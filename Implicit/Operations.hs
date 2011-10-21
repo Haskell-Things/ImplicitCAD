@@ -48,4 +48,5 @@ difference a b = differenceL [a,b]
 slice :: Float -> Obj3 -> Obj2
 slice z obj = \(a,b) -> obj (a,b,z)
 
+-- buble :: Obj2 -> Obj3
 

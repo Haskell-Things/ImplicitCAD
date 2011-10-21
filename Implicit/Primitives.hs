@@ -5,8 +5,10 @@ module Implicit.Primitives (
 	sphere,
 	cube,
 	circle,
+	cylinder,
 	square,
-	regularNGon--,
+	regularNGon,
+	zsurface--,
 	--ellipse
 ) where
 
@@ -18,6 +20,9 @@ sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 
 cube :: ℝ -> Obj3
 cube l = \(x,y,z) -> (maximum $ map abs [x,y,z]) - l/2
+
+cylinder :: ℝ -> ℝ -> Obj3
+cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
 
 circle :: ℝ -> Obj2
 circle r = \(x,y) -> sqrt (x**2 + y**2) - r
@@ -41,3 +46,6 @@ regularNGon sides r =
 			[ x*cos(2*pi*m/sides) + y*sin(2*pi*m/sides) | m <- [0.. sides -1]] in 
 	\(x,y) -> (unnormalized x y) / (unnormalized 1 0) - r 
 
+
+zsurface :: (ℝ2 -> ℝ) -> Obj3
+zsurface f = \(x,y,z) -> f (x,y) - z

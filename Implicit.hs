@@ -18,8 +18,10 @@ module Implicit(
 	sphere,
 	cube,
 	circle,
+	cylinder,
 	square,
 	regularNGon,
+	zsurface,
 	--ellipse,
 	-- Export
 	writeSVG
