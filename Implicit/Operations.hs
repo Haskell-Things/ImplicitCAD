@@ -19,7 +19,7 @@ import Implicit.MathUtil
 import Implicit.SaneOperators
 
 
-
+translate :: (Additive a a a, AdditiveInvertable a) => a -> (a -> b) -> a -> b
 translate p obj = \q -> obj (q-p)
 
 scale s obj = \p -> s * obj (p/s)
