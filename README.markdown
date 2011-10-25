@@ -24,34 +24,34 @@ Examples
 
 A simple 2D example:
 
-> import Implicit
-> 
-> out = union 
-> 	(square 40) 
-> 	(translate (20,20) (circle 15) )
->
-> writeSVG (-50,-50) (50,50) 1 "test.svg" out 
+>     import Implicit
+>     
+>     out = union 
+>     	(square 40) 
+>     	(translate (20,20) (circle 15) )
+>     
+>     writeSVG (-50,-50) (50,50) 1 "test.svg" out 
 
 A rounded union:
 
-> import Implicit
-> 
-> out = unionR 7
-> 	(square 40) 
-> 	(translate (20,20) (circle 15) )
->
-> writeSVG (-50,-50) (50,50) 1 "test.svg" out 
+>     import Implicit
+>     
+>     out = unionR 7
+>     	(square 40) 
+>     	(translate (20,20) (circle 15) )
+>    
+>     writeSVG (-50,-50) (50,50) 1 "test.svg" out 
 
 
 A simple 3D example:
 
-> import Implicit
-> 
-> out = union 
-> 	(cube 40) 
-> 	(translate (20,20,20) (sphere 15) )
->
-> writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
+>     import Implicit
+>     
+>     out = union 
+>     	(cube 40) 
+>     	(translate (20,20,20) (sphere 15) )
+>    
+>     writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
 
 
 Status
