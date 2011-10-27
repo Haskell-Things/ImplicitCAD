@@ -10,7 +10,10 @@ module Implicit.Operations (
 	unionR, intersectR, differenceR,
 	unionL, intersectL, differenceL,
 	shell,
-	slice
+	slice,
+	bubble,
+	extrude,
+	extrudeR
 ) where
 
 import Prelude hiding ((+),(-),(*),(/))
@@ -48,5 +51,19 @@ difference a b = differenceL [a,b]
 slice :: Float -> Obj3 -> Obj2
 slice z obj = \(a,b) -> obj (a,b,z)
 
--- buble :: Obj2 -> Obj3
+bubble :: ℝ -> Obj2 -> Obj3
+bubble s obj = 
+	let
+		spsqrt n = signum n * sqrt (abs n)
+		spsq n = signum n * n ** 2
+	in
+		\(x,y,z) -> spsqrt ( z ** 2 + s * obj (x,y) )
+
+extrude :: ℝ -> Obj2 -> Obj3
+extrude h obj = \(x,y,z) -> max (obj (x,y)) (abs (z + h/(2.0 :: ℝ )) - h)
+
+extrudeR :: ℝ -> ℝ -> Obj2 -> Obj3
+extrudeR r h obj = \(x,y,z) -> rmax r (obj (x,y)) (abs (z + h/(2.0 :: ℝ)) - h)
+
+
 

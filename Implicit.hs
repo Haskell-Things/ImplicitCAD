@@ -14,6 +14,9 @@ module Implicit(
 	unionL, intersectL, differenceL,
 	shell,
 	slice,
+	bubble,
+	extrude,
+	extrudeR,
 	-- Primitives
 	sphere,
 	cube,
