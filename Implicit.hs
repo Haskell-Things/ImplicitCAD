@@ -22,6 +22,7 @@ module Implicit(
 	square,
 	regularNGon,
 	zsurface,
+	polygon,
 	--ellipse,
 	-- Export
 	writeSVG

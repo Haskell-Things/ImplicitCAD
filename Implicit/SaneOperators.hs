@@ -16,15 +16,24 @@ import Implicit.Definitions
 
 class Additive a b c | a b -> c where
 	(+) :: a -> b -> c
+	infixl 6 +
 
 class Multiplicative a b c | a b -> c where
 	(*) :: a -> b -> c
+	infixl 7 *
 
 class AdditiveInvertable a where
 	additiveInverse :: a -> a
 
 class MultiplicativeInvertable a where
 	multiplicativeInverse :: a -> a
+
+class Normable a where
+	norm :: a -> ℝ
+
+class InnerProductSpace a where
+	(⋅) :: a -> a -> ℝ
+
 
 -- These should work, but I can't get them to
 -- play nice with haskell's type checker...
@@ -55,11 +64,36 @@ instance AdditiveInvertable ℝ where
 instance MultiplicativeInvertable ℝ where
 	multiplicativeInverse a = 1 P./ a
 
+instance Additive ℕ ℕ ℕ where
+	a + b = a P.+ b
+
+instance Multiplicative ℕ ℕ ℕ where
+	a * b = a P.* b
+
+instance AdditiveInvertable ℕ where
+	additiveInverse a = negate a
+
+
+instance Additive ℝ ℕ ℝ where
+	a + b = a P.+ (fromIntegral b)
+
+instance Multiplicative ℝ ℕ ℝ where
+	a * b = a P.* (fromIntegral b)
+
+instance Additive ℕ ℝ ℝ where
+	a + b = (fromIntegral a) P.+ b
+
+instance Multiplicative ℕ ℝ ℝ where
+	a * b = (fromIntegral a) P.* b
+
+
 (-) :: (Additive a b c) => (AdditiveInvertable b) => a -> b -> c
 x - y = x + (additiveInverse y)
+infixl 6 -
 
 (/) :: (Multiplicative a b c) => (MultiplicativeInvertable b) => a -> b -> c
 x / y = x * (multiplicativeInverse y)
+infixl 7 /
 
 
 
@@ -101,6 +135,24 @@ instance (Additive a b c) => Additive (d -> a) (d -> b) (d -> c) where
 instance (Multiplicative a b c) => Multiplicative (d -> a) (d -> b) (d -> c) where
 	f * g = \p -> f p * g p
 
+
+instance Normable ℝ where
+	norm a = abs a
+
+instance Normable ℝ2 where
+	norm (a, b) = sqrt ((a**2) + (b**2))
+
+instance Normable ℝ3 where
+	norm (a, b, c) = sqrt ((a**2) + (b**2) + (c**2))
+
+instance InnerProductSpace ℝ where
+	x ⋅ y = x*y
+
+instance InnerProductSpace ℝ2 where
+	(a1, a2) ⋅ (b1, b2) = a1*b1 + a2*b2
+
+instance InnerProductSpace ℝ3 where
+	(a1, a2, a3) ⋅ (b1, b2, b3) = a1*b1 + a2*b2+a3*b3
 
 
 

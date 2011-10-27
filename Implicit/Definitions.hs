@@ -9,6 +9,8 @@ type ℝ = Float
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
+type ℕ = Int
+
 -- A chain of line segments, as in SVG
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
