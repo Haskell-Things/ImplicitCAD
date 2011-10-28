@@ -1,8 +1,8 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-Intro
------
+Introduction
+------------
 
 ImplicitCAD is a programmatic CAD program, implemented in haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
@@ -63,6 +63,16 @@ writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out
 ```
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
+
+Try It
+------
+
+ (1) Install GHC and cabal. For example, on Ubuntu: `sudo apt-get install ghc cabal-install`
+ (2) Use cabal to install dependencies: `cabal install hasmap parsec parallel`
+ (3) Clone this repository: `git clone git://github.com/colah/ImplicitCAD.git`
+ (4) Go into the repository and start ghci: `cd ImplicitCAD; ghci`
+ (5) Load ImplicitCAD: `:l Implicit`
+ (6) Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
 Status
 ------
