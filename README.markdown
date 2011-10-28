@@ -23,39 +23,46 @@ Examples
 
 A simple 2D example:
 
->     import Implicit
->     
->     out = union 
->     	(square 80) 
->     	(translate (40,40) (circle 30) )
->     
->     writeSVG (-100,-100) (100,100) 2 "test.svg" out 
+```haskell
+import Implicit
+
+out = union 
+	(square 80) 
+	(translate (40,40) (circle 30) )
+
+writeSVG (-100,-100) (100,100) 2 "test.svg" out
+``` 
 
 ![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
 
 
 A rounded union:
 
->     import Implicit
->     
->     out = unionR 14 
->     	(square 80) 
->     	(translate (40,40) (circle 30) )
->     
->     writeSVG (-100,-100) (100,100) 2 "test.svg" out 
+```haskell
+import Implicit
+
+out = unionR 14 
+	(square 80) 
+	(translate (40,40) (circle 30) )
+
+writeSVG (-100,-100) (100,100) 2 "test.svg" out
+``` 
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
 
 A simple 3D example:
 
->     import Implicit
->     
->     out = union 
->     	(cube 40) 
->     	(translate (20,20,20) (sphere 15) )
->    
->     writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
+```haskell
+import Implicit
 
+out = union 
+	(cube 40) 
+	(translate (20,20,20) (sphere 15) )
+
+writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
+```
+
+![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
 
 Status
 ------
