@@ -31,7 +31,7 @@ A simple 2D example:
 >     
 >     writeSVG (-100,-100) (100,100) 2 "test.svg" out 
 
-![A Union of a Square and Circle](colah.github.com/ImplicitCAD_doc_images/0.0/SquareCircleUnion.svg)
+![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
 
 
 A rounded union:
@@ -44,7 +44,7 @@ A rounded union:
 >     
 >     writeSVG (-100,-100) (100,100) 2 "test.svg" out 
 
-![A Rounded Union of a Square and Circle](colah.github.com/ImplicitCAD_doc_images/0.0/SquareCircleUnionR.svg)
+![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
 
 A simple 3D example:
 
