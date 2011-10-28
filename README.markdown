@@ -64,11 +64,17 @@ writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
 
-Try It
-------
+Try ImplicitCAD!
+----------------
 
- 1. Install GHC and cabal. For example, on Ubuntu: `sudo apt-get install ghc cabal-install`
- 2. Use cabal to install dependencies: `cabal install hashmap parsec parallel`
+ 1. Install GHC and cabal.
+     * Debain/Ubuntu: `apt-get install ghc cabal-install`
+     * Archlinux: `pacman -S ghc cabal-install`
+     * Red Hat/Fedora: `yum install ghc cabal-install`
+     * Mac OSX:
+         * Homebrew: `brew install ghc cabal-install`
+         * *Fink doesn't seem to have a package for cabal*
+ 2. Use cabal to install dependencies: `cabal update; cabal install hashmap parsec parallel`
  3. Clone this repository: `git clone git://github.com/colah/ImplicitCAD.git`
  4. Go into the repository and start ghci: `cd ImplicitCAD; ghci`
  5. Load ImplicitCAD: `:l Implicit`
