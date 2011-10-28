@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.Primitives (
+module Graphics.Implicit.Primitives (
 	sphere,
 	cube,
 	circle,
@@ -13,8 +13,8 @@ module Implicit.Primitives (
 	--ellipse
 ) where
 
-import Implicit.Definitions
-import qualified Implicit.SaneOperators as S
+import Graphics.Implicit.Definitions
+import qualified Graphics.Implicit.SaneOperators as S
 
 sphere :: ℝ -> Obj3
 sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r

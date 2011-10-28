@@ -7,12 +7,12 @@
 -- I'd rather not have to break every stupid vector into
 -- its components to add them or scale them...
 
-module Implicit.SaneOperators where
+module Graphics.Implicit.SaneOperators where
 
 import qualified Prelude as P
 import Prelude hiding ((+),(-),(*),(/))
 
-import Implicit.Definitions
+import Graphics.Implicit.Definitions
 
 class Additive a b c | a b -> c where
 	(+) :: a -> b -> c

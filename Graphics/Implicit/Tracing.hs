@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.Tracing (
+module Graphics.Implicit.Tracing (
 	getTriangles,
 	getLineSeg,
 	orderLines,
@@ -11,8 +11,8 @@ module Implicit.Tracing (
 	polylineNotNull
 ) where
 
-import Implicit.Definitions
-import Implicit.Tracing.GetTriangles (getTriangles)
+import Graphics.Implicit.Definitions
+import Graphics.Implicit.Tracing.GetTriangles (getTriangles)
 
 import Control.Parallel (par, pseq)
 

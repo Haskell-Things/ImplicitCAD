@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.Definitions where
+module Graphics.Implicit.Definitions where
 
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...

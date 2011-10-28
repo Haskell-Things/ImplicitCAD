@@ -3,10 +3,10 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Implicit.ExtOpenScad where
+module Graphics.Implicit.ExtOpenScad where
 
 import Prelude hiding (lookup)
-import Implicit.Definitions
+import Graphics.Implicit.Definitions
 import Data.Map hiding (map)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr

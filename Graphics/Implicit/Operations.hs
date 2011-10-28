@@ -2,7 +2,7 @@
 -- Released under the GNU GPL, see LICENSE
 
 
-module Implicit.Operations (
+module Graphics.Implicit.Operations (
 	translate, 
 	scale,
 	complement,
@@ -18,9 +18,9 @@ module Implicit.Operations (
 ) where
 
 import Prelude hiding ((+),(-),(*),(/))
-import Implicit.Definitions
-import Implicit.MathUtil
-import Implicit.SaneOperators
+import Graphics.Implicit.Definitions
+import Graphics.Implicit.MathUtil
+import Graphics.Implicit.SaneOperators
 
 
 translate :: (Additive a a a, AdditiveInvertable a) => a -> (a -> b) -> a -> b

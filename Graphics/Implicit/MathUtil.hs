@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.MathUtil (rmax, rmin) where
+module Graphics.Implicit.MathUtil (rmax, rmin) where
 
 -- Rounded Maximum
 -- Consider  max(x,y) = 0, the generated curve 

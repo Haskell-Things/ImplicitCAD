@@ -1,10 +1,10 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.Export where
+module Graphics.Implicit.Export where
 
-import Implicit.Definitions
-import Implicit.Tracing
+import Graphics.Implicit.Definitions
+import Graphics.Implicit.Tracing
 import System.IO
 
 

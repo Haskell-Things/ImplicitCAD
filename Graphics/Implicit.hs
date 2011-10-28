@@ -4,7 +4,7 @@
 {- The sole purpose of this file it to pass on the 
    functionality we want to be accessible to the end user. -}
 
-module Implicit(
+module Graphics.Implicit(
 	-- Operations
 	translate, 
 	scale,
@@ -32,8 +32,8 @@ module Implicit(
 	writeSVG
 ) where
 
-import Implicit.Definitions
-import Implicit.Primitives
-import Implicit.Operations
-import Implicit.Export
+import Graphics.Implicit.Definitions
+import Graphics.Implicit.Primitives
+import Graphics.Implicit.Operations
+import Graphics.Implicit.Export
 

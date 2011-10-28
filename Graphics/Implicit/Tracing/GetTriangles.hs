@@ -1,9 +1,9 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Implicit.Tracing.GetTriangles (getTriangles) where
+module Graphics.Implicit.Tracing.GetTriangles (getTriangles) where
 
-import Implicit.Definitions
+import Graphics.Implicit.Definitions
 
 
 -- This monstrosity of a function gives triangles to divde negative interior
