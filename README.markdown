@@ -67,12 +67,12 @@ writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out
 Try It
 ------
 
- (1) Install GHC and cabal. For example, on Ubuntu: `sudo apt-get install ghc cabal-install`
- (2) Use cabal to install dependencies: `cabal install hasmap parsec parallel`
- (3) Clone this repository: `git clone git://github.com/colah/ImplicitCAD.git`
- (4) Go into the repository and start ghci: `cd ImplicitCAD; ghci`
- (5) Load ImplicitCAD: `:l Implicit`
- (6) Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+ 1. Install GHC and cabal. For example, on Ubuntu: `sudo apt-get install ghc cabal-install`
+ 2. Use cabal to install dependencies: `cabal install hasmap parsec parallel`
+ 3. Clone this repository: `git clone git://github.com/colah/ImplicitCAD.git`
+ 4. Go into the repository and start ghci: `cd ImplicitCAD; ghci`
+ 5. Load ImplicitCAD: `:l Implicit`
+ 6. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
 Status
 ------
