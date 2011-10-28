@@ -10,7 +10,8 @@ License-file:        LICENSE
 Author:              Christopher Olah
 Maintainer:          Christopher Olah <chris@colah.ca>
 Homepage:            https://github.com/colah/ImplicitCAD
-Build-Depends:       base, parsec, hashmap, parallel, containers
+Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
+build-type:          Simple
 Exposed-Modules:   
     Graphics.Implicit
     Graphics.Implicit.Definitions
