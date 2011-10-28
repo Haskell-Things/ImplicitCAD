@@ -28,6 +28,9 @@ cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
 circle :: ℝ -> Obj2
 circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
+torus :: ℝ -> ℝ -> Obj3
+torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
+
 --ellipse :: ℝ -> ℝ -> Obj2
 --ellipse a b = \(x,y) ->
 --	if a > b 
@@ -54,13 +57,13 @@ polygon points =
 		dist a@(a1,a2) b@(b1,b2) p@(p1,p2) =
 			let
 				ab = b S.- a
-				nab = S.norm ab
+				nab = (1 / S.norm ab) S.* ab
 				ap = p S.- a
-				d  = ab S.⋅ ap
+				d  = nab S.⋅ ap
 				closest 
 					| d < 0 = a
-					| d > 1 = b
-					| otherwise = a S.+ d S.* ab
+					| d > S.norm ab = b
+					| otherwise = a S.+ d S.* nab
 			in
 				S.norm (closest S.- p)
 		dists = \ p -> map (\(a,b) ->  dist a b p) pairs

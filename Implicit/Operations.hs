@@ -13,7 +13,8 @@ module Implicit.Operations (
 	slice,
 	bubble,
 	extrude,
-	extrudeR
+	extrudeR,
+	runOnEdgeOf
 ) where
 
 import Prelude hiding ((+),(-),(*),(/))
@@ -65,5 +66,5 @@ extrude h obj = \(x,y,z) -> max (obj (x,y)) (abs (z + h/(2.0 :: ℝ )) - h)
 extrudeR :: ℝ -> ℝ -> Obj2 -> Obj3
 extrudeR r h obj = \(x,y,z) -> rmax r (obj (x,y)) (abs (z + h/(2.0 :: ℝ)) - h)
 
-
+runOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z) 
 

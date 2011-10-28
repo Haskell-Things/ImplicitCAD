@@ -17,6 +17,7 @@ module Implicit(
 	bubble,
 	extrude,
 	extrudeR,
+	runOnEdgeOf,
 	-- Primitives
 	sphere,
 	cube,
