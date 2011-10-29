@@ -17,7 +17,7 @@ module Graphics.Implicit(
 	bubble,
 	extrude,
 	extrudeR,
-	runOnEdgeOf,
+	extrudeOnEdgeOf,
 	-- Primitives
 	sphere,
 	cube,

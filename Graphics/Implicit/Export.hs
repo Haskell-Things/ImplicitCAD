@@ -31,7 +31,15 @@ renderRaw2D (x1, y1) (x2, y2) res name obj =
 				[[ obj (x,y) | x <- [x1, x1+res.. x2] ] | y <- [y1, y1+res.. y2] ]
 			hClose out
 
-writeSVG :: ℝ2 -> ℝ2 -> ℝ -> String -> Obj2 -> IO ()
+-- | Write an SVG of a 2D object
+writeSVG :: 
+	ℝ2         -- ^ lower corner of bounding box
+	-> ℝ2      -- ^ upper corner of bounding box
+	-> ℝ       -- ^ resolution of rendering
+	-> String  -- ^ Filename to write SVG to
+	-> Obj2    -- ^ 2D object to render as SVG
+	-> IO ()   -- ^ Resulting IO action that will write SVG
+
 writeSVG (x1,y1) (x2,y2) d name obj = 
 	let 
 		-- Note that 0,0 is the upper right hand corner and that positive is down
@@ -48,7 +56,15 @@ writeSVG (x1,y1) (x2,y2) d name obj =
 	in do 
 		writeFile name text
 
-writeSVG2 :: ℝ2 -> ℝ2 -> ℝ -> String -> Obj2 -> IO ()
+-- | Write an SVG of a 2D object (uses parallel algorithms)
+writeSVG2 :: 
+	ℝ2         -- ^ lower corner of bounding box
+	-> ℝ2      -- ^ upper corner of bounding box
+	-> ℝ       -- ^ resolution of rendering
+	-> String  -- ^ Filename to write SVG to
+	-> Obj2    -- ^ 2D object to render as SVG
+	-> IO ()   -- ^ Resulting IO action that will write SVG
+
 writeSVG2 (x1,y1) (x2,y2) d name obj = 
 	let 
 		grid = [[getLineSeg (obj (x,-y), obj (x+d,-y), obj (x+d,-(y+d)), obj (x,-(y+d)), obj (x+d/2,-(y+d/2)) , (x-x1,y-y1), d ) | x <- [x1, x1+d.. x2]] | y <- [y1, y1 +d.. y2] ]
@@ -66,7 +82,14 @@ writeSVG2 (x1,y1) (x2,y2) d name obj =
 
 
 
-writeGCode :: ℝ2 -> ℝ2 -> ℝ -> FilePath -> Obj2 -> IO ()
+writeGCode :: 
+	ℝ2          -- ^ lower corner of bounding box
+	-> ℝ2       -- ^ upper corner of bounding box
+	-> ℝ        -- ^ resolution of rendering
+	-> FilePath -- ^ Filename to write gcode to
+	-> Obj2     -- ^ 2D object to make gcode for
+	-> IO ()    -- ^ Resulting IO action that will write gcode
+
 writeGCode (x1,y1) (x2,y2) d name obj = 
 	let 
 		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLines $ concat $ map getLineSeg [(obj (x,y), obj (x+d,y), obj (x+d,y+d), obj (x,y+d), obj (x+d/2,y+d/2) , (x,y), d ) | x <- [x1, x1+d.. x2], y <- [y1, y1 +d.. y2] ]
@@ -86,7 +109,14 @@ writeGCode (x1,y1) (x2,y2) d name obj =
 	in do 
 		writeFile name text
 
-writeGCodeHacklabLaser :: ℝ2 -> ℝ2 -> ℝ -> FilePath -> Obj2 -> IO()
+writeGCodeHacklabLaser :: 
+	ℝ2          -- ^ lower corner of bounding box
+	-> ℝ2       -- ^ upper corner of bounding box
+	-> ℝ        -- ^ resolution of rendering
+	-> FilePath -- ^ Filename to write gcode to
+	-> Obj2     -- ^ 2D object to make gcode for
+	-> IO ()    -- ^ Resulting IO action that will write gcode
+
 writeGCodeHacklabLaser (x1,y1) (x2,y2) d name obj = 
 	let 
 		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLines $ concat $ map getLineSeg [(obj (x,y), obj (x+d,y), obj (x+d,y+d), obj (x,y+d), obj (x+d/2,y+d/2) , (x,y), d ) | x <- [x1, x1+d.. x2], y <- [y1, y1 +d.. y2] ]
@@ -116,8 +146,13 @@ writeGCodeHacklabLaser (x1,y1) (x2,y2) d name obj =
 		writeFile name text
 
 
--- ((x1y1z1,x2y1z1,x1y2z1,x2y21z1,x1y1z2,x2y1z2,x1y2z2,x2y2z2), (x,y,z), d)
-writeSTL :: ℝ3 -> ℝ3 -> ℝ -> FilePath -> Obj3 -> IO()
+writeSTL :: 
+	ℝ3           -- ^ Lower corner of (3D) bounding box
+	-> ℝ3        -- ^ Upper corner of bounding box
+	-> ℝ         -- ^ resolution of rendering
+	-> FilePath  -- ^ Name of file to write STL to
+	-> Obj3      -- ^ 3D object to make STL for
+	-> IO()      -- ^ Resulting IO action that will write STL
 writeSTL (x1,y1,z1) (x2,y2,z2) d name obj =
 	let
 		grid3d = [((obj(x,y,z), obj(x+d,y,z), obj(x,y+d,z), obj(x+d,y+d,z), obj(x,y,z+d), obj(x+d,y,z+d), obj(x,y+d,z+d), obj(x+d,y+d,z+d)), (x,y,z), d )| x <- [x1, x1+d.. x2], y <- [y1, y1 +d.. y2], z <- [z1, z1+d.. z2] ]

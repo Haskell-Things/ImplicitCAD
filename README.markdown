@@ -24,7 +24,7 @@ Examples
 A simple 2D example:
 
 ```haskell
-import Implicit
+import Graphics.Implicit
 
 out = union 
 	(square 80) 
@@ -39,7 +39,7 @@ writeSVG (-100,-100) (100,100) 2 "test.svg" out
 A rounded union:
 
 ```haskell
-import Implicit
+import Graphics.Implicit
 
 out = unionR 14 
 	(square 80) 
@@ -53,7 +53,7 @@ writeSVG (-100,-100) (100,100) 2 "test.svg" out
 A simple 3D example:
 
 ```haskell
-import Implicit
+import Graphics.Implicit
 
 out = union 
 	(cube 40) 
@@ -74,11 +74,10 @@ Try ImplicitCAD!
      * Mac OSX:
          * Homebrew: `brew install ghc cabal-install`
          * *Fink doesn't seem to have a package for cabal*
- 2. Use cabal to install dependencies: `cabal update; cabal install hashmap parsec parallel`
- 3. Clone this repository: `git clone git://github.com/colah/ImplicitCAD.git`
- 4. Go into the repository and start ghci: `cd ImplicitCAD; ghci`
- 5. Load ImplicitCAD: `:l Implicit`
- 6. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+ 2. Use cabal to install ImplicitCAD: `cabal update; cabal install implicit`
+ 3. Start ghci: `ghci`
+ 4. Load ImplicitCAD: `import Graphics.Implicit`
+ 5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
 Status
 ------

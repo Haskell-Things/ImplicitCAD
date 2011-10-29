@@ -16,19 +16,31 @@ module Graphics.Implicit.Primitives (
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 
-sphere :: ℝ -> Obj3
+sphere :: 
+	ℝ         -- ^ Radius of the sphere
+	-> Obj3   -- ^ Resulting sphere
 sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 
-cube :: ℝ -> Obj3
+cube :: 
+	ℝ          -- ^ Width of the cube
+	 -> Obj3   -- ^ Resuting cube
 cube l = \(x,y,z) -> (maximum $ map abs [x,y,z]) - l/2.0
 
-cylinder :: ℝ -> ℝ -> Obj3
+cylinder :: 
+	ℝ         -- ^ Radius of the cylinder
+	-> ℝ      -- ^ Height of the cylinder
+	-> Obj3   -- ^ Resulting cylinder
 cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
 
-circle :: ℝ -> Obj2
+circle :: 
+	ℝ        -- ^ radius of the circle
+	-> Obj2  -- ^ resulting circle
 circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
-torus :: ℝ -> ℝ -> Obj3
+torus :: 
+	ℝ       -- ^ radius of the rotated circle of a torus
+	-> ℝ    -- ^ radius of the circle rotationaly extruded on of a torus
+	-> Obj3 -- ^ resulting torus
 torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
 
 --ellipse :: ℝ -> ℝ -> Obj2
@@ -37,10 +49,14 @@ torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 
 --	then ellipse b a (y,x)
 --	else sqrt ((b/a*x)*	*2 + y**2) - a
 
-square :: ℝ -> Obj2
+square :: 
+	ℝ        -- ^ Width of the square
+	-> Obj2  -- ^ Resulting square
 square l = \(x,y) -> (maximum $ map abs [x,y]) - l/2.0
 
-polygon :: [ℝ2] -> Obj2
+polygon :: 
+	[ℝ2]      -- ^ Verticies of the polygon
+	 -> Obj2  -- ^ Resulting polygon
 polygon points = 
 	let
 		pairs = 

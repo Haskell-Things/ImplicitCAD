@@ -1,6 +1,7 @@
 Name:                implicit
-Version:             0.0
-Synopsis:            Math-inspired programmatic CAD: CSG, bevels, and shells; 2D & 3D; gcode generation..
+Version:             0.0.0
+cabal-version:       >= 1.6
+Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 Description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
                      shells and more in 2D & 3D. Then export to SVGs, STLs, 
@@ -10,19 +11,24 @@ License-file:        LICENSE
 Author:              Christopher Olah
 Maintainer:          Christopher Olah <chris@colah.ca>
 Homepage:            https://github.com/colah/ImplicitCAD
-Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
 build-type:          Simple
-Exposed-Modules:   
-    Graphics.Implicit
-    Graphics.Implicit.Definitions
-    Graphics.Implicit.Export
-    Graphics.Implicit.ExtOpenScad
-    Graphics.Implicit.MathUtil
-    Graphics.Implicit.Operations
-    Graphics.Implicit.Primitives
-    Graphics.Implicit.SaneOperators
-    Graphics.Implicit.Tracing
-    Graphics.Implicit.Tracing.GetTriangles
+Category:            Graphics
 
+Library
+    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
+    Exposed-Modules:   
+        Graphics.Implicit
+        Graphics.Implicit.Definitions
+        Graphics.Implicit.Export
+        Graphics.Implicit.ExtOpenScad
+        Graphics.Implicit.MathUtil
+        Graphics.Implicit.Operations
+        Graphics.Implicit.Primitives
+        Graphics.Implicit.SaneOperators
+        Graphics.Implicit.Tracing
+        Graphics.Implicit.Tracing.GetTriangles
 
+source-repository head
+    type:            git
+    location:        https://github.com/colah/ImplicitCAD.git
 
