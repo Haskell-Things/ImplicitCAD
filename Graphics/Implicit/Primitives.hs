@@ -7,7 +7,7 @@ module Graphics.Implicit.Primitives (
 	circle,
 	cylinder,
 	square,
-	regularNGon,
+	regularPolygon,
 	polygon,
 	zsurface--,
 	--ellipse
@@ -86,16 +86,17 @@ polygon points =
 	in 
 		\ p -> isIn p * minimum (dists p)
 
-roundRegularNGon sides n r =
-	let unnormalized x y = (**(1/n)) $ sum $ map (**n) $ filter (>0) $
-			[ x*cos(2*pi*m/sides) + y*sin(2*pi*m/sides) | m <- [0.. sides -1]] in 
-	\(x,y) -> (unnormalized x y) / (unnormalized 1 0) - r 
-
-regularNGon sides r =
-	let unnormalized x y = maximum $
-			[ x*cos(2*pi*m/sides) + y*sin(2*pi*m/sides) | m <- [0.. sides -1]] in 
-	\(x,y) -> (unnormalized x y) / (unnormalized 1 0) - r 
+regularPolygon :: 
+	ℕ       -- ^ number of sides
+	-> ℝ    -- ^ radius
+	-> Obj2 -- ^ resulting regular polygon
+regularPolygon sides r =
+	\(x,y) -> maximum [ x*cos(2*pi*m/sides) + y*sin(2*pi*m/sides) | m <- [0.. sides -1]] - r 
 
 
-zsurface :: (ℝ2 -> ℝ) -> Obj3
+zsurface :: 
+	(ℝ2 -> ℝ) -- ^ Description of the height of the surface
+	-> Obj3   -- ^ Resulting 3D object
 zsurface f = \(x,y,z) -> f (x,y) - z
+
+

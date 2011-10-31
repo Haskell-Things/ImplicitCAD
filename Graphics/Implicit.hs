@@ -24,7 +24,7 @@ module Graphics.Implicit(
 	circle,
 	cylinder,
 	square,
-	regularNGon,
+	regularPolygon,
 	zsurface,
 	polygon,
 	--ellipse,

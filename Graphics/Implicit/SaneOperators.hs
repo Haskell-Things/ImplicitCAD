@@ -14,6 +14,8 @@ import Prelude hiding ((+),(-),(*),(/))
 
 import Graphics.Implicit.Definitions
 
+-- * Num is too big a class and doesn't make sense for, say, vectors.
+
 class Additive a b c | a b -> c where
 	(+) :: a -> b -> c
 	infixl 6 +
@@ -34,9 +36,9 @@ class Normable a where
 class InnerProductSpace a where
 	(⋅) :: a -> a -> ℝ
 
+-- * I should be able to create instances for all Num instances,
+-- but Haskell's type checker doesn't seem to play nice with them.
 
--- These should work, but I can't get them to
--- play nice with haskell's type checker...
 
 {-instance Num a => Additive a a a where
 	a + b = a P.+ b

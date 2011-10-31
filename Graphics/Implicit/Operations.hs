@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
 
 module Graphics.Implicit.Operations (
 	translate, 
@@ -33,14 +33,22 @@ translate ::
 translate p obj = \q -> obj (q-p)
 
 -- | Scale an object
-scale :: (Multiplicative a b1 c1, Multiplicative b1 b c, MultiplicativeInvertable b1) => b1 -> (c1 -> b) -> a -> c
+scale :: (Multiplicative a ℝ a) => 
+	ℝ            -- ^ Amount to scale by
+	-> (a -> ℝ)  -- ^ Object to scale
+	-> (a -> ℝ)  -- ^ Resulting scaled object
 scale s obj = \p -> s * obj (p/s)
 
-complement :: (a -> ℝ) -> (a -> ℝ)
+complement :: 
+	(a -> ℝ)     -- ^ Object to complement
+	-> (a -> ℝ)  -- ^ Result
 complement obj = \p -> - obj p
 
-shell :: ℝ -> (a -> ℝ) -> (a -> ℝ)
-shell r a = \p -> abs (a p) - r
+shell :: 
+	ℝ             -- ^ width of shell
+	-> (a -> ℝ)   -- ^ object to take shell of
+	-> (a -> ℝ)   -- ^ resulting shell
+shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 
 -- | Rounded union
 unionR :: 
