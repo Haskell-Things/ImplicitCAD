@@ -26,9 +26,9 @@ A simple 2D example:
 ```haskell
 import Graphics.Implicit
 
-out = union 
-	(square 80) 
-	(translate (40,40) (circle 30) )
+out = union [
+	square 80,
+	translate (40,40) (circle 30) ]
 
 writeSVG (-100,-100) (100,100) 2 "test.svg" out
 ``` 
@@ -41,9 +41,9 @@ A rounded union:
 ```haskell
 import Graphics.Implicit
 
-out = unionR 14 
-	(square 80) 
-	(translate (40,40) (circle 30) )
+out = unionR 14 [
+	square 80,
+	translate (40,40) (circle 30) ]
 
 writeSVG (-100,-100) (100,100) 2 "test.svg" out
 ``` 
@@ -55,9 +55,9 @@ A simple 3D example:
 ```haskell
 import Graphics.Implicit
 
-out = union 
-	(cube 40) 
-	(translate (20,20,20) (sphere 15) )
+out = union [
+	cube 40,
+	translate (20,20,20) (sphere 15) ]
 
 writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
 ```

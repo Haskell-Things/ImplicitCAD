@@ -9,7 +9,6 @@ module Graphics.Implicit.Operations (
 	complement,
 	union,  intersect,  difference,
 	unionR, intersectR, differenceR,
-	unionL, intersectL, differenceL,
 	shell,
 	slice,
 	bubble,
@@ -52,53 +51,43 @@ shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 
 -- | Rounded union
 unionR :: 
-	ℝ  -- ^ The radius of rounding
-	-> (a -> ℝ) -- ^ First object to union
-	-> (a -> ℝ) -- ^ Second object to union
+	ℝ           -- ^ The radius of rounding
+	-> [a -> ℝ] -- ^ objects to union
 	-> (a -> ℝ) -- ^ Resulting object
-unionR r a b = \p -> rmin r (a p) (b p)
+unionR r objs = \p -> rminimum r $ map ($p) objs
 
 -- | Rounded minimum
-intersectR :: ℝ  -- ^ The radius of rounding
-	-> (a -> ℝ) -- ^ First object to intersect
-	-> (a -> ℝ) -- ^ Second object to intersect
+intersectR :: 
+	ℝ           -- ^ The radius of rounding
+	-> [a -> ℝ] -- ^ Objects to intersect
 	-> (a -> ℝ) -- ^ Resulting object
-intersectR r a b = \p -> rmax r (a p) (b p)
+intersectR r objs = \p -> rmaximum r $ map ($p) objs
 
 -- | Rounded difference
-differenceR :: ℝ  -- ^ The radius of rounding
-	-> (a -> ℝ) -- ^ First object 
-	-> (a -> ℝ) -- ^ Object to cut out of the first object
+differenceR :: 
+	ℝ           -- ^ The radius of rounding
+	-> [a -> ℝ] -- ^ Objects to difference 
 	-> (a -> ℝ) -- ^ Resulting object
-differenceR r a b = \p -> rmax r (a p) (- b p)
+differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
 
 
 -- | Union a list of objects
-unionL :: 
+union :: 
 	[a -> ℝ] -- ^ List of objects to union
 	-> (a -> ℝ) -- ^ The object resulting from the union
-unionL objs = \p -> minimum $ map ($p) objs
+union objs = \p -> minimum $ map ($p) objs
 
 -- | Intersect a list of objects
-intersectL :: 
+intersect :: 
 	[a -> ℝ] -- ^ List of objects to intersect
 	-> (a -> ℝ) -- ^ The object resulting from the intersection
-intersectL objs = \p -> maximum $ map ($p) objs
+intersect objs = \p -> maximum $ map ($p) objs
 
 -- | Difference a list of objects
-differenceL :: 
+difference :: 
 	[a -> ℝ] -- ^ List of objects to difference
 	-> (a -> ℝ) -- ^ The object resulting from the difference
-differenceL (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
-
-
-
-
-union a b = unionL [a,b]
-(∪) a b = union a b
-intersect a b = intersectL [a,b]
-(∩) a b = intersect a b
-difference a b = differenceL [a,b]
+difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
 
 -- | Slice a 3D objects at a given z value to make a 2D object.
 slice :: 

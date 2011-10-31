@@ -11,7 +11,6 @@ module Graphics.Implicit(
 	complement,
 	union,  intersect,  difference,
 	unionR, intersectR, differenceR,
-	unionL, intersectL, differenceL,
 	shell,
 	slice,
 	bubble,

@@ -4,18 +4,27 @@
 module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum) where
 
 import Data.List
+import Graphics.Implicit.Definitions
 
 -- | Rounded Maximum
 -- Consider  max(x,y) = 0, the generated curve 
 -- has a square-like corner. We replace it with a 
 -- quarter of a circle
-
+rmax :: 
+	ℝ     -- ^ radius
+	-> ℝ  -- ^ first number to round maximum
+	-> ℝ  -- ^ second number to round maximum
+	-> ℝ  -- ^ resulting number
 rmax r x y =  if abs (x-y) < r 
 	then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
 	else max x y
 
 -- | Rounded minimum
-
+rmin :: 
+	ℝ     -- ^ radius
+	-> ℝ  -- ^ first number to round minimum
+	-> ℝ  -- ^ second number to round minimum
+	-> ℝ  -- ^ resulting number
 rmin r x y = if abs (x-y) < r 
 	then y + r*sin(pi/4+asin((x-y)/r/sqrt 2)) - r
 	else min x y
@@ -25,6 +34,12 @@ rmin r x y = if abs (x-y) < r
 -- The implementation is to take the maximum two
 -- and rmax those.
 
+rmaximum ::
+	ℝ      -- ^ radius
+	-> [ℝ] -- ^ numbers to take round maximum
+	-> ℝ   -- ^ resulting number
+rmaximum _ (a:[]) = a
+rmaximum r (a:b:[]) = rmax r a b
 rmaximum r l = 
 	let
 		tops = reverse $ sort l
@@ -32,7 +47,12 @@ rmaximum r l =
 		rmax r (tops !! 0) (tops !! 1)
 
 -- | Like rmin but on a list.
-
+rminimum ::
+	ℝ      -- ^ radius
+	-> [ℝ] -- ^ numbers to take round minimum
+	-> ℝ   -- ^ resulting number
+rminimum r (a:[]) = a
+rminimum r (a:b:[]) = rmin r a b
 rminimum r l = 
 	let
 		tops = sort l
