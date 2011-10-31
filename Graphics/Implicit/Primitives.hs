@@ -90,8 +90,8 @@ regularPolygon ::
 	ℕ       -- ^ number of sides
 	-> ℝ    -- ^ radius
 	-> Obj2 -- ^ resulting regular polygon
-regularPolygon sides r =
-	\(x,y) -> maximum [ x*cos(2*pi*m/sides) + y*sin(2*pi*m/sides) | m <- [0.. sides -1]] - r 
+regularPolygon sides r = let sidesr = fromIntegral sides in
+	\(x,y) -> maximum [ x*cos(2*pi*m/sidesr) + y*sin(2*pi*m/sidesr) | m <- [0.. sidesr -1]] - r 
 
 
 zsurface :: 
