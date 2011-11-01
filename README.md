@@ -79,6 +79,13 @@ Try ImplicitCAD!
  4. Load ImplicitCAD: `import Graphics.Implicit`
  5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
+Documentation
+-------------
+
+Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
+
+Releases of ImplicitCAD are uploaded to hackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. You can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [here](http://hackage.haskell.org/packages/archive/implicit/0.0.0/doc/html/Graphics-Implicit.html).
+
 Status
 ------
 
@@ -94,7 +101,6 @@ What works (Oct 24, 2011 -- regressions are possible if not probable):
 What still needs to be done:
 
  - openscad parser for backwards compatibility (partially completed)
- - Documentation
  - Finish openscad parser
  - More primitives, operations
  - gcode generation for 3D printers, gcode generator config
