@@ -29,7 +29,9 @@ module Graphics.Implicit(
 	--ellipse,
 	-- Export
 	writeSVG,
-	writeSTL
+	writeSVG2,
+	writeSTL,
+	writeSTL2
 ) where
 
 import Graphics.Implicit.Definitions

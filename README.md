@@ -84,7 +84,7 @@ Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to hackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. You can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [here](http://hackage.haskell.org/packages/archive/implicit/0.0.0/doc/html/Graphics-Implicit.html).
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.0/doc/html/Graphics-Implicit.html).
 
 Status
 ------

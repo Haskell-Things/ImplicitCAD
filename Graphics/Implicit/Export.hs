@@ -176,3 +176,34 @@ writeSTL (x1,y1,z1) (x2,y2,z2) d name obj =
 	in do 
 		writeFile name text
 
+
+writeSTL2 :: 
+	ℝ3           -- ^ Lower corner of (3D) bounding box
+	-> ℝ3        -- ^ Upper corner of bounding box
+	-> ℝ         -- ^ resolution of rendering
+	-> FilePath  -- ^ Name of file to write STL to
+	-> Obj3      -- ^ 3D object to make STL for
+	-> IO()      -- ^ Resulting IO action that will write STL
+writeSTL2 (x1,y1,z1) (x2,y2,z2) d name obj =
+	let
+		triangles = getMesh (x1,y1,z1) (x2,y2,z2) d obj
+		stlHeader = "solid ImplictCADExport\n"
+		stlFooter = "endsolid ImplictCADExport\n"
+		vertex :: ℝ3 -> String
+		vertex (x,y,z) = "vertex " ++ show x ++ " " ++ show y ++ " " ++ show z
+		stlTriangle :: (ℝ3, ℝ3, ℝ3) -> String
+		stlTriangle (a,b,c) =
+			"facet normal 0 0 0\n"
+			++ "outer loop\n"
+			++ vertex a ++ "\n"
+			++ vertex b ++ "\n"
+			++ vertex c ++ "\n"
+			++ "endloop\n"
+			++ "endfacet\n"
+		text = stlHeader
+			++ (concat $ map stlTriangle triangles)
+			++ stlFooter
+	in do 
+		writeFile name text
+
+

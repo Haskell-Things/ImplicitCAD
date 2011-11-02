@@ -8,7 +8,8 @@ module Graphics.Implicit.Tracing (
 	orderLinesDC,
 	orderLinesP,
 	reducePolyline,
-	polylineNotNull
+	polylineNotNull,
+	getMesh
 ) where
 
 import Graphics.Implicit.Definitions
@@ -126,4 +127,31 @@ orderLinesP segs =
 
 polylineNotNull (a:l) = not (null l)
 polylineNotNull [] = False
+
+
+getMesh (x1,y1,z1) (x2,y2,z2) res obj = 
+	let 
+		dx = abs $ x2 - x1
+		dy = abs $ y2 - y1
+		dz = abs $ z2 - z1
+		d = maximum [dx, dy, dz]
+		ffloor = fromIntegral . floor
+		fceil = fromIntegral . ceiling
+	in
+		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
+		else
+		if d <= res
+		then getTriangles ((obj(x1,y1,z1), obj(x1+res,y1,z1), obj(x1,y1+res,z1), obj(x1+res,y1+res,z1), obj(x1,y1,z1+res), obj(x1+res,y1,z1+res), obj(x1,y1+res,z1+res), obj(x1+res,y1+res,z1+res)), (x1,y1,z1), d )
+		else let
+			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
+				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
+			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
+				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
+			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
+				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
+			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
+				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
+		in
+			foldr1 par partitions `pseq` concat partitions
+
 
