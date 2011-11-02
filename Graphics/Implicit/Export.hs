@@ -155,8 +155,7 @@ writeSTL ::
 	-> IO()      -- ^ Resulting IO action that will write STL
 writeSTL (x1,y1,z1) (x2,y2,z2) d name obj =
 	let
-		grid3d = [((obj(x,y,z), obj(x+d,y,z), obj(x,y+d,z), obj(x+d,y+d,z), obj(x,y,z+d), obj(x+d,y,z+d), obj(x,y+d,z+d), obj(x+d,y+d,z+d)), (x,y,z), d )| x <- [x1, x1+d.. x2], y <- [y1, y1 +d.. y2], z <- [z1, z1+d.. z2] ]
-		triangles = concat $ map getTriangles grid3d
+		triangles = getMesh (x1,y1,z1) (x2,y2,z2) d obj
 		stlHeader = "solid ImplictCADExport\n"
 		stlFooter = "endsolid ImplictCADExport\n"
 		vertex :: ℝ3 -> String
@@ -186,7 +185,7 @@ writeSTL2 ::
 	-> IO()      -- ^ Resulting IO action that will write STL
 writeSTL2 (x1,y1,z1) (x2,y2,z2) d name obj =
 	let
-		triangles = getMesh (x1,y1,z1) (x2,y2,z2) d obj
+		triangles = getMesh2 (x1,y1,z1) (x2,y2,z2) d obj
 		stlHeader = "solid ImplictCADExport\n"
 		stlFooter = "endsolid ImplictCADExport\n"
 		vertex :: ℝ3 -> String

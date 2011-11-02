@@ -16,6 +16,8 @@ Category:            Graphics
 
 Library
     Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
+    ghc-options:         -O2
+    Extensions:          MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances
     Exposed-Modules:   
         Graphics.Implicit
         Graphics.Implicit.Definitions
