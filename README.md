@@ -91,7 +91,7 @@ Status
 
 ImplicitCAD is very much a work in progress.
 
-What works (Oct 24, 2011 -- regressions are possible if not probable):
+What works (Nov 2, 2011 -- regressions are possible if not probable):
 
  - CSG, bevelled CSG, shells.
  - 2D output (svg)
@@ -101,10 +101,11 @@ What works (Oct 24, 2011 -- regressions are possible if not probable):
 What still needs to be done:
 
  - openscad parser for backwards compatibility (partially completed)
- - Finish openscad parser
- - More primitives, operations
  - gcode generation for 3D printers, gcode generator config
- - parallelize marching cubes, etc for 3D mesh generation (2D already done)
+
+And a wishlist of things further in the future:
+
+ - More optimisation
  - openGL viewer?
  - openCL acceleration?
 
