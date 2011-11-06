@@ -16,6 +16,9 @@ module Graphics.Implicit.Primitives (
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 
+-- If you are confused as to how these functions work, please refer to
+-- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
+
 sphere :: 
 	ℝ         -- ^ Radius of the sphere
 	-> Obj3   -- ^ Resulting sphere

@@ -19,6 +19,7 @@ type Polyline = [ℝ2]
 -- of `outwardness'. The boundary is 0, negative is the
 -- interior and positive the exterior. The magnitude is
 -- how far out or in.
+-- For more details, refer to http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
 -- | A 2D object
 type Obj2 = (ℝ2 -> ℝ)

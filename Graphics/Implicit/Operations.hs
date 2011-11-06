@@ -22,6 +22,9 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.MathUtil
 import Graphics.Implicit.SaneOperators
 
+-- If you are confused as to how these functions work, please refer to
+-- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
+
 
 -- | Translate an object by a vector of appropriate dimension. 
 translate :: 
