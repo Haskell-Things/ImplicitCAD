@@ -1,12 +1,12 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{- The sole purpose of this file it to pass on the 
+{- The sole purpose of this file it to pass on the
    functionality we want to be accessible to the end user. -}
 
 module Graphics.Implicit(
 	-- Operations
-	translate, 
+	translate,
 	scale,
 	complement,
 	union,  intersect,  difference,
@@ -26,7 +26,7 @@ module Graphics.Implicit(
 	regularPolygon,
 	zsurface,
 	polygon,
-	--ellipse,
+	ellipse,
 	-- Export
 	writeSVG,
 	writeSVG2,
