@@ -46,10 +46,13 @@ torus ::
 	-> Obj3 -- ^ resulting torus
 torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
 
-ellipse :: ℝ -> ℝ -> Obj2
-ellipse a b
-    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
-    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
+-- This function is commented out because it doesn't obey the magnitude requirement.
+-- Refer to blog post.
+-- It needs to be fixed at some point, but the math is somewhat non-trivial.
+--ellipse :: ℝ -> ℝ -> Obj2
+--ellipse a b
+--    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
+--    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
 
 square ::
 	ℝ        -- ^ Width of the square
