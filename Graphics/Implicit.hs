@@ -26,7 +26,6 @@ module Graphics.Implicit(
 	regularPolygon,
 	zsurface,
 	polygon,
-	ellipse,
 	-- Export
 	writeSVG,
 	writeSVG2,

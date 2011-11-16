@@ -9,8 +9,7 @@ module Graphics.Implicit.Primitives (
 	square,
 	regularPolygon,
 	polygon,
-	zsurface--,
-	ellipse
+	zsurface
 ) where
 
 import Graphics.Implicit.Definitions
