@@ -7,7 +7,7 @@ module Graphics.Implicit.ExtOpenScad where
 
 import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
-import Data.Map hiding (map)
+import Data.Map hiding (map,foldl)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
@@ -36,6 +36,7 @@ numericOFunc f = OFunc $ \oObj -> case oObj of
 data Computation = 
 	ControlStructure ( VariableLookup -> [Computation] -> ([Obj2], [Obj3], VariableLookup) ) [Computation]
 	| Assignment (VariableLookup -> VariableLookup)
+	| IOStatement (VariableLookup -> IO VariableLookup)
 	| Object2 (VariableLookup -> Obj2)
 	| Object3 (VariableLookup -> Obj3)
 	| Include String
@@ -66,7 +67,7 @@ literal =
 		) <?> "number" )
 	<|> try ( ( do
 		string "\"";
-		strlit <- many $ noneOf "\"\n";
+		strlit <-  many $  try (string "\\\"" >> return '\"') <|> try (string "\\n" >> return '\n') <|> ( noneOf "\"\n");
 		string "\"";
 		return $ \map -> OString $ strlit;
 	) <?> "string" )
@@ -81,32 +82,36 @@ expression :: Int -> GenParser Char st (VariableLookup -> OpenscadObj)
 expression 10 = (try literal) <|> (try variable )
 	<|> ((do
 		string "(";
-		many space;
 		expr <- expression 0;
-		many space;
 		string ")";
 		return expr;
 	) <?> "bracketed expression" )
 	<|> ( ( do
 		string "[";
-		many space;
-		exprs <- sepBy (expression 0) (many space >> char ',' >> many space);
-		many space;
+		exprs <- sepBy (expression 0) (char ',' );
 		string "]";
 		return $ \varlookup -> OList (map ($varlookup) exprs )
 	) <?> "vector/list" )
 expression 9 = ( try( do 
 		f <- expression 10;
 		string "(";
-		many space;
 		arg <- expression 0;
-		many space;
 		string ")";
 		return $ \varlookup ->
 			case f varlookup of
 				OFunc actual_func -> actual_func (arg varlookup)
 				_ -> OUndefined
 	) <?> "function appliation" )
+	<|> ( try( do 
+		l <- expression 10;
+		string "[";
+		i <- expression 0;
+		string "]";
+		return $ \varlookup ->
+			case (l varlookup, i varlookup) of
+				(OList actual_list, ONum ind) -> actual_list !! (floor ind)
+				_ -> OUndefined
+	) <?> "list indexing" )
 	<|> try (expression 10)
 expression n@8 = try (( do 
 		a <- expression (n+1);
@@ -129,7 +134,7 @@ expression n@6 =
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
 		div _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy (expression $ n+1) (char '/')) (char '*')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '/')) (char '*')
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
@@ -154,22 +159,49 @@ expression n@4 =
 		sub (OList a) (OList b) = OList $ zipWith sub a b
 		sub _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy (expression $ n+1) (char '-')) (char '+')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '-')) (char '+')
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)
 expression n@3 = try (expression $ n+1)
 expression n@2 = try (expression $ n+1)
 expression n@1 = try (expression $ n+1)
-expression n@0 = try (expression $ n+1)
+expression n@0 = try (do { many space; expr <- expression $ n+1; many space; return expr}) <|> try (expression $ n+1)
 
 
 
-testParse str = case parse (expression 0) ""  str of
+testParse str = putStrLn$ case parse (expression 0) ""  str of
 		Right res -> show $ res 
 			(fromList [("sin", numericOFunc sin)] )
 		Left  err -> show err
 
+
+runStatement :: VariableLookup ->  Computation -> IO VariableLookup
+runStatement  varlookup (Assignment a) = return $ a varlookup
+runStatement  varlookup (IOStatement s) = s varlookup
+
+runComputations :: [Computation] -> IO VariableLookup
+runComputations = foldl ( \a b -> do { a' <- a; runStatement a' b}) 
+	(return $ fromList [("sin", numericOFunc sin)] )
+
+test :: Either ParseError [Computation] -> IO ()
+test (Right res) = (runComputations res) >> (return ())
+test (Left err) = (putStrLn $ show $ err) >> return ()
+
+testParse2 str = test $ parse (many1 computationStatement) ""  str
+
+{-testParse2 :: String -> IO ()
+testParse2 str = putStrLn$ 
+		let
+			runStatement :: VariableLookup ->  Computation -> IO VariableLookup
+			runStatement  varlookup (Assignment a) = return $ a varlookup
+			runStatement  varlookup (IOStatement s) = s varlookup
+			runComputations :: [Computation] -> IO VariableLookup
+			runComputations = foldl ( \a b -> do { a' <- a; runStatement a' b}) 
+				(return $ fromList [("sin", numericOFunc sin)] )
+		in case parse (many1 computationStatement) ""  str of
+			Right res -> (runComputations res) >> return ()
+			Left  err -> (putStrLn $ show $ err) >> return ()-}
 
 assigmentStatement = do
 	var <- variableSymb
@@ -177,7 +209,15 @@ assigmentStatement = do
 	char '='
 	many space
 	val <- expression 0
+	char ';'
 	return $ Assignment (\varlookup -> insert var (val varlookup) varlookup)
+
+echoStatement = do
+	string "echo"
+	many1 space
+	val <- expression 0
+	char ';'
+	return $ IOStatement (\varlookup -> (putStrLn $ show $ val varlookup) >> return varlookup)
 
 {-ifStatement = do
 	string "if"
@@ -189,5 +229,5 @@ assigmentStatement = do
 	trueCase <- computationStatement-}
 	
 
-computationStatement = assigmentStatement
+computationStatement = echoStatement <|> assigmentStatement
 
