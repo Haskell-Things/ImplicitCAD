@@ -33,8 +33,11 @@ numericOFunc f = OFunc $ \oObj -> case oObj of
 	ONum n -> ONum $ f n
 	_ -> OUndefined
 
+type ComputationState = (VariableLookup, [Obj2], [Obj3], IO() )
+
 data Computation = 
 	ControlStructure ( VariableLookup -> [Computation] -> ([Obj2], [Obj3], VariableLookup) ) [Computation]
+	| GeneralComputation (ComputationState -> ComputationState)
 	| Assignment (VariableLookup -> VariableLookup)
 	| IOStatement (VariableLookup -> IO VariableLookup)
 	| Object2 (VariableLookup -> Obj2)
@@ -170,7 +173,7 @@ expression n@0 = try (do { many space; expr <- expression $ n+1; many space; ret
 
 
 
-testParse str = putStrLn$ case parse (expression 0) ""  str of
+parseExpression str = putStrLn$ case parse (expression 0) ""  str of
 		Right res -> show $ res 
 			(fromList [("sin", numericOFunc sin)] )
 		Left  err -> show err
@@ -180,28 +183,20 @@ runStatement :: VariableLookup ->  Computation -> IO VariableLookup
 runStatement  varlookup (Assignment a) = return $ a varlookup
 runStatement  varlookup (IOStatement s) = s varlookup
 
-runComputations :: [Computation] -> IO VariableLookup
-runComputations = foldl ( \a b -> do { a' <- a; runStatement a' b}) 
-	(return $ fromList [("sin", numericOFunc sin)] )
 
-test :: Either ParseError [Computation] -> IO ()
-test (Right res) = (runComputations res) >> (return ())
-test (Left err) = (putStrLn $ show $ err) >> return ()
+runComputationsDefault = runComputations
+	(fromList [("sin", numericOFunc sin)], [], [], return () )
 
-testParse2 str = test $ parse (many1 computationStatement) ""  str
+runComputations :: ComputationState -> [(ComputationState -> ComputationState)]  -> ComputationState
+runComputations = foldl ( \a b -> b $ a) 
 
-{-testParse2 :: String -> IO ()
-testParse2 str = putStrLn$ 
-		let
-			runStatement :: VariableLookup ->  Computation -> IO VariableLookup
-			runStatement  varlookup (Assignment a) = return $ a varlookup
-			runStatement  varlookup (IOStatement s) = s varlookup
-			runComputations :: [Computation] -> IO VariableLookup
-			runComputations = foldl ( \a b -> do { a' <- a; runStatement a' b}) 
-				(return $ fromList [("sin", numericOFunc sin)] )
-		in case parse (many1 computationStatement) ""  str of
-			Right res -> (runComputations res) >> return ()
-			Left  err -> (putStrLn $ show $ err) >> return ()-}
+
+parseComputations str = let 
+		test :: Either ParseError [(ComputationState -> ComputationState)] -> ComputationState
+		test (Right res) = (runComputationsDefault res)
+		test (Left err) = (fromList [], [], [], putStrLn $ show $ err)
+	in test $ parse (many1 computationStatement) ""  str
+
 
 assigmentStatement = do
 	var <- variableSymb
@@ -209,25 +204,40 @@ assigmentStatement = do
 	char '='
 	many space
 	val <- expression 0
-	char ';'
-	return $ Assignment (\varlookup -> insert var (val varlookup) varlookup)
+	return $ \ (varlookup, obj2s, obj3s, io) -> (insert var (val varlookup) varlookup, obj2s, obj3s, io) 
 
 echoStatement = do
 	string "echo"
 	many1 space
 	val <- expression 0
-	char ';'
-	return $ IOStatement (\varlookup -> (putStrLn $ show $ val varlookup) >> return varlookup)
+	return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>(putStrLn $ show $ val varlookup) ) 
 
-{-ifStatement = do
+suite = liftM return computationStatement <|> do 
+	char '{'
+	stmts <- many computationStatement
+	char '}'
+	return stmts
+
+ifStatement = do
 	string "if"
 	many space
 	char '('
-	condition <- expression 0
+	bexpr <- expression 0
 	char ')'
 	many space
-	trueCase <- computationStatement-}
-	
+	statementsTrueCase <- suite
+	many space
+	statementsFalseCase <- try (string "else" >> many space >> suite ) <|> (return [])
+	return $ \ (state@(varlookup, _, _, _)) -> if 
+		case bexpr varlookup of  
+			OBool b -> b
+			_ -> False
+		then runComputations state statementsTrueCase
+		else runComputations state statementsFalseCase
 
-computationStatement = echoStatement <|> assigmentStatement
+computationStatement = (many space >> try ifStatement) <|> do
+	s <- try echoStatement <|> try assigmentStatement
+	many space
+	char ';'
+	return s
 
