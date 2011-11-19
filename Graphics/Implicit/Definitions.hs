@@ -27,5 +27,11 @@ type Obj2 = (ℝ2 -> ℝ)
 -- | A 3D object
 type Obj3 = (ℝ3 -> ℝ)
 
+-- | Boxed 2D object
+type BoxedObj2 = (Obj2, (ℝ2, ℝ2))
+
+-- | Boxed 3D object
+type BoxedObj3 = (Obj3, (ℝ3, ℝ3))
+
 
 

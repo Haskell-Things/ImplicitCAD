@@ -13,7 +13,7 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
-variableSymb = many1 (noneOf " ,|[]{}()*&^%$#@!~`'\"\\/;:.,<>?") <?> "variable"
+variableSymb = many1 (noneOf " ,|[]{}()+-*&^%$#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
 variable :: GenParser Char st (VariableLookup -> OpenscadObj)
 variable = liftM (\varstr -> \varlookup -> case lookup varstr varlookup of
@@ -54,12 +54,20 @@ expression 10 = (try literal) <|> (try variable )
 		string ")";
 		return expr;
 	) <?> "bracketed expression" )
-	<|> ( ( do
+	<|> ( try ( do
 		string "[";
 		exprs <- sepBy (expression 0) (char ',' );
 		string "]";
 		return $ \varlookup -> OList (map ($varlookup) exprs )
-	) <?> "vector/list" )
+	) <|> ( do
+		string "[";
+		exprs <- sepBy (expression 0) (char ':' );
+		string "]";
+		return $ \varlookup -> OList $ map ONum $ case map (coerceNum.($varlookup)) exprs  of
+			a:[] -> [a]
+			a:b:[] -> [a .. b]
+			a:b:c:xs -> [a, a+b .. c]
+	)<?> "vector/list" )
 expression 9 = ( try( do 
 		f <- expression 10;
 		string "(";
@@ -102,7 +110,7 @@ expression n@6 =
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
 		div _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '/')) (char '*')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) (many space >> char '/' >> many space)) (many space >> char '*' >> many space)
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
@@ -127,7 +135,7 @@ expression n@4 =
 		sub (OList a) (OList b) = OList $ zipWith sub a b
 		sub _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '-')) (char '+')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) ( many space >> char '-' >> many space)) (many space >> char '+' >> many space)
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)

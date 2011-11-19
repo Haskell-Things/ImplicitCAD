@@ -24,8 +24,12 @@ assigmentStatement = do
 
 echoStatement = do
 	string "echo"
-	many1 space
+	many space
+	char '('
+	many space
 	val <- expression 0
+	many space
+	char ')'
 	return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>(putStrLn $ show $ val varlookup) ) 
 
 suite = liftM return computationStatement <|> do 
@@ -73,7 +77,7 @@ forStatement = do
 				_       -> []
 
 
-computationStatement = (many space >> (try ifStatement <|> try forStatement)) <|> do
+computationStatement = (many space >>)$  (try ifStatement <|> try forStatement) <|> do
 	s <- try echoStatement <|> try assigmentStatement
 	many space
 	char ';'
