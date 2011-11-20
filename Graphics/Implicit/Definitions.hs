@@ -33,5 +33,8 @@ type BoxedObj2 = (Obj2, (ℝ2, ℝ2))
 -- | Boxed 3D object
 type BoxedObj3 = (Obj3, (ℝ3, ℝ3))
 
-
+-- | Make ALL the functions Showable!
+--   This is very handy when testing functions in interactive mode...
+instance Show (a -> b) where
+	show f = "<function>"
 

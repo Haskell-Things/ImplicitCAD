@@ -13,7 +13,7 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
-variableSymb = many1 (noneOf " ,|[]{}()+-*&^%$#@!~`'\"\\/;:.,<>?=") <?> "variable"
+variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
 variable :: GenParser Char st (VariableLookup -> OpenscadObj)
 variable = liftM (\varstr -> \varlookup -> case lookup varstr varlookup of
