@@ -1,14 +1,14 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances #-}
 
 module Graphics.Implicit.Operations (
 	translate, 
 	scale,
 	complement,
-	union,  intersect,  difference,
-	unionR, intersectR, differenceR,
+	union,  intersect,  difference, 
+	unionR,  intersectR,  differenceR, 
 	shell,
 	slice,
 	bubble,
@@ -25,72 +25,97 @@ import Graphics.Implicit.SaneOperators
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
+-- | Very basic operations objects
+class BasicObj obj vec | obj -> vec where
+	
+	-- | Translate an object by a vector of appropriate dimension. 
+	translate :: 
+		vec      -- ^ Vector to translate by (Also: a is a vector, blah, blah)
+		-> obj   -- ^ Object to translate
+		-> obj   -- ^ Resulting object
 
--- | Translate an object by a vector of appropriate dimension. 
-translate :: 
-	(Additive a a a, AdditiveInvertable a)
-	=> a             -- ^ Vector to translate by (Also: a is a vector, blah, blah)
-	-> (a -> ℝ)   -- ^ Object to translate
-	-> (a -> ℝ)   -- ^ Resulting object
-translate p obj = \q -> obj (q-p)
+	-- | Scale an object
+	scale :: 
+		ℝ       -- ^ Amount to scale by
+		-> obj  -- ^ Object to scale
+		-> obj  -- ^ Resulting scaled object
+	
+	-- | Complement an Object
+	complement :: 
+		obj     -- ^ Object to complement
+		-> obj  -- ^ Result
+	
+	-- | Union a list of objects
+	union :: 
+		[obj]  -- ^ List of objects to union
+		-> obj -- ^ The object resulting from the union
 
--- | Scale an object
-scale :: (Multiplicative a ℝ a) => 
-	ℝ            -- ^ Amount to scale by
-	-> (a -> ℝ)  -- ^ Object to scale
-	-> (a -> ℝ)  -- ^ Resulting scaled object
-scale s obj = \p -> s * obj (p/s)
-
-complement :: 
-	(a -> ℝ)     -- ^ Object to complement
-	-> (a -> ℝ)  -- ^ Result
-complement obj = \p -> - obj p
-
-shell :: 
-	ℝ             -- ^ width of shell
-	-> (a -> ℝ)   -- ^ object to take shell of
-	-> (a -> ℝ)   -- ^ resulting shell
-shell w a = \p -> abs (a p) - w/(2.0::ℝ)
-
--- | Rounded union
-unionR :: 
-	ℝ           -- ^ The radius of rounding
-	-> [a -> ℝ] -- ^ objects to union
-	-> (a -> ℝ) -- ^ Resulting object
-unionR r objs = \p -> rminimum r $ map ($p) objs
-
--- | Rounded minimum
-intersectR :: 
-	ℝ           -- ^ The radius of rounding
-	-> [a -> ℝ] -- ^ Objects to intersect
-	-> (a -> ℝ) -- ^ Resulting object
-intersectR r objs = \p -> rmaximum r $ map ($p) objs
-
--- | Rounded difference
-differenceR :: 
-	ℝ           -- ^ The radius of rounding
-	-> [a -> ℝ] -- ^ Objects to difference 
-	-> (a -> ℝ) -- ^ Resulting object
-differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
+	-- | Difference a list of objects
+	difference :: 
+		[obj]  -- ^ List of objects to difference
+		-> obj -- ^ The object resulting from the difference
+	
+	-- | Intersect a list of objects
+	intersect :: 
+		[obj]  -- ^ List of objects to intersect
+		-> obj -- ^ The object resulting from the intersection
 
 
--- | Union a list of objects
-union :: 
-	[a -> ℝ] -- ^ List of objects to union
-	-> (a -> ℝ) -- ^ The object resulting from the union
-union objs = \p -> minimum $ map ($p) objs
+instance BasicObj Obj2 ℝ2 where
+	translate p obj = \q -> obj (q-p)
+	scale s obj = \p -> s * obj (p/s)
+	complement obj = \p -> - obj p
+	union objs = \p -> minimum $ map ($p) objs
+	intersect objs = \p -> maximum $ map ($p) objs
+	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
 
--- | Intersect a list of objects
-intersect :: 
-	[a -> ℝ] -- ^ List of objects to intersect
-	-> (a -> ℝ) -- ^ The object resulting from the intersection
-intersect objs = \p -> maximum $ map ($p) objs
 
--- | Difference a list of objects
-difference :: 
-	[a -> ℝ] -- ^ List of objects to difference
-	-> (a -> ℝ) -- ^ The object resulting from the difference
-difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
+instance BasicObj Obj3 ℝ3 where
+	translate p obj = \q -> obj (q-p)
+	scale s obj = \p -> s * obj (p/s)
+	complement obj = \p -> - obj p
+	union objs = \p -> minimum $ map ($p) objs
+	intersect objs = \p -> maximum $ map ($p) objs
+	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
+
+
+class MagnitudeObj obj where
+	-- | Make a shell of an object.
+	shell :: 
+		ℝ        -- ^ width of shell
+		-> obj   -- ^ object to take shell of
+		-> obj   -- ^ resulting shell
+	
+	-- | Rounded union
+	unionR :: 
+		ℝ        -- ^ The radius of rounding
+		-> [obj] -- ^ objects to union
+		-> obj   -- ^ Resulting object
+	
+	-- | Rounded minimum
+	intersectR :: 
+		ℝ        -- ^ The radius of rounding
+		-> [obj] -- ^ Objects to intersect
+		-> obj   -- ^ Resulting object
+	
+	-- | Rounded difference
+	differenceR :: 
+		ℝ        -- ^ The radius of rounding
+		-> [obj] -- ^ Objects to difference 
+		-> obj   -- ^ Resulting object
+
+instance MagnitudeObj Obj2 where
+	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
+	unionR r objs = \p -> rminimum r $ map ($p) objs
+	intersectR r objs = \p -> rmaximum r $ map ($p) objs
+	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
+
+instance MagnitudeObj Obj3 where
+	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
+	unionR r objs = \p -> rminimum r $ map ($p) objs
+	intersectR r objs = \p -> rmaximum r $ map ($p) objs
+	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
+
 
 -- | Slice a 3D objects at a given z value to make a 2D object.
 slice :: 
@@ -130,4 +155,5 @@ extrudeOnEdgeOf ::
 	-> Obj2  -- ^ Object to extrude along the edge of
 	-> Obj3  -- ^ Resulting 3D object
 extrudeOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z) 
+
 

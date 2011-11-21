@@ -114,8 +114,14 @@ instance (Additive a b c, Additive d e f, Additive  g h i) => Additive (a,d,g) (
 instance Multiplicative ℝ ℝ2 ℝ2 where
 	s * (x,y) = (s*x, s*y)
 
+instance Multiplicative ℝ2 ℝ ℝ2 where
+	(x,y)*s = (s*x, s*y)
+
 instance Multiplicative ℝ ℝ3 ℝ3 where
 	s * (x,y,z) = (s*x, s*y, s*z)
+
+instance Multiplicative ℝ3 ℝ ℝ3 where
+	(x,y,z) * s = (s*x, s*y, s*z)
 
 instance AdditiveInvertable ℝ2 where
 	additiveInverse (x, y) = (additiveInverse x, additiveInverse y)
