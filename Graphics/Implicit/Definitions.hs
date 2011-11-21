@@ -33,6 +33,25 @@ type BoxedObj2 = (Obj2, (ℝ2, ℝ2))
 -- | Boxed 3D object
 type BoxedObj3 = (Obj3, (ℝ3, ℝ3))
 
+data SymbolicObj2 =
+	Rect ℝ ℝ
+	| Circle ℝ
+	| Polygon (ℝ2)
+	| UnionR2 ℝ [SymbolicObj2]
+	| DifferenceR2 ℝ [SymbolicObj2]
+	| IntersectionR2 ℝ [SymbolicObj2]
+	| Translate2 SymbolicObj2
+	| EmbedBoxedObj2 BoxedObj2
+
+data SymbolicObj3 = 
+	Rect3 ℝ ℝ ℝ
+	| Sphere ℝ
+	| UnionR3 ℝ [SymbolicObj3]
+	| IntersectionR3 ℝ [SymbolicObj3]
+	| DifferenceR3 ℝ [SymbolicObj3]
+	| Translate3 SymbolicObj3
+	| EmbedBoxedObj3 BoxedObj3
+
 -- | Make ALL the functions Showable!
 --   This is very handy when testing functions in interactive mode...
 instance Show (a -> b) where
