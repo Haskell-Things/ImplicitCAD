@@ -10,72 +10,78 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
+data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) | ArgParserTerminator a
+
+instance Monad ArgParser where
+	(ArgParser str fallback f) >>= g = ArgParser str fallback (\a -> (f a) >>= g)
+	(ArgParserTerminator a) >>= g = g a
+	return a = ArgParserTerminator a
+
+argMap :: [OpenscadObj] -> [(String, OpenscadObj)] -> ArgParser a -> Maybe a
+argMap _ _ (ArgParserTerminator a) = Just a
+argMap (x:unnamedArgs) namedArgs (ArgParser _ _ f) = 
+	argMap unnamedArgs namedArgs (f x)
+argMap [] namedArgs (ArgParser str fallback f) = case Data.List.lookup str namedArgs of
+	Just a -> argMap [] namedArgs (f a)
+	Nothing -> case fallback of
+		Just b -> argMap [] namedArgs (f b)
+		Nothing -> Nothing
+
+argument :: String -> ArgParser OpenscadObj
+argument str = ArgParser str Nothing (\a -> return a)
+
+argumentWithDefault :: String -> OpenscadObj -> ArgParser OpenscadObj
+
+argumentWithDefault str fallback = ArgParser str (Just fallback) (\a -> return a)
+
+addObj2 :: (Monad m) => Obj2 -> m ComputationStateModifier
+addObj2 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s ++ [obj], obj3s, io)
+
+addObj3 :: (Monad m) => Obj3 -> m ComputationStateModifier
+addObj3 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s ++ [obj], io)
+
+noChange :: (Monad m) => m ComputationStateModifier
+noChange = return id
+
+moduleWithoutSuite :: 
+	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
+
+moduleWithoutSuite name argHandeler = do
+	string name;
+	many space;
+	char '(';
+	many space;
+	args <- sepBy ( 
+		try (do {
+			symb <- variableSymb;
+			many space;
+			char '=';
+			many space;
+			expr <- expression 0;
+			return $ Right (symb, expr);
+		}) <|> (do {
+			expr <- expression 0;
+			return $ Left expr;
+		})
+		) (char ',');
+	many space;	
+	char ')';
+	let
+		named = map (\(Right a) -> a) $ filter (\(Right a) -> True) $ args
+		unnamed = map (\(Left a) -> a) $ filter (\(Left a) -> True) $ args
+		in return $ \state@(varlookup, obj2s, obj3s, io) -> 
+			case argMap 
+				(map ($varlookup) unnamed) 
+				(map (\(a,b) -> (a, b varlookup)) named) argHandeler 
+			of
+				Just computationModifier ->  computationModifier state
+				Nothing -> state;
+
+
 pad parser = do
 	many space
 	a <- parser
 	many space
 	return a
 
-argMap :: [(String, Maybe a, a -> Bool)] -> [(String, a)] -> [a] -> Maybe [(String, a)]
-argMap argFormat namedArgs unnamedArgs =
-	let
-		isNone Nothing = True
-		isNone _ = False
-		split test list = (filter test list, filter (not . test) list )
-		bimap f (l1, l2) = (map f l1, map f l2)
-		
-		decideNamedArg :: ([(String,b)], [(String, Maybe b,  b -> Bool)] ) -> 
-			(String,b) -> ([(String,b)], [(String, Maybe b,  b -> Bool)] )
-		decideNamedArg (decidedArgs, presFormat) (name, val) = 
-			case split (\(a,_,_)-> a == name) presFormat of
-				([],_) -> (decidedArgs, presFormat)
-				((_,_,test):[], remainder) ->
-					if test val 
-					then ((name,val):decidedArgs, remainder) 
-					else (decidedArgs, presFormat)
-		
-		decideUnnamedArg :: ([(String,b)], [(String, Maybe b,  b -> Bool)] ) -> 
-			b -> ([(String,b)], [(String, Maybe b,  b -> Bool)] )
-		decideUnnamedArg (decidedArgs, []) _ = (decidedArgs, [])
-		decideUnnamedArg (decidedArgs, presFormat@((nVar,_,nTest):others)) val = 
-			if nTest val 
-			then ((nVar, val):decidedArgs, others)
-			else (decidedArgs, others)
-		
-		(nameClaimed, postNameFormat)= foldl decideNamedArg ([], argFormat) namedArgs
-		(unnamedClaimed, notClaimed) = foldl decideUnnamedArg ([], postNameFormat) unnamedArgs
-		(defaulted, noDefault) = bimap (\(a,Just b,_) -> (a,b) )  $  
-			split (\(_,a,_) -> not $ isNone a) notClaimed
-		result = nameClaimed ++ unnamedClaimed -- ++ defaulted
-	in 
-		if null noDefault
-		then Just result
-		else Nothing
 
-{-plookup l i = case Data.List.lookup l i of
-	Just n -> n
-
-possiblyNamedArg = 
-	try (do 
-		name <- variableSymb
-		many space
-		char '='
-		many space
-		val <- expression 0
-		return Left (name, val)
-	) <|> (do
-		val <- expression 0;
-		return Right val
-	)
-
-possiblyNameArgs = do
-	args <- sepBy possiblyNamedArg (char ',') 
-	return $
-		let
-			isLeft Left a = True
-			isLeft _ = False
-			named = map (\Left a -> a) $ filter isLeft args
-			unnamed = map (\Right a -> a) $ filter (not.isLeft) args
-		in (named, unnamed)
-
--}

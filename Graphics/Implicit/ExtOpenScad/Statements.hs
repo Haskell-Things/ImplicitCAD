@@ -7,12 +7,17 @@ module Graphics.Implicit.ExtOpenScad.Statements where
 
 import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
+import qualified Graphics.Implicit.Primitives as Prim
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
+import Graphics.Implicit.ExtOpenScad.Util
 import Data.Map hiding (map,foldl)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
+
+
+
 
 assigmentStatement = do
 	var <- variableSymb
@@ -76,9 +81,20 @@ forStatement = do
 				OList l -> l
 				_       -> []
 
+sphere = moduleWithoutSuite "sphere" $ do
+	r <- argument "r";
+	addObj3 $ Prim.sphere (coerceNum r);
+
+{- cube = moduleWithoutSuite "sphere" $ do
+	size <- argument "size";
+	center <- argumentWithDefault "center" (OBool False);
+	case (size, center) of
+	(OVec x:y:z:[], OBool b) -> if b then 
+	addObj3 $ Prim.sphere (coerceNum r); -}
+
 
 computationStatement = (many space >>)$  (try ifStatement <|> try forStatement) <|> do
-	s <- try echoStatement <|> try assigmentStatement
+	s <- try echoStatement <|> try assigmentStatement <|> try sphere
 	many space
 	char ';'
 	return s

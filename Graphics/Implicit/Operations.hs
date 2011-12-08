@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.Operations (
 	translate, 
@@ -24,6 +24,8 @@ import Graphics.Implicit.SaneOperators
 
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
+
+infty = (1 :: ℝ) / (0 :: ℝ)
 
 -- | Very basic operations objects
 class BasicObj obj vec | obj -> vec where
@@ -78,8 +80,54 @@ instance BasicObj Obj3 ℝ3 where
 	intersect objs = \p -> maximum $ map ($p) objs
 	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
 
+instance (BasicObj a b) => BasicObj (Boxed2 a) b where
+	translate p (obj, (a,b)) = (translate p obj, (a+p,b+p))
+	scale s (obj, (a,b)) = (scale s obj, (s*a,s*b))
+	complement (obj, _) = (complement obj, ((-infty, -infty), (infty,infty)) )
+	union bobjs = 
+		let
+			isEmpty box = snd box == ((0,0),(0,0)) 
+			(objs, boxes) = unzip $ filter (not . isEmpty) bobjs
+			(leftbot, topright) = unzip boxes
+			(lefts, bots) = unzip leftbot
+			(rights, tops) = unzip topright
+			left = minimum lefts
+			bot = minimum bots
+			right = maximum rights
+			top = maximum tops
+		in
+			(union objs, ((left,bot),(right,top)))
+	intersect bobjs = 
+		let
+			(objs, boxes) = unzip bobjs
+			(leftbot, topright) = unzip boxes
+			(lefts, bots) = unzip leftbot
+			(rights, tops) = unzip topright
+			left = maximum lefts
+			bot = maximum bots
+			right = minimum rights
+			top = minimum tops
+		in
+			if top > bot && right > left 
+			then (union objs, ((left,bot),(right,top)))
+			else (union objs, ((0,0),(0,0)) )
+	difference bobjs = (difference $ map fst $ bobjs, snd $ head bobjs )
+
 
 class MagnitudeObj obj where
+
+	-- | Inset an object.
+	inset :: 
+		ℝ        -- ^ distance to inset
+		-> obj   -- ^ object to inset
+		-> obj   -- ^ resulting object
+
+	-- | Outset an object.
+	outset :: 
+		ℝ        -- ^ distance to outset
+		-> obj   -- ^ object to outset
+		-> obj   -- ^ resulting object
+
 	-- | Make a shell of an object.
 	shell :: 
 		ℝ        -- ^ width of shell
@@ -105,12 +153,16 @@ class MagnitudeObj obj where
 		-> obj   -- ^ Resulting object
 
 instance MagnitudeObj Obj2 where
+	inset d obj = \p -> obj p - d
+	outset d obj = \p -> obj p - d
 	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 	unionR r objs = \p -> rminimum r $ map ($p) objs
 	intersectR r objs = \p -> rmaximum r $ map ($p) objs
 	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
 
 instance MagnitudeObj Obj3 where
+	inset d obj = \p -> obj p - d
+	outset d obj = \p -> obj p - d
 	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 	unionR r objs = \p -> rminimum r $ map ($p) objs
 	intersectR r objs = \p -> rmaximum r $ map ($p) objs

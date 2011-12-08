@@ -27,16 +27,25 @@ type Obj2 = (ℝ2 -> ℝ)
 -- | A 3D object
 type Obj3 = (ℝ3 -> ℝ)
 
+-- | A 2D box
+type Box2 = (ℝ2, ℝ2)
+
+-- | A 3D box
+type Box3 = (ℝ3, ℝ3)
+
 -- | Boxed 2D object
-type BoxedObj2 = (Obj2, (ℝ2, ℝ2))
+type Boxed2 a = (a, Box2)
 
 -- | Boxed 3D object
-type BoxedObj3 = (Obj3, (ℝ3, ℝ3))
+type Boxed3 a = (a, Box3)
+
+type BoxedObj2 = Boxed2 Obj2
+type BoxedObj3 = Boxed3 Obj3
 
 data SymbolicObj2 =
 	Rect ℝ ℝ
 	| Circle ℝ
-	| Polygon (ℝ2)
+	| Polygon [ℝ2]
 	| UnionR2 ℝ [SymbolicObj2]
 	| DifferenceR2 ℝ [SymbolicObj2]
 	| IntersectionR2 ℝ [SymbolicObj2]
@@ -51,6 +60,12 @@ data SymbolicObj3 =
 	| DifferenceR3 ℝ [SymbolicObj3]
 	| Translate3 SymbolicObj3
 	| EmbedBoxedObj3 BoxedObj3
+
+-- | Rectiliniar 2D set
+type Rectiliniar2 = [Box2]
+
+-- | Rectiliniar 2D set
+type Rectiliniar3 = [Box3]
 
 -- | Make ALL the functions Showable!
 --   This is very handy when testing functions in interactive mode...
