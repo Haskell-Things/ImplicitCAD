@@ -70,6 +70,7 @@ expression 10 = (try literal) <|> (try variable )
 	)<?> "vector/list" )
 expression 9 = ( try( do 
 		f <- expression 10;
+		many space
 		string "(";
 		arg <- expression 0;
 		string ")";
@@ -139,7 +140,17 @@ expression n@4 =
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)
-expression n@3 = try (expression $ n+1)
+expression n@3 = 
+	let
+		negate (ONum n) = ONum (-n)
+		negate (OList l) = OList $ map negate l
+		negate _ = OUndefined
+	in try (do
+		char '-'
+		many space
+		expr <- expression $ n+1
+		return $ \varlookup -> negate $ expr varlookup
+	) <|> try (expression $ n+1)
 expression n@2 = try (expression $ n+1)
 expression n@1 = try (expression $ n+1)
 expression n@0 = try (do { many space; expr <- expression $ n+1; many space; return expr}) <|> try (expression $ n+1)

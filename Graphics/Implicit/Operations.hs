@@ -80,7 +80,7 @@ instance BasicObj Obj3 ℝ3 where
 	intersect objs = \p -> maximum $ map ($p) objs
 	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
 
-instance (BasicObj a b) => BasicObj (Boxed2 a) b where
+{-instance (BasicObj a b) => BasicObj (Boxed2 a) b where
 	translate p (obj, (a,b)) = (translate p obj, (a+p,b+p))
 	scale s (obj, (a,b)) = (scale s obj, (s*a,s*b))
 	complement (obj, _) = (complement obj, ((-infty, -infty), (infty,infty)) )
@@ -111,7 +111,7 @@ instance (BasicObj a b) => BasicObj (Boxed2 a) b where
 			if top > bot && right > left 
 			then (union objs, ((left,bot),(right,top)))
 			else (union objs, ((0,0),(0,0)) )
-	difference bobjs = (difference $ map fst $ bobjs, snd $ head bobjs )
+	difference bobjs = (difference $ map fst $ bobjs, snd $ head bobjs )-}
 
 
 class MagnitudeObj obj where

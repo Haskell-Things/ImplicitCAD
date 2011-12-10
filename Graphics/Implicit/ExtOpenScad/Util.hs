@@ -10,15 +10,19 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
-data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) | ArgParserTerminator a
+data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) 
+                 | ArgParserTerminator a 
+                 | ArgParserFail
 
 instance Monad ArgParser where
 	(ArgParser str fallback f) >>= g = ArgParser str fallback (\a -> (f a) >>= g)
 	(ArgParserTerminator a) >>= g = g a
+	(ArgParserFail) >>= g = ArgParserFail
 	return a = ArgParserTerminator a
 
 argMap :: [OpenscadObj] -> [(String, OpenscadObj)] -> ArgParser a -> Maybe a
 argMap _ _ (ArgParserTerminator a) = Just a
+argMap _ _ ArgParserFail = Nothing
 argMap (x:unnamedArgs) namedArgs (ArgParser _ _ f) = 
 	argMap unnamedArgs namedArgs (f x)
 argMap [] namedArgs (ArgParser str fallback f) = case Data.List.lookup str namedArgs of
@@ -30,9 +34,29 @@ argMap [] namedArgs (ArgParser str fallback f) = case Data.List.lookup str named
 argument :: String -> ArgParser OpenscadObj
 argument str = ArgParser str Nothing (\a -> return a)
 
-argumentWithDefault :: String -> OpenscadObj -> ArgParser OpenscadObj
+realArgument :: String -> ArgParser ℝ
+realArgument str = ArgParser str Nothing (\a -> case a of {(ONum a) -> return a; _ -> ArgParserFail;})
 
+intArgument :: String -> ArgParser Int
+intArgument str = ArgParser str Nothing (\a -> case a of {(ONum a) -> return (floor a); _ -> ArgParserFail;})
+
+boolArgument :: String -> ArgParser Bool
+boolArgument str = ArgParser str Nothing (\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
+
+argumentWithDefault :: String -> OpenscadObj -> ArgParser OpenscadObj
 argumentWithDefault str fallback = ArgParser str (Just fallback) (\a -> return a)
+
+realArgumentWithDefault :: String -> ℝ -> ArgParser ℝ
+realArgumentWithDefault str fallback = ArgParser str (Just (ONum fallback)) 
+	(\a -> case a of {(ONum a) -> return a; _ -> ArgParserFail;})
+
+intArgumentWithDefault :: String -> Int -> ArgParser Int
+intArgumentWithDefault str fallback = ArgParser str (Just (ONum (fromIntegral fallback))) 
+	(\a -> case a of {(ONum a) -> return (floor a); _ -> ArgParserFail;})
+
+boolArgumentWithDefault :: String -> Bool -> ArgParser Bool
+boolArgumentWithDefault str fallback = ArgParser str (Just (OBool fallback)) 
+	(\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
 
 addObj2 :: (Monad m) => Obj2 -> m ComputationStateModifier
 addObj2 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s ++ [obj], obj3s, io)
@@ -40,15 +64,18 @@ addObj2 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s ++ [o
 addObj3 :: (Monad m) => Obj3 -> m ComputationStateModifier
 addObj3 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s ++ [obj], io)
 
+changeObjs :: (Monad m) => ([Obj2] -> [Obj2]) -> ([Obj3] -> [Obj3]) -> m ComputationStateModifier
+changeObjs mod2s mod3s = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, mod2s obj2s, mod3s obj3s, io)
+
+runIO ::  (Monad m) => IO() -> m ComputationStateModifier
+runIO newio = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>newio)
+
 noChange :: (Monad m) => m ComputationStateModifier
 noChange = return id
 
-moduleWithoutSuite :: 
-	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
-
-moduleWithoutSuite name argHandeler = do
-	string name;
-	many space;
+moduleArgsUnit ::  
+	GenParser Char st ([VariableLookup -> OpenscadObj], [(String, VariableLookup -> OpenscadObj)])
+moduleArgsUnit = do
 	char '(';
 	many space;
 	args <- sepBy ( 
@@ -67,15 +94,27 @@ moduleWithoutSuite name argHandeler = do
 	many space;	
 	char ')';
 	let
-		named = map (\(Right a) -> a) $ filter (\(Right a) -> True) $ args
-		unnamed = map (\(Left a) -> a) $ filter (\(Left a) -> True) $ args
-		in return $ \state@(varlookup, obj2s, obj3s, io) -> 
-			case argMap 
-				(map ($varlookup) unnamed) 
-				(map (\(a,b) -> (a, b varlookup)) named) argHandeler 
-			of
-				Just computationModifier ->  computationModifier state
-				Nothing -> state;
+		isRight (Right a) = True
+		isRight _ = False
+		named = map (\(Right a) -> a) $ filter isRight $ args
+		unnamed = map (\(Left a) -> a) $ filter (not . isRight) $ args
+		in return (unnamed, named)
+
+
+moduleWithoutSuite :: 
+	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
+
+moduleWithoutSuite name argHandeler = do
+	string name;
+	many space;
+	(unnamed, named) <- moduleArgsUnit
+	return $ \state@(varlookup, obj2s, obj3s, io) -> 
+		case argMap 
+			(map ($varlookup) unnamed) 
+			(map (\(a,b) -> (a, b varlookup)) named) argHandeler 
+		of
+			Just computationModifier ->  computationModifier state
+			Nothing -> state;
 
 
 pad parser = do

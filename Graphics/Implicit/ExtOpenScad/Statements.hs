@@ -7,10 +7,11 @@ module Graphics.Implicit.ExtOpenScad.Statements where
 
 import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.Primitives as Prim
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
+import Graphics.Implicit.ExtOpenScad.Primitives
+import qualified Graphics.Implicit.Operations as Op
 import Data.Map hiding (map,foldl)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
@@ -37,6 +38,7 @@ echoStatement = do
 	char ')'
 	return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>(putStrLn $ show $ val varlookup) ) 
 
+suite :: GenParser Char st [ComputationStateModifier]
 suite = liftM return computationStatement <|> do 
 	char '{'
 	stmts <- many computationStatement
@@ -81,26 +83,70 @@ forStatement = do
 				OList l -> l
 				_       -> []
 
-sphere = moduleWithoutSuite "sphere" $ do
-	r <- argument "r";
-	addObj3 $ Prim.sphere (coerceNum r);
-
-{- cube = moduleWithoutSuite "sphere" $ do
-	size <- argument "size";
-	center <- argumentWithDefault "center" (OBool False);
-	case (size, center) of
-	(OVec x:y:z:[], OBool b) -> if b then 
-	addObj3 $ Prim.sphere (coerceNum r); -}
-
-
-computationStatement = (many space >>)$  (try ifStatement <|> try forStatement) <|> do
-	s <- try echoStatement <|> try assigmentStatement <|> try sphere
-	many space
-	char ';'
-	return s
+computationStatement :: GenParser Char st ComputationStateModifier
+computationStatement = (many space >>)$  
+	(try ifStatement 
+	<|> try forStatement 
+	<|> try unionStatement
+	<|> try intersectStatement
+	<|> try differenceStatement
+	) 
+	<|> do
+		s <- try echoStatement <|> try assigmentStatement <|> try sphere <|> try cube
+		many space
+		char ';'
+		return s
 
 
-runComputations :: ComputationState -> [(ComputationState -> ComputationState)]  -> ComputationState
+runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
 runComputations = foldl ( \a b -> b $ a) 
 
+moduleWithSuite ::
+	String -> ([ComputationStateModifier] -> ArgParser ComputationStateModifier)
+	-> GenParser Char st ComputationStateModifier
+moduleWithSuite name argHandeler = do
+	string name;
+	many space;
+	(unnamed, named) <- moduleArgsUnit
+	statements <- suite
+	return $ \state@(varlookup, obj2s, obj3s, io) -> 
+		case argMap 
+			(map ($varlookup) unnamed) 
+			(map (\(a,b) -> (a, b varlookup)) named) (argHandeler statements)
+		of
+			Just computationModifier ->  computationModifier state
+			Nothing -> state;
+
+
+getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
+	-> ([Obj2] -> Obj2)
+	-> ([Obj3] -> Obj3)
+	-> m ComputationStateModifier
+getAndCompressSuiteObjs suite obj2modifier obj3modifier = 
+	return $ \(varlookup, obj2s, obj3s, io) -> 
+		(\(varlookup2, obj2s2, obj3s2, io2) -> 
+			(varlookup2, 
+			 obj2s ++ (case obj2s2 of [] -> []; _ -> [obj2modifier obj2s2]), 
+			 obj3s ++ (case obj3s2 of [] -> []; _ -> [obj3modifier obj3s2]), 
+			 io2)
+		)
+		(runComputations (varlookup, [], [], io) suite)
+
+unionStatement = moduleWithSuite "union" $ \suite -> do
+	r <- realArgumentWithDefault "r" 0.0
+	if r > 0
+	then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
+	else getAndCompressSuiteObjs suite Op.union Op.union
+
+intersectStatement = moduleWithSuite "intersection" $ \suite -> do
+	r <- realArgumentWithDefault "r" 0.0
+	if r > 0
+	then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
+	else getAndCompressSuiteObjs suite Op.intersect Op.intersect
+
+differenceStatement = moduleWithSuite "difference" $ \suite -> do
+	r <- realArgumentWithDefault "r" 0.0
+	if r > 0
+	then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
+	else getAndCompressSuiteObjs suite Op.difference Op.difference
 

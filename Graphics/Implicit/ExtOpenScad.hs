@@ -18,17 +18,30 @@ import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
 
-
 runComputationsDefault = runComputations
-	(fromList [("sin", numericOFunc sin)], [], [], return () )
+	(fromList funcs, [], [], return () )
 
 
 
 parseComputations str = let 
 		test :: Either ParseError [(ComputationState -> ComputationState)] -> IO()
 		test (Right res) = case runComputationsDefault res of
-			(_,_,_,io) -> io
+			(varlookup, obj2s, obj3s, io) -> do
+				io
+				putStrLn "== DONE! =="
+				putStrLn $ "2D Objs: " ++ show (length obj2s)
+				putStrLn $ "3D Objs: " ++ show (length obj3s)
+				putStrLn $ "varlookup:\n" ++ show (varlookup)
 		test (Left err) =  putStrLn $ show $ err
 	in test $ parse (many1 computationStatement) ""  str
 
-
+funcs = [
+		("sin", numericOFunc sin),
+		("cos", numericOFunc cos),
+		("tan", numericOFunc tan),
+		("abs", numericOFunc abs),
+		("sign", numericOFunc signum),
+		("floor", numericOFunc (fromIntegral . floor) ),
+		("ceil", numericOFunc (fromIntegral . ceiling) ),
+		("exp", numericOFunc exp)
+	]

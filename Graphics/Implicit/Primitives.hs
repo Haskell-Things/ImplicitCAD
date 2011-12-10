@@ -3,9 +3,9 @@
 
 module Graphics.Implicit.Primitives (
 	sphere,
-	cube,
+	cube, cubeC, cubeV, cubeVC,
 	circle,
-	cylinder,
+	cylinder, cylinderC, cylinder2, cylinder2C,
 	square,
 	regularPolygon,
 	polygon,
@@ -25,14 +25,51 @@ sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 
 cube ::
 	ℝ          -- ^ Width of the cube
-	 -> Obj3   -- ^ Resuting cube
-cube l = \(x,y,z) -> (maximum $ map abs [x,y,z]) - l/2.0
+	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
+cube l = \(x,y,z) -> (maximum $ map abs [x-l/2.0,y-l/2.0,z-l/2.0]) - l/2.0
+
+cubeC ::
+	ℝ          -- ^ Width of the cube
+	 -> Obj3   -- ^ Resuting centered cube
+cubeC l = \(x,y,z) -> (maximum $ map abs [x,y,z]) - l/2.0
+
+cubeV ::
+	ℝ3         -- ^ Dimensions of the cube
+	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
+cubeV (dx, dy, dz) = \(x,y,z) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy, abs (z-dz/2.0) - dz])
+
+cubeVC ::
+	ℝ3         -- ^ Dimensions of the cube
+	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
+cubeVC (dx, dy, dz) = \(x,y,z) -> (maximum [abs x - dx, abs y - dy, abs z - dz])
+
 
 cylinder ::
-	ℝ         -- ^ Radius of the cylinder
+	ℝ         -- ^ Radius of the cylinder	
 	-> ℝ      -- ^ Height of the cylinder
 	-> Obj3   -- ^ Resulting cylinder
-cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
+cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z-h/2.0) - h)
+
+cylinderC ::
+	ℝ         -- ^ Radius of the cylinder	
+	-> ℝ      -- ^ Height of the cylinder
+	-> Obj3   -- ^ Resulting cylinder
+cylinderC r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
+
+cylinder2 ::
+	ℝ         -- ^ Radius of the cylinder	
+	-> ℝ      -- ^ Second radius of the cylinder
+	-> ℝ      -- ^ Height of the cylinder
+	-> Obj3   -- ^ Resulting cylinder
+cylinder2 r1 r2 h = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h)
+
+cylinder2C ::
+	ℝ         -- ^ Radius of the cylinder	
+	-> ℝ      -- ^ Second radius of the cylinder
+	-> ℝ      -- ^ Height of the cylinder
+	-> Obj3   -- ^ Resulting cylinder
+cylinder2C r1 r2 h = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z) - h)
+
 
 circle ::
 	ℝ        -- ^ radius of the circle
