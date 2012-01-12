@@ -30,11 +30,13 @@ module Graphics.Implicit(
 	writeSVG,
 	writeSVG2,
 	writeSTL,
-	writeSTL2
+	writeSTL2,
+	runOpenscad
 ) where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Primitives
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Export
+import Graphics.Implicit.ExtOpenScad
 

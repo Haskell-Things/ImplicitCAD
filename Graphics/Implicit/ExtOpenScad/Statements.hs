@@ -18,6 +18,12 @@ import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
 
+{-comment = 
+	(try $ do
+		string "//"
+		many ( noneOf "\n")
+		string "\n"
+	) <|> do-}
 
 
 assigmentStatement = do
@@ -41,7 +47,9 @@ echoStatement = do
 suite :: GenParser Char st [ComputationStateModifier]
 suite = liftM return computationStatement <|> do 
 	char '{'
-	stmts <- many computationStatement
+	many space
+	stmts <- many (try computationStatement)
+	many space
 	char '}'
 	return stmts
 
@@ -90,11 +98,19 @@ computationStatement = (many space >>)$
 	<|> try unionStatement
 	<|> try intersectStatement
 	<|> try differenceStatement
+	<|> try translateStatement
 	) 
 	<|> do
-		s <- try echoStatement <|> try assigmentStatement <|> try sphere <|> try cube
+		s <- (  try echoStatement 
+		    <|> try assigmentStatement 
+		    <|> try sphere 
+		    <|> try cube
+		    <|> try circle
+		    <|> try polygon
+		  )
 		many space
 		char ';'
+		many space
 		return s
 
 
@@ -108,6 +124,7 @@ moduleWithSuite name argHandeler = do
 	string name;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
+	many space;
 	statements <- suite
 	return $ \state@(varlookup, obj2s, obj3s, io) -> 
 		case argMap 
@@ -132,21 +149,58 @@ getAndCompressSuiteObjs suite obj2modifier obj3modifier =
 		)
 		(runComputations (varlookup, [], [], io) suite)
 
+getAndTransformSuiteObjs :: (Monad m) => [ComputationStateModifier] 
+	-> (Obj2 -> Obj2)
+	-> (Obj3 -> Obj3)
+	-> m ComputationStateModifier
+getAndTransformSuiteObjs suite obj2modifier obj3modifier = 
+	return $ \(varlookup, obj2s, obj3s, io) -> 
+		(\(varlookup2, obj2s2, obj3s2, io2) -> 
+			(varlookup2, 
+			 obj2s ++ (map obj2modifier obj2s2),
+			 obj3s ++ (map obj3modifier obj3s2),
+			 io2)
+		)
+		(runComputations (varlookup, [], [], io) suite)
+
+
 unionStatement = moduleWithSuite "union" $ \suite -> do
 	r <- realArgumentWithDefault "r" 0.0
 	if r > 0
-	then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
-	else getAndCompressSuiteObjs suite Op.union Op.union
+		then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
+		else getAndCompressSuiteObjs suite Op.union Op.union
 
 intersectStatement = moduleWithSuite "intersection" $ \suite -> do
 	r <- realArgumentWithDefault "r" 0.0
 	if r > 0
-	then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
-	else getAndCompressSuiteObjs suite Op.intersect Op.intersect
+		then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
+		else getAndCompressSuiteObjs suite Op.intersect Op.intersect
 
 differenceStatement = moduleWithSuite "difference" $ \suite -> do
 	r <- realArgumentWithDefault "r" 0.0
 	if r > 0
-	then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
-	else getAndCompressSuiteObjs suite Op.difference Op.difference
+		then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
+		else getAndCompressSuiteObjs suite Op.difference Op.difference
+
+translateStatement = moduleWithSuite "translate" $ \suite -> do
+	v <- argument "v"
+	case v of
+		OList ((ONum x):(ONum y):(ONum z):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
+		OList ((ONum x):(ONum y):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
+		OList ((ONum x):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
+
+scaleStatement = moduleWithSuite "translate" $ \suite -> do
+	v <- argument "v"
+	case v of
+		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
+		OList ((ONum x):(ONum y):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
+		OList ((ONum x):[]) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0)-}
+		ONum s ->
+			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
 

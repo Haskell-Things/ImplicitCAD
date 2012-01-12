@@ -11,3 +11,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 numericOFunc f = OFunc $ \oObj -> case oObj of
 	ONum n -> ONum $ f n
 	_ -> OUndefined
+
+
+numericOFunc2 f = OFunc $ \oObj -> case oObj of
+	ONum n -> OFunc $ \oObj2 -> case oObj2 of
+		ONum n2 -> ONum $ f n n2
+		_ -> OUndefined
+	_ -> OUndefined
+

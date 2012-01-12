@@ -90,7 +90,7 @@ moduleArgsUnit = do
 			expr <- expression 0;
 			return $ Left expr;
 		})
-		) (char ',');
+		) (many space >> char ',' >> many space);
 	many space;	
 	char ')';
 	let

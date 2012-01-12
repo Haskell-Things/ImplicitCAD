@@ -64,20 +64,36 @@ expression 10 = (try literal) <|> (try variable )
 		exprs <- sepBy (expression 0) (char ':' );
 		string "]";
 		return $ \varlookup -> OList $ map ONum $ case map (coerceNum.($varlookup)) exprs  of
-			a:[] -> [a]
-			a:b:[] -> [a .. b]
+			a:[]     -> [a]
+			a:b:[]   -> [a .. b]
 			a:b:c:xs -> [a, a+b .. c]
 	)<?> "vector/list" )
-expression 9 = ( try( do 
+expression 9 = 
+	let
+		-- Like in Haskell, we're going to think of functions of 
+		-- many variables as functions that result in functions.
+		-- So f(a,b) = f(a)(b) :)
+		applyArgs :: OpenscadObj -> [OpenscadObj] -> OpenscadObj
+		applyArgs obj []  = obj
+		applyArgs (OFunc f) (arg:others) = applyArgs (f arg) others 
+		applyArgs _ _ = OUndefined
+		-- List splicing, like in Python. 'Cause list splicing is
+		-- awesome!
+		splice :: [a] -> ℝ -> ℝ -> [a]
+		splice [] _ _     = []
+		splice (x:xs) a b 
+			| floor a < 0 =      splice xs (fromIntegral $ length xs + floor a) (fromIntegral $ floor b)
+			| floor b < 0 =      splice xs (fromIntegral $ floor a) ( fromIntegral $ length xs + floor b)
+			| floor a > 0 =      splice xs (fromIntegral $ floor a - 1) (fromIntegral $ floor b)
+			| floor b > 0 = x : (splice xs (fromIntegral $ floor a) (fromIntegral $ floor b - 1 ) )
+			| otherwise = []
+	in ( try( do 
 		f <- expression 10;
 		many space
 		string "(";
-		arg <- expression 0;
+		args <- sepBy (expression 0) (many space >> char ',' >> many space);
 		string ")";
-		return $ \varlookup ->
-			case f varlookup of
-				OFunc actual_func -> actual_func (arg varlookup)
-				_ -> OUndefined
+		return $ \varlookup -> applyArgs (f varlookup) (map ($varlookup) args) 
 	) <?> "function appliation" )
 	<|> ( try( do 
 		l <- expression 10;
@@ -87,8 +103,28 @@ expression 9 = ( try( do
 		return $ \varlookup ->
 			case (l varlookup, i varlookup) of
 				(OList actual_list, ONum ind) -> actual_list !! (floor ind)
+				(OString str, ONum ind) -> OString $ [str !! (floor ind)]
 				_ -> OUndefined
 	) <?> "list indexing" )
+	<|> ( try( do 
+		l <- expression 10;
+		string "[";
+		start <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+		char ':';
+		end   <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+		string "]";
+		return $ \varlookup ->
+			case (l varlookup, start varlookup, end varlookup) of
+				(OList  list, ONum a,     ONum b    ) -> OList   $ splice list a b
+				(OString str, ONum a,     ONum b    ) -> OString $ splice str  a b
+				(OList  list, OUndefined, ONum b    ) -> OList   $ splice list 0 b
+				(OString str, OUndefined, ONum b    ) -> OString $ splice str  0 b
+				(OList  list, ONum a,     OUndefined) -> OList   $ splice list a (1.0/0.0)
+				(OString str, ONum a,     OUndefined) -> OString $ splice str  a (1.0/0.0)
+				(OList  list, OUndefined, OUndefined) -> OList   $ splice list 0 (1.0/0.0)
+				(OString str, OUndefined, OUndefined) -> OString $ splice str  0 (1.0/0.0)
+				_ -> OUndefined
+	) <?> "list splicing" )
 	<|> try (expression 10)
 expression n@8 = try (( do 
 		a <- expression (n+1);
@@ -102,14 +138,14 @@ expression n@8 = try (( do
 expression n@7 =  try (expression $ n+1)
 expression n@6 = 
 	let 
-		mult (ONum a) (ONum b) = ONum (a*b)
-		mult (ONum a) (OList b) = OList (map (mult (ONum a)) b)
-		mult (OList a) (ONum b) = OList (map (mult (ONum b)) a)
-		mult _ _ = OUndefined
+		mult (ONum a)  (ONum b)  = ONum  (a*b)
+		mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
+		mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
+		mult _         _         = OUndefined
 
-		div  (ONum a) (ONum b) = ONum (a/b)
+		div (ONum a)  (ONum b) = ONum  (a/b)
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
-		div _ _ = OUndefined
+		div _         _        = OUndefined
 	in try (( do 
 		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '/')) (char '*')
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
@@ -117,9 +153,9 @@ expression n@6 =
 	<|>try (expression $ n+1)
 expression n@5 =
 	let 
-		append (OList a) (OList b) = OList $ a++b
+		append (OList   a) (OList   b) = OList   $ a++b
 		append (OString a) (OString b) = OString $ a++b
-		append _ _ = OUndefined
+		append _           _           = OUndefined
 	in try (( do 
 		exprs <- sepBy1 (expression $ n+1) (string "++")
 		return $ \varlookup -> foldl1 append $ map ($varlookup) exprs;

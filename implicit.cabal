@@ -15,7 +15,7 @@ build-type:          Simple
 Category:            Graphics
 
 Library
-    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
+    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers, haskell98
     ghc-options:         -O2
     Extensions:          MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances
     Exposed-Modules:   
@@ -29,6 +29,9 @@ Library
         Graphics.Implicit.SaneOperators
         Graphics.Implicit.Tracing
         Graphics.Implicit.Tracing.GetTriangles
+
+Executable extopenscad
+   Main-is: extopenscad.hs
 
 source-repository head
     type:            git

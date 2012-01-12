@@ -22,8 +22,8 @@ runComputationsDefault = runComputations
 	(fromList funcs, [], [], return () )
 
 
-
-parseComputations str = let 
+runOpenscad :: String -> IO ()
+runOpenscad str = let 
 		test :: Either ParseError [(ComputationState -> ComputationState)] -> IO()
 		test (Right res) = case runComputationsDefault res of
 			(varlookup, obj2s, obj3s, io) -> do
@@ -43,5 +43,7 @@ funcs = [
 		("sign", numericOFunc signum),
 		("floor", numericOFunc (fromIntegral . floor) ),
 		("ceil", numericOFunc (fromIntegral . ceiling) ),
-		("exp", numericOFunc exp)
+		("exp", numericOFunc exp),
+		("max", numericOFunc2 max),
+		("min", numericOFunc2 min)
 	]

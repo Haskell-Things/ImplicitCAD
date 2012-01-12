@@ -6,7 +6,7 @@ module Graphics.Implicit.Primitives (
 	cube, cubeC, cubeV, cubeVC,
 	circle,
 	cylinder, cylinderC, cylinder2, cylinder2C,
-	square,
+	square, squareC, squareV, squareVC,
 	regularPolygon,
 	polygon,
 	zsurface
@@ -92,8 +92,25 @@ torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 
 
 square ::
 	ℝ        -- ^ Width of the square
+	-> Obj2  -- ^ Resulting square (bottom corner = (0,0) )
+square l = \(x,y) -> (maximum $ map abs [x- l/2.0,y- l/2.0]) - l/2.0
+
+squareC ::
+	ℝ        -- ^ Width of the square
+	-> Obj2  -- ^ Resulting square (centered on (0,0))
+squareC l = \(x,y) -> (maximum $ map abs [x,y]) - l/2.0
+
+squareV ::
+	ℝ2        -- ^ (x width, y width)
+	-> Obj2  -- ^ Resulting square (bottom right = (0,0) )
+squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx, abs (y- dy/2.0) - dy])
+
+squareVC ::
+	ℝ2        -- ^ Width of the square
 	-> Obj2  -- ^ Resulting square
-square l = \(x,y) -> (maximum $ map abs [x,y]) - l/2.0
+squareVC (dx,dy) = \(x,y) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy])
+
+
 
 polygon ::
 	[ℝ2]      -- ^ Verticies of the polygon
