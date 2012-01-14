@@ -117,9 +117,9 @@ instance BasicObj Box3 ℝ3 where
 	translate _ ((0,0,0),(0,0,0)) = ((0,0,0),(0,0,0))
 	translate p (a,b) = (a+p, b+p)
 	scale s (a,b) = (s*a, s*b)
-	complement _ = ((-infty, -infty), (infty, infty))
+	complement _ = ((-infty, -infty,-infty), (infty, infty, infty))
 	union boxes = ((left,bot,inward),(right,top,out)) where
-			isEmpty = ( == ((0,0),(0,0)) )
+			isEmpty = ( == ((0,0,0),(0,0,0)) )
 			(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
 			(lefts, bots, ins) = unzip3 leftbot
 			(rights, tops, outs) = unzip3 topright
@@ -143,7 +143,7 @@ instance BasicObj Box3 ℝ3 where
 		in
 			if top > bot && right > left && out > inward
 			then ((left,bot,inward),(right,top,out))
-			else ((0,0),(0,0))
+			else ((0,0,0),(0,0,0))
 	difference (firstBox : otherBoxes) = firstBox
 
 
@@ -171,12 +171,6 @@ instance BasicObj (Boxed3 Obj3) ℝ3 where
 
 
 class MagnitudeObj obj where
-
-	-- | Inset an object.
-	inset :: 
-		ℝ        -- ^ distance to inset
-		-> obj   -- ^ object to inset
-		-> obj   -- ^ resulting object
 
 	-- | Outset an object.
 	outset :: 
@@ -208,8 +202,16 @@ class MagnitudeObj obj where
 		-> [obj] -- ^ Objects to difference 
 		-> obj   -- ^ Resulting object
 
+
+-- | Inset an object.
+inset :: MagnitudeObj obj =>
+	ℝ        -- ^ distance to inset
+	-> obj   -- ^ object to inset
+	-> obj   -- ^ resulting object
+inset d obj = outset (-d) obj
+
+
 instance MagnitudeObj Obj2 where
-	inset d obj = \p -> obj p - d
 	outset d obj = \p -> obj p - d
 	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 	unionR r objs = \p -> rminimum r $ map ($p) objs
@@ -217,7 +219,6 @@ instance MagnitudeObj Obj2 where
 	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
 
 instance MagnitudeObj Obj3 where
-	inset d obj = \p -> obj p - d
 	outset d obj = \p -> obj p - d
 	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
 	unionR r objs = \p -> rminimum r $ map ($p) objs
