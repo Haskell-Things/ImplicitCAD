@@ -1,6 +1,8 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+
 module Graphics.Implicit.Primitives (
 	sphere,
 	cube, cubeC, cubeV, cubeVC,
@@ -13,62 +15,76 @@ module Graphics.Implicit.Primitives (
 ) where
 
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.Operations
 import qualified Graphics.Implicit.SaneOperators as S
 
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
-sphere ::
-	ℝ         -- ^ Radius of the sphere
-	-> Obj3   -- ^ Resulting sphere
-sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
+-- Basic Primitive 3D Objects; We can make the others from here.
+class PrimitiveSupporter3 obj where
+	sphere ::
+		ℝ         -- ^ Radius of the sphere
+		-> obj    -- ^ Resulting sphere
+	cubeV ::
+		ℝ3        -- ^ Dimensions of the cube
+		 -> obj   -- ^ Resuting cube - (0,0,0) is bottom left...
+	cylinder2 ::
+		ℝ         -- ^ Radius of the cylinder	
+		-> ℝ      -- ^ Second radius of the cylinder
+		-> ℝ      -- ^ Height of the cylinder
+		-> obj    -- ^ Resulting cylinder
+	torus ::
+		ℝ         -- ^ radius of the rotated circle of a torus
+		-> ℝ      -- ^ radius of the circle rotationaly extruded on of a torus
+		-> obj    -- ^ resulting torus
 
-cube ::
+instance PrimitiveSupporter3 Obj3 where
+	sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
+	cubeV (dx, dy, dz) = 
+		\(x,y,z) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy, abs (z-dz/2.0) - dz])
+	cylinder2 r1 r2 h 
+		| r1 == r2  = \(x,y,z) -> max (sqrt(x^2+y^2) - r1) (abs(z-h/2.0) - h)
+		| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h)
+	torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
+
+
+
+cube :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ          -- ^ Width of the cube
-	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
-cube l = \(x,y,z) -> (maximum $ map abs [x-l/2.0,y-l/2.0,z-l/2.0]) - l/2.0
+	 -> obj    -- ^ Resuting cube - (0,0,0) is bottom left...
+cube l = cubeV (l,l,l)
 
-cubeC ::
+cubeC :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ          -- ^ Width of the cube
-	 -> Obj3   -- ^ Resuting centered cube
-cubeC l = \(x,y,z) -> (maximum $ map abs [x,y,z]) - l/2.0
+	 -> obj    -- ^ Resuting centered cube
+cubeC l = translate (-l/2.0, -l/2.0, -l/2.0) $ cube l
 
-cubeV ::
+cubeVC :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ3         -- ^ Dimensions of the cube
-	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
-cubeV (dx, dy, dz) = \(x,y,z) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy, abs (z-dz/2.0) - dz])
-
-cubeVC ::
-	ℝ3         -- ^ Dimensions of the cube
-	 -> Obj3   -- ^ Resuting cube - (0,0,0) is bottom left...
-cubeVC (dx, dy, dz) = \(x,y,z) -> (maximum [abs x - dx, abs y - dy, abs z - dz])
+	 -> obj    -- ^ Resuting cube - (0,0,0) is bottom left...
+cubeVC (dx, dy, dz) = translate (-dx/2.0, -dy/2.0, -dz/2.0) $ cubeV (dx, dy, dz)
 
 
-cylinder ::
+cylinder :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ         -- ^ Radius of the cylinder	
 	-> ℝ      -- ^ Height of the cylinder
-	-> Obj3   -- ^ Resulting cylinder
-cylinder r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z-h/2.0) - h)
+	-> obj    -- ^ Resulting cylinder
+cylinder r h = cylinder2 r r h
 
-cylinderC ::
+cylinderC :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ         -- ^ Radius of the cylinder	
 	-> ℝ      -- ^ Height of the cylinder
-	-> Obj3   -- ^ Resulting cylinder
-cylinderC r h = \(x,y,z) -> max (sqrt(x^2+y^2) - r) (abs(z) - h)
+	-> obj    -- ^ Resulting cylinder
+cylinderC r h = translate (0,0,-h/2.0) $ cylinder r h
 
-cylinder2 ::
+
+cylinder2C :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ         -- ^ Radius of the cylinder	
 	-> ℝ      -- ^ Second radius of the cylinder
 	-> ℝ      -- ^ Height of the cylinder
-	-> Obj3   -- ^ Resulting cylinder
-cylinder2 r1 r2 h = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h)
-
-cylinder2C ::
-	ℝ         -- ^ Radius of the cylinder	
-	-> ℝ      -- ^ Second radius of the cylinder
-	-> ℝ      -- ^ Height of the cylinder
-	-> Obj3   -- ^ Resulting cylinder
-cylinder2C r1 r2 h = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z) - h)
+	-> obj    -- ^ Resulting cylinder
+cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 
 
 circle ::
@@ -76,11 +92,6 @@ circle ::
 	-> Obj2  -- ^ resulting circle
 circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
-torus ::
-	ℝ       -- ^ radius of the rotated circle of a torus
-	-> ℝ    -- ^ radius of the circle rotationaly extruded on of a torus
-	-> Obj3 -- ^ resulting torus
-torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
 
 -- This function is commented out because it doesn't obey the magnitude requirement.
 -- Refer to blog post.

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.Operations (
+	BasicObj, MagnitudeObj,
 	translate, 
 	scale,
 	complement,
