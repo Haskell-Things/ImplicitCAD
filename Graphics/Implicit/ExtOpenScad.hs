@@ -18,20 +18,19 @@ import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
 
-runComputationsDefault = runComputations
-	(fromList funcs, [], [], return () )
+runComputationsDefault = runComputations $
+	return (fromList funcs, [], [])
 
 
 runOpenscad :: String -> IO ()
 runOpenscad str = let 
 		test :: Either ParseError [(ComputationState -> ComputationState)] -> IO()
-		test (Right res) = case runComputationsDefault res of
-			(varlookup, obj2s, obj3s, io) -> do
-				io
-				putStrLn "== DONE! =="
-				putStrLn $ "2D Objs: " ++ show (length obj2s)
-				putStrLn $ "3D Objs: " ++ show (length obj3s)
-				putStrLn $ "varlookup:\n" ++ show (varlookup)
+		test (Right res) = do
+			(varlookup, obj2s, obj3s) <- runComputationsDefault res
+			putStrLn "== DONE! =="
+			putStrLn $ "2D Objs: " ++ show (length obj2s)
+			putStrLn $ "3D Objs: " ++ show (length obj3s)
+			putStrLn $ "varlookup:\n" ++ show (varlookup)
 		test (Left err) =  putStrLn $ show $ err
 	in test $ parse (many1 computationStatement) ""  str
 

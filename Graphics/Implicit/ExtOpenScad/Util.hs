@@ -59,16 +59,25 @@ boolArgumentWithDefault str fallback = ArgParser str (Just (OBool fallback))
 	(\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
 
 addObj2 :: (Monad m) => Obj2 -> m ComputationStateModifier
-addObj2 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s ++ [obj], obj3s, io)
+addObj2 obj = return $  \ ioWrappedState -> do
+		(varlookup, obj2s, obj3s) <- ioWrappedState
+		return (varlookup, obj2s ++ [obj], obj3s)
 
 addObj3 :: (Monad m) => Obj3 -> m ComputationStateModifier
-addObj3 obj = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s ++ [obj], io)
+addObj3 obj = return $  \ ioWrappedState -> do
+		(varlookup, obj2s, obj3s) <- ioWrappedState
+		return (varlookup, obj2s, obj3s ++ [obj])
 
 changeObjs :: (Monad m) => ([Obj2] -> [Obj2]) -> ([Obj3] -> [Obj3]) -> m ComputationStateModifier
-changeObjs mod2s mod3s = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, mod2s obj2s, mod3s obj3s, io)
+changeObjs mod2s mod3s = return $  \ ioWrappedState -> do
+		(varlookup, obj2s, obj3s) <- ioWrappedState
+		return (varlookup, mod2s obj2s, mod3s obj3s)
 
 runIO ::  (Monad m) => IO() -> m ComputationStateModifier
-runIO newio = return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>newio)
+runIO newio = return $  \ ioWrappedState -> do
+		state <- ioWrappedState
+		newio
+		return state
 
 noChange :: (Monad m) => m ComputationStateModifier
 noChange = return id
@@ -108,13 +117,14 @@ moduleWithoutSuite name argHandeler = do
 	string name;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
-	return $ \state@(varlookup, obj2s, obj3s, io) -> 
+	return $ \ ioWrappedState -> do
+		state@(varlookup, obj2s, obj3s) <- ioWrappedState
 		case argMap 
 			(map ($varlookup) unnamed) 
 			(map (\(a,b) -> (a, b varlookup)) named) argHandeler 
-		of
-			Just computationModifier ->  computationModifier state
-			Nothing -> state;
+			of
+				Just computationModifier ->  computationModifier (return state)
+				Nothing -> (return state);
 
 
 pad parser = do

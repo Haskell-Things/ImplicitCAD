@@ -27,6 +27,7 @@ instance Show OpenscadObj where
 
 type ComputationState = (VariableLookup, [Obj2], [Obj3], IO() )
 
+type ComputationStateModifier = ComputationState -> ComputationState
 
 coerceNum (ONum n) = n
 coerceNum _ = sqrt (-1)

@@ -32,7 +32,9 @@ assigmentStatement = do
 	char '='
 	many space
 	val <- expression 0
-	return $ \ (varlookup, obj2s, obj3s, io) -> (insert var (val varlookup) varlookup, obj2s, obj3s, io) 
+	return $ \ ioWrappedState -> do
+		(varlookup, obj2s, obj3s) <- ioWrappedState
+		return (insert var (val varlookup) varlookup, obj2s, obj3s) 
 
 echoStatement = do
 	string "echo"
@@ -42,7 +44,10 @@ echoStatement = do
 	val <- expression 0
 	many space
 	char ')'
-	return $ \(varlookup, obj2s, obj3s, io) -> (varlookup, obj2s, obj3s, io>>(putStrLn $ show $ val varlookup) ) 
+	return $  \ ioWrappedState -> do
+		state@(varlookup, _, _) <- ioWrappedState
+		putStrLn $ show $ val varlookup
+		return state
 
 suite :: GenParser Char st [ComputationStateModifier]
 suite = liftM return computationStatement <|> do 
@@ -63,13 +68,13 @@ ifStatement = do
 	statementsTrueCase <- suite
 	many space
 	statementsFalseCase <- try (string "else" >> many space >> suite ) <|> (return [])
-	return $ \ (state@(varlookup, _, _, _)) -> if 
-		case bexpr varlookup of  
+	return $  \ ioWrappedState -> do
+		state@(varlookup, _, _) <- ioWrappedState
+		if case bexpr varlookup of  
 			OBool b -> b
 			_ -> False
-		then runComputations state statementsTrueCase
-		else runComputations state statementsFalseCase
-
+		then runComputations (return state) statementsTrueCase
+		else runComputations (return state) statementsFalseCase
 forStatement = do
 	string "for"
 	many space
@@ -82,14 +87,17 @@ forStatement = do
 	char ')'
 	many space
 	loopStatements <- suite
-	return $ \ state@(varlookup,_,_,_) -> 
+	return $ \ ioWrappedState -> do
+		state@(varlookup,_,_) <- ioWrappedState;
 		let
-			loopOnce (varlookup, a, b, c) val =  
-				runComputations (insert vsymb val varlookup, a, b, c) loopStatements
-		in
-			foldl (loopOnce) state $ case vexpr varlookup of
-				OList l -> l
-				_       -> []
+			loopOnce :: ComputationState -> OpenscadObj -> ComputationState
+			loopOnce ioWrappedState val =  do
+				(varlookup, a, b) <- ioWrappedState
+				runComputations (return (insert vsymb val varlookup, a, b)) loopStatements
+			in
+				foldl (loopOnce) (return state) $ case vexpr varlookup of
+					OList l -> l
+					_       -> []
 
 computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = (many space >>)$  
@@ -115,7 +123,7 @@ computationStatement = (many space >>)$
 
 
 runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
-runComputations = foldl ( \a b -> b $ a) 
+runComputations = foldl (\a b -> b $ a)
 
 moduleWithSuite ::
 	String -> ([ComputationStateModifier] -> ArgParser ComputationStateModifier)
@@ -126,13 +134,14 @@ moduleWithSuite name argHandeler = do
 	(unnamed, named) <- moduleArgsUnit
 	many space;
 	statements <- suite
-	return $ \state@(varlookup, obj2s, obj3s, io) -> 
+	return $ \ ioWrappedState -> do
+		state@(varlookup, obj2s, obj3s) <- ioWrappedState
 		case argMap 
 			(map ($varlookup) unnamed) 
 			(map (\(a,b) -> (a, b varlookup)) named) (argHandeler statements)
-		of
-			Just computationModifier ->  computationModifier state
-			Nothing -> state;
+			of
+				Just computationModifier ->  computationModifier (return state)
+				Nothing -> (return state);
 
 
 getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
@@ -140,28 +149,26 @@ getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier]
 	-> ([Obj3] -> Obj3)
 	-> m ComputationStateModifier
 getAndCompressSuiteObjs suite obj2modifier obj3modifier = 
-	return $ \(varlookup, obj2s, obj3s, io) -> 
-		(\(varlookup2, obj2s2, obj3s2, io2) -> 
-			(varlookup2, 
+	return $  \ ioWrappedState -> do
+		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
+		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
+		return 
+			(varlookup2,
 			 obj2s ++ (case obj2s2 of [] -> []; _ -> [obj2modifier obj2s2]), 
-			 obj3s ++ (case obj3s2 of [] -> []; _ -> [obj3modifier obj3s2]), 
-			 io2)
-		)
-		(runComputations (varlookup, [], [], io) suite)
+			 obj3s ++ (case obj3s2 of [] -> []; _ -> [obj3modifier obj3s2])  )
 
 getAndTransformSuiteObjs :: (Monad m) => [ComputationStateModifier] 
 	-> (Obj2 -> Obj2)
 	-> (Obj3 -> Obj3)
 	-> m ComputationStateModifier
 getAndTransformSuiteObjs suite obj2modifier obj3modifier = 
-	return $ \(varlookup, obj2s, obj3s, io) -> 
-		(\(varlookup2, obj2s2, obj3s2, io2) -> 
-			(varlookup2, 
+	return $  \ ioWrappedState -> do
+		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
+		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
+		return 
+			(varlookup2,
 			 obj2s ++ (map obj2modifier obj2s2),
-			 obj3s ++ (map obj3modifier obj3s2),
-			 io2)
-		)
-		(runComputations (varlookup, [], [], io) suite)
+			 obj3s ++ (map obj3modifier obj3s2)   )
 
 
 unionStatement = moduleWithSuite "union" $ \suite -> do
