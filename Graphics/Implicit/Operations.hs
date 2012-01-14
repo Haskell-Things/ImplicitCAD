@@ -225,6 +225,39 @@ instance MagnitudeObj Obj3 where
 	intersectR r objs = \p -> rmaximum r $ map ($p) objs
 	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
 
+instance MagnitudeObj Box2 where
+	outset d (a,b) = (a - (d,d), b + (d,d))
+	shell w (a,b) = (a - (w/(2.0::ℝ),w/(2.0::ℝ)), b + (w/(2.0::ℝ),w/(2.0::ℝ)))
+	unionR r boxes = outset r $ union boxes
+	intersectR r boxes = outset r $ intersect boxes
+	differenceR r boxes = outset r $ difference boxes
+
+instance MagnitudeObj Box3 where
+	outset d (a,b) = (a - (d,d,d), b + (d,d,d))
+	shell w (a,b) = (a - (w/(2.0::ℝ),w/(2.0::ℝ),w/(2.0::ℝ)), b + (w/(2.0::ℝ),w/(2.0::ℝ),w/(2.0::ℝ)))
+	unionR r boxes = outset r $ union boxes
+	intersectR r boxes = outset r $ intersect boxes
+	differenceR r boxes = outset r $ difference boxes
+
+instance MagnitudeObj (Boxed2 Obj2) where
+	outset  d     (obj, box) = (outset d obj, outset d box)
+	shell   w     (obj, box) = (shell  w obj, shell  w box)
+	unionR      r bobjs      = (unionR      r objs, unionR      r boxes) where
+		(objs, boxes) = unzip bobjs
+	intersectR  r bobjs      = (intersectR  r objs, intersectR  r boxes) where
+		(objs, boxes) = unzip bobjs
+	differenceR r bobjs      = (differenceR r objs, differenceR r boxes) where
+		(objs, boxes) = unzip bobjs
+
+instance MagnitudeObj (Boxed3 Obj3) where
+	outset  d     (obj, box) = (outset d obj, outset d box)
+	shell   w     (obj, box) = (shell  w obj, shell  w box)
+	unionR      r bobjs      = (unionR      r objs, unionR      r boxes) where
+		(objs, boxes) = unzip bobjs
+	intersectR  r bobjs      = (intersectR  r objs, intersectR  r boxes) where
+		(objs, boxes) = unzip bobjs
+	differenceR r bobjs      = (differenceR r objs, differenceR r boxes) where
+		(objs, boxes) = unzip bobjs
 
 -- | Slice a 3D objects at a given z value to make a 2D object.
 slice :: 
