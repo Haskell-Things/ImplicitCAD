@@ -80,26 +80,26 @@ instance BasicObj Obj3 ℝ3 where
 	intersect objs = \p -> maximum $ map ($p) objs
 	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
 
-{-instance (BasicObj a b) => BasicObj (Boxed2 a) b where
-	translate p (obj, (a,b)) = (translate p obj, (a+p,b+p))
-	scale s (obj, (a,b)) = (scale s obj, (s*a,s*b))
-	complement (obj, _) = (complement obj, ((-infty, -infty), (infty,infty)) )
-	union bobjs = 
-		let
-			isEmpty box = snd box == ((0,0),(0,0)) 
-			(objs, boxes) = unzip $ filter (not . isEmpty) bobjs
-			(leftbot, topright) = unzip boxes
+-- CSG on 2D boxes
+-- Not precise, since not all CSG of such is a 2D box, 
+-- but result will be a super set. We will use this for bounding boxes.
+-- Empty boxes will always be ((0,0),(0,0)) for convenience :)
+instance BasicObj Box2 ℝ2 where
+	translate _ ((0,0),(0,0)) = ((0,0),(0,0))
+	translate p (a,b) = (a+p, b+p)
+	scale s (a,b) = (s*a, s*b)
+	complement _ = ((-infty, -infty), (infty, infty))
+	union boxes = ((left,bot),(right,top)) where
+			isEmpty = ( == ((0,0),(0,0)) )
+			(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
 			(lefts, bots) = unzip leftbot
 			(rights, tops) = unzip topright
 			left = minimum lefts
 			bot = minimum bots
 			right = maximum rights
 			top = maximum tops
-		in
-			(union objs, ((left,bot),(right,top)))
-	intersect bobjs = 
+	intersect boxes = 
 		let
-			(objs, boxes) = unzip bobjs
 			(leftbot, topright) = unzip boxes
 			(lefts, bots) = unzip leftbot
 			(rights, tops) = unzip topright
@@ -109,9 +109,65 @@ instance BasicObj Obj3 ℝ3 where
 			top = minimum tops
 		in
 			if top > bot && right > left 
-			then (union objs, ((left,bot),(right,top)))
-			else (union objs, ((0,0),(0,0)) )
-	difference bobjs = (difference $ map fst $ bobjs, snd $ head bobjs )-}
+			then ((left,bot),(right,top))
+			else ((0,0),(0,0))
+	difference (firstBox : otherBoxes) = firstBox
+
+instance BasicObj Box3 ℝ3 where
+	translate _ ((0,0,0),(0,0,0)) = ((0,0,0),(0,0,0))
+	translate p (a,b) = (a+p, b+p)
+	scale s (a,b) = (s*a, s*b)
+	complement _ = ((-infty, -infty), (infty, infty))
+	union boxes = ((left,bot,inward),(right,top,out)) where
+			isEmpty = ( == ((0,0),(0,0)) )
+			(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
+			(lefts, bots, ins) = unzip3 leftbot
+			(rights, tops, outs) = unzip3 topright
+			left = minimum lefts
+			bot = minimum bots
+			inward = minimum ins
+			right = maximum rights
+			top = maximum tops
+			out = maximum outs
+	intersect boxes = 
+		let
+			(leftbot, topright) = unzip boxes
+			(lefts, bots, ins) = unzip3 leftbot
+			(rights, tops, outs) = unzip3 topright
+			left = maximum lefts
+			bot = maximum bots
+			inward = maximum ins
+			right = minimum rights
+			top = minimum tops
+			out = minimum outs
+		in
+			if top > bot && right > left && out > inward
+			then ((left,bot,inward),(right,top,out))
+			else ((0,0),(0,0))
+	difference (firstBox : otherBoxes) = firstBox
+
+
+instance BasicObj (Boxed2 Obj2) ℝ2 where
+	translate p (obj, box) = (translate p obj, translate p box)
+	scale s (obj, box) = (scale s obj, scale s box)
+	complement (obj, box) = (complement obj, complement box )
+	union bobjs = (union objs, union boxes) where
+		(objs, boxes) = unzip bobjs
+	intersect bobjs = (intersect objs, intersect boxes) where
+		(objs, boxes) = unzip bobjs
+	difference bobjs = (difference objs, difference boxes) where
+		(objs, boxes) = unzip bobjs
+
+instance BasicObj (Boxed3 Obj3) ℝ3 where
+	translate p (obj, box) = (translate p obj, translate p box)
+	scale s (obj, box) = (scale s obj, scale s box)
+	complement (obj, box) = (complement obj, complement box )
+	union bobjs = (union objs, union boxes) where
+		(objs, boxes) = unzip bobjs
+	intersect bobjs = (intersect objs, intersect boxes) where
+		(objs, boxes) = unzip bobjs
+	difference bobjs = (difference objs, difference boxes) where
+		(objs, boxes) = unzip bobjs
 
 
 class MagnitudeObj obj where
