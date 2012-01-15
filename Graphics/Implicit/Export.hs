@@ -81,6 +81,14 @@ writeSVG2 (x1,y1) (x2,y2) d name obj =
 	in do 
 		writeFile name text
 
+writeSVG2InBox ::
+	ℝ                -- ^ resolution of rendering
+	-> String       -- ^ Filename to write SVG to
+	-> Boxed2 Obj2  -- ^ 2D object to render as SVG
+	-> IO ()        -- ^ Resulting IO action that will write SVG
+
+writeSVG2InBox d name (obj, ((x1,y1), (x2,y2))) = writeSVG2 (x1,y1) (x2,y2) d name obj
+
 
 
 writeGCode :: 
@@ -205,6 +213,14 @@ writeSTL2 (x1,y1,z1) (x2,y2,z2) d name obj =
 			++ stlFooter
 	in do 
 		writeFile name text
+
+
+writeSTL2InBox :: 
+	ℝ                     -- ^ resolution of rendering
+	-> FilePath           -- ^ Name of file to write STL to
+	-> (Boxed3 Obj3)      -- ^ 3D object to make STL for
+	-> IO()               -- ^ Resulting IO action that will write STL
+writeSTL2InBox  d name (obj, ((x1,y1,z1),(x2,y2,z2))) = writeSTL2 (x1,y1,z1) (x2,y2,z2) d name obj
 
 
 
