@@ -48,7 +48,12 @@ instance PrimitiveSupporter3 Obj3 where
 		| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h)
 	torus r_main r_second = \(x,y,z) -> sqrt( ( sqrt (x^2 + y^2) - r_main )^2 + z^2 ) - r_second
 
-
+instance PrimitiveSupporter3 (Boxed3 Obj3) where
+	sphere r = (sphere r, ((-r, -r, -r), (r,r,r)) )
+	cubeV (dx, dy, dz) = (cubeV (dx, dy, dz), ( (-dx, -dy, -dz), (dx, dy, dz) ) )
+	cylinder2 r1 r2 h = (cylinder2 r1 r2 h, ( (-r,-r,0), (r,r,h) ) ) where r = max r1 r2
+	torus r_main r_second = (torus r_main r_second, ((-r, -r, -r_second), (r, r, r_second)))
+		where r = r_main + r_second
 
 cube :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ          -- ^ Width of the cube
@@ -87,10 +92,57 @@ cylinder2C :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 
 
-circle ::
-	ℝ        -- ^ radius of the circle
-	-> Obj2  -- ^ resulting circle
-circle r = \(x,y) -> sqrt (x**2 + y**2) - r
+class PrimitiveSupporter2 obj where
+
+	circle ::
+		ℝ        -- ^ radius of the circle
+		-> obj   -- ^ resulting circle
+	squareV ::
+		ℝ2        -- ^ (x width, y width)
+		-> obj    -- ^ Resulting square (bottom right = (0,0) )
+	polygon ::
+		[ℝ2]      -- ^ Verticies of the polygon
+		 -> obj   -- ^ Resulting polygon
+
+
+
+
+instance PrimitiveSupporter2 Obj2 where
+
+	circle r = \(x,y) -> sqrt (x**2 + y**2) - r
+
+	squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx, abs (y- dy/2.0) - dy])
+
+	polygon points =
+		let
+			pairs =
+			   [ (points !! n, points !! (mod (n+1) (length points) ) ) | n <- [0 .. (length points) - 1] ]
+			isIn p@(p1,p2) =
+				let
+					crossing_points =
+						[x1 + (x2-x1)*y2/(y2-y1) |
+						((x1,y1), (x2,y2)) <-
+							map (\((a1,a2),(b1,b2)) -> ((a1-p1,a2-p2), (b1-p1,b2-p2)) ) pairs,
+						( (y2 < 0) && (y1 > 0) ) || ( (y2 > 0) && (y1 < 0) ) ]
+				in
+					if odd $ length $ filter (>0) crossing_points then -1 else 1
+			dist a@(a1,a2) b@(b1,b2) p@(p1,p2) =
+				let
+					ab = b S.- a
+					nab = (1 / S.norm ab) S.* ab
+					ap = p S.- a
+					d  = nab S.⋅ ap
+					closest
+						| d < 0 = a
+						| d > S.norm ab = b
+						| otherwise = a S.+ d S.* nab
+				in
+					S.norm (closest S.- p)
+			dists = \ p -> map (\(a,b) ->  dist a b p) pairs
+		in
+			\ p -> isIn p * minimum (dists p)
+
+
 
 
 -- This function is commented out because it doesn't obey the magnitude requirement.
@@ -101,59 +153,27 @@ circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 --    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
 --    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
 
-square ::
+square :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
 	ℝ        -- ^ Width of the square
-	-> Obj2  -- ^ Resulting square (bottom corner = (0,0) )
-square l = \(x,y) -> (maximum $ map abs [x- l/2.0,y- l/2.0]) - l/2.0
+	-> obj   -- ^ Resulting square (bottom corner = (0,0) )
+square l = squareV (l,l)
 
-squareC ::
+squareC :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
 	ℝ        -- ^ Width of the square
-	-> Obj2  -- ^ Resulting square (centered on (0,0))
-squareC l = \(x,y) -> (maximum $ map abs [x,y]) - l/2.0
+	-> obj   -- ^ Resulting square (centered on (0,0))
+squareC l = squareVC (l,l)
 
-squareV ::
-	ℝ2        -- ^ (x width, y width)
-	-> Obj2  -- ^ Resulting square (bottom right = (0,0) )
-squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx, abs (y- dy/2.0) - dy])
 
-squareVC ::
+squareVC :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
 	ℝ2        -- ^ Width of the square
-	-> Obj2  -- ^ Resulting square
-squareVC (dx,dy) = \(x,y) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy])
+	-> obj    -- ^ Resulting square
+squareVC (dx,dy) = translate (-dx/2.0, -dy/2.0) $ squareV (dx,dy)
 
 
 
-polygon ::
-	[ℝ2]      -- ^ Verticies of the polygon
-	 -> Obj2  -- ^ Resulting polygon
-polygon points =
-	let
-		pairs =
-		   [ (points !! n, points !! (mod (n+1) (length points) ) ) | n <- [0 .. (length points) - 1] ]
-		isIn p@(p1,p2) =
-			let
-				crossing_points =
-					[x1 + (x2-x1)*y2/(y2-y1) |
-					((x1,y1), (x2,y2)) <-
-						map (\((a1,a2),(b1,b2)) -> ((a1-p1,a2-p2), (b1-p1,b2-p2)) ) pairs,
-					( (y2 < 0) && (y1 > 0) ) || ( (y2 > 0) && (y1 < 0) ) ]
-			in
-				if odd $ length $ filter (>0) crossing_points then -1 else 1
-		dist a@(a1,a2) b@(b1,b2) p@(p1,p2) =
-			let
-				ab = b S.- a
-				nab = (1 / S.norm ab) S.* ab
-				ap = p S.- a
-				d  = nab S.⋅ ap
-				closest
-					| d < 0 = a
-					| d > S.norm ab = b
-					| otherwise = a S.+ d S.* nab
-			in
-				S.norm (closest S.- p)
-		dists = \ p -> map (\(a,b) ->  dist a b p) pairs
-	in
-		\ p -> isIn p * minimum (dists p)
+
+
+
 
 regularPolygon ::
 	ℕ       -- ^ number of sides
