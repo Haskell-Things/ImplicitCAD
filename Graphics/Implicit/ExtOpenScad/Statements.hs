@@ -145,8 +145,8 @@ moduleWithSuite name argHandeler = do
 
 
 getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
-	-> ([Obj2] -> Obj2)
-	-> ([Obj3] -> Obj3)
+	-> ([Boxed2 Obj2] -> Boxed2 Obj2)
+	-> ([Boxed3 Obj3] -> Boxed3 Obj3)
 	-> m ComputationStateModifier
 getAndCompressSuiteObjs suite obj2modifier obj3modifier = 
 	return $  \ ioWrappedState -> do
@@ -158,8 +158,8 @@ getAndCompressSuiteObjs suite obj2modifier obj3modifier =
 			 obj3s ++ (case obj3s2 of [] -> []; _ -> [obj3modifier obj3s2])  )
 
 getAndTransformSuiteObjs :: (Monad m) => [ComputationStateModifier] 
-	-> (Obj2 -> Obj2)
-	-> (Obj3 -> Obj3)
+	-> (Boxed2 Obj2 -> Boxed2 Obj2)
+	-> (Boxed3 Obj3 -> Boxed3 Obj3)
 	-> m ComputationStateModifier
 getAndTransformSuiteObjs suite obj2modifier obj3modifier = 
 	return $  \ ioWrappedState -> do

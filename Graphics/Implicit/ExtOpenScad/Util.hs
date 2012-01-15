@@ -58,17 +58,17 @@ boolArgumentWithDefault :: String -> Bool -> ArgParser Bool
 boolArgumentWithDefault str fallback = ArgParser str (Just (OBool fallback)) 
 	(\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
 
-addObj2 :: (Monad m) => Obj2 -> m ComputationStateModifier
+addObj2 :: (Monad m) => Boxed2 Obj2 -> m ComputationStateModifier
 addObj2 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
 		return (varlookup, obj2s ++ [obj], obj3s)
 
-addObj3 :: (Monad m) => Obj3 -> m ComputationStateModifier
+addObj3 :: (Monad m) => Boxed3 Obj3 -> m ComputationStateModifier
 addObj3 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
 		return (varlookup, obj2s, obj3s ++ [obj])
 
-changeObjs :: (Monad m) => ([Obj2] -> [Obj2]) -> ([Obj3] -> [Obj3]) -> m ComputationStateModifier
+changeObjs :: (Monad m) => ([Boxed2 Obj2] -> [Boxed2 Obj2]) -> ([Boxed3 Obj3] -> [Boxed3 Obj3]) -> m ComputationStateModifier
 changeObjs mod2s mod3s = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
 		return (varlookup, mod2s obj2s, mod3s obj3s)

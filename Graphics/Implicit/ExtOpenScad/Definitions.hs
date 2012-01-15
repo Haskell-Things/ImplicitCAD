@@ -25,7 +25,7 @@ instance Show OpenscadObj where
 	show (OString s) = show s
 	show (OFunc f) = "<function>"
 
-type ComputationState = IO (VariableLookup, [Obj2], [Obj3])
+type ComputationState = IO (VariableLookup, [Boxed2 Obj2], [Boxed3 Obj3])
 
 type ComputationStateModifier = ComputationState -> ComputationState
 

@@ -34,6 +34,7 @@ cube = moduleWithoutSuite "cube" $ do
 			else addObj3 $ Prim.cube w
 		_ -> noChange;
 
+-- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
 	h  <- realArgumentWithDefault "h"  1;
 	r  <- realArgumentWithDefault "r"  1;
@@ -54,7 +55,8 @@ circle = moduleWithoutSuite "circle" $ do
 	fn <- intArgumentWithDefault "$fn" (-1);
 	if fn < 3
 		then addObj2 $ Prim.circle r
-		else addObj2 $ Prim.regularPolygon fn r
+		else addObj2 $ Prim.polygon [(r*cos θ, r*sin θ )| θ <- [2*pi*n/fromIntegral fn | n <- [0.0 .. fromIntegral fn - 1.0]]]
+		--else addObj2 $ Prim.regularPolygon fn r
 
 square = moduleWithoutSuite "square" $ do
 	size <- argument "size";
