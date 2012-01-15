@@ -38,5 +38,12 @@ funcs = [
 		("ceil", numericOFunc (fromIntegral . ceiling) ),
 		("exp", numericOFunc exp),
 		("max", numericOFunc2 max),
-		("min", numericOFunc2 min)
+		("min", numericOFunc2 min),
+		("map", mapfunc)
 	]
+
+mapfunc = OFunc $ \oObj -> case oObj of
+	OFunc f -> OFunc $ \oObj2 -> case oObj2 of
+		OList l -> OList $ map f l
+		_ -> OUndefined
+	_ -> OUndefined
