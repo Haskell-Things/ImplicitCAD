@@ -18,10 +18,79 @@ Generally, objects in programmatic CAD are built with Constructive Solid Geometr
 It also directly provides GCode generation, and has a parser for OpenSCAD to make it easier for people to transition.
 
 
-Examples
----------
+ExtOpenSCAD Examples
+--------------------
 
-A simple 2D example:
+Let's being with OpenSCAD examples, since they're likely a more comfortable format that Haskell for most readers :)
+
+ImplicitCAD supports an extended version of OpenSCAD, the popular programmatic CAD tool. This is very new functionality, so expect bugs!
+
+Generally, normal openscad code should work. For example, save the following as `file.scad`.
+
+```c
+union() {
+	square([80,80]);
+	translate ([40,40]) circle(30);
+}
+``` 
+
+Running `extopenscad file.scad` will produce `file.svg`, which will look like:
+
+![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
+
+You can read more about standard openscad functionality in [OpenSCAD User Manual](http://en.wikibooks.org/wiki/OpenSCAD_User_Manual). 
+
+However, there are additional ImplicitCAD specific features. For example a rounded union:
+
+```c
+union(r=14) {
+	square([80,80]);
+	translate ([40,40]) circle(30);
+}
+``` 
+
+![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
+
+ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
+
+```c
+a = 5;
+for (c = [1, 2, 3]) {
+	echo(c);
+	a = a*c;
+	echo(a);
+}
+```
+Has the output:
+
+```
+1.0
+5.0
+2.0
+10.0
+3.0
+30.0
+Nothing to render
+```
+
+As a functional programmer, I couldn't resist adding some other niceties to the language. For example, function currying:
+
+```c
+f = max(4);
+echo(f(5));
+echo(max(4,5));
+```
+And some higher order functions, like my friend map:
+
+```c
+echo(map(cos, [0, pi/2, pi]));
+```
+
+
+Haskell Examples
+-----------------
+
+A simple 2D example, the same as our first ExtOpenSCAD one:
 
 ```haskell
 import Graphics.Implicit
@@ -30,7 +99,7 @@ out = union [
 	square 80,
 	translate (40,40) (circle 30) ]
 
-writeSVG (-100,-100) (100,100) 2 "test.svg" out
+main = writeSVG (-100,-100) (100,100) 2 "test.svg" out
 ``` 
 
 ![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
@@ -45,7 +114,7 @@ out = unionR 14 [
 	square 80,
 	translate (40,40) (circle 30) ]
 
-writeSVG (-100,-100) (100,100) 2 "test.svg" out
+main = writeSVG (-100,-100) (100,100) 2 "test.svg" out
 ``` 
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
@@ -59,13 +128,17 @@ out = union [
 	cube 40,
 	translate (20,20,20) (sphere 15) ]
 
-writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
+main = writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
 ```
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
 
+You can do a whole lot more!
+
 Try ImplicitCAD!
 ----------------
+
+Install latest stable release:
 
  1. Install GHC and cabal.
      * Debain/Ubuntu: `apt-get install ghc cabal-install`
@@ -78,6 +151,19 @@ Try ImplicitCAD!
  3. Start ghci: `ghci`
  4. Load ImplicitCAD: `import Graphics.Implicit`
  5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+
+Install development branch:
+
+ 1. Install GHC and cabal (see above)
+ 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+ 3. cd in: `cd ImplicitCAD/`
+ 4. cabal install it: `cabal install`
+ 5. Start ghci: `ghci`
+ 6. Load ImplicitCAD: `import Graphics.Implicit`
+ 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+
+
+(*Development branch only:* If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
 
 Documentation
 -------------
@@ -100,10 +186,11 @@ What works (Nov 2, 2011 -- regressions are possible if not probable):
  - 3D output (stl) -- rare bugs that can be fixed by increasing re
  - gcode generation for 2D to hacklab laser cutter. Not configurable.
 
+
 What still needs to be done:
 
- - openscad parser for backwards compatibility (partially completed)
  - gcode generation for 3D printers, gcode generator config
+ - openscad parser for backwards compatibility (partially complete)
 
 And a wishlist of things further in the future:
 
