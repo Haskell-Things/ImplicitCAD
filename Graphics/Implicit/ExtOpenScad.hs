@@ -22,17 +22,11 @@ runComputationsDefault = runComputations $
 	return (fromList funcs, [], [])
 
 
-runOpenscad :: String -> IO ()
-runOpenscad str = let 
-		test :: Either ParseError [(ComputationState -> ComputationState)] -> IO()
-		test (Right res) = do
-			(varlookup, obj2s, obj3s) <- runComputationsDefault res
-			putStrLn "== DONE! =="
-			putStrLn $ "2D Objs: " ++ show (length obj2s)
-			putStrLn $ "3D Objs: " ++ show (length obj3s)
-			putStrLn $ "varlookup:\n" ++ show (varlookup)
-		test (Left err) =  putStrLn $ show $ err
-	in test $ parse (many1 computationStatement) ""  str
+runOpenscad str = case parse (many1 computationStatement) ""  str of
+	Right res -> Right $ runComputationsDefault res
+	Left  err ->  Left err
+
+
 
 funcs = [
 		("sin", numericOFunc sin),
