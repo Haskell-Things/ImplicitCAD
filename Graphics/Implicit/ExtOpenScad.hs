@@ -29,6 +29,7 @@ runOpenscad str = case parse (many1 computationStatement) ""  str of
 
 
 funcs = [
+		("pi", ONum pi),
 		("sin", numericOFunc sin),
 		("cos", numericOFunc cos),
 		("tan", numericOFunc tan),
