@@ -100,14 +100,18 @@ forStatement = do
 					_       -> []
 
 computationStatement :: GenParser Char st ComputationStateModifier
-computationStatement = (many space >>)$  
-	(try ifStatement 
-	<|> try forStatement 
-	<|> try unionStatement
-	<|> try intersectStatement
-	<|> try differenceStatement
-	<|> try translateStatement
-	) 
+computationStatement = 
+	do
+		many space
+		s <- (try ifStatement 
+		     <|> try forStatement 
+		     <|> try unionStatement
+		     <|> try intersectStatement
+		     <|> try differenceStatement
+		     <|> try translateStatement
+		     )
+		many space
+		return s
 	<|> do
 		s <- (  try echoStatement 
 		    <|> try assigmentStatement 
