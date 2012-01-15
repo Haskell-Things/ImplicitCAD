@@ -142,7 +142,11 @@ instance PrimitiveSupporter2 Obj2 where
 		in
 			\ p -> isIn p * minimum (dists p)
 
-
+instance PrimitiveSupporter2 (Boxed2 Obj2) where
+	circle r = (circle r, ((-r, -r), (r,r)) )
+	squareV (dx, dy) = (squareV (dx, dy), ( (0,0), (dx, dy) ) )
+	polygon points = (polygon points, ((minimum xs, minimum ys), (maximum xs, maximum ys)) ) where
+		(xs, ys) = unzip points
 
 
 -- This function is commented out because it doesn't obey the magnitude requirement.
