@@ -20,12 +20,15 @@ import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
 
-{-comment = 
+comment = 
 	(try $ do
 		string "//"
 		many ( noneOf "\n")
 		string "\n"
-	) <|> do-}
+	) <|> (do
+		string "/*"
+		manyTill anyChar (try $ string "*/")
+	)
 
 
 assigmentStatement = do
@@ -77,6 +80,7 @@ ifStatement = do
 			_ -> False
 		then runComputations (return state) statementsTrueCase
 		else runComputations (return state) statementsFalseCase
+
 forStatement = do
 	string "for"
 	many space
@@ -105,6 +109,7 @@ computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = 
 	do
 		many space
+		many (many space >> comment >> many space)
 		s <- (try ifStatement 
 		     <|> try forStatement 
 		     <|> try unionStatement
@@ -115,10 +120,13 @@ computationStatement =
 		many space
 		return s
 	<|> do
+		many space
+		many (many space >> comment >> many space)
 		s <- (  try echoStatement 
 		    <|> try assigmentStatement 
 		    <|> try sphere 
 		    <|> try cube
+		    <|> try cylinder
 		    <|> try circle
 		    <|> try polygon
 		  )
