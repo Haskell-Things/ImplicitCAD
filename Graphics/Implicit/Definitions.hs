@@ -43,22 +43,32 @@ type BoxedObj2 = Boxed2 Obj2
 type BoxedObj3 = Boxed3 Obj3
 
 data SymbolicObj2 =
-	Rect ℝ ℝ
+	  Rect ℝ2 ℝ2
 	| Circle ℝ
 	| Polygon [ℝ2]
 	| UnionR2 ℝ [SymbolicObj2]
 	| DifferenceR2 ℝ [SymbolicObj2]
-	| IntersectionR2 ℝ [SymbolicObj2]
-	| Translate2 SymbolicObj2
+	| IntersectR2 ℝ [SymbolicObj2]
+	| Translate2 ℝ2 SymbolicObj2
+	| Complement2 SymbolicObj2
+	| Scale2 ℝ SymbolicObj2
+	| Rotate2 ℝ SymbolicObj2
+	| Outset2 ℝ SymbolicObj2
+	| Shell2 ℝ SymbolicObj2
 	| EmbedBoxedObj2 BoxedObj2
 
 data SymbolicObj3 = 
-	Rect3 ℝ ℝ ℝ
+	  Rect3 ℝ3 ℝ3
 	| Sphere ℝ
 	| UnionR3 ℝ [SymbolicObj3]
-	| IntersectionR3 ℝ [SymbolicObj3]
+	| IntersectR3 ℝ [SymbolicObj3]
 	| DifferenceR3 ℝ [SymbolicObj3]
-	| Translate3 SymbolicObj3
+	| Translate3 ℝ3 SymbolicObj3
+	| Complement3 SymbolicObj3
+	| Scale3 ℝ SymbolicObj3
+	| Rotate3 ℝ SymbolicObj3
+	| Outset3 ℝ SymbolicObj3
+	| Shell3 ℝ SymbolicObj3
 	| EmbedBoxedObj3 BoxedObj3
 
 -- | Rectiliniar 2D set

@@ -31,6 +31,9 @@ import Graphics.Implicit.Operations.Box2
 import Graphics.Implicit.Operations.Box3
 import Graphics.Implicit.Operations.BoxedObj2
 import Graphics.Implicit.Operations.BoxedObj3
+import Graphics.Implicit.Operations.SymbolicObj2
+import Graphics.Implicit.Operations.SymbolicObj3
+
 
 
 -- If you are confused as to how these functions work, please refer to
