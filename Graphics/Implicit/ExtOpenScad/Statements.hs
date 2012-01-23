@@ -116,6 +116,7 @@ computationStatement =
 		     <|> try intersectStatement
 		     <|> try differenceStatement
 		     <|> try translateStatement
+		     <|> try rotateStatement
 		     )
 		many space
 		return s
@@ -212,6 +213,18 @@ translateStatement = moduleWithSuite "translate" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
 		OList ((ONum x):[]) -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
+
+-- This is mostly insane
+translateStatement = moduleWithSuite "rotate" $ \suite -> do
+	a <- argument "a"
+	case a of
+		OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
+			getAndTransformSuiteObjs suite (Op.rotate xy ) (Op.rotate xy )
+		OList ((ONum yz):(ONum xz):[]) -> 
+			getAndTransformSuiteObjs suite (id ) (id)
+		OList ((ONum yz):[]) -> 
+			getAndTransformSuiteObjs suite (id) (id)
+
 
 scaleStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"

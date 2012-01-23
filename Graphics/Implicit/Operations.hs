@@ -42,6 +42,11 @@ class BasicObj obj vec | obj -> vec where
 		ℝ       -- ^ Amount to scale by
 		-> obj  -- ^ Object to scale
 		-> obj  -- ^ Resulting scaled object
+
+	rotateXY ::
+		ℝ       -- ^ Amount to rotate by
+		-> obj  -- ^ Object to rotate
+		-> obj  -- ^ Resulting rotated object		
 	
 	-- | Complement an Object
 	complement :: 
@@ -67,6 +72,7 @@ class BasicObj obj vec | obj -> vec where
 instance BasicObj Obj2 ℝ2 where
 	translate p obj = \q -> obj (q-p)
 	scale s obj = \p -> s * obj (p/s)
+	rotateXY θ obj = \(x,y) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
 	complement obj = \p -> - obj p
 	union objs = \p -> minimum $ map ($p) objs
 	intersect objs = \p -> maximum $ map ($p) objs
@@ -76,6 +82,7 @@ instance BasicObj Obj2 ℝ2 where
 instance BasicObj Obj3 ℝ3 where
 	translate p obj = \q -> obj (q-p)
 	scale s obj = \p -> s * obj (p/s)
+	rotateXY θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
 	complement obj = \p -> - obj p
 	union objs = \p -> minimum $ map ($p) objs
 	intersect objs = \p -> maximum $ map ($p) objs
@@ -89,6 +96,19 @@ instance BasicObj Box2 ℝ2 where
 	translate _ ((0,0),(0,0)) = ((0,0),(0,0))
 	translate p (a,b) = (a+p, b+p)
 	scale s (a,b) = (s*a, s*b)
+	rotateXY θ ((x1,y1),(x2,y2)) = 
+		let
+			rotate (x,y) = ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
+			(xa, ya) = rotate (x1, y1)
+			(xb, yb) = rotate (x1, y2)
+			(xc, yc) = rotate (x2, y1)
+			(xd, yd) = rotate (x2, y2)
+			minx = minimum [xa, xb, xc, xd]
+			miny = minimum [ya, yb, yc, yd]
+			maxx = maximum [xa, xb, xc, xd]
+			maxy = maximum [ya, yb, yc, yd]
+		in
+			((minx, miny), (maxx, maxy))
 	complement _ = ((-infty, -infty), (infty, infty))
 	union boxes = ((left,bot),(right,top)) where
 			isEmpty = ( == ((0,0),(0,0)) )
@@ -118,6 +138,19 @@ instance BasicObj Box3 ℝ3 where
 	translate _ ((0,0,0),(0,0,0)) = ((0,0,0),(0,0,0))
 	translate p (a,b) = (a+p, b+p)
 	scale s (a,b) = (s*a, s*b)
+	rotateXY θ ((x1,y1,z1),(x2,y2,z2)) = 
+		let
+			rotate (x,y) = ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
+			(xa, ya) = rotate (x1, y1)
+			(xb, yb) = rotate (x1, y2)
+			(xc, yc) = rotate (x2, y1)
+			(xd, yd) = rotate (x2, y2)
+			minx = minimum [xa, xb, xc, xd]
+			miny = minimum [ya, yb, yc, yd]
+			maxx = maximum [xa, xb, xc, xd]
+			maxy = maximum [ya, yb, yc, yd]
+		in
+			((minx, miny,z1), (maxx, maxy,z2))
 	complement _ = ((-infty, -infty,-infty), (infty, infty, infty))
 	union boxes = ((left,bot,inward),(right,top,out)) where
 			isEmpty = ( == ((0,0,0),(0,0,0)) )
@@ -151,6 +184,7 @@ instance BasicObj Box3 ℝ3 where
 instance BasicObj (Boxed2 Obj2) ℝ2 where
 	translate p (obj, box) = (translate p obj, translate p box)
 	scale s (obj, box) = (scale s obj, scale s box)
+	rotateXY θ (obj, box) = (rotateXY θ obj, rotateXY θ box)
 	complement (obj, box) = (complement obj, complement box )
 	union bobjs = (union objs, union boxes) where
 		(objs, boxes) = unzip bobjs
@@ -162,6 +196,7 @@ instance BasicObj (Boxed2 Obj2) ℝ2 where
 instance BasicObj (Boxed3 Obj3) ℝ3 where
 	translate p (obj, box) = (translate p obj, translate p box)
 	scale s (obj, box) = (scale s obj, scale s box)
+	rotateXY θ (obj, box) = (rotateXY θ obj, rotateXY θ box)
 	complement (obj, box) = (complement obj, complement box )
 	union bobjs = (union objs, union boxes) where
 		(objs, boxes) = unzip bobjs
