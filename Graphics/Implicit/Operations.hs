@@ -11,6 +11,7 @@ module Graphics.Implicit.Operations (
 	complement,
 	union,  intersect,  difference, 
 	unionR,  intersectR,  differenceR, 
+	outset,
 	shell,
 	slice,
 	bubble,
