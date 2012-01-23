@@ -215,15 +215,17 @@ translateStatement = moduleWithSuite "translate" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
 
 -- This is mostly insane
-translateStatement = moduleWithSuite "rotate" $ \suite -> do
+rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	case a of
-		OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
-			getAndTransformSuiteObjs suite (Op.rotate xy ) (Op.rotate xy )
+		ONum xy -> getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotateXY xy )
+		_ -> noChange
+		{-OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
+			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotateXY xy )
 		OList ((ONum yz):(ONum xz):[]) -> 
 			getAndTransformSuiteObjs suite (id ) (id)
 		OList ((ONum yz):[]) -> 
-			getAndTransformSuiteObjs suite (id) (id)
+			getAndTransformSuiteObjs suite (id) (id)-}
 
 
 scaleStatement = moduleWithSuite "translate" $ \suite -> do

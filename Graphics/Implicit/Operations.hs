@@ -7,6 +7,7 @@ module Graphics.Implicit.Operations (
 	BasicObj, MagnitudeObj,
 	translate, 
 	scale,
+	rotateXY,
 	complement,
 	union,  intersect,  difference, 
 	unionR,  intersectR,  differenceR, 
