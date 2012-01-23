@@ -24,277 +24,20 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.MathUtil
 import Graphics.Implicit.SaneOperators
 
+import Graphics.Implicit.Operations.Definitions
+import Graphics.Implicit.Operations.Obj2
+import Graphics.Implicit.Operations.Obj3
+import Graphics.Implicit.Operations.Box2
+import Graphics.Implicit.Operations.Box3
+import Graphics.Implicit.Operations.BoxedObj2
+import Graphics.Implicit.Operations.BoxedObj3
+
+
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
-infty = (1 :: ℝ) / (0 :: ℝ)
-
--- | Very basic operations objects
-class BasicObj obj vec | obj -> vec where
-	
-	-- | Translate an object by a vector of appropriate dimension. 
-	translate :: 
-		vec      -- ^ Vector to translate by (Also: a is a vector, blah, blah)
-		-> obj   -- ^ Object to translate
-		-> obj   -- ^ Resulting object
-
-	-- | Scale an object
-	scale :: 
-		ℝ       -- ^ Amount to scale by
-		-> obj  -- ^ Object to scale
-		-> obj  -- ^ Resulting scaled object
-
-	rotateXY ::
-		ℝ       -- ^ Amount to rotate by
-		-> obj  -- ^ Object to rotate
-		-> obj  -- ^ Resulting rotated object		
-	
-	-- | Complement an Object
-	complement :: 
-		obj     -- ^ Object to complement
-		-> obj  -- ^ Result
-	
-	-- | Union a list of objects
-	union :: 
-		[obj]  -- ^ List of objects to union
-		-> obj -- ^ The object resulting from the union
-
-	-- | Difference a list of objects
-	difference :: 
-		[obj]  -- ^ List of objects to difference
-		-> obj -- ^ The object resulting from the difference
-	
-	-- | Intersect a list of objects
-	intersect :: 
-		[obj]  -- ^ List of objects to intersect
-		-> obj -- ^ The object resulting from the intersection
 
 
-instance BasicObj Obj2 ℝ2 where
-	translate p obj = \q -> obj (q-p)
-	scale s obj = \p -> s * obj (p/s)
-	rotateXY θ obj = \(x,y) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
-	complement obj = \p -> - obj p
-	union objs = \p -> minimum $ map ($p) objs
-	intersect objs = \p -> maximum $ map ($p) objs
-	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
-
-
-instance BasicObj Obj3 ℝ3 where
-	translate p obj = \q -> obj (q-p)
-	scale s obj = \p -> s * obj (p/s)
-	rotateXY θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
-	complement obj = \p -> - obj p
-	union objs = \p -> minimum $ map ($p) objs
-	intersect objs = \p -> maximum $ map ($p) objs
-	difference (obj:objs) = \p -> maximum $ map ($p) $ obj:(map complement objs)
-
--- CSG on 2D boxes
--- Not precise, since not all CSG of such is a 2D box, 
--- but result will be a super set. We will use this for bounding boxes.
--- Empty boxes will always be ((0,0),(0,0)) for convenience :)
-instance BasicObj Box2 ℝ2 where
-	translate _ ((0,0),(0,0)) = ((0,0),(0,0))
-	translate p (a,b) = (a+p, b+p)
-	scale s (a,b) = (s*a, s*b)
-	rotateXY θ ((x1,y1),(x2,y2)) = 
-		let
-			rotate (x,y) = ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
-			(xa, ya) = rotate (x1, y1)
-			(xb, yb) = rotate (x1, y2)
-			(xc, yc) = rotate (x2, y1)
-			(xd, yd) = rotate (x2, y2)
-			minx = minimum [xa, xb, xc, xd]
-			miny = minimum [ya, yb, yc, yd]
-			maxx = maximum [xa, xb, xc, xd]
-			maxy = maximum [ya, yb, yc, yd]
-		in
-			((minx, miny), (maxx, maxy))
-	complement _ = ((-infty, -infty), (infty, infty))
-	union boxes = ((left,bot),(right,top)) where
-			isEmpty = ( == ((0,0),(0,0)) )
-			(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-			(lefts, bots) = unzip leftbot
-			(rights, tops) = unzip topright
-			left = minimum lefts
-			bot = minimum bots
-			right = maximum rights
-			top = maximum tops
-	intersect boxes = 
-		let
-			(leftbot, topright) = unzip boxes
-			(lefts, bots) = unzip leftbot
-			(rights, tops) = unzip topright
-			left = maximum lefts
-			bot = maximum bots
-			right = minimum rights
-			top = minimum tops
-		in
-			if top > bot && right > left 
-			then ((left,bot),(right,top))
-			else ((0,0),(0,0))
-	difference (firstBox : otherBoxes) = firstBox
-
-instance BasicObj Box3 ℝ3 where
-	translate _ ((0,0,0),(0,0,0)) = ((0,0,0),(0,0,0))
-	translate p (a,b) = (a+p, b+p)
-	scale s (a,b) = (s*a, s*b)
-	rotateXY θ ((x1,y1,z1),(x2,y2,z2)) = 
-		let
-			rotate (x,y) = ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
-			(xa, ya) = rotate (x1, y1)
-			(xb, yb) = rotate (x1, y2)
-			(xc, yc) = rotate (x2, y1)
-			(xd, yd) = rotate (x2, y2)
-			minx = minimum [xa, xb, xc, xd]
-			miny = minimum [ya, yb, yc, yd]
-			maxx = maximum [xa, xb, xc, xd]
-			maxy = maximum [ya, yb, yc, yd]
-		in
-			((minx, miny,z1), (maxx, maxy,z2))
-	complement _ = ((-infty, -infty,-infty), (infty, infty, infty))
-	union boxes = ((left,bot,inward),(right,top,out)) where
-			isEmpty = ( == ((0,0,0),(0,0,0)) )
-			(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-			(lefts, bots, ins) = unzip3 leftbot
-			(rights, tops, outs) = unzip3 topright
-			left = minimum lefts
-			bot = minimum bots
-			inward = minimum ins
-			right = maximum rights
-			top = maximum tops
-			out = maximum outs
-	intersect boxes = 
-		let
-			(leftbot, topright) = unzip boxes
-			(lefts, bots, ins) = unzip3 leftbot
-			(rights, tops, outs) = unzip3 topright
-			left = maximum lefts
-			bot = maximum bots
-			inward = maximum ins
-			right = minimum rights
-			top = minimum tops
-			out = minimum outs
-		in
-			if top > bot && right > left && out > inward
-			then ((left,bot,inward),(right,top,out))
-			else ((0,0,0),(0,0,0))
-	difference (firstBox : otherBoxes) = firstBox
-
-
-instance BasicObj (Boxed2 Obj2) ℝ2 where
-	translate p (obj, box) = (translate p obj, translate p box)
-	scale s (obj, box) = (scale s obj, scale s box)
-	rotateXY θ (obj, box) = (rotateXY θ obj, rotateXY θ box)
-	complement (obj, box) = (complement obj, complement box )
-	union bobjs = (union objs, union boxes) where
-		(objs, boxes) = unzip bobjs
-	intersect bobjs = (intersect objs, intersect boxes) where
-		(objs, boxes) = unzip bobjs
-	difference bobjs = (difference objs, difference boxes) where
-		(objs, boxes) = unzip bobjs
-
-instance BasicObj (Boxed3 Obj3) ℝ3 where
-	translate p (obj, box) = (translate p obj, translate p box)
-	scale s (obj, box) = (scale s obj, scale s box)
-	rotateXY θ (obj, box) = (rotateXY θ obj, rotateXY θ box)
-	complement (obj, box) = (complement obj, complement box )
-	union bobjs = (union objs, union boxes) where
-		(objs, boxes) = unzip bobjs
-	intersect bobjs = (intersect objs, intersect boxes) where
-		(objs, boxes) = unzip bobjs
-	difference bobjs = (difference objs, difference boxes) where
-		(objs, boxes) = unzip bobjs
-
-
-class MagnitudeObj obj where
-
-	-- | Outset an object.
-	outset :: 
-		ℝ        -- ^ distance to outset
-		-> obj   -- ^ object to outset
-		-> obj   -- ^ resulting object
-
-	-- | Make a shell of an object.
-	shell :: 
-		ℝ        -- ^ width of shell
-		-> obj   -- ^ object to take shell of
-		-> obj   -- ^ resulting shell
-	
-	-- | Rounded union
-	unionR :: 
-		ℝ        -- ^ The radius of rounding
-		-> [obj] -- ^ objects to union
-		-> obj   -- ^ Resulting object
-	
-	-- | Rounded minimum
-	intersectR :: 
-		ℝ        -- ^ The radius of rounding
-		-> [obj] -- ^ Objects to intersect
-		-> obj   -- ^ Resulting object
-	
-	-- | Rounded difference
-	differenceR :: 
-		ℝ        -- ^ The radius of rounding
-		-> [obj] -- ^ Objects to difference 
-		-> obj   -- ^ Resulting object
-
-
--- | Inset an object.
-inset :: MagnitudeObj obj =>
-	ℝ        -- ^ distance to inset
-	-> obj   -- ^ object to inset
-	-> obj   -- ^ resulting object
-inset d obj = outset (-d) obj
-
-
-instance MagnitudeObj Obj2 where
-	outset d obj = \p -> obj p - d
-	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
-	unionR r objs = \p -> rminimum r $ map ($p) objs
-	intersectR r objs = \p -> rmaximum r $ map ($p) objs
-	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
-
-instance MagnitudeObj Obj3 where
-	outset d obj = \p -> obj p - d
-	shell w a = \p -> abs (a p) - w/(2.0::ℝ)
-	unionR r objs = \p -> rminimum r $ map ($p) objs
-	intersectR r objs = \p -> rmaximum r $ map ($p) objs
-	differenceR r (x:xs) = \p -> rmaximum r $ (x p) :(map (negate . ($p)) xs)
-
-instance MagnitudeObj Box2 where
-	outset d (a,b) = (a - (d,d), b + (d,d))
-	shell w (a,b) = (a - (w/(2.0::ℝ),w/(2.0::ℝ)), b + (w/(2.0::ℝ),w/(2.0::ℝ)))
-	unionR r boxes = outset r $ union boxes
-	intersectR r boxes = outset r $ intersect boxes
-	differenceR r boxes = outset r $ difference boxes
-
-instance MagnitudeObj Box3 where
-	outset d (a,b) = (a - (d,d,d), b + (d,d,d))
-	shell w (a,b) = (a - (w/(2.0::ℝ),w/(2.0::ℝ),w/(2.0::ℝ)), b + (w/(2.0::ℝ),w/(2.0::ℝ),w/(2.0::ℝ)))
-	unionR r boxes = outset r $ union boxes
-	intersectR r boxes = outset r $ intersect boxes
-	differenceR r boxes = outset r $ difference boxes
-
-instance MagnitudeObj (Boxed2 Obj2) where
-	outset  d     (obj, box) = (outset d obj, outset d box)
-	shell   w     (obj, box) = (shell  w obj, shell  w box)
-	unionR      r bobjs      = (unionR      r objs, unionR      r boxes) where
-		(objs, boxes) = unzip bobjs
-	intersectR  r bobjs      = (intersectR  r objs, intersectR  r boxes) where
-		(objs, boxes) = unzip bobjs
-	differenceR r bobjs      = (differenceR r objs, differenceR r boxes) where
-		(objs, boxes) = unzip bobjs
-
-instance MagnitudeObj (Boxed3 Obj3) where
-	outset  d     (obj, box) = (outset d obj, outset d box)
-	shell   w     (obj, box) = (shell  w obj, shell  w box)
-	unionR      r bobjs      = (unionR      r objs, unionR      r boxes) where
-		(objs, boxes) = unzip bobjs
-	intersectR  r bobjs      = (intersectR  r objs, intersectR  r boxes) where
-		(objs, boxes) = unzip bobjs
-	differenceR r bobjs      = (differenceR r objs, differenceR r boxes) where
-		(objs, boxes) = unzip bobjs
 
 -- | Slice a 3D objects at a given z value to make a 2D object.
 slice :: 
@@ -334,5 +77,26 @@ extrudeOnEdgeOf ::
 	-> Obj2  -- ^ Object to extrude along the edge of
 	-> Obj3  -- ^ Resulting 3D object
 extrudeOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
