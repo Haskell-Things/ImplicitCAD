@@ -10,7 +10,8 @@ module Graphics.Implicit.Tracing (
 	reducePolyline,
 	polylineNotNull,
 	getMesh,
-	getMesh2
+	getMesh2,
+	getContour
 ) where
 
 import Graphics.Implicit.Definitions
@@ -129,6 +130,13 @@ orderLinesP segs =
 polylineNotNull (a:l) = not (null l)
 polylineNotNull [] = False
 
+
+getContour (x1,y1) (x2,y2) d obj = 
+	let
+		grid = [[getLineSeg (obj (x,-y), obj (x+d,-y), obj (x+d,-(y+d)), obj (x,-(y+d)), obj (x+d/2,-(y+d/2)) , (x-x1,y-y1), d ) | x <- [x1, x1+d.. x2]] | y <- [y1, y1 +d.. y2] ]
+		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesP grid
+	in
+		concat multilines
 
 getMesh (x1,y1,z1) (x2,y2,z2) res obj = 
 	let 

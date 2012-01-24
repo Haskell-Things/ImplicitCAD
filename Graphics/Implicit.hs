@@ -31,7 +31,8 @@ module Graphics.Implicit(
 	writeSVG2,
 	writeSTL,
 	writeSTL2,
-	runOpenscad
+	runOpenscad,
+	symbolicGetContour
 ) where
 
 import Graphics.Implicit.Definitions
@@ -40,3 +41,5 @@ import Graphics.Implicit.Operations
 import Graphics.Implicit.Export
 import Graphics.Implicit.ExtOpenScad
 
+-- Temporary for testing:
+import Graphics.Implicit.SymbolicManip
