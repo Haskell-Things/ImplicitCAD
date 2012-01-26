@@ -31,7 +31,7 @@ comment =
 	)
 
 
-assigmentStatement = do
+assigmentStatement = (do
 	var <- variableSymb
 	many space
 	char '='
@@ -40,6 +40,7 @@ assigmentStatement = do
 	return $ \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
 		return (insert var (val varlookup) varlookup, obj2s, obj3s) 
+	) <?> "assignment statement"
 
 echoStatement = do
 	string "echo"
@@ -55,15 +56,16 @@ echoStatement = do
 		return state
 
 suite :: GenParser Char st [ComputationStateModifier]
-suite = liftM return computationStatement <|> do 
+suite = (liftM return computationStatement <|> do 
 	char '{'
 	many space
 	stmts <- many (try computationStatement)
 	many space
 	char '}'
 	return stmts
+	) <?> "statement suite"
 
-ifStatement = do
+ifStatement = (do
 	string "if"
 	many space
 	char '('
@@ -80,8 +82,9 @@ ifStatement = do
 			_ -> False
 		then runComputations (return state) statementsTrueCase
 		else runComputations (return state) statementsFalseCase
+	) <?> "if statement"
 
-forStatement = do
+forStatement = (do
 	string "for"
 	many space
 	char '('
@@ -104,6 +107,7 @@ forStatement = do
 				foldl (loopOnce) (return state) $ case vexpr varlookup of
 					OList l -> l
 					_       -> []
+	) <?> "for statement"
 
 computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = 
@@ -143,7 +147,7 @@ runComputations = foldl (\a b -> b $ a)
 moduleWithSuite ::
 	String -> ([ComputationStateModifier] -> ArgParser ComputationStateModifier)
 	-> GenParser Char st ComputationStateModifier
-moduleWithSuite name argHandeler = do
+moduleWithSuite name argHandeler = (do
 	string name;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
@@ -157,6 +161,7 @@ moduleWithSuite name argHandeler = do
 			of
 				Just computationModifier ->  computationModifier (return state)
 				Nothing -> (return state);
+	) <?> (name ++ " statement")
 
 
 getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 

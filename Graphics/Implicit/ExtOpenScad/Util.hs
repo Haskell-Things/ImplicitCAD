@@ -113,7 +113,7 @@ moduleArgsUnit = do
 moduleWithoutSuite :: 
 	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
 
-moduleWithoutSuite name argHandeler = do
+moduleWithoutSuite name argHandeler = (do
 	string name;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
@@ -125,6 +125,7 @@ moduleWithoutSuite name argHandeler = do
 			of
 				Just computationModifier ->  computationModifier (return state)
 				Nothing -> (return state);
+	) <?> name
 
 
 pad parser = do
