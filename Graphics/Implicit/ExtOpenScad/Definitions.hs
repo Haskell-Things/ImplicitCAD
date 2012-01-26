@@ -8,6 +8,13 @@ module Graphics.Implicit.ExtOpenScad.Definitions where
 import Graphics.Implicit.Definitions
 import Data.Map hiding (map,foldl)
 
+-- Lets make it easy to change the object types we're using :)
+
+-- | The 2D object type to be used in ExtOpenScad
+type Obj2Type = SymbolicObj2
+-- | The 3D object type to be used in ExtOpenScad
+type Obj3Type = SymbolicObj3
+
 type VariableLookup = Map String OpenscadObj
 
 data OpenscadObj = OUndefined 
@@ -25,7 +32,7 @@ instance Show OpenscadObj where
 	show (OString s) = show s
 	show (OFunc f) = "<function>"
 
-type ComputationState = IO (VariableLookup, [Boxed2 Obj2], [Boxed3 Obj3])
+type ComputationState = IO (VariableLookup, [Obj2Type], [Obj3Type])
 
 type ComputationStateModifier = ComputationState -> ComputationState
 
