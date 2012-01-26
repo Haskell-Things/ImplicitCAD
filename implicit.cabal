@@ -22,17 +22,47 @@ Library
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Export
-        Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.MathUtil
         Graphics.Implicit.Operations
-        Graphics.Implicit.Primitives
         Graphics.Implicit.SaneOperators
-        Graphics.Implicit.Tracing
-        Graphics.Implicit.Tracing.GetTriangles
+    Other-Modules:
+        Graphics.Implicit.Primitives
+        Graphics.Implicit.Primitives.Definitions
+        Graphics.Implicit.Primitives.BoxedObj2
+        Graphics.Implicit.Primitives.BoxedObj3
+        Graphics.Implicit.Primitives.SymbolicObj2
+        Graphics.Implicit.Primitives.SymbolicObj3
+        Graphics.Implicit.Primitives.Obj2
+        Graphics.Implicit.Primitives.Obj3
+        Graphics.Implicit.Operations.Definitions
+        Graphics.Implicit.Operations.Box2
+        Graphics.Implicit.Operations.Box3
+        Graphics.Implicit.Operations.BoxedObj2
+        Graphics.Implicit.Operations.BoxedObj3
+        Graphics.Implicit.Operations.SymbolicObj2
+        Graphics.Implicit.Operations.SymbolicObj3
+        Graphics.Implicit.Operations.Obj2
+        Graphics.Implicit.Operations.Obj3
+        Graphics.Implicit.ExtOpenScad
+        Graphics.Implicit.ExtOpenScad.Definitions
+        Graphics.Implicit.ExtOpenScad.Default
+        Graphics.Implicit.ExtOpenScad.Expressions
+        Graphics.Implicit.ExtOpenScad.Primitives
+        Graphics.Implicit.ExtOpenScad.Statements
+        Graphics.Implicit.ExtOpenScad.Util
+        Graphics.Implicit.Export.Definitions
+        Graphics.Implicit.Export.MarchingSquares
+        Graphics.Implicit.Export.MarchingCubes
+        Graphics.Implicit.Export.BoxedObj2
+        Graphics.Implicit.Export.BoxedObj3
+        Graphics.Implicit.Export.SymbolicObj2
+        Graphics.Implicit.Export.SymbolicObj3
+        Graphics.Implicit.Export.PolylineFormats
+        Graphics.Implicit.Export.TriangleMeshFormats
 
 Executable extopenscad
-   Main-is: extopenscad.hs
 
+   Main-is: extopenscad.hs
 source-repository head
     type:            git
     location:        https://github.com/colah/ImplicitCAD.git

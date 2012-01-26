@@ -9,10 +9,10 @@ module Graphics.Implicit.Export.SymbolicObj3 () where
 import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.Export.Definitions
-import Graphics.Implicit.Export.MarchingSquares
+import Graphics.Implicit.Export.MarchingCubes
+
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Primitives
-import Graphics.Implicit.Tracing
 
 import qualified Graphics.Implicit.SaneOperators as S
 
