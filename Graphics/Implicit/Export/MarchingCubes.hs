@@ -1,52 +1,119 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Graphics.Implicit.Tracing.GetTriangles (getTriangles) where
+module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh2) where
 
 import Graphics.Implicit.Definitions
+import Control.Parallel (par, pseq)
+
+getMesh (x1,y1,z1) (x2,y2,z2) res obj = 
+	let 
+		dx = abs $ x2 - x1
+		dy = abs $ y2 - y1
+		dz = abs $ z2 - z1
+		d = maximum [dx, dy, dz]
+		ffloor = fromIntegral . floor
+		fceil = fromIntegral . ceiling
+	in
+		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
+		else
+		if d <= res
+		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
+		else let
+			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
+				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
+			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
+				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
+			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
+				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
+			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
+				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
+		in
+			concat partitions
 
 
--- This monstrosity of a function gives triangles to divde negative interior
--- regions and positive exterior ones inside a cube, based on its vertices.
+getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
+	let 
+		dx = abs $ x2 - x1
+		dy = abs $ y2 - y1
+		dz = abs $ z2 - z1
+		d = maximum [dx, dy, dz]
+		ffloor = fromIntegral . floor
+		fceil = fromIntegral . ceiling
+	in
+		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
+		else
+		if d <= res
+		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
+		else let
+			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
+				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
+			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
+				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
+			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
+				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
+			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
+				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
+		in
+			foldr1 par partitions `pseq` concat partitions
 
--- It is based on the linearly-interpolated marching cubes algorithm.
 
-getTriangles :: ((ℝ,ℝ,ℝ,ℝ,ℝ,ℝ,ℝ,ℝ),ℝ3,ℝ) -> [(ℝ3,ℝ3,ℝ3)]
-getTriangles ((x1y1z1,x2y1z1,x1y2z1,x2y2z1,x1y1z2,x2y1z2,x1y2z2,x2y2z2), (x,y,z), d) =
+
+-- | This monstrosity of a function gives triangles to divde negative interior
+--  regions and positive exterior ones inside a cube, based on its vertices.
+--  It is based on the linearly-interpolated marching cubes algorithm.
+
+getCubeTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
+getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 	let
+		(x,y,z) = (x1, y1, z1)
+		
+		x1y1z1 = obj (x1, y1, z1)
+		x2y1z1 = obj (x2, y1, z1)
+		x1y2z1 = obj (x1, y2, z1)
+		x2y2z1 = obj (x2, y2, z1)
+		x1y1z2 = obj (x1, y1, z2)
+		x2y1z2 = obj (x2, y1, z2)
+		x1y2z2 = obj (x1, y2, z2)
+		x2y2z2 = obj (x2, y2, z2)
+
+		dx = x2 - x1
+		dy = y2 - y1
+		dz = z2 - z1
+		
 		--{- Linearly interpolated
-		x1y1 = (x,   y,   z+d*x1y1z1/(x1y1z1-x1y1z2))
-		x1y2 = (x,   y+d, z+d*x1y2z1/(x1y2z1-x1y2z2))
-		x2y1 = (x+d, y,   z+d*x2y1z1/(x2y1z1-x2y1z2))
-		x2y2 = (x+d, y+d, z+d*x2y2z1/(x2y2z1-x2y2z2))
+		x1y1 = (x,    y,    z+dz*x1y1z1/(x1y1z1-x1y1z2))
+		x1y2 = (x,    y+dy, z+dz*x1y2z1/(x1y2z1-x1y2z2))
+		x2y1 = (x+dx, y,    z+dz*x2y1z1/(x2y1z1-x2y1z2))
+		x2y2 = (x+dx, y+dy, z+dz*x2y2z1/(x2y2z1-x2y2z2))
 
-		x1z1 = (x,   y+d*x1y1z1/(x1y1z1-x1y2z1), z)
-		x1z2 = (x,   y+d*x1y1z2/(x1y1z2-x1y2z2), z+d)
-		x2z1 = (x+d, y+d*x2y1z1/(x2y1z1-x2y2z1), z)
-		x2z2 = (x+d, y+d*x2y1z2/(x2y1z2-x2y2z2), z+d)
+		x1z1 = (x,    y+dy*x1y1z1/(x1y1z1-x1y2z1), z)
+		x1z2 = (x,    y+dy*x1y1z2/(x1y1z2-x1y2z2), z+dz)
+		x2z1 = (x+dx, y+dy*x2y1z1/(x2y1z1-x2y2z1), z)
+		x2z2 = (x+dx, y+dy*x2y1z2/(x2y1z2-x2y2z2), z+dz)
 
-		y1z1 = (x+d*x1y1z1/(x1y1z1-x2y1z1), y,   z)
-		y1z2 = (x+d*x1y1z2/(x1y1z2-x2y1z2), y,   z+d)
-		y2z1 = (x+d*x1y2z1/(x1y2z1-x2y2z1), y+d, z)
-		y2z2 = (x+d*x1y2z2/(x1y2z2-x2y2z2), y+d, z+d)
+		y1z1 = (x+dx*x1y1z1/(x1y1z1-x2y1z1), y,    z)
+		y1z2 = (x+dx*x1y1z2/(x1y1z2-x2y1z2), y,    z+dz)
+		y2z1 = (x+dx*x1y2z1/(x1y2z1-x2y2z1), y+dy, z)
+		y2z2 = (x+dx*x1y2z2/(x1y2z2-x2y2z2), y+dy, z+dz)
 		--}
 
 
 		{- Non-linearly interpolated
-		x1y1 = (x,   y,   z+d/2)
-		x1y2 = (x,   y+d, z+d/2)
-		x2y1 = (x+d, y,   z+d/2)
-		x2y2 = (x+d, y+d, z+d/2)
+		x1y1 = (x,    y,    z+dz/2)
+		x1y2 = (x,    y+dy, z+dz/2)
+		x2y1 = (x+dx, y,    z+dz/2)
+		x2y2 = (x+dx, y+dy, z+dz/2)
 
-		x1z1 = (x,   y+d/2, z)
-		x1z2 = (x,   y+d/2, z+d)
-		x2z1 = (x+d, y+d/2, z)
-		x2z2 = (x+d, y+d/2, z+d)
+		x1z1 = (x,    y+dy/2, z)
+		x1z2 = (x,    y+dy/2, z+dz)
+		x2z1 = (x+dx, y+dy/2, z)
+		x2z2 = (x+dx, y+dy/2, z+dz)
 
-		y1z1 = (x+d/2, y,  z)
-		y1z2 = (x+d/2, y,  z+d)
-		y2z1 = (x+d/2, y+d,z)
-		y2z2 = (x+d/2, y+d,z+d)
+		y1z1 = (x+dx/2, y,   z)
+		y1z2 = (x+dx/2, y,   z+dz)
+		y2z1 = (x+dx/2, y+dy,z)
+		y2z2 = (x+dx/2, y+dy,z+dz)
 		--}
 
 		-- Convenience function
@@ -66,6 +133,11 @@ getTriangles ((x1y1z1,x2y1z1,x1y2z1,x2y2z1,x1y1z2,x2y1z2,x1y2z2,x2y2z2), (x,y,z)
 		-- There are 256 cases to implement.
 		-- Only about half are, but they're the most common ones.
 		-- In practice, this has no issues redering reasonable objects.
+
+		-- Yes, there's some symetries that could reduce the amount of code...
+		-- But I don't think they're worth exploiting...
+		-- In particular, since we're not implementing any case, 
+		-- it would make catching the ones we don't implement... problematic.
 
 		-- Uniform cases = empty
 		(False,False,    False,False,

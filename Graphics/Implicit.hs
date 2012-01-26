@@ -28,11 +28,8 @@ module Graphics.Implicit(
 	polygon,
 	-- Export
 	writeSVG,
-	writeSVG2,
 	writeSTL,
-	writeSTL2,
-	runOpenscad,
-	symbolicGetContour
+	runOpenscad
 ) where
 
 import Graphics.Implicit.Definitions
@@ -41,5 +38,3 @@ import Graphics.Implicit.Operations
 import Graphics.Implicit.Export
 import Graphics.Implicit.ExtOpenScad
 
--- Temporary for testing:
-import Graphics.Implicit.SymbolicManip

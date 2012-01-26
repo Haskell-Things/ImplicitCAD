@@ -6,7 +6,6 @@
 import System
 import System.IO
 import Graphics.Implicit
-import Graphics.Implicit.Export (writeSVG2InBox, writeSTL2InBox)
 
 strip filename = case reverse filename of
 	'd':'a':'c':'s':'.':xs     -> reverse xs
@@ -21,10 +20,10 @@ executeAndExport content targetname = case runOpenscad content of
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
-				writeSVG2InBox 1 (targetname ++ ".svg") x
+				writeSVG 1 (targetname ++ ".svg") x
 			(_, _, x:xs)  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
-				writeSTL2InBox 1 (targetname ++ ".stl") x
+				writeSTL 1 (targetname ++ ".stl") x
 
 		
 

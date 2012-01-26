@@ -15,6 +15,12 @@ type ℕ = Int
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
 
+-- | A triangle (a,b,c) = a trinagle with vertices a, b and c
+type Triangle = (ℝ3, ℝ3, ℝ3)
+
+-- | A triangle mesh is a bunch of triangles :)
+type TriangleMesh = [Triangle]
+
 -- $ In Implicit CAD, we consider objects as functions
 -- of `outwardness'. The boundary is 0, negative is the
 -- interior and positive the exterior. The magnitude is
@@ -42,6 +48,10 @@ type Boxed3 a = (a, Box3)
 type BoxedObj2 = Boxed2 Obj2
 type BoxedObj3 = Boxed3 Obj3
 
+-- | A symbolic 2D object format.
+--   We want to have a symbolic object so that we can 
+--   accelerate rendering & give ideal meshes for simple
+--   cases.
 data SymbolicObj2 =
 	  Rect ℝ2 ℝ2
 	| Circle ℝ
@@ -56,6 +66,8 @@ data SymbolicObj2 =
 	| Outset2 ℝ SymbolicObj2
 	| Shell2 ℝ SymbolicObj2
 	| EmbedBoxedObj2 BoxedObj2
+
+-- | A symbolic 3D format!
 
 data SymbolicObj3 = 
 	  Rect3 ℝ3 ℝ3
