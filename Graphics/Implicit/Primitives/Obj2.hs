@@ -14,7 +14,7 @@ instance PrimitiveSupporter2 Obj2 where
 
 	circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
-	squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx, abs (y- dy/2.0) - dy])
+	squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx/2.0, abs (y- dy/2.0) - dy/2.0])
 
 	polygon points =
 		let

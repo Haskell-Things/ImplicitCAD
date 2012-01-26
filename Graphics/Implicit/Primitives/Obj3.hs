@@ -11,7 +11,7 @@ import Graphics.Implicit.Primitives.Definitions
 instance PrimitiveSupporter3 Obj3 where
 	sphere r = \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 	cubeV (dx, dy, dz) = 
-		\(x,y,z) -> (maximum [abs (x-dx/2.0) - dx, abs (y-dy/2.0) - dy, abs (z-dz/2.0) - dz])
+		\(x,y,z) -> (maximum [abs (x-dx/2.0) - dx/2.0, abs (y-dy/2.0) - dy/2.0, abs (z-dz/2.0) - dz/2.0])
 	cylinder2 r1 r2 h 
 		| r1 == r2  = \(x,y,z) -> max (sqrt(x^2+y^2) - r1) (abs(z-h/2.0) - h)
 		| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h)
