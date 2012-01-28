@@ -6,6 +6,8 @@
 import System
 import System.IO
 import Graphics.Implicit
+import Graphics.Implicit.ExtOpenScad.Definitions
+import Data.Map as S
 
 strip filename = case reverse filename of
 	'd':'a':'c':'s':'.':xs     -> reverse xs
@@ -15,15 +17,19 @@ strip filename = case reverse filename of
 executeAndExport content targetname = case runOpenscad content of
 	Left err -> putStrLn $ show $ err
 	Right openscadProgram -> do 
-		s <- openscadProgram 
-		case s of
+		s@(vars, obj2s, obj3s) <- openscadProgram 
+		let
+			res = case S.lookup "$res" vars of 
+				Nothing -> 1
+				Just (ONum n) -> n
+		in case s of
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
-				writeSVG 1 (targetname ++ ".svg") x
+				writeSVG res (targetname ++ ".svg") x
 			(_, _, x:xs)  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
-				writeSTL 1 (targetname ++ ".stl") x
+				writeSTL res (targetname ++ ".stl") x
 
 		
 
