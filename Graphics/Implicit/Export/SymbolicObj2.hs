@@ -40,6 +40,12 @@ symbolicGetContour res (Circle r) = [[ ( r*cos(2*pi*m/n), r*sin(2*pi*m/n) ) | m 
 	n = max 5 (fromIntegral $ ceiling $ 2*pi*r/res)
 symbolicGetContour res (Translate2 v obj) = map (map (S.+ v) ) $ symbolicGetContour res obj
 symbolicGetContour res (Scale2 s obj) = map (map (S.* s)) $ symbolicGetContour res obj
-symbolicGetContour res obj = (\(obj,(a,b)) -> getContour a b (res,res) obj) (coerceSymbolic2 obj)
+symbolicGetContour res obj = (\(obj,(a,b)) ->  
+	let
+		d :: ℝ2
+		d = (b S.- a) S./ (10.0 :: ℝ)
+	in 
+		getContour (a S.- d) (b S.+ d) (res,res) obj
+	) (coerceSymbolic2 obj)
 
 

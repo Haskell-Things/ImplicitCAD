@@ -121,6 +121,7 @@ computationStatement =
 		     <|> try differenceStatement
 		     <|> try translateStatement
 		     <|> try rotateStatement
+		     <|> try scaleStatement
 		     )
 		many space
 		return s
@@ -233,7 +234,7 @@ rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 			getAndTransformSuiteObjs suite (id) (id)-}
 
 
-scaleStatement = moduleWithSuite "translate" $ \suite -> do
+scaleStatement = moduleWithSuite "scale" $ \suite -> do
 	v <- argument "v"
 	case v of
 		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 

@@ -43,5 +43,11 @@ symbolicGetMesh _ (Rect3 (x1,y1,z1) (x2,y2,z2)) =
 		++ square (x1,y2,z1) (x2,y2,z1) (x2,y2,z2) (x1,y2,z2)
 		++ square (x1,y1,z1) (x1,y1,z2) (x1,y2,z2) (x1,y2,z1)
 		++ square (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
-symbolicGetMesh res  obj = (\(obj,(a,b)) -> getMesh a b res obj) (coerceSymbolic3 obj)
+symbolicGetMesh res  obj = 
+	(\(obj,(a,b)) ->  let
+		d :: ℝ3
+		d = (b S.- a) S./ (10.0 :: ℝ)
+	in
+		getMesh (a S.- d) (b S.+ d) res obj 
+	) (coerceSymbolic3 obj)
 
