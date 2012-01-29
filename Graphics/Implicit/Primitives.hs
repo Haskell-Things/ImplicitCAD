@@ -9,6 +9,7 @@ module Graphics.Implicit.Primitives (
 	circle,
 	cylinder, cylinderC, cylinder2, cylinder2C,
 	square, squareC, squareV, squareVC,
+	torus,
 	regularPolygon,
 	polygon,
 	zsurface
