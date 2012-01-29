@@ -13,11 +13,13 @@ module Graphics.Implicit.Operations (
 	unionR,  intersectR,  differenceR, 
 	outset,
 	shell,
-	slice,
-	bubble,
-	extrude,
-	extrudeR,
+	extrudeR, extrudeRMod,
 	extrudeOnEdgeOf
+	--slice,
+	--bubble
+	{-extrude,
+	extrudeR,
+	extrudeOnEdgeOf-}
 ) where
 
 import Prelude hiding ((+),(-),(*),(/))
@@ -28,12 +30,16 @@ import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Operations.Definitions
 import Graphics.Implicit.Operations.Obj2
 import Graphics.Implicit.Operations.Obj3
+import Graphics.Implicit.Operations.ObjPair
 import Graphics.Implicit.Operations.Box2
 import Graphics.Implicit.Operations.Box3
+import Graphics.Implicit.Operations.BoxPair
 import Graphics.Implicit.Operations.BoxedObj2
 import Graphics.Implicit.Operations.BoxedObj3
+import Graphics.Implicit.Operations.BoxedObjPair
 import Graphics.Implicit.Operations.SymbolicObj2
 import Graphics.Implicit.Operations.SymbolicObj3
+import Graphics.Implicit.Operations.SymbolicObjPair
 
 
 
@@ -59,6 +65,7 @@ bubble s obj =
 	in
 		\(x,y,z) -> spsqrt ( z ** 2 + s * obj (x,y) )
 
+{-
 -- | Extrude a 2D object. (The extrusion goes into the z-plane)
 extrude :: 
 	ℝ          -- ^ Length to extrude
@@ -85,7 +92,7 @@ extrudeOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z)
 
 
 
-
+-}
 
 
 

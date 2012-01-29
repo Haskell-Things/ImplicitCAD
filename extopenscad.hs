@@ -18,11 +18,11 @@ executeAndExport content targetname = case runOpenscad content of
 	Left err -> putStrLn $ show $ err
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
-		let
+		let {
 			res = case S.lookup "$res" vars of 
 				Nothing -> 1
 				Just (ONum n) -> n
-		in case s of
+		} in case s of 
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
@@ -30,6 +30,7 @@ executeAndExport content targetname = case runOpenscad content of
 			(_, _, x:xs)  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
 				writeSTL res (targetname ++ ".stl") x
+		
 
 		
 

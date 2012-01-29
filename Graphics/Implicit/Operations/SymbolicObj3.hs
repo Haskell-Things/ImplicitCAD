@@ -15,7 +15,7 @@ import Graphics.Implicit.SaneOperators
 instance BasicObj SymbolicObj3 ℝ3 where
 	translate = Translate3
 	scale     = Scale3
-	rotateXY  = Rotate3
+	rotateXY θ= Rotate3 (0,0, θ)
 	complement= Complement3
 	union     = UnionR3 0
 	intersect = IntersectR3 0

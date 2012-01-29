@@ -53,35 +53,49 @@ type BoxedObj3 = Boxed3 Obj3
 --   accelerate rendering & give ideal meshes for simple
 --   cases.
 data SymbolicObj2 =
+	-- Primitives
 	  Rect ℝ2 ℝ2
 	| Circle ℝ
 	| Polygon [ℝ2]
+	-- (Rounded) CSG
+	| Complement2 SymbolicObj2
 	| UnionR2 ℝ [SymbolicObj2]
 	| DifferenceR2 ℝ [SymbolicObj2]
 	| IntersectR2 ℝ [SymbolicObj2]
+	-- Simple transforms
 	| Translate2 ℝ2 SymbolicObj2
-	| Complement2 SymbolicObj2
 	| Scale2 ℝ SymbolicObj2
 	| Rotate2 ℝ SymbolicObj2
+	-- Boundary mods
 	| Outset2 ℝ SymbolicObj2
 	| Shell2 ℝ SymbolicObj2
+	-- Misc
 	| EmbedBoxedObj2 BoxedObj2
 
 -- | A symbolic 3D format!
 
 data SymbolicObj3 = 
+	-- Some simple primitives
 	  Rect3 ℝ3 ℝ3
 	| Sphere ℝ
+	-- Some (rounded) CSG
+	| Complement3 SymbolicObj3
 	| UnionR3 ℝ [SymbolicObj3]
 	| IntersectR3 ℝ [SymbolicObj3]
 	| DifferenceR3 ℝ [SymbolicObj3]
+	-- Some simple transofrms
 	| Translate3 ℝ3 SymbolicObj3
-	| Complement3 SymbolicObj3
 	| Scale3 ℝ SymbolicObj3
-	| Rotate3 ℝ SymbolicObj3
+	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
+	-- Some boundary based transforms
 	| Outset3 ℝ SymbolicObj3
 	| Shell3 ℝ SymbolicObj3
+	-- Misc
 	| EmbedBoxedObj3 BoxedObj3
+	-- 2D based
+	| ExtrudeR ℝ SymbolicObj2 ℝ
+	| ExtrudeRMod ℝ (ℝ -> ℝ2 -> ℝ2) SymbolicObj2 ℝ
+	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 
 -- | Rectiliniar 2D set
 type Rectiliniar2 = [Box2]

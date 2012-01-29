@@ -12,9 +12,7 @@ module Graphics.Implicit(
 	union,  intersect,  difference,
 	unionR, intersectR, differenceR,
 	shell,
-	slice,
-	bubble,
-	extrude,
+	--slice,
 	extrudeR,
 	extrudeOnEdgeOf,
 	-- Primitives
@@ -37,4 +35,3 @@ import Graphics.Implicit.Primitives
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Export
 import Graphics.Implicit.ExtOpenScad
-

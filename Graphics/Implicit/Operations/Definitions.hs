@@ -60,7 +60,7 @@ class BasicObj obj vec | obj -> vec where
 
 
 
-
+-- | Operations that involve an idea of how far you are outwards
 class MagnitudeObj obj where
 
 	-- | Outset an object.
@@ -102,8 +102,45 @@ inset :: MagnitudeObj obj =>
 inset d obj = outset (-d) obj
 
 
+-- | Operations that are specific to some part of a
+--   2D-3D dimensional object pair.
+class PairObj obj2 vec2 obj3 vec3 
+              | obj2 -> vec2, obj3 -> vec3, obj2 -> obj3, obj3 -> obj2 
+      where
 
+	-- | Extrude a rounded object
+	extrudeR :: 
+		ℝ       -- ^ Radius of rounding
+		-> obj2 -- ^ 2D Object to extrude
+		-> ℝ    -- ^ length to extrude it
+		-> obj3 -- ^ Resulting 3D object
 
+	-- | Extrude a rounded 2D object, modifying it over height
+	--   Comment: Technically, extrudeR = extrudeRMod id, but then we 
+	--    couldn't be clever with symbolics :) 
+	extrudeRMod :: 
+		ℝ       -- ^ Radius of rounding
+		-> (ℝ -> ℝ2 -> ℝ2) -- ^ Function to modify each layer:
+		                   -- Height transforming at,
+		                   -- Input 2D transform,
+		                   -- New point!
+		-> obj2      -- ^ 2D Object to extrude
+		-> ℝ         -- ^ length to extrude it
+		-> obj3      -- ^ Resulting 3D object
 
+	-- | Extrude one 2D object about the edge of another.
+	--   Example: 2 circles produce a torus
+	--   Comment: extrudeOnEdgeOf a b can be thought of as a 
+	--   projection of a×b.
+	extrudeOnEdgeOf ::
+		obj2     -- ^ Object to extrude
+		-> obj2  -- ^ Object to extrude along the edge of
+		-> obj3  -- ^ Resulting 3D object
 
+	-- | Like openscad rotate...
+	--   Comment: Rotations are not abelian -- watch out!
+	rotate3 ::
+		(ℝ, ℝ, ℝ)   -- ^ Rotater (YZ, XZ, XY)
+		-> obj3     -- ^ Object to rotate
+		-> obj3     -- ^ Resulting object
 
