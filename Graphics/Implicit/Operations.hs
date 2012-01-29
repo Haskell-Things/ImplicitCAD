@@ -14,12 +14,8 @@ module Graphics.Implicit.Operations (
 	outset,
 	shell,
 	extrudeR, extrudeRMod,
-	extrudeOnEdgeOf
-	--slice,
-	--bubble
-	{-extrude,
-	extrudeR,
-	extrudeOnEdgeOf-}
+	extrudeOnEdgeOf,
+	rotate3
 ) where
 
 import Prelude hiding ((+),(-),(*),(/))

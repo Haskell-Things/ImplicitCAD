@@ -27,7 +27,8 @@ module Graphics.Implicit(
 	-- Export
 	writeSVG,
 	writeSTL,
-	runOpenscad
+	runOpenscad,
+	symbolicGetMesh
 ) where
 
 import Graphics.Implicit.Definitions
@@ -35,3 +36,5 @@ import Graphics.Implicit.Primitives
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Export
 import Graphics.Implicit.ExtOpenScad
+
+import Graphics.Implicit.Export.SymbolicObj3

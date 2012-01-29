@@ -71,6 +71,7 @@ data SymbolicObj2 =
 	| Shell2 ℝ SymbolicObj2
 	-- Misc
 	| EmbedBoxedObj2 BoxedObj2
+	deriving Show
 
 -- | A symbolic 3D format!
 
@@ -96,6 +97,7 @@ data SymbolicObj3 =
 	| ExtrudeR ℝ SymbolicObj2 ℝ
 	| ExtrudeRMod ℝ (ℝ -> ℝ2 -> ℝ2) SymbolicObj2 ℝ
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
+	deriving Show
 
 -- | Rectiliniar 2D set
 type Rectiliniar2 = [Box2]
