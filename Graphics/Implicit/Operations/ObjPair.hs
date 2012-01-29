@@ -16,10 +16,10 @@ instance PairObj Obj2 ℝ2 Obj3 ℝ3 where
 
 	-- Notice that \(x,y,z) = obj2 (x,y) infinitly extrudes a obj2 in both directions.
 	-- We essentially do that but rounded intersect it to get the desired height.
-	extrudeR r obj h = \(x,y,z) -> rmax r (obj (x,y)) (abs (z + h/2.0) - h/2.0)
+	extrudeR r obj h = \(x,y,z) -> rmax r (obj (x,y)) (abs (z - h/2.0) - h/2.0)
 
 	-- As above, but (obj $ mod z (x,y)) to modify to the object over ehight :)
-	extrudeRMod r mod obj h = \(x,y,z) -> rmax r (obj $ mod z (x,y)) (abs (z + h/2.0) - h/2.0)
+	extrudeRMod r mod obj h = \(x,y,z) -> rmax r (obj $ mod z (x,y)) (abs (z - h/2.0) - h/2.0)
 
 	-- We feed the output of one object as an input to another.
 	extrudeOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z)
