@@ -122,6 +122,8 @@ computationStatement =
 		     <|> try translateStatement
 		     <|> try rotateStatement
 		     <|> try scaleStatement
+		     <|> try extrudeStatement
+		     <|> try rotateExtrudeStatement
 		     )
 		many space
 		return s
@@ -165,6 +167,17 @@ moduleWithSuite name argHandeler = (do
 	) <?> (name ++ " statement")
 
 
+getAndModUpObj2s :: (Monad m) => [ComputationStateModifier] 
+	-> (Obj2Type -> Obj3Type)
+	-> m ComputationStateModifier
+getAndModUpObj2s suite obj2mod = 
+	return $  \ ioWrappedState -> do
+		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
+		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
+		return 
+			(varlookup2,
+			 obj2s, 
+			 obj3s ++ (case obj2s2 of [] -> []; x:xs -> [obj2mod x])  )
 getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
 	-> ([Obj2Type] -> Obj2Type)
 	-> ([Obj3Type] -> Obj3Type)
@@ -219,19 +232,22 @@ translateStatement = moduleWithSuite "translate" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
 		OList ((ONum x):[]) -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
+		ONum x -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
+		_ -> noChange
 
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	case a of
-		ONum xy -> getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotateXY xy )
-		_ -> noChange
-		{-OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
-			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotateXY xy )
+		ONum xy -> getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
+		OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
+			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
 		OList ((ONum yz):(ONum xz):[]) -> 
-			getAndTransformSuiteObjs suite (id ) (id)
+			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
 		OList ((ONum yz):[]) -> 
-			getAndTransformSuiteObjs suite (id) (id)-}
+			getAndTransformSuiteObjs suite (id) (Op.rotate3 (yz, 0, 0))
+		_ -> noChange
 
 
 scaleStatement = moduleWithSuite "scale" $ \suite -> do
@@ -245,4 +261,15 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0)-}
 		ONum s ->
 			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
+
+extrudeStatement = moduleWithSuite "extrude" $ \suite -> do
+	h <- realArgument "h"
+	r <- realArgumentWithDefault "r" 0.0
+	getAndModUpObj2s suite (\obj -> Op.extrudeR r obj h) 
+
+rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
+	h <- realArgument "h"
+	r <- realArgumentWithDefault "r" 0.0
+	getAndModUpObj2s suite (\obj -> Op.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h) 
+
 
