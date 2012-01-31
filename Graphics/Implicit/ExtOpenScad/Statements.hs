@@ -123,7 +123,8 @@ computationStatement =
 		     <|> try rotateStatement
 		     <|> try scaleStatement
 		     <|> try extrudeStatement
-		     <|> try rotateExtrudeStatement
+		     <|> try shellStatement
+		     -- <|> try rotateExtrudeStatement
 		     )
 		many space
 		return s
@@ -262,14 +263,37 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 		ONum s ->
 			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
 
-extrudeStatement = moduleWithSuite "extrude" $ \suite -> do
-	h <- realArgument "h"
-	r <- realArgumentWithDefault "r" 0.0
-	getAndModUpObj2s suite (\obj -> Op.extrudeR r obj h) 
+extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
+	height <- realArgument "height"
+	center <- boolArgumentWithDefault "center" False
+	twist <- realArgumentWithDefault "twist" 0
+	r <- realArgumentWithDefault "r" 0
+	case (twist/height/360*2*pi, center) of
+		(0, False) -> getAndModUpObj2s suite (\obj -> Op.extrudeR r obj height) 
+		(0, True) -> getAndModUpObj2s suite 
+			(\obj -> Op.translate (0,0,-height/2.0) $ Op.extrudeR r obj height) 
+		(rot, False) ->
+			getAndModUpObj2s suite (\obj -> 
+				Op.extrudeRMod r 
+					(\h (x,y) -> (x*cos(rot*h)+y*sin(rot*h), y*cos(rot*h)-x*sin(rot*h)))  
+					obj height
+				) 
+		(rot, True) ->
+			getAndModUpObj2s suite (\obj -> 
+				Op.translate (0,0,-height/2.0) $ Op.extrudeRMod r 
+					(\h (x,y) -> (x*cos(rot*h)+y*sin(rot*h), y*cos(rot*h)-x*sin(rot*h)))  
+					obj height
+				)
 
-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
+{-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
 	h <- realArgument "h"
+	center <- boolArgumentWithDefault "center" False
+	twist <- realArgumentWithDefault 0.0
 	r <- realArgumentWithDefault "r" 0.0
 	getAndModUpObj2s suite (\obj -> Op.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h) 
+-}
 
+shellStatement = moduleWithSuite "shell" $ \suite -> do
+	w <- realArgumentWithDefault "w" 0.0
+	getAndTransformSuiteObjs suite (Op.shell w) (Op.shell w)
 
