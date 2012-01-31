@@ -1,6 +1,8 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+
 {- The sole purpose of this file it to pass on the
    functionality we want to be accessible to the end user. -}
 
@@ -33,13 +35,19 @@ module Graphics.Implicit(
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.Primitives as S
 import Graphics.Implicit.Operations
-import Graphics.Implicit.Export
+import qualified Graphics.Implicit.Export as Export
 import Graphics.Implicit.ExtOpenScad
 
 -- The versions of objects that should be used by default.
 -- Import Graphics.Implicit.Primitives to override
 type DObj3 = SymbolicObj3
 type DObj2 = SymbolicObj2
+
+writeSTL :: ℝ -> String -> DObj3 -> IO()
+writeSTL = Export.writeSTL
+writeSVG :: ℝ -> String -> DObj2 -> IO()
+writeSVG = Export.writeSVG
+
 
 sphere ::
 	ℝ           -- ^ Radius of the sphere
