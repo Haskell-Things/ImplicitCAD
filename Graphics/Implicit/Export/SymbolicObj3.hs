@@ -74,6 +74,32 @@ symbolicGetMesh res  (ExtrudeR 0.0 obj2 h) =
 		top_tris = [((a1,a2,h),(b1,b2,h),(c1,c2,h)) | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
 	in side_tris ++ bottom_tris ++ top_tris
 
+symbolicGetMesh res  (ExtrudeRMod 0.0 mod obj2 h) = 
+	let
+		n = fromIntegral $ ceiling $ h/res
+		segify (a:b:xs) = (a,b):(segify $ b:xs)
+		segify _ = []
+		segToSide l a b =
+			let
+				l2 = l + h/n
+				(x1,y1) = mod l  a
+				(x2,y2) = mod l  b
+				(x3,y3) = mod l2 a
+				(x4,y4) = mod l2 b
+			in 
+				[((x1,y1,l), (x2,y2,l), (x4,y4,l2)), ((x1,y1,l), (x4,y4,l2), (x3,y3,l2)) ]
+		segs = concat $ map segify $ symbolicGetContour res obj2
+		side_tris = concat $  
+			[concat $ map (\(a,b) -> segToSide l a b) segs | l <- [0, h/n .. h-h/n] ]
+		fill_tris = symbolicGetContourMesh res obj2
+		bottom_tris = [((a1,a2,0),(b1,b2,0),(c1,c2,0)) 
+		              | ((a1,a2),(b1,b2),(c1,c2)) <- 
+		                        map (\(a,b,c) -> (mod 0 a, mod 0 b, mod 0 c) ) fill_tris]
+		top_tris = [((a1,a2,h),(b1,b2,h),(c1,c2,h))
+		              | ((a1,a2),(b1,b2),(c1,c2)) <- 
+		                        map (\(a,b,c) -> (mod h a, mod h b, mod h c) ) fill_tris]
+	in side_tris ++ bottom_tris ++ top_tris
+
 symbolicGetMesh res  (ExtrudeR r obj2 h) = 
 	let
 		d = fromIntegral $ ceiling $ r
