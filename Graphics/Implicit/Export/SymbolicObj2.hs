@@ -13,26 +13,15 @@ import Graphics.Implicit.Export.MarchingSquaresFill
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Primitives
 
+import Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
+import Graphics.Implicit.Export.Symbolic.CoerceSymbolic3
+import Graphics.Implicit.Export.Symbolic.Rebound2
+import Graphics.Implicit.Export.Symbolic.Rebound3
+
 import qualified Graphics.Implicit.SaneOperators as S
 
 instance DiscreteAproxable SymbolicObj2 [Polyline] where
 	discreteAprox res obj = symbolicGetContour res obj
-
-
-coerceSymbolic2 :: SymbolicObj2 -> BoxedObj2
-coerceSymbolic2 (EmbedBoxedObj2 boxedObj) = boxedObj
-coerceSymbolic2 (Rect (x1,y1) (x2,y2)) = translate (x1,y1) $ (squareV (x2-x1, y2-y1))
-coerceSymbolic2 (Circle r ) = circle r
-coerceSymbolic2 (Polygon points) = polygon points
-coerceSymbolic2 (UnionR2 r objs) = unionR r (map coerceSymbolic2 objs)
-coerceSymbolic2 (IntersectR2 r objs) = intersectR r (map coerceSymbolic2 objs)
-coerceSymbolic2 (DifferenceR2 r objs) = differenceR r (map coerceSymbolic2 objs)
-coerceSymbolic2 (Complement2 obj) = complement $ coerceSymbolic2 obj
-coerceSymbolic2 (Shell2 w obj) = shell w $ coerceSymbolic2 obj
-coerceSymbolic2 (Translate2 v obj) = translate v $ coerceSymbolic2 obj
-coerceSymbolic2 (Scale2 s obj) = scale s $ coerceSymbolic2 obj
-coerceSymbolic2 (Rotate2 a obj) = rotateXY a $ coerceSymbolic2 obj
-coerceSymbolic2 (Outset2 d obj) = outset 2 $ coerceSymbolic2 obj
 
 
 symbolicGetContour :: ℝ ->  SymbolicObj2 -> [Polyline]
@@ -41,15 +30,15 @@ symbolicGetContour res (Circle r) = [[ ( r*cos(2*pi*m/n), r*sin(2*pi*m/n) ) | m 
 	n = max 5 (fromIntegral $ ceiling $ 2*pi*r/res)
 symbolicGetContour res (Translate2 v obj) = map (map (S.+ v) ) $ symbolicGetContour res obj
 symbolicGetContour res (Scale2 s obj) = map (map (S.* s)) $ symbolicGetContour res obj
-symbolicGetContour res obj = (\(obj,(a,b)) ->  
-	let
-		d :: ℝ2
-		d = (b S.- a) S./ (10.0 :: ℝ)
-	in 
-		getContour (a S.- d) (b S.+ d) (res,res) obj
-	) (coerceSymbolic2 obj)
+symbolicGetContour res obj = case rebound2 (coerceSymbolic2 obj) of
+	(obj, (a,b)) -> getContour a b (res,res) obj
+
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [(ℝ2,ℝ2,ℝ2)]
+symbolicGetContourMesh res (Translate2 v obj) = map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) )  $
+	symbolicGetContourMesh res obj
+symbolicGetContourMesh res (Scale2 s obj) = map (\(a,b,c) -> (a S.* s, b S.* s, c S.* s) )  $
+	symbolicGetContourMesh res obj
 symbolicGetContourMesh _ (Rect (x1,y1) (x2,y2)) = [((x1,y1), (x2,y1), (x2,y2)), ((x2,y2), (x1,y2), (x1,y1)) ]
 symbolicGetContourMesh res (Circle r) = 
 	[ ((0,0),
@@ -58,11 +47,7 @@ symbolicGetContourMesh res (Circle r) =
 	  )| m <- [0.. n-1] ] 
 	where
 		n = max 5 (fromIntegral $ ceiling $ 2*pi*r/res)
-symbolicGetContourMesh res obj = (\(obj,(a,b)) ->  
-	let
-		d :: ℝ2
-		d = (b S.- a) S./ (10.0 :: ℝ)
-	in 
-		getContourMesh (a S.- d) (b S.+ d) (res,res) obj
-	) (coerceSymbolic2 obj)
+symbolicGetContourMesh res obj = case rebound2 (coerceSymbolic2 obj) of
+	(obj, (a,b)) -> getContourMesh a b (res,res) obj
+
 
