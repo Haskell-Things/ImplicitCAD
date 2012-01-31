@@ -8,11 +8,16 @@ import Graphics.Implicit.Definitions
 
 svg polylines = text
 	where
+		-- SVG is stupidly laid out... (0,0) is the top right corner
+		(xs, ys) = unzip (concat polylines)
+		(minx, maxy) = (minimum xs, maximum ys)
+		transform (x,y) = (x-minx, maxy - y)
+		polylines2 = map (map transform) polylines
 		svglines = concat $ map (\line -> 
 				"  <polyline points=\"" 
 				++ concat (map (\(x,y) -> " " ++ show x ++ "," ++ show y) line)
 				++ "\" style=\"stroke:rgb(0,0,255);stroke-width:1;fill:none;\"/> \n" ) 
-				polylines	
+				polylines2	
 		text = "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\"> \n" 
 			++ svglines		
 			++ "</svg> "
