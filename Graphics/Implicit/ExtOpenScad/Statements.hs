@@ -127,6 +127,7 @@ computationStatement =
 		     -- <|> try rotateExtrudeStatement
 		     )
 		many space
+		many (many space >> comment >> many space)
 		return s
 	<|> do
 		many space
@@ -142,6 +143,7 @@ computationStatement =
 		many space
 		char ';'
 		many space
+		many (many space >> comment >> many space)
 		return s
 
 
