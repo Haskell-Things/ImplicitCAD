@@ -8,7 +8,7 @@ module Graphics.Implicit.ExtOpenScad.Expressions where
 import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
-import Data.Map hiding (map,foldl)
+import Data.Map (Map, lookup)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)

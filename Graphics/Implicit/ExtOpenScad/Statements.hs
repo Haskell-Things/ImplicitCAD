@@ -1,4 +1,4 @@
-{-# LANGUAGE DoAndIfThenElse #-}
+
 
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
@@ -14,7 +14,7 @@ import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
 import Graphics.Implicit.ExtOpenScad.Primitives
 import qualified Graphics.Implicit.Operations as Op
-import Data.Map hiding (map,foldl)
+import Data.Map (Map, lookup, insert)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
@@ -78,10 +78,10 @@ ifStatement = (do
 	return $  \ ioWrappedState -> do
 		state@(varlookup, _, _) <- ioWrappedState
 		if case bexpr varlookup of  
-			OBool b -> b
-			_ -> False
-		then runComputations (return state) statementsTrueCase
-		else runComputations (return state) statementsFalseCase
+				OBool b -> b
+				_ -> False
+			then runComputations (return state) statementsTrueCase
+			else runComputations (return state) statementsFalseCase
 	) <?> "if statement"
 
 forStatement = (do
