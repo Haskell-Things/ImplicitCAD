@@ -12,7 +12,7 @@ import Graphics.Implicit.ExtOpenScad.Default
 import Graphics.Implicit.ExtOpenScad.Statements
 
 import Prelude hiding (lookup)
-import Data.Map hiding (map,foldl)
+import Data.Map (Map, fromList, lookup)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)

@@ -11,7 +11,7 @@ import qualified Graphics.Implicit.Primitives as Prim
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
-import Data.Map hiding (map,foldl,split,filter,null)
+import Data.Map (Map, lookup)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)

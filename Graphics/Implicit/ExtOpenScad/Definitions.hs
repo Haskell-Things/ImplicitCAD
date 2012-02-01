@@ -6,7 +6,7 @@
 module Graphics.Implicit.ExtOpenScad.Definitions where
 
 import Graphics.Implicit.Definitions
-import Data.Map hiding (map,foldl)
+import Data.Map (Map)
 
 -- Lets make it easy to change the object types we're using :)
 

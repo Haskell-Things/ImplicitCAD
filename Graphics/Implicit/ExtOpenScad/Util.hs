@@ -4,7 +4,7 @@ import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
-import Data.Map hiding (map,foldl,split,filter,null)
+import Data.Map (Map, lookup)
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
