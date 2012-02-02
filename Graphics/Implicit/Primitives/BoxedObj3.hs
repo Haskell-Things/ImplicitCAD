@@ -12,9 +12,7 @@ import Graphics.Implicit.Primitives.Obj3
 
 instance PrimitiveSupporter3 (Boxed3 Obj3) where
 	sphere r = (sphere r, ((-r, -r, -r), (r,r,r)) )
-	cubeV (dx, dy, dz) = (cubeV (dx, dy, dz), ( (0,0,0), (dx, dy, dz) ) )
+	rect3R r a b = (rect3R r a b, ( a, b) )
 	cylinder2 r1 r2 h = (cylinder2 r1 r2 h, ( (-r,-r,0), (r,r,h) ) ) where r = max r1 r2
-	torus r_main r_second = (torus r_main r_second, ((-r, -r, -r_second), (r, r, r_second)))
-		where r = r_main + r_second
 
 

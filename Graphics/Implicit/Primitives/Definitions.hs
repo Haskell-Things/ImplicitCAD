@@ -14,18 +14,16 @@ class PrimitiveSupporter3 obj where
 	sphere ::
 		ℝ         -- ^ Radius of the sphere
 		-> obj    -- ^ Resulting sphere
-	cubeV ::
-		ℝ3        -- ^ Dimensions of the cube
-		 -> obj   -- ^ Resuting cube - (0,0,0) is bottom left...
+	rect3R ::
+		ℝ        -- ^ Rounding of corners
+		-> ℝ3    -- ^ Bottom// corner
+		-> ℝ3    -- ^ Top right... corner
+		-> obj   -- ^ Resuting cube - (0,0,0) is bottom left...
 	cylinder2 ::
 		ℝ         -- ^ Radius of the cylinder	
 		-> ℝ      -- ^ Second radius of the cylinder
 		-> ℝ      -- ^ Height of the cylinder
 		-> obj    -- ^ Resulting cylinder
-	torus ::
-		ℝ         -- ^ radius of the rotated circle of a torus
-		-> ℝ      -- ^ radius of the circle rotationaly extruded on of a torus
-		-> obj    -- ^ resulting torus
 
 
 class PrimitiveSupporter2 obj where
@@ -33,11 +31,14 @@ class PrimitiveSupporter2 obj where
 	circle ::
 		ℝ        -- ^ radius of the circle
 		-> obj   -- ^ resulting circle
-	squareV ::
-		ℝ2        -- ^ (x width, y width)
+	rectR ::
+		ℝ
+		-> ℝ2     -- ^ Bottom left corner
+		-> ℝ2     -- ^ Top right corner
 		-> obj    -- ^ Resulting square (bottom right = (0,0) )
-	polygon ::
-		[ℝ2]      -- ^ Verticies of the polygon
+	polygonR ::
+		ℝ         -- ^ Rouding of the polygon
+		-> [ℝ2]   -- ^ Verticies of the polygon
 		 -> obj   -- ^ Resulting polygon
 
 

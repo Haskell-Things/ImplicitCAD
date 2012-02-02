@@ -38,7 +38,7 @@ symbolicGetMesh res (Scale3 s obj) =
 		scaleTriangle (a,b,c) = (s S.* a, s S.* b, s S.* c)
 	in map scaleTriangle  mesh
 
-symbolicGetMesh _ (Rect3 (x1,y1,z1) (x2,y2,z2)) = 
+symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = 
 	let
 		square a b c d = [(a,b,c),(d,a,c)]
 	in

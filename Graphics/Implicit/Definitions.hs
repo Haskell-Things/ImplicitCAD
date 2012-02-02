@@ -54,9 +54,9 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
 	-- Primitives
-	  Rect ℝ2 ℝ2
+	  RectR ℝ ℝ2 ℝ2
 	| Circle ℝ
-	| Polygon [ℝ2]
+	| PolygonR ℝ [ℝ2]
 	-- (Rounded) CSG
 	| Complement2 SymbolicObj2
 	| UnionR2 ℝ [SymbolicObj2]
@@ -77,7 +77,7 @@ data SymbolicObj2 =
 
 data SymbolicObj3 = 
 	-- Some simple primitives
-	  Rect3 ℝ3 ℝ3
+	  Rect3R ℝ ℝ3 ℝ3
 	| Sphere ℝ
 	-- Some (rounded) CSG
 	| Complement3 SymbolicObj3
@@ -95,6 +95,7 @@ data SymbolicObj3 =
 	| EmbedBoxedObj3 BoxedObj3
 	-- 2D based
 	| ExtrudeR ℝ SymbolicObj2 ℝ
+	| ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
 	| ExtrudeRMod ℝ (ℝ -> ℝ2 -> ℝ2) SymbolicObj2 ℝ
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show

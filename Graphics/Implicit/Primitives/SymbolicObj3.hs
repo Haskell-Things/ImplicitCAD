@@ -12,8 +12,7 @@ import Graphics.Implicit.Primitives.BoxedObj3
 
 instance PrimitiveSupporter3 SymbolicObj3 where
 	sphere r = Sphere r
-	cubeV (dx, dy, dz) = Rect3 (0,0,0) (dx, dy, dz)
+	rect3R = Rect3R
 	cylinder2 r1 r2 h = EmbedBoxedObj3 $ cylinder2 r1 r2 h
-	torus r_main r_second = EmbedBoxedObj3 $ torus r_main r_second
 
 

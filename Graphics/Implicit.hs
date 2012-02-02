@@ -19,10 +19,10 @@ module Graphics.Implicit(
 	extrudeOnEdgeOf,
 	-- Primitives
 	sphere,
-	cube,
+	rect3R,
 	circle,
 	cylinder,
-	square,
+	rectR,
 	--regularPolygon,
 	--zsurface,
 	polygon,
@@ -53,52 +53,37 @@ sphere ::
 	ℝ           -- ^ Radius of the sphere
 	-> DObj3    -- ^ Resulting sphere
 sphere = S.sphere
-cubeV ::
-	ℝ3          -- ^ Dimensions of the cube
-	 -> DObj3   -- ^ Resuting cube - (0,0,0) is bottom left...
-cubeV = S.cubeV
+rect3R ::
+	ℝ           -- ^ Radius of roudning
+	-> ℝ3       -- ^ bot-left-out corner
+	-> ℝ3       -- ^ top-right-in corner
+	 -> DObj3   -- ^ Resuting 3D rect
+rect3R = S.rect3R
+
 cylinder2 ::
 	ℝ           -- ^ Radius of the cylinder	
 	-> ℝ        -- ^ Second radius of the cylinder
 	-> ℝ        -- ^ Height of the cylinder
 	-> DObj3    -- ^ Resulting cylinder
 cylinder2 = S.cylinder2
-torus ::
-	ℝ           -- ^ radius of the rotated circle of a torus
-	-> ℝ        -- ^ radius of the circle rotationaly extruded on of a torus
-	-> DObj3    -- ^ resulting torus
-torus = S.torus
-
 
 circle ::
 	ℝ          -- ^ radius of the circle
 	-> DObj2   -- ^ resulting circle
 circle = S.circle
-squareV ::
-	ℝ2         -- ^ (x width, y width)
-	-> DObj2   -- ^ Resulting square (bottom right = (0,0) )
-squareV = S.squareV
+
+rectR ::
+	ℝ          -- ^ Radius of rounding
+	-> ℝ2      -- ^ (x1, y1)
+	-> ℝ2      -- ^ (x2 ,y2)
+	-> DObj2   -- ^ rect between (x1,y1) and (x2,y2)
+rectR = S.rectR
+
 polygon ::
 	[ℝ2]      -- ^ Verticies of the polygon
 	 -> DObj2   -- ^ Resulting polygon
-polygon = S.polygon
+polygon = S.polygonR 0
 
-
-
-cube :: 
-	ℝ          -- ^ Width of the cube
-	 -> DObj3    -- ^ Resuting cube - (0,0,0) is bottom left...
-cube l = cubeV (l,l,l)
-
-cubeC :: 
-	ℝ          -- ^ Width of the cube
-	 -> DObj3   -- ^ Resuting centered cube
-cubeC l = translate (-l/2.0, -l/2.0, -l/2.0) $ cube l
-
-cubeVC ::
-	ℝ3         -- ^ Dimensions of the cube
-	 -> DObj3    -- ^ Resuting cube - (0,0,0) is bottom left...
-cubeVC (dx, dy, dz) = translate (-dx/2.0, -dy/2.0, -dz/2.0) $ cubeV (dx, dy, dz)
 
 
 cylinder ::
@@ -136,21 +121,4 @@ cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 --ellipse a b
 --    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
 --    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
-
-square :: 
-	ℝ        -- ^ Width of the square
-	-> DObj2   -- ^ Resulting square (bottom corner = (0,0) )
-square l = squareV (l,l)
-
-squareC :: 
-	ℝ        -- ^ Width of the square
-	-> DObj2   -- ^ Resulting square (centered on (0,0))
-squareC l = squareVC (l,l)
-
-
-squareVC ::
-	ℝ2        -- ^ Width of the square
-	-> DObj2    -- ^ Resulting square
-squareVC (dx,dy) = translate (-dx/2.0, -dy/2.0) $ squareV (dx,dy)
-
 

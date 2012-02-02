@@ -6,6 +6,7 @@
 module Graphics.Implicit.Primitives.Obj2 where
 
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.MathUtil
 import Graphics.Implicit.Primitives.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 
@@ -14,9 +15,10 @@ instance PrimitiveSupporter2 Obj2 where
 
 	circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
-	squareV (dx,dy) = \(x,y) -> (maximum [abs (x- dx/2.0) -dx/2.0, abs (y- dy/2.0) - dy/2.0])
-
-	polygon points =
+	rectR r (x1,y1) (x2,y2) = 
+		\(x,y) -> rmaximum  r [abs (x- dx/2.0 -x1) -dx/2.0, abs (y- dy/2.0 -y1) - dy/2.0]
+			where (dx,dy) = (x2-x1,y2-y1)
+	polygonR 0 points =
 		let
 			pairs =
 			   [ (points !! n, points !! (mod (n+1) (length points) ) ) | n <- [0 .. (length points) - 1] ]

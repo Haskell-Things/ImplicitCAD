@@ -16,7 +16,7 @@ import Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
 
 coerceSymbolic3 :: SymbolicObj3 -> BoxedObj3
 coerceSymbolic3 (EmbedBoxedObj3 boxedObj) = boxedObj
-coerceSymbolic3 (Rect3 (x1,y1,z1) (x2,y2,z2)) = translate (x1,y1,z1) $ (cubeV (x2-x1, y2-y1, z2-z1))
+coerceSymbolic3 (Rect3R r a b) = rect3R r a b
 coerceSymbolic3 (Sphere r ) = sphere r
 coerceSymbolic3 (UnionR3 r objs) = unionR r (map coerceSymbolic3 objs)
 coerceSymbolic3 (IntersectR3 r objs) = intersectR r (map coerceSymbolic3 objs)

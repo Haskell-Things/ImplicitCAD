@@ -13,9 +13,9 @@ import Graphics.Implicit.Primitives
 
 coerceSymbolic2 :: SymbolicObj2 -> BoxedObj2
 coerceSymbolic2 (EmbedBoxedObj2 boxedObj) = boxedObj
-coerceSymbolic2 (Rect (x1,y1) (x2,y2)) = translate (x1,y1) $ (squareV (x2-x1, y2-y1))
+coerceSymbolic2 (RectR r a b) = rectR r a b
 coerceSymbolic2 (Circle r ) = circle r
-coerceSymbolic2 (Polygon points) = polygon points
+coerceSymbolic2 (PolygonR r points) = polygonR r points
 coerceSymbolic2 (UnionR2 r objs) = unionR r (map coerceSymbolic2 objs)
 coerceSymbolic2 (IntersectR2 r objs) = intersectR r (map coerceSymbolic2 objs)
 coerceSymbolic2 (DifferenceR2 r objs) = differenceR r (map coerceSymbolic2 objs)

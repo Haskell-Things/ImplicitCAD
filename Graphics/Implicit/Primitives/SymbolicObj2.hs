@@ -11,7 +11,7 @@ import Graphics.Implicit.Primitives.Definitions
 
 
 instance PrimitiveSupporter2 SymbolicObj2 where
-	circle r = Circle r
-	squareV (dx, dy) = Rect (0,0) (dx, dy) 
-	polygon = Polygon
+	circle   = Circle
+	rectR    = RectR
+	polygonR = PolygonR
 

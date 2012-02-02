@@ -13,8 +13,8 @@ import Graphics.Implicit.Primitives.Obj2
 
 instance PrimitiveSupporter2 (Boxed2 Obj2) where
 	circle r = (circle r, ((-r, -r), (r,r)) )
-	squareV (dx, dy) = (squareV (dx, dy), ( (0,0), (dx, dy) ) )
-	polygon points = (polygon points, ((minimum xs, minimum ys), (maximum xs, maximum ys)) ) where
+	rectR r a b = (rectR r a b, ( a,b ) )
+	polygonR r points = (polygonR r points, ((minimum xs, minimum ys), (maximum xs, maximum ys)) ) where
 		(xs, ys) = unzip points
 
 

@@ -23,15 +23,16 @@ sphere = moduleWithoutSuite "sphere" $ do
 cube = moduleWithoutSuite "cube" $ do
 	size <- argument "size";
 	center <- boolArgumentWithDefault "center" False;
+	r  <- realArgumentWithDefault "r" 0;
 	case size of
 		OList ((ONum x):(ONum y):(ONum z):[]) -> 
 			if center  
-			then addObj3 $ Prim.cubeVC (x, y, z)
-			else addObj3 $ Prim.cubeV (x, y, z)
+			then addObj3 $ Prim.rect3R r (-x/2, -y/2, -z/2) (x/2, y/2, z/2)
+			else addObj3 $ Prim.rect3R r (0,0,0) (x,y,z)
 		ONum w -> 
 			if center
-			then addObj3 $ Prim.cubeC w
-			else addObj3 $ Prim.cube w
+			then addObj3 $ Prim.rect3R r (-w/2,-w/2,-w/2) (w/2,w/2,w/2)
+			else addObj3 $ Prim.rect3R r (0,0,0) (w,w,w)
 		_ -> noChange;
 
 -- What about $fn for regular n-gon prisms? This will break models..
@@ -55,21 +56,22 @@ circle = moduleWithoutSuite "circle" $ do
 	fn <- intArgumentWithDefault "$fn" (-1);
 	if fn < 3
 		then addObj2 $ Prim.circle r
-		else addObj2 $ Prim.polygon [(r*cos θ, r*sin θ )| θ <- [2*pi*n/fromIntegral fn | n <- [0.0 .. fromIntegral fn - 1.0]]]
+		else addObj2 $ Prim.polygonR 0 [(r*cos θ, r*sin θ )| θ <- [2*pi*n/fromIntegral fn | n <- [0.0 .. fromIntegral fn - 1.0]]]
 		--else addObj2 $ Prim.regularPolygon fn r
 
 square = moduleWithoutSuite "square" $ do
 	size <- argument "size";
 	center <- boolArgumentWithDefault "center" False;
+	r  <- realArgumentWithDefault "r" 0;
 	case size of
 		OList ((ONum x):(ONum y):[]) -> 
 			if center  
-			then addObj2 $ Prim.squareVC (x, y)
-			else addObj2 $ Prim.squareV (x, y)
+			then addObj2 $ Prim.rectR r (-x/2, -y/2) (x/2, y/2)
+			else addObj2 $ Prim.rectR r (0,0) (x, y)
 		ONum w -> 
 			if center
-			then addObj2 $ Prim.squareC w
-			else addObj2 $ Prim.square w
+			then addObj2 $ Prim.rectR r (-w/2, -w/2) (w/2, w/2)
+			else addObj2 $ Prim.rectR r (0,0) (w,w)
 		_ -> noChange;
 
 
@@ -95,7 +97,7 @@ polygon = moduleWithoutSuite "polygon" $ do
 
 		in case (points, pathes) of
 			(OList pointList, OUndefined) -> case extractTupleList pointList of
-				Just tupleList -> addObj2 $ Prim.polygon tupleList
+				Just tupleList -> addObj2 $ Prim.polygonR 0 tupleList
 				Nothing -> noChange
 			{-(OList pointList, OList pathList) -> 
 				case (extractTupleList pointList, extractNumList pathList) of

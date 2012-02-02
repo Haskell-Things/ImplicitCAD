@@ -5,13 +5,11 @@
 
 module Graphics.Implicit.Primitives (
 	sphere,
-	cube, cubeC, cubeV, cubeVC,
 	circle,
 	cylinder, cylinderC, cylinder2, cylinder2C,
-	square, squareC, squareV, squareVC,
-	torus,
+	rect3R, rectR,
 	regularPolygon,
-	polygon,
+	polygonR,
 	zsurface
 ) where
 
@@ -28,23 +26,6 @@ import Graphics.Implicit.Primitives.SymbolicObj3
 
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
-
-
-cube :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
-	ℝ          -- ^ Width of the cube
-	 -> obj    -- ^ Resuting cube - (0,0,0) is bottom left...
-cube l = cubeV (l,l,l)
-
-cubeC :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
-	ℝ          -- ^ Width of the cube
-	 -> obj    -- ^ Resuting centered cube
-cubeC l = translate (-l/2.0, -l/2.0, -l/2.0) $ cube l
-
-cubeVC :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
-	ℝ3         -- ^ Dimensions of the cube
-	 -> obj    -- ^ Resuting cube - (0,0,0) is bottom left...
-cubeVC (dx, dy, dz) = translate (-dx/2.0, -dy/2.0, -dz/2.0) $ cubeV (dx, dy, dz)
-
 
 cylinder :: (PrimitiveSupporter3 obj, BasicObj obj ℝ3) =>
 	ℝ         -- ^ Radius of the cylinder	
@@ -81,27 +62,6 @@ cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 --ellipse a b
 --    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
 --    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
-
-square :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
-	ℝ        -- ^ Width of the square
-	-> obj   -- ^ Resulting square (bottom corner = (0,0) )
-square l = squareV (l,l)
-
-squareC :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
-	ℝ        -- ^ Width of the square
-	-> obj   -- ^ Resulting square (centered on (0,0))
-squareC l = squareVC (l,l)
-
-
-squareVC :: (PrimitiveSupporter2 obj, BasicObj obj ℝ2) =>
-	ℝ2        -- ^ Width of the square
-	-> obj    -- ^ Resulting square
-squareVC (dx,dy) = translate (-dx/2.0, -dy/2.0) $ squareV (dx,dy)
-
-
-
-
-
 
 
 regularPolygon ::
