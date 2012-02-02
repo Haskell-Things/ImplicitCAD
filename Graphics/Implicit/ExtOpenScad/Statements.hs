@@ -21,14 +21,52 @@ import Control.Monad (liftM)
 
 
 comment = 
-	(try $ do
+	(((try $ do
 		string "//"
 		many ( noneOf "\n")
 		string "\n"
 	) <|> (do
 		string "/*"
 		manyTill anyChar (try $ string "*/")
-	)
+	)) >> return id) <?> "comment"
+
+includeStatement :: GenParser Char st ComputationStateModifier
+includeStatement = (do
+	string "include"
+	many space
+	string "<"
+	filename <- many (noneOf "<>")
+	string ">"
+	return $ \ ioWrappedState -> do
+		state@(varlookup,obj2s,obj3s) <- ioWrappedState;
+		content <- readFile filename
+		case parse (many1 computationStatement) ""  content of
+			Left  err ->  do
+				putStrLn $ "Error parsing included file " ++ filename
+				putStrLn $ show err
+				putStrLn $ "Ignoring included file " ++ filename ++ "..."
+				return state
+			Right result -> runComputations (return state) result
+	) <?> "include statement"
+
+useStatement :: GenParser Char st ComputationStateModifier
+useStatement = (do
+	string "use"
+	many space
+	string "<"
+	filename <- many (noneOf "<>")
+	string ">"
+	return $ \ ioWrappedState -> do
+		state@(varlookup,obj2s,obj3s) <- ioWrappedState;
+		content <- readFile filename
+		case parse (many1 computationStatement) ""  content of
+			Left  err ->  do
+				putStrLn $ "Error parsing used file " ++ filename
+				putStrLn $ show err
+				putStrLn $ "Ignoring used file " ++ filename ++ "..."
+				return state
+			Right result -> runComputations (return (varlookup,[],[])) result
+	) <?> "use statement"
 
 
 assigmentStatement = (do
@@ -111,9 +149,8 @@ forStatement = (do
 
 computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = 
-	do
+	(try $ do
 		many space
-		many (many space >> comment >> many space)
 		s <- (try ifStatement 
 		     <|> try forStatement 
 		     <|> try unionStatement
@@ -127,13 +164,13 @@ computationStatement =
 		     -- <|> try rotateExtrudeStatement
 		     )
 		many space
-		many (many space >> comment >> many space)
 		return s
-	<|> do
+	) <|> (try $ do
 		many space
-		many (many space >> comment >> many space)
 		s <- (  try echoStatement 
 		    <|> try assigmentStatement 
+		    <|> try includeStatement
+		    <|> try useStatement
 		    <|> try sphere 
 		    <|> try cube
 		    <|> try square
@@ -144,8 +181,8 @@ computationStatement =
 		many space
 		char ';'
 		many space
-		many (many space >> comment >> many space)
 		return s
+	)<|> (many space >> comment)
 
 
 runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
