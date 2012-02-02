@@ -136,6 +136,7 @@ computationStatement =
 		    <|> try assigmentStatement 
 		    <|> try sphere 
 		    <|> try cube
+		    <|> try square
 		    <|> try cylinder
 		    <|> try circle
 		    <|> try polygon
