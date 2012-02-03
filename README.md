@@ -51,6 +51,91 @@ union(r=14) {
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
 
+Like openscad, ImplicitCAD supports extruding objects.
+
+```c
+linear_extrude (height = 40, center=true){  
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
+
+```
+
+And we allow you to twist them as you extrude.
+
+![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeObj.png)
+
+```c
+linear_extrude (height = 40, center=true, twist=90){
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
+
+```
+
+![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistObj.png)
+
+In fact, we've extended this to allow you to twist at non-constant rates and even reverse directions. You just make `twist` a function! (We're following the openscad convention of using degrees...)
+
+```c
+linear_extrude (height = 40, center=true, twist(h) = 35*cos(h*2*pi/60)) {
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
+```
+
+![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeVarTwistObj.png)
+
+We also allow you to do rounded extrusions. See, we heard you like rounding, so we set this up so you can rounded extrude your rounded union...
+
+```c
+linear_extrude (height = 40, center=true, r=5){
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
+
+```
+
+![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundObj.png)
+
+This is fully compatible with twisting, of course!
+
+```c
+linear_extrude (height = 40, center=true, twist=90, r=5){
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
+
+```
+
+![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistRoundObj.png)
+
+
 ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
 
 ```c
@@ -90,7 +175,7 @@ echo(map(cos, [0, pi/2, pi]));
 Haskell Examples
 -----------------
 
-A simple 2D example, the same as our first ExtOpenSCAD one:
+Everything you saw above can be done with the Haskell API. For example, a simple 2D example, the same as our first ExtOpenSCAD one:
 
 ```haskell
 import Graphics.Implicit
@@ -99,7 +184,7 @@ out = union [
 	square 80,
 	translate (40,40) (circle 30) ]
 
-main = writeSVG (-100,-100) (100,100) 2 "test.svg" out
+main = writeSVG 2 "test.svg" out
 ``` 
 
 ![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
@@ -114,7 +199,7 @@ out = unionR 14 [
 	square 80,
 	translate (40,40) (circle 30) ]
 
-main = writeSVG (-100,-100) (100,100) 2 "test.svg" out
+main = writeSVG 2 "test.svg" out
 ``` 
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
@@ -128,7 +213,7 @@ out = union [
 	cube 40,
 	translate (20,20,20) (sphere 15) ]
 
-main = writeSTL (-50,-50,-50) (50,50,50) 1 "test.stl" out 
+main = writeSTL 1 "test.stl" out 
 ```
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
@@ -138,7 +223,20 @@ You can do a whole lot more!
 Try ImplicitCAD!
 ----------------
 
-Install latest stable release:
+Install development branch (*recommended*):
+
+ 1. Install GHC and cabal (see above)
+ 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+ 3. cd in: `cd ImplicitCAD/`
+ 4. cabal install it: `cabal install`
+ 5. Start ghci: `ghci`
+ 6. Load ImplicitCAD: `import Graphics.Implicit`
+ 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+
+
+(*Development branch only:* If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
+
+Install latest stable release (*out of date, examples in README may not work*):
 
  1. Install GHC and cabal.
      * Debain/Ubuntu: `apt-get install ghc cabal-install`
@@ -152,19 +250,6 @@ Install latest stable release:
  4. Load ImplicitCAD: `import Graphics.Implicit`
  5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
-Install development branch:
-
- 1. Install GHC and cabal (see above)
- 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
- 3. cd in: `cd ImplicitCAD/`
- 4. cabal install it: `cabal install`
- 5. Start ghci: `ghci`
- 6. Load ImplicitCAD: `import Graphics.Implicit`
- 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
-
-
-(*Development branch only:* If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
-
 Documentation
 -------------
 
@@ -172,7 +257,7 @@ Documentation can be generated from the source code of ImplicitCAD by Haddock by
 
 Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.0/doc/html/Graphics-Implicit.html).
 
-A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/).
+A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post.
 
 Status
 ------
