@@ -3,6 +3,10 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
+-- This file symbolicaly renders contours and contour fillings.
+-- If it can't, it passes the puck to a marching-squares-like
+-- algorithm...
+
 module Graphics.Implicit.Export.SymbolicObj2 where
 
 import Graphics.Implicit.Definitions

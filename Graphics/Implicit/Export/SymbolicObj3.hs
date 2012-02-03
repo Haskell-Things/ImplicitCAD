@@ -3,6 +3,9 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
+-- The purpose of this function is to symbolicaly compute triangle meshes where possible.
+-- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
+
 -- We just want to export the instance...
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
@@ -30,7 +33,11 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
-symbolicGetMesh res (Translate3 v obj) = map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) $ symbolicGetMesh res obj
+-- A translated objects mesh is its mesh translated.
+symbolicGetMesh res (Translate3 v obj) = 
+	map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) symbolicGetMesh res obj
+
+-- A scaled objects mesh is its mesh scaled
 symbolicGetMesh res (Scale3 s obj) =
 	let
 		mesh :: [(ℝ3, ℝ3, ℝ3)]
@@ -39,6 +46,7 @@ symbolicGetMesh res (Scale3 s obj) =
 		scaleTriangle (a,b,c) = (s S.* a, s S.* b, s S.* c)
 	in map scaleTriangle  mesh
 
+-- A couple triangles make a cube...
 symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = 
 	let
 		square a b c d = [(a,b,c),(d,a,c)]
@@ -50,6 +58,7 @@ symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) =
 		++ square (x1,y1,z1) (x1,y1,z2) (x1,y2,z2) (x1,y2,z1)
 		++ square (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
 
+-- Use spherical coordiantes to create an easy tesselation of a sphere
 symbolicGetMesh res (Sphere r) = 
 	let
 		square a b c d = [(a,b,c),(d,a,c)]
@@ -62,6 +71,12 @@ symbolicGetMesh res (Sphere r) =
 		 (r*cos(2*pi*m1/n),     r*sin(2*pi*m1/n)*cos(pi*(m2+1)/n), r*sin(2*pi*m1/n)*sin(pi*(m2+1)/n)) 
 		  | m1 <- [0.. n-1], m2 <- [0.. n-1] ]
 
+-- We can compute a mesh of a rounded, extruded object from it contour, 
+-- contour filling trinagles, and magic.
+-- General approach:
+--   - generate sides by basically cross producting the contour.
+--   - generate the the top by taking the contour fill and
+--     calculating an appropriate z height.
 symbolicGetMesh res  (ExtrudeR r obj2 h) = 
 	let
 		-- Get a Obj2 (magnitude descriptor object)
@@ -97,11 +112,12 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
 		-- Merge them all together! :)
 		side_tris ++ bottom_tris ++ top_tris 
 
+
+-- This is quite similar to the one above
+-- Key differences are the seperation of the middle part into many layers,
+-- and the final transform.
 symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) = 
 	let
-		-- This is quite similar to the one above
-		-- Key differences are the seperation of the middle part into many layers,
-		-- and the final transform.
 		-- Get a Obj2 (magnitude descriptor object)
 		obj2mag :: Obj2 -- = ℝ2 -> ℝ
 		obj2mag = fst $ coerceSymbolic2 obj2
@@ -162,6 +178,11 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 	in
 		map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
 
-symbolicGetMesh res  obj = case rebound3 (coerceSymbolic3 obj) of
-	(obj, (a,b)) -> getMesh a b res obj 
+-- If all that fails, coerce and apply marching cubes :(
+-- (rebound is for being safe about the bounding box --
+--  it slightly streches it to make sure nothing will 
+--  have problems because it is right at the edge )
+symbolicGetMesh res  obj = 
+	case rebound3 (coerceSymbolic3 obj) of
+		(obj, (a,b)) -> getMesh a b res obj 
 
