@@ -4,7 +4,7 @@ import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
-import Data.Map (Map, lookup)
+import Data.Map (Map, lookup, insert)
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
@@ -88,14 +88,27 @@ moduleArgsUnit = do
 	char '(';
 	many space;
 	args <- sepBy ( 
-		try (do {
+		(try $ do
 			symb <- variableSymb;
 			many space;
 			char '=';
 			many space;
 			expr <- expression 0;
 			return $ Right (symb, expr);
-		}) <|> (do {
+		) <|> (try $ do
+			symb <- variableSymb;
+			many space;
+			char '('
+			many space
+			argvar <- variableSymb
+			char ')'
+			many space
+			char '=';
+			many space;
+			expr <- expression 0;
+			return $ Right (symb, 
+				\varlookup -> OFunc $ \obj -> expr (insert argvar obj varlookup) );
+		) <|> (do {
 			expr <- expression 0;
 			return $ Left expr;
 		})

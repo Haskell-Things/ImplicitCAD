@@ -3,6 +3,13 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
+-- This file provides primitive objects for the openscad parser.
+-- The code is fairly straightforward; an explanation of how 
+-- the first one works is provided.
+
+-- Note: Primitives must be added to the computationStatement parser in
+-- Graphics.Implicit.ExtOpenScad.Statements to have any effect!!!
+
 module Graphics.Implicit.ExtOpenScad.Primitives where
 
 import Prelude hiding (lookup)
@@ -16,8 +23,22 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
+-- **Exmaple of implementing a module**
+-- sphere is a module without a suite named sphere,
+-- this means that the parser will look for this like
+--       sphere(args...);
 sphere = moduleWithoutSuite "sphere" $ do
+	-- What are the arguments?
+	-- The radius, r, which is a (real) number.
+	-- If we didn't specify real, we'd get an openscadObj
+	-- but we use the real convenience function.
+	-- Because we don't provide a default, this ends right
+	-- here if it doesn't get a suitable argument!
 	r <- realArgument "r";
+	-- So what does this module do?
+	-- It adds a 3D object, a sphere of radius r,
+	-- using the sphere implementation in Prim
+	-- (Graphics.Implicit.Primitives)
 	addObj3 $ Prim.sphere r;
 
 cube = moduleWithoutSuite "cube" $ do

@@ -5,6 +5,8 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
+-- Implement statements for things other than primitive objects!
+
 module Graphics.Implicit.ExtOpenScad.Statements where
 
 import Prelude hiding (lookup)
@@ -19,7 +21,72 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
+-- | A statement in our programming openscad-like programming language.
+computationStatement :: GenParser Char st ComputationStateModifier
+computationStatement = 
+	(try $ do -- suite statemetns: no semicolon...
+		many space
+		s <- (try ifStatement 
+		     <|> try forStatement 
+		     <|> try unionStatement
+		     <|> try intersectStatement
+		     <|> try differenceStatement
+		     <|> try translateStatement
+		     <|> try rotateStatement
+		     <|> try scaleStatement
+		     <|> try extrudeStatement
+		     <|> try shellStatement
+		     -- <|> try rotateExtrudeStatement
+		     )
+		many space
+		return s
+	) <|> (try $ do -- Non suite statements. Semicolon needed...
+		many space
+		s <- (  try echoStatement 
+		    <|> try assigmentStatement 
+		    <|> try includeStatement
+		    <|> try useStatement
+		    <|> try sphere 
+		    <|> try cube
+		    <|> try square
+		    <|> try cylinder
+		    <|> try circle
+		    <|> try polygon
+		  )
+		many space
+		char ';'
+		many space
+		return s
+	)<|> (many space >> comment)
 
+-- | A suite of statements!
+--  What's a suite? Consider:
+--      union() {
+--         sphere(3);
+--      }
+--  The suite was in the braces ({}). Similarily, the
+--  following has the same suite:
+--      union() sphere(3);
+--  We consider it to be a list of statements which
+--  are in tern ComputationStateModifier s.
+--  So this parses them.
+
+suite :: GenParser Char st [ComputationStateModifier]
+suite = (liftM return computationStatement <|> do 
+	char '{'
+	many space
+	stmts <- many (try computationStatement)
+	many space
+	char '}'
+	return stmts
+	) <?> "statement suite"
+
+-- | Run a list of computations!
+--   We start with a state and run it through a bunch of ComputationStateModifier s.
+runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
+runComputations = foldl (\a b -> b $ a)
+
+-- | We think of comments as statements that do nothing. It's just convenient.
 comment = 
 	(((try $ do
 		string "//"
@@ -30,6 +97,7 @@ comment =
 		manyTill anyChar (try $ string "*/")
 	)) >> return id) <?> "comment"
 
+-- An included statement! Basically, inject another openscad file here...
 includeStatement :: GenParser Char st ComputationStateModifier
 includeStatement = (do
 	string "include"
@@ -49,6 +117,7 @@ includeStatement = (do
 			Right result -> runComputations (return state) result
 	) <?> "include statement"
 
+-- In a use statement, variables are imported but we drop any existing 2D/3D objects.
 useStatement :: GenParser Char st ComputationStateModifier
 useStatement = (do
 	string "use"
@@ -69,17 +138,39 @@ useStatement = (do
 	) <?> "use statement"
 
 
-assigmentStatement = (do
-	var <- variableSymb
-	many space
-	char '='
-	many space
-	val <- expression 0
-	return $ \ ioWrappedState -> do
-		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (insert var (val varlookup) varlookup, obj2s, obj3s) 
-	) <?> "assignment statement"
+-- | An assignment statement (parser)
+assigmentStatement :: GenParser Char st ComputationStateModifier
+assigmentStatement = 
+	(try $ do
+		var <- variableSymb
+		many space
+		char '='
+		many space
+		val <- expression 0
+		return $ \ ioWrappedState -> do
+			(varlookup, obj2s, obj3s) <- ioWrappedState
+			return (insert var (val varlookup) varlookup, obj2s, obj3s) 
+	) <|> (try $ do 
+		var <- variableSymb
+		many space
+		char '('
+		many space
+		argvar <- variableSymb
+		char ')'
+		many space
+		char '='
+		many space
+		val <- expression 0
+		return $ \ ioWrappedState -> do
+			(varlookup, obj2s, obj3s) <- ioWrappedState
+			return $ (
+				insert var (OFunc $ \obj -> val (insert argvar obj varlookup)) 
+				varlookup, obj2s, obj3s)
 
+	)<?> "assignment statement"
+
+-- | An echo statement (parser)
+echoStatement :: GenParser Char st ComputationStateModifier
 echoStatement = do
 	string "echo"
 	many space
@@ -92,16 +183,6 @@ echoStatement = do
 		state@(varlookup, _, _) <- ioWrappedState
 		putStrLn $ show $ val varlookup
 		return state
-
-suite :: GenParser Char st [ComputationStateModifier]
-suite = (liftM return computationStatement <|> do 
-	char '{'
-	many space
-	stmts <- many (try computationStatement)
-	many space
-	char '}'
-	return stmts
-	) <?> "statement suite"
 
 ifStatement = (do
 	string "if"
@@ -146,47 +227,6 @@ forStatement = (do
 					OList l -> l
 					_       -> []
 	) <?> "for statement"
-
-computationStatement :: GenParser Char st ComputationStateModifier
-computationStatement = 
-	(try $ do
-		many space
-		s <- (try ifStatement 
-		     <|> try forStatement 
-		     <|> try unionStatement
-		     <|> try intersectStatement
-		     <|> try differenceStatement
-		     <|> try translateStatement
-		     <|> try rotateStatement
-		     <|> try scaleStatement
-		     <|> try extrudeStatement
-		     <|> try shellStatement
-		     -- <|> try rotateExtrudeStatement
-		     )
-		many space
-		return s
-	) <|> (try $ do
-		many space
-		s <- (  try echoStatement 
-		    <|> try assigmentStatement 
-		    <|> try includeStatement
-		    <|> try useStatement
-		    <|> try sphere 
-		    <|> try cube
-		    <|> try square
-		    <|> try cylinder
-		    <|> try circle
-		    <|> try polygon
-		  )
-		many space
-		char ';'
-		many space
-		return s
-	)<|> (many space >> comment)
-
-
-runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
-runComputations = foldl (\a b -> b $ a)
 
 moduleWithSuite ::
 	String -> ([ComputationStateModifier] -> ArgParser ComputationStateModifier)
@@ -306,23 +346,41 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 	height <- realArgument "height"
 	center <- boolArgumentWithDefault "center" False
-	twist <- realArgumentWithDefault "twist" 0
+	twist <- argumentWithDefault "twist" (ONum 0)
 	r <- realArgumentWithDefault "r" 0
-	case (twist/height/360*2*pi, center) of
-		(0, False) -> getAndModUpObj2s suite (\obj -> Op.extrudeR r obj height) 
-		(0, True) -> getAndModUpObj2s suite 
+	let
+		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
+	case (twist, center) of
+		(ONum 0, False) -> getAndModUpObj2s suite (\obj -> Op.extrudeR r obj height) 
+		(ONum 	0, True) -> getAndModUpObj2s suite 
 			(\obj -> Op.translate (0,0,-height/2.0) $ Op.extrudeR r obj height) 
-		(rot, False) ->
+		(ONum rot, False) ->
 			getAndModUpObj2s suite (\obj -> 
 				Op.extrudeRMod r 
-					(\h (x,y) -> (x*cos(rot*h)+y*sin(rot*h), y*cos(rot*h)-x*sin(rot*h)))  
+					(degRotate . (*(rot/height)))  
 					obj height
 				) 
-		(rot, True) ->
+		(ONum rot, True) ->
 			getAndModUpObj2s suite (\obj -> 
 				Op.translate (0,0,-height/2.0) $ Op.extrudeRMod r 
-					(\h (x,y) -> (x*cos(rot*h)+y*sin(rot*h), y*cos(rot*h)-x*sin(rot*h)))  
+					(degRotate . (*(rot/height)))  
 					obj height
+				)
+		(OFunc rotf, False) ->
+			getAndModUpObj2s suite (\obj -> 
+				Op.extrudeRMod r 
+					(\h -> degRotate$ case rotf (ONum h) of
+							ONum n -> n
+							_ -> 0
+					) obj height
+				) 
+		(OFunc rotf, True) ->
+			getAndModUpObj2s suite (\obj -> 
+				Op.translate (0,0,-height/2.0) $ Op.extrudeRMod r 
+					(\h -> degRotate$ case rotf (ONum h) of
+							ONum n -> n
+							_ -> 0
+					) obj height
 				)
 
 {-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do

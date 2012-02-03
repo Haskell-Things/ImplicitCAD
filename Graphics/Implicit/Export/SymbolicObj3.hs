@@ -35,7 +35,7 @@ symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
 -- A translated objects mesh is its mesh translated.
 symbolicGetMesh res (Translate3 v obj) = 
-	map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) symbolicGetMesh res obj
+	map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
 
 -- A scaled objects mesh is its mesh scaled
 symbolicGetMesh res (Scale3 s obj) =
