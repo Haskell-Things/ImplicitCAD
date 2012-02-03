@@ -133,7 +133,7 @@ linear_extrude (height = 40, center=true, twist=90, r=5){
 
 ```
 
-![A rounded twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundTwistObj.png)
+![A rounded twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundTwist.png)
 
 
 ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
