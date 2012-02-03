@@ -83,7 +83,7 @@ linear_extrude (height = 40, center=true, twist=90){
 
 ```
 
-![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistObj.png)
+![An twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistObj.png)
 
 In fact, we've extended this to allow you to twist at non-constant rates and even reverse directions. You just make `twist` a function! (We're following the openscad convention of using degrees...)
 
@@ -99,7 +99,7 @@ linear_extrude (height = 40, center=true, twist(h) = 35*cos(h*2*pi/60)) {
 }
 ```
 
-![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeVarTwistObj.png)
+![An variably twisted ImplicitCAD extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeVarTwistObj.png)
 
 We also allow you to do rounded extrusions. See, we heard you like rounding, so we set this up so you can rounded extrude your rounded union...
 
@@ -116,7 +116,7 @@ linear_extrude (height = 40, center=true, r=5){
 
 ```
 
-![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundObj.png)
+![A rounded extrusion made with ImplicitCAD](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundObj.png)
 
 This is fully compatible with twisting, of course!
 
@@ -133,7 +133,7 @@ linear_extrude (height = 40, center=true, twist=90, r=5){
 
 ```
 
-![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistRoundObj.png)
+![A rounded twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundTwistObj.png)
 
 
 ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
