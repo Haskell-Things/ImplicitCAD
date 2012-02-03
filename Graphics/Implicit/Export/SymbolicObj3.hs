@@ -22,6 +22,7 @@ import Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
 import Graphics.Implicit.Export.Symbolic.CoerceSymbolic3
 import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
+import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
 
 
 instance DiscreteAproxable SymbolicObj3 TriangleMesh where
@@ -61,65 +62,106 @@ symbolicGetMesh res (Sphere r) =
 		 (r*cos(2*pi*m1/n),     r*sin(2*pi*m1/n)*cos(pi*(m2+1)/n), r*sin(2*pi*m1/n)*sin(pi*(m2+1)/n)) 
 		  | m1 <- [0.. n-1], m2 <- [0.. n-1] ]
 
-symbolicGetMesh res  (ExtrudeR 0.0 obj2 h) = 
-	let
-		segify (a:b:xs) = (a,b):(segify $ b:xs)
-		segify _ = []
-		segToSide (x1,y1) (x2,y2) =
-			[((x1,y1,0), (x2,y2,0), (x2,y2,h)), ((x1,y1,0), (x2,y2,h), (x1,y1,h)) ]
-		segs = concat $ map segify $ symbolicGetContour res obj2
-		side_tris = concat $ map (\(a,b) -> segToSide a b) segs
-		fill_tris = symbolicGetContourMesh res obj2
-		bottom_tris = [((a1,a2,0),(b1,b2,0),(c1,c2,0)) | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
-		top_tris = [((a1,a2,h),(b1,b2,h),(c1,c2,h)) | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
-	in side_tris ++ bottom_tris ++ top_tris
-
-symbolicGetMesh res  (ExtrudeRMod 0.0 mod obj2 h) = 
-	let
-		n = fromIntegral $ ceiling $ h/res
-		segify (a:b:xs) = (a,b):(segify $ b:xs)
-		segify _ = []
-		segToSide l a b =
-			let
-				l2 = l + h/n
-				(x1,y1) = mod l  a
-				(x2,y2) = mod l  b
-				(x3,y3) = mod l2 a
-				(x4,y4) = mod l2 b
-			in 
-				[((x1,y1,l), (x2,y2,l), (x4,y4,l2)), ((x1,y1,l), (x4,y4,l2), (x3,y3,l2)) ]
-		segs = concat $ map segify $ symbolicGetContour res obj2
-		side_tris = concat $  
-			[concat $ map (\(a,b) -> segToSide l a b) segs | l <- [0, h/n .. h-h/n] ]
-		fill_tris = symbolicGetContourMesh res obj2
-		bottom_tris = [((a1,a2,0),(b1,b2,0),(c1,c2,0)) 
-		              | ((a1,a2),(b1,b2),(c1,c2)) <- 
-		                        map (\(a,b,c) -> (mod 0 a, mod 0 b, mod 0 c) ) fill_tris]
-		top_tris = [((a1,a2,h),(b1,b2,h),(c1,c2,h))
-		              | ((a1,a2),(b1,b2),(c1,c2)) <- 
-		                        map (\(a,b,c) -> (mod h a, mod h b, mod h c) ) fill_tris]
-	in side_tris ++ bottom_tris ++ top_tris
-
 symbolicGetMesh res  (ExtrudeR r obj2 h) = 
 	let
-		d = fromIntegral $ ceiling $ r
-
-		(ojb2, ((x1,y1),(x2,y2))) = rebound2 $ coerceSymbolic2 obj2
-		newbound = ((x1,y1,0),(x2,y2,d))
-		(bottom_obj,(bound1,bound2@ (_,_,d2))) = 
-			rebound3 (fst $ coerceSymbolic3 (ExtrudeR r obj2 h), newbound)
-		bottom_tris = getMesh bound1 bound2 res bottom_obj
-		flip (x,y,z) = (x,y,h-z)
-		top_tris = map (\(a,b,c) -> (flip a, flip b, flip c)) bottom_tris
-
+		-- Get a Obj2 (magnitude descriptor object)
+		obj2mag :: Obj2 -- = ℝ2 -> ℝ
+		obj2mag = fst $ coerceSymbolic2 obj2
+		-- The amount that a point (x,y) on the top should be lifted
+		-- from h-r. Because of rounding, the edges should be h-r,
+		-- but it should increase inwards.
+		dh x y = sqrt (r^2 - ( max 0 $ min r $ r+obj2mag (x,y))^2)
+		-- Turn a polyline into a list of its segments
 		segify (a:b:xs) = (a,b):(segify $ b:xs)
 		segify _ = []
+		-- Turn a segment a--b into a list of triangles forming (a--b)×(r,h-r)
+		-- The dh stuff is to compensate for rounding errors, etc, and ensure that
+		-- the sides meet the top and bottom
 		segToSide (x1,y1) (x2,y2) =
-			[((x1,y1,d2), (x2,y2,d2), (x2,y2,h-d2)), ((x1,y1,d2), (x2,y2,h-d2), (x1,y1,h-d2)) ]
-
+			[((x1,y1,r-dh x1 y1), (x2,y2,r-dh x2 y2), (x2,y2,h-r+dh x2 y2)), 
+			 ((x1,y1,r-dh x1 y1), (x2,y2,h-r+dh x2 y2), (x1,y1,h-r+dh x1 y1)) ]
+		-- Get a contour polyline for obj2, turn it into a list of segments
 		segs = concat $ map segify $ symbolicGetContour res obj2
+		-- Create sides for the main body of our object = segs × (r,h-r)
 		side_tris = concat $ map (\(a,b) -> segToSide a b) segs
-	in side_tris ++ bottom_tris ++ top_tris 
+		-- Triangles that fill the contour. Make sure the mesh is at least (res/5) fine.
+		-- --res/5 because xyres won't always match up with normal res and we need to compensate.
+		fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
+		-- The bottom. Use dh to determine the z coordinates
+		bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
+		-- Same idea at the top.
+		top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
+				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
+	in
+		-- Merge them all together! :)
+		side_tris ++ bottom_tris ++ top_tris 
+
+symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) = 
+	let
+		-- This is quite similar to the one above
+		-- Key differences are the seperation of the middle part into many layers,
+		-- and the final transform.
+		-- Get a Obj2 (magnitude descriptor object)
+		obj2mag :: Obj2 -- = ℝ2 -> ℝ
+		obj2mag = fst $ coerceSymbolic2 obj2
+		-- The amount that a point (x,y) on the top should be lifted
+		-- from h-r. Because of rounding, the edges should be h-r,
+		-- but it should increase inwards.
+		dh x y = sqrt (r^2 - ( max 0 $ min r $ r+obj2mag (x,y))^2)
+		-- Turn a polyline into a list of its segments
+		segify (a:b:xs) = (a,b):(segify $ b:xs)
+		segify _ = []
+		-- The number of steps we're going to do the sides in:
+		n = fromIntegral $ ceiling $ h/res
+		-- Turn a segment a--b into a list of triangles forming 
+		--    (a--b)×(r+(h-2r)*m/n,r+(h-2r)*(m+1)/n)
+		-- The dh stuff is to compensate for rounding errors, etc, and ensure that
+		-- the sides meet the top and bottom
+		-- m is the number of n steps we are up from the base of the main section
+		segToSide m (x1,y1) (x2,y2) =
+			let
+				-- Change across the main body of the object,
+				-- at (x1,y1) and (x2,y2) respectivly
+				mainH1 = h - 2*r + 2*dh x1 y1
+				mainH2 = h - 2*r + 2*dh x2 y2
+				-- level a (lower) and level b (upper)
+				la1 = r-dh x1 y1  +  mainH1*m/n
+				lb1 = r-dh x1 y1  +  mainH1*(m+1)/n
+				la2 = r-dh x2 y2  +  mainH1*m/n
+				lb2 = r-dh x2 y2  +  mainH1*(m+1)/n
+			in
+				-- Resulting triangles: 
+				[((x1,y1,la1), (x2,y2,la2), (x2,y2,lb2)), 
+				 ((x1,y1,la1), (x2,y2,lb2), (x1,y1,lb1)) ]
+		-- Get a contour polyline for obj2, turn it into a list of segments
+		segs = concat $ map segify $ symbolicGetContour res obj2
+		-- Create sides for the main body of our object = segs × (r,h-r)
+		-- Many layers...
+		side_tris = concat $
+			[concat $ map (\(a,b) -> segToSide m a b) segs | m <- [0.. n-1] ]
+		-- Triangles that fill the contour. Make sure the mesh is at least (res/5) fine.
+		-- --res/5 because xyres won't always match up with normal res and we need to compensate.
+		fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
+		-- The bottom. Use dh to determine the z coordinates
+		bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
+		-- Same idea at the top.
+		top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
+				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
+		-- Mesh modifiers in individual components
+		fx :: ℝ3 -> ℝ
+		fx (x,y,z) = fst $ mod z (x,y)
+		fy :: ℝ3 -> ℝ
+		fy (x,y,z) = snd $ mod z (x,y)
+		-- function to transform a triangle
+		transformTriangle :: (ℝ3,ℝ3,ℝ3) -> (ℝ3,ℝ3,ℝ3)
+		transformTriangle (a@(_,_,z1), b@(_,_,z2), c@(_,_,z3)) = 
+			((fx a, fy a, z1), (fx b, fy b, z2), (fx c, fy c, z3))
+
+	in
+		map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
 
 symbolicGetMesh res  obj = case rebound3 (coerceSymbolic3 obj) of
 	(obj, (a,b)) -> getMesh a b res obj 
+

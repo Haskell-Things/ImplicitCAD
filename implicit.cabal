@@ -59,6 +59,7 @@ Library
         Graphics.Implicit.Export.SymbolicObj3
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.TriangleMeshFormats
+        Graphics.Implicit.Export.Util
 
 Executable extopenscad
 
