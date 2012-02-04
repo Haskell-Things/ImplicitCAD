@@ -3,48 +3,20 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Graphics.Implicit.ExtOpenScad where
+module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Expressions
-import Graphics.Implicit.ExtOpenScad.Default
-import Graphics.Implicit.ExtOpenScad.Statements
+import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
+import Graphics.Implicit.ExtOpenScad.Statements (computationStatement, runComputations)
 
-import Prelude hiding (lookup)
-import Data.Map (Map, fromList, lookup)
-import Text.ParserCombinators.Parsec 
-import Text.ParserCombinators.Parsec.Expr
+import Text.ParserCombinators.Parsec (parse, many1)
 import Control.Monad (liftM)
 
-
-runComputationsDefault = runComputations $
-	return (fromList funcs, [], [])
-
-
+-- Small wrapper to handle parse errors, etc
 runOpenscad str = case parse (many1 computationStatement) ""  str of
 	Right res -> Right $ runComputationsDefault res
 	Left  err ->  Left err
 
+runComputationsDefault = runComputations $
+	return (defaultObjects, [], [])
 
 
-funcs = [
-		("pi", ONum pi),
-		("sin", numericOFunc sin),
-		("cos", numericOFunc cos),
-		("tan", numericOFunc tan),
-		("abs", numericOFunc abs),
-		("sign", numericOFunc signum),
-		("floor", numericOFunc (fromIntegral . floor) ),
-		("ceil", numericOFunc (fromIntegral . ceiling) ),
-		("exp", numericOFunc exp),
-		("max", numericOFunc2 max),
-		("min", numericOFunc2 min),
-		("map", mapfunc)
-	]
-
-mapfunc = OFunc $ \oObj -> case oObj of
-	OFunc f -> OFunc $ \oObj2 -> case oObj2 of
-		OList l -> OList $ map f l
-		_ -> OUndefined
-	_ -> OUndefined

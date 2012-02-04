@@ -6,12 +6,7 @@
 
 module Graphics.Implicit.Operations.Definitions where
 
-import Prelude hiding ((+),(-),(*),(/))
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.MathUtil
-import Graphics.Implicit.SaneOperators
-
-
 
 
 infty = (1 :: ℝ) / (0 :: ℝ)

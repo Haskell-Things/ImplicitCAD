@@ -3,25 +3,32 @@
 
 -- Let's make it convenient to run our extended openscad format code
 
-import System
-import System.IO
-import Graphics.Implicit
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Data.Map as S
+-- Let's be explicit about what we're getting from where :)
+import System (getArgs)
+import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
+import Graphics.Implicit (runOpenscad, writeSVG, writeSTL)
+import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
+import Data.Map as Map
 
+-- | strip a .scad or .escad file to its basename.
+strip :: String -> String
 strip filename = case reverse filename of
 	'd':'a':'c':'s':'.':xs     -> reverse xs
 	'd':'a':'c':'s':'e':'.':xs -> reverse xs
 	_                          -> filename
 
+-- | Give an openscad object to run and the basename of 
+--   the target to write to... write an object!
+executeAndExport :: String -> String -> IO ()
 executeAndExport content targetname = case runOpenscad content of
 	Left err -> putStrLn $ show $ err
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let {
-			res = case S.lookup "$res" vars of 
+			res = case Map.lookup "$res" vars of 
 				Nothing -> 1
 				Just (ONum n) -> n
+				Just (_) -> 1
 		} in case s of 
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
@@ -32,8 +39,7 @@ executeAndExport content targetname = case runOpenscad content of
 				writeSTL res (targetname ++ ".stl") x
 		
 
-		
-
+main :: IO()
 main = do
 	args <- getArgs
 	case length args of
@@ -43,3 +49,4 @@ main = do
 			content <- hGetContents f 
 			executeAndExport content (strip $ args !! 0)
 			hClose f
+

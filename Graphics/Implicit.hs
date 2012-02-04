@@ -32,57 +32,77 @@ module Graphics.Implicit(
 	runOpenscad
 ) where
 
-import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.Primitives as S
-import Graphics.Implicit.Operations
+-- Let's be explicit about where things come from :)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3)
+import qualified Graphics.Implicit.Primitives as Prim
 import qualified Graphics.Implicit.Export as Export
-import Graphics.Implicit.ExtOpenScad
+import Graphics.Implicit.ExtOpenScad (runOpenscad)
+import Graphics.Implicit.Operations 
+	(translate, scale, complement, 
+	 union,  intersect,  difference,
+	 unionR, intersectR, differenceR,
+	 extrudeR, extrudeOnEdgeOf, shell)
 
 -- The versions of objects that should be used by default.
 -- Import Graphics.Implicit.Primitives to override
+
 type DObj3 = SymbolicObj3
 type DObj2 = SymbolicObj2
 
-writeSTL :: ℝ -> String -> DObj3 -> IO()
+-- We're going to force some of the types to be less flexible 
+-- than they are for ease of use for the end user...
+
+writeSTL ::
+	ℝ           -- ^ Resolution
+	-> FilePath -- ^ STL file to write to
+	-> DObj3    -- ^ 3D object to write
+	-> IO()     -- ^ Writing action!
+
 writeSTL = Export.writeSTL
-writeSVG :: ℝ -> String -> DObj2 -> IO()
+
+writeSVG :: 
+	ℝ           -- ^ Resolution
+	-> FilePath -- ^ SVG File to be written to
+	-> DObj2    -- ^ 2D object to write
+	-> IO()     -- ^ Writing action!
+
 writeSVG = Export.writeSVG
 
 
 sphere ::
 	ℝ           -- ^ Radius of the sphere
 	-> DObj3    -- ^ Resulting sphere
-sphere = S.sphere
+sphere = Prim.sphere
 rect3R ::
 	ℝ           -- ^ Radius of roudning
 	-> ℝ3       -- ^ bot-left-out corner
 	-> ℝ3       -- ^ top-right-in corner
 	 -> DObj3   -- ^ Resuting 3D rect
-rect3R = S.rect3R
+rect3R = Prim.rect3R
 
 cylinder2 ::
 	ℝ           -- ^ Radius of the cylinder	
 	-> ℝ        -- ^ Second radius of the cylinder
 	-> ℝ        -- ^ Height of the cylinder
 	-> DObj3    -- ^ Resulting cylinder
-cylinder2 = S.cylinder2
+cylinder2 = Prim.cylinder2
 
 circle ::
 	ℝ          -- ^ radius of the circle
 	-> DObj2   -- ^ resulting circle
-circle = S.circle
+circle = Prim.circle
 
 rectR ::
 	ℝ          -- ^ Radius of rounding
 	-> ℝ2      -- ^ (x1, y1)
 	-> ℝ2      -- ^ (x2 ,y2)
 	-> DObj2   -- ^ rect between (x1,y1) and (x2,y2)
-rectR = S.rectR
+rectR = Prim.rectR
 
 polygon ::
 	[ℝ2]      -- ^ Verticies of the polygon
 	 -> DObj2   -- ^ Resulting polygon
-polygon = S.polygonR 0
+polygon = Prim.polygonR 0
 
 
 

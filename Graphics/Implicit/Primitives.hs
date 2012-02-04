@@ -13,16 +13,25 @@ module Graphics.Implicit.Primitives (
 	zsurface
 ) where
 
+-- Some type definitions :)
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Operations
 
+-- Most of the functions we're exporting come from here
+-- They are methods of classes.
 import Graphics.Implicit.Primitives.Definitions
+
+-- These files implement the classes for types
+-- corresponding to the name of the file.
 import Graphics.Implicit.Primitives.Obj2
 import Graphics.Implicit.Primitives.Obj3
 import Graphics.Implicit.Primitives.BoxedObj2
 import Graphics.Implicit.Primitives.BoxedObj3
 import Graphics.Implicit.Primitives.SymbolicObj2
 import Graphics.Implicit.Primitives.SymbolicObj3
+
+-- We export a few functions modified by operations
+-- for users conveniences...
+import Graphics.Implicit.Operations
 
 -- If you are confused as to how these functions work, please refer to
 -- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
@@ -49,10 +58,18 @@ cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 
 
 
+regularPolygon ::
+	ℕ       -- ^ number of sides
+	-> ℝ    -- ^ radius
+	-> Obj2 -- ^ resulting regular polygon
+regularPolygon sides r = polygonR 0 [ (r*cos(2*pi*m/sidesr), r*sin(2*pi*m/sidesr)) | m <- [0.. sidesr -1]]
+	where sidesr = fromIntegral sides
 
 
-
-
+zsurface ::
+	(ℝ2 -> ℝ) -- ^ Description of the height of the surface
+	-> Obj3   -- ^ Resulting 3D object
+zsurface f = \(x,y,z) -> f (x,y) - z
 
 
 -- This function is commented out because it doesn't obey the magnitude requirement.
@@ -62,19 +79,3 @@ cylinder2C r1 r2 h = translate (0,0,-h/2.0) $ cylinder2 r1 r2 h
 --ellipse a b
 --    | a < b = \(x,y) -> sqrt ((b/a*x)**2 + y**2) - a
 --    | otherwise = \(x,y) -> sqrt (x**2 + (a/b*y)**2) - b
-
-
-regularPolygon ::
-	ℕ       -- ^ number of sides
-	-> ℝ    -- ^ radius
-	-> Obj2 -- ^ resulting regular polygon
-regularPolygon sides r = let sidesr = fromIntegral sides in
-	\(x,y) -> maximum [ x*cos(2*pi*m/sidesr) + y*sin(2*pi*m/sidesr) | m <- [0.. sidesr -1]] - r
-
-
-zsurface ::
-	(ℝ2 -> ℝ) -- ^ Description of the height of the surface
-	-> Obj3   -- ^ Resulting 3D object
-zsurface f = \(x,y,z) -> f (x,y) - z
-
-

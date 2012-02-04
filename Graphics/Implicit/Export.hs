@@ -5,32 +5,45 @@ module Graphics.Implicit.Export where
 
 import Graphics.Implicit.Definitions
 --import Graphics.Implicit.Operations (slice)
-import System.IO
 
+import System.IO (writeFile)
+
+-- class DiscreteApproxable
 import Graphics.Implicit.Export.Definitions
 
+-- instances of DiscreteApproxable...
 import Graphics.Implicit.Export.BoxedObj2
 import Graphics.Implicit.Export.BoxedObj3
 import Graphics.Implicit.Export.SymbolicObj2
 import Graphics.Implicit.Export.SymbolicObj3
 
-import Graphics.Implicit.Export.PolylineFormats
-import Graphics.Implicit.Export.TriangleMeshFormats
+-- File formats
+import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats
+import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats
+
+-- Write an object in a given formet...
 
 writeObject :: (DiscreteAproxable obj aprox) => 
 	ℝ                    -- ^ Resolution
 	-> (aprox -> String) -- ^ File Format (Function that formats)
-	-> String            -- ^ File Name
+	-> FilePath          -- ^ File Name
 	-> obj               -- ^ Object to render
 	-> IO()              -- ^ Writing Action!
+
 writeObject res format filename obj = writeFile filename text 
 	where
 		aprox = discreteAprox res obj
 		text = format aprox
 
-writeSVG res = writeObject res svg
-writeSTL res = writeObject res  stl
-writeGCodeHacklabLaser res = writeObject res hacklabLaserGCode
+-- Now functions to write it in specific formats
+
+writeSVG res = writeObject res PolylineFormats.svg
+
+writeSTL res = writeObject res  TriangleMeshFormats.stl
+
+writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
+
+
 
 {-
 renderRaw :: ℝ3 -> ℝ3 -> ℝ -> String -> Obj3 -> IO()

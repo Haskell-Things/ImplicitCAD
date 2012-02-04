@@ -18,18 +18,13 @@ module Graphics.Implicit.Operations (
 	rotate3
 ) where
 
-import Prelude hiding ((+),(-),(*),(/))
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.MathUtil
-import Graphics.Implicit.SaneOperators
-
+-- classes in here provide basicaly everything we're exporting...
 import Graphics.Implicit.Operations.Definitions
+
+-- Then we have a bunch of isntances, corresponding to each file name.
 import Graphics.Implicit.Operations.Obj2
 import Graphics.Implicit.Operations.Obj3
 import Graphics.Implicit.Operations.ObjPair
-import Graphics.Implicit.Operations.Box2
-import Graphics.Implicit.Operations.Box3
-import Graphics.Implicit.Operations.BoxPair
 import Graphics.Implicit.Operations.BoxedObj2
 import Graphics.Implicit.Operations.BoxedObj3
 import Graphics.Implicit.Operations.BoxedObjPair
@@ -39,11 +34,7 @@ import Graphics.Implicit.Operations.SymbolicObjPair
 
 
 
--- If you are confused as to how these functions work, please refer to
--- http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
-
-
-
+{- Old stuff that may need to be incorporated into the larger structure later
 
 -- | Slice a 3D objects at a given z value to make a 2D object.
 slice :: 
@@ -52,16 +43,7 @@ slice ::
 	-> Obj2   -- ^ Resulting 2D object
 slice z obj = \(a,b) -> obj (a,b,z)
 
--- | Bubble out a 2D object into a 3D one.
-bubble :: ℝ -> Obj2 -> Obj3
-bubble s obj = 
-	let
-		spsqrt n = signum n * sqrt (abs n)
-		spsq n = signum n * n ** 2
-	in
-		\(x,y,z) -> spsqrt ( z ** 2 + s * obj (x,y) )
 
-{-
 -- | Extrude a 2D object. (The extrusion goes into the z-plane)
 extrude :: 
 	ℝ          -- ^ Length to extrude
@@ -86,24 +68,4 @@ extrudeOnEdgeOf ::
 extrudeOnEdgeOf a b = \(x,y,z) -> a (b (x,y), z) 
 
 
-
-
 -}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
