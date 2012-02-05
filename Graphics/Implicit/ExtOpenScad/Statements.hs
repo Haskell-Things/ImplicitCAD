@@ -59,6 +59,8 @@ computationStatement =
 		return s
 	)<|> (many space >> comment)
 
+
+
 -- | A suite of statements!
 --  What's a suite? Consider:
 --      union() {
@@ -126,7 +128,7 @@ useStatement = (do
 	filename <- many (noneOf "<>")
 	string ">"
 	return $ \ ioWrappedState -> do
-		state@(varlookup,obj2s,obj3s) <- ioWrappedState;
+		state@(varlookup, _, _) <- ioWrappedState;
 		content <- readFile filename
 		case parse (many1 computationStatement) ""  content of
 			Left  err ->  do
@@ -142,31 +144,33 @@ useStatement = (do
 assigmentStatement :: GenParser Char st ComputationStateModifier
 assigmentStatement = 
 	(try $ do
-		var <- variableSymb
+		varSymb <- variableSymb
 		many space
 		char '='
 		many space
-		val <- expression 0
+		valExpr <- expression 0
 		return $ \ ioWrappedState -> do
 			(varlookup, obj2s, obj3s) <- ioWrappedState
-			return (insert var (val varlookup) varlookup, obj2s, obj3s) 
+			let
+				val = valExpr varlookup
+			return (insert varSymb val varlookup, obj2s, obj3s) 
 	) <|> (try $ do 
-		var <- variableSymb
+		varSymb <- variableSymb
 		many space
 		char '('
 		many space
-		argvar <- variableSymb
+		argVar <- variableSymb
+		many space
 		char ')'
 		many space
 		char '='
 		many space
-		val <- expression 0
+		valExpr <- expression 0
 		return $ \ ioWrappedState -> do
 			(varlookup, obj2s, obj3s) <- ioWrappedState
-			return $ (
-				insert var (OFunc $ \obj -> val (insert argvar obj varlookup)) 
-				varlookup, obj2s, obj3s)
-
+			let
+				val = OFunc $ \argObj -> valExpr (insert argVar argObj varlookup)
+			return (insert varSymb val varlookup, obj2s, obj3s)
 	)<?> "assignment statement"
 
 -- | An echo statement (parser)
@@ -269,6 +273,7 @@ getAndModUpObj2s suite obj2mod =
 			(varlookup2,
 			 obj2s, 
 			 obj3s ++ (case obj2s2 of [] -> []; x:xs -> [obj2mod x])  )
+
 getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
 	-> ([Obj2Type] -> Obj2Type)
 	-> ([Obj3Type] -> Obj3Type)
@@ -356,38 +361,26 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 	height <- realArgument "height"
 	center <- boolArgumentWithDefault "center" False
-	twist <- argumentWithDefault "twist" (ONum 0)
+	twist  <- argumentWithDefault "twist" (ONum 0)
 	r <- realArgumentWithDefault "r" 0
 	let
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
-	case (twist, center) of
-		(ONum 0, False) -> getAndModUpObj2s suite (\obj -> Op.extrudeR r obj height) 
-		(ONum 	0, True) -> getAndModUpObj2s suite 
-			(\obj -> Op.translate (0,0,-height/2.0) $ Op.extrudeR r obj height) 
-		(ONum rot, False) ->
+		shiftAsNeeded =
+			if center
+			then Op.translate (0,0,-height/2.0)
+			else id
+	case twist of
+		ONum 0 -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
+		ONum rot ->
 			getAndModUpObj2s suite (\obj -> 
-				Op.extrudeRMod r 
-					(degRotate . (*(rot/height)))  
-					obj height
-				) 
-		(ONum rot, True) ->
-			getAndModUpObj2s suite (\obj -> 
-				Op.translate (0,0,-height/2.0) $ Op.extrudeRMod r 
+				shiftAsNeeded $ Op.extrudeRMod r 
 					(degRotate . (*(rot/height)))  
 					obj height
 				)
-		(OFunc rotf, False) ->
+		OFunc rotf ->
 			getAndModUpObj2s suite (\obj -> 
-				Op.extrudeRMod r 
-					(\h -> degRotate$ case rotf (ONum h) of
-							ONum n -> n
-							_ -> 0
-					) obj height
-				) 
-		(OFunc rotf, True) ->
-			getAndModUpObj2s suite (\obj -> 
-				Op.translate (0,0,-height/2.0) $ Op.extrudeRMod r 
-					(\h -> degRotate$ case rotf (ONum h) of
+				shiftAsNeeded $ Op.extrudeRMod r 
+					(\h -> degRotate $ case rotf (ONum h) of
 							ONum n -> n
 							_ -> 0
 					) obj height

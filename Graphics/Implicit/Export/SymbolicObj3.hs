@@ -80,7 +80,7 @@ symbolicGetMesh res (Sphere r) =
 symbolicGetMesh res  (ExtrudeR r obj2 h) = 
 	let
 		-- Get a Obj2 (magnitude descriptor object)
-		obj2mag :: Obj2 -- = ℝ2 -> ℝ
+		obj2mag :: ℝ2 -> ℝ -- Obj2
 		obj2mag = fst $ coerceSymbolic2 obj2
 		-- The amount that a point (x,y) on the top should be lifted
 		-- from h-r. Because of rounding, the edges should be h-r,
