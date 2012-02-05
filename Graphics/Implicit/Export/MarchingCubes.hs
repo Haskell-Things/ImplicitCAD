@@ -6,7 +6,29 @@ module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh2) where
 import Graphics.Implicit.Definitions
 import Control.Parallel (par, pseq)
 
-getMesh (x1,y1,z1) (x2,y2,z2) res obj = 
+-- | getMesh gets a triangle mesh describe the boundary of your 3D
+--  object. 
+--  There are many getMesh functions in this file. THis one is the
+--  simplest and should be least bug prone. Use it for debugging.
+getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
+getMesh (x1, y1, z1) (x2, y2, z2) res obj = 
+	let
+		-- How many steps will we take on each axis?
+		nx = fromIntegral $ ceiling $ (x2 - x1) / res
+		ny = fromIntegral $ ceiling $ (y2 - y1) / res
+		nz = fromIntegral $ ceiling $ (y2 - y1) / res
+		-- Divide it up and compute the polylines
+		triangles :: [TriangleMesh]
+		triangles = [getCubeTriangles
+		           (x1 + (x2 - x1)*mx/nx,     y1 + (y2 - y1)*my/ny,     z1 + (z2 - z1)*mz/nz)
+		           (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny, z1 + (z2 - z1)*(mz+1)/nz)
+		           obj
+		     | mx <- [0.. nx-1], my <- [0..ny-1], mz <- [0..nz-1] ]
+	in
+		concat $ triangles
+
+
+getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
 	let 
 		dx = abs $ x2 - x1
 		dy = abs $ y2 - y1
@@ -32,7 +54,7 @@ getMesh (x1,y1,z1) (x2,y2,z2) res obj =
 			concat partitions
 
 
-getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
+getMesh3 (x1,y1,z1) (x2,y2,z2) res obj = 
 	let 
 		dx = abs $ x2 - x1
 		dy = abs $ y2 - y1
