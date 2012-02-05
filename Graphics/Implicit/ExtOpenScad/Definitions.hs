@@ -23,6 +23,7 @@ data OpenscadObj = OUndefined
 		 | OList [OpenscadObj]
 		 | OString String
 		 | OFunc ( OpenscadObj -> OpenscadObj ) 
+		 | OModule (ArgParser ComputationStateModifier)
 
 instance Show OpenscadObj where
 	show OUndefined = "Undefined"
@@ -31,6 +32,10 @@ instance Show OpenscadObj where
 	show (OList l) = show l
 	show (OString s) = show s
 	show (OFunc f) = "<function>"
+
+data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) 
+                 | ArgParserTerminator a 
+                 | ArgParserFail
 
 type ComputationState = IO (VariableLookup, [Obj2Type], [Obj3Type])
 

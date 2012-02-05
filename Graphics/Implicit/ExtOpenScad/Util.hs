@@ -10,10 +10,6 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
-data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) 
-                 | ArgParserTerminator a 
-                 | ArgParserFail
-
 instance Monad ArgParser where
 	(ArgParser str fallback f) >>= g = ArgParser str fallback (\a -> (f a) >>= g)
 	(ArgParserTerminator a) >>= g = g a

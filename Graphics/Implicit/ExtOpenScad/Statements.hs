@@ -204,6 +204,9 @@ ifStatement = (do
 	) <?> "if statement"
 
 forStatement = (do
+	-- a for loop is of the form:
+	--      for ( vsymb = vexpr   ) loopStatements
+	-- eg.  for ( a     = [1,2,3] ) {echo(a); echo "lol";}
 	string "for"
 	many space
 	char '('
@@ -216,16 +219,23 @@ forStatement = (do
 	many space
 	loopStatements <- suite
 	return $ \ ioWrappedState -> do
+		-- a for loop unpackages the state from an io monad
 		state@(varlookup,_,_) <- ioWrappedState;
 		let
-			loopOnce :: ComputationState -> OpenscadObj -> ComputationState
+			-- each iteration of the loop consists of unpacking the state
+			loopOnce :: 
+				ComputationState    -- ^ The state at this point in the loop
+				-> OpenscadObj      -- ^ The value of vsymb for this iteration
+				-> ComputationState -- ^ The resulting state
 			loopOnce ioWrappedState val =  do
-				(varlookup, a, b) <- ioWrappedState
-				runComputations (return (insert vsymb val varlookup, a, b)) loopStatements
-			in
-				foldl (loopOnce) (return state) $ case vexpr varlookup of
-					OList l -> l
-					_       -> []
+				(varlookup, a, b) <- ioWrappedState;
+				let
+					vsymbSetState = return (insert vsymb val varlookup, a, b)
+				runComputations vsymbSetState loopStatements
+		-- Then loops once for every entry in vexpr
+		foldl (loopOnce) (return state) $ case vexpr varlookup of 
+			OList l -> l;
+			_       -> [];
 	) <?> "for statement"
 
 moduleWithSuite ::

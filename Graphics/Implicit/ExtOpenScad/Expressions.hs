@@ -5,18 +5,18 @@
 
 module Graphics.Implicit.ExtOpenScad.Expressions where
 
+-- We need lookup from Data.Map
 import Prelude hiding (lookup)
+import Data.Map (Map, lookup)
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
-import Data.Map (Map, lookup)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
-import Control.Monad (liftM)
 
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
 variable :: GenParser Char st (VariableLookup -> OpenscadObj)
-variable = liftM (\varstr -> \varlookup -> case lookup varstr varlookup of
+variable = fmap (\varstr -> \varlookup -> case lookup varstr varlookup of
 			Nothing -> OUndefined
 			Just a -> a )
 		variableSymb
