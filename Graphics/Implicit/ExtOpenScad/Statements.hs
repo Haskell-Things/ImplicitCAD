@@ -21,38 +21,42 @@ import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 
+tryMany = (foldl1 (<|>)) . (map try)
+
 -- | A statement in our programming openscad-like programming language.
 computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = 
 	(try $ do -- suite statemetns: no semicolon...
 		many space
-		s <- (try ifStatement 
-		     <|> try forStatement 
-		     <|> try unionStatement
-		     <|> try intersectStatement
-		     <|> try differenceStatement
-		     <|> try translateStatement
-		     <|> try rotateStatement
-		     <|> try scaleStatement
-		     <|> try extrudeStatement
-		     <|> try shellStatement
-		     -- <|> try rotateExtrudeStatement
-		     )
+		s <- tryMany [
+			ifStatement,
+			forStatement, 
+			unionStatement,
+			intersectStatement,
+			differenceStatement,
+			translateStatement,
+			rotateStatement,
+			scaleStatement,
+			extrudeStatement,
+			shellStatement
+			-- rotateExtrudeStatement
+			]
 		many space
 		return s
 	) <|> (try $ do -- Non suite statements. Semicolon needed...
 		many space
-		s <- (  try echoStatement 
-		    <|> try assigmentStatement 
-		    <|> try includeStatement
-		    <|> try useStatement
-		    <|> try sphere 
-		    <|> try cube
-		    <|> try square
-		    <|> try cylinder
-		    <|> try circle
-		    <|> try polygon
-		  )
+		s <- tryMany [
+			echoStatement,
+			assigmentStatement,
+			includeStatement,
+			useStatement,
+			sphere,
+			cube,
+			square,
+			cylinder,
+			circle,
+			polygon
+			]
 		many space
 		char ';'
 		many space
@@ -62,13 +66,17 @@ computationStatement =
 
 
 -- | A suite of statements!
---  What's a suite? Consider:
+--   What's a suite? Consider:
+--
 --      union() {
 --         sphere(3);
 --      }
+--
 --  The suite was in the braces ({}). Similarily, the
 --  following has the same suite:
+--
 --      union() sphere(3);
+--
 --  We consider it to be a list of statements which
 --  are in tern ComputationStateModifier s.
 --  So this parses them.
