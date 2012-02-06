@@ -167,7 +167,7 @@ assigmentStatement =
 		many space
 		char '('
 		many space
-		argVar <- variableSymb
+		argVars <- sepBy variableSymb (many space >> char ',' >> many space)
 		many space
 		char ')'
 		many space
@@ -177,7 +177,10 @@ assigmentStatement =
 		return $ \ ioWrappedState -> do
 			(varlookup, obj2s, obj3s) <- ioWrappedState
 			let
-				val = OFunc $ \argObj -> valExpr (insert argVar argObj varlookup)
+				makeFunc baseExpr (argVar:xs) varlookup' = OFunc $ 
+					\argObj -> makeFunc baseExpr xs (insert argVar argObj varlookup')
+				makeFunc baseExpr [] varlookup' = baseExpr varlookup'
+				val = makeFunc valExpr argVars varlookup
 			return (insert varSymb val varlookup, obj2s, obj3s)
 	)<?> "assignment statement"
 

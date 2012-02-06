@@ -96,14 +96,18 @@ moduleArgsUnit = do
 			many space;
 			char '('
 			many space
-			argvar <- variableSymb
+			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
 			char ')'
 			many space
 			char '=';
 			many space;
 			expr <- expression 0;
-			return $ Right (symb, 
-				\varlookup -> OFunc $ \obj -> expr (insert argvar obj varlookup) );
+			let
+				makeFunc baseExpr (argVar:xs) varlookup' = OFunc $ 
+					\argObj -> makeFunc baseExpr xs (insert argVar argObj varlookup')
+				makeFunc baseExpr [] varlookup' = baseExpr varlookup'
+				funcExpr = makeFunc expr argVars
+			return $ Right (symb, funcExpr);
 		) <|> (do {
 			expr <- expression 0;
 			return $ Left expr;

@@ -8,7 +8,7 @@ import Graphics.Implicit.Definitions
 
 svg polylines = text
 	where
-		-- SVG is stupidly laid out... (0,0) is the top right corner
+		-- SVG is stupidly laid out... (0,0) is the top left corner
 		(xs, ys) = unzip (concat polylines)
 		(minx, maxy) = (minimum xs, maximum ys)
 		transform (x,y) = (x-minx, maxy - y)
