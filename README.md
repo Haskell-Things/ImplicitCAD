@@ -17,6 +17,8 @@ Generally, objects in programmatic CAD are built with Constructive Solid Geometr
 
 It also directly provides GCode generation, and has a parser for OpenSCAD to make it easier for people to transition.
 
+ImplicitCAD is very much a work in progress. The author considers it ready for beta testers and greatly appreciates bug reports.
+
 
 ExtOpenSCAD Examples
 --------------------
@@ -181,7 +183,7 @@ Everything you saw above can be done with the Haskell API. For example, a simple
 import Graphics.Implicit
 
 out = union [
-	square 80,
+	rectR 0 (-40,-40) (40,40),
 	translate (40,40) (circle 30) ]
 
 main = writeSVG 2 "test.svg" out
@@ -196,7 +198,7 @@ A rounded union:
 import Graphics.Implicit
 
 out = unionR 14 [
-	square 80,
+	rectR 0 (-40,-40) (40,40),
 	translate (40,40) (circle 30) ]
 
 main = writeSVG 2 "test.svg" out
@@ -210,7 +212,7 @@ A simple 3D example:
 import Graphics.Implicit
 
 out = union [
-	cube 40,
+	rect3R 0 (0,0,0) (20,20,20),
 	translate (20,20,20) (sphere 15) ]
 
 main = writeSTL 1 "test.stl" out 
@@ -223,20 +225,7 @@ You can do a whole lot more!
 Try ImplicitCAD!
 ----------------
 
-Install development branch (*recommended*):
-
- 1. Install GHC and cabal (see above)
- 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
- 3. cd in: `cd ImplicitCAD/`
- 4. cabal install it: `cabal install`
- 5. Start ghci: `ghci`
- 6. Load ImplicitCAD: `import Graphics.Implicit`
- 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
-
-
-(*Development branch only:* If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
-
-Install latest stable release (*out of date, examples in README may not work*):
+Install latest stable release:
 
  1. Install GHC and cabal.
      * Debain/Ubuntu: `apt-get install ghc cabal-install`
@@ -250,12 +239,25 @@ Install latest stable release (*out of date, examples in README may not work*):
  4. Load ImplicitCAD: `import Graphics.Implicit`
  5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
 
+Install development branch:
+
+ 1. Install GHC and cabal (see above)
+ 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+ 3. cd in: `cd ImplicitCAD/`
+ 4. cabal install it: `cabal install`
+ 5. Start ghci: `ghci`
+ 6. Load ImplicitCAD: `import Graphics.Implicit`
+ 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+
+
+(If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
+
 Documentation
 -------------
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.0/doc/html/Graphics-Implicit.html).
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.1/doc/html/Graphics-Implicit.html).
 
 A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post.
 
