@@ -237,7 +237,7 @@ Install latest stable release:
  2. Use cabal to install ImplicitCAD: `cabal update; cabal install implicit`
  3. Start ghci: `ghci`
  4. Load ImplicitCAD: `import Graphics.Implicit`
- 5. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+ 5. Try it! `writeSVG 1 "test.svg" (circle 30)`
 
 Install development branch:
 
@@ -247,7 +247,7 @@ Install development branch:
  4. cabal install it: `cabal install`
  5. Start ghci: `ghci`
  6. Load ImplicitCAD: `import Graphics.Implicit`
- 7. Try it! `writeSVG (-35,-35) (35,35) 1 "test.svg" (circle 30)`
+ 7. Try it! `writeSVG 1 "test.svg" (circle 30)`
 
 
 (If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
@@ -257,7 +257,7 @@ Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.1/doc/html/Graphics-Implicit.html).
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.1, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.1/doc/html/Graphics-Implicit.html).
 
 A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post.
 
