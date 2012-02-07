@@ -53,6 +53,8 @@ union(r=14) {
 
 ![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
 
+(For code like this that is not backwards compatible with OpenSCAD, it is recommended that you save it as a .escad file -- Extended OpenSCAD.)
+
 Like openscad, ImplicitCAD supports extruding objects.
 
 ```c
@@ -225,8 +227,6 @@ You can do a whole lot more!
 Try ImplicitCAD!
 ----------------
 
-Install latest stable release:
-
  1. Install GHC and cabal.
      * Debain/Ubuntu: `apt-get install ghc cabal-install`
      * Archlinux: `pacman -S ghc cabal-install`
@@ -234,23 +234,32 @@ Install latest stable release:
      * Mac OSX:
          * Homebrew: `brew install ghc cabal-install`
          * *Fink doesn't seem to have a package for cabal*
- 2. Use cabal to install ImplicitCAD: `cabal update; cabal install implicit`
- 3. Start ghci: `ghci`
- 4. Load ImplicitCAD: `import Graphics.Implicit`
- 5. Try it! `writeSVG 1 "test.svg" (circle 30)`
-
-Install development branch:
-
- 1. Install GHC and cabal (see above)
- 2. Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
- 3. cd in: `cd ImplicitCAD/`
- 4. cabal install it: `cabal install`
- 5. Start ghci: `ghci`
- 6. Load ImplicitCAD: `import Graphics.Implicit`
- 7. Try it! `writeSVG 1 "test.svg" (circle 30)`
-
-
-(If you want to use the extended OpenSCAD interpreter, extopenscad, you may need to modify your `$PATH` variable to include `~/.cabal/bin/`.)
+ 2. You now have two options for installation:
+     * Latest release:
+         * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
+     * Development version:
+         * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+         * cd in: `cd ImplicitCAD/`
+         * cabal install it: `cabal update && cabal configure && cabal install`
+ 3. Try it!
+     * extopenscad test:
+          * Make a test file: `echo "circle(30);" > test.escad`
+          * Run extopencad: `extopenscad test.escad`
+             * Alternatively, `~/.cabal/bin/extopenscad test.escad` -- see bellow.
+     * Haskell ImplicitCAD test: 
+          * Start ghci: `ghci`
+          * Load ImplicitCAD: `import Graphics.Implicit`
+          * Try it! `writeSVG 1 "test.svg" (circle 30)`
+ 4. Known issues:
+     * extopenscad test results in `bash: extopenscad: command not found` (or similar for your shell)
+         * This probably means `~/.cabal/bin/` is not in your `$PATH` variable. 
+           Try using `~/.cabal/bin/extopenscad` as your command instead.
+     * Haskell test results in `module is not loaded: `Graphics.Implicit' (./Graphics/Implicit.hs)`
+         * This is most likely a problem with your Linux distro and cabal not playing nice. 
+           GHC is not configured to see the ImplicitCAD libraries. You can confirm this by 
+           try the test in `~/.cabal/lib/`. If that works, you should be able to use ghc
+           anywhere with the `-Ldir` or `-llib` options. Alternatively, some people have
+           permanently fixed this by doing the cabal install as root.
 
 Documentation
 -------------
