@@ -50,16 +50,17 @@ symbolicGetMesh res (Scale3 s obj) =
 symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = 
 	let
 		square a b c d = [(a,b,c),(d,a,c)]
+		rsquare a b c d = [(c,b,a),(c,a,d)]
 	in
-		   square (x1,y1,z1) (x2,y1,z1) (x2,y2,z1) (x1,y2,z1)
+		   rsquare (x1,y1,z1) (x2,y1,z1) (x2,y2,z1) (x1,y2,z1)
 		++ square (x1,y1,z2) (x2,y1,z2) (x2,y2,z2) (x1,y2,z2)
 		++ square (x1,y1,z1) (x2,y1,z1) (x2,y1,z2) (x1,y1,z2)
-		++ square (x1,y2,z1) (x2,y2,z1) (x2,y2,z2) (x1,y2,z2)
+		++ rsquare (x1,y2,z1) (x2,y2,z1) (x2,y2,z2) (x1,y2,z2)
 		++ square (x1,y1,z1) (x1,y1,z2) (x1,y2,z2) (x1,y2,z1)
-		++ square (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
+		++ rsquare (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
 
--- Use spherical coordiantes to create an easy tesselation of a sphere
-symbolicGetMesh res (Sphere r) = 
+-- Use spherical coordinates to create an easy tesselation of a sphere
+symbolicGetMesh res (Sphere r) =
 	let
 		square a b c d = [(a,b,c),(d,a,c)]
 		n = max 5 (fromIntegral $ ceiling $ 3*r/res)

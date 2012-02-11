@@ -8,7 +8,7 @@ import Control.Parallel (par, pseq)
 
 -- | getMesh gets a triangle mesh describe the boundary of your 3D
 --  object. 
---  There are many getMesh functions in this file. THis one is the
+--  There are many getMesh functions in this file. This one is the
 --  simplest and should be least bug prone. Use it for debugging.
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
 getMesh (x1, y1, z1) (x2, y2, z2) res obj = 
@@ -140,6 +140,8 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 
 		-- Convenience function
 		square a b c d = [(a,b,c),(d,a,c)]
+		rsquare a b c d = [(c,b,a),(c,a,d)]
+		rev (a, b, c) = (c, b, a)
 	in case 
 		-- whether the vertices are "in" or "out" form the topological 
 		-- basis of our triangles constructions. We must consider every 
@@ -174,37 +176,36 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     False,False) -> square x1y1 x2y1 x2y2 x1y2
 
 		(False,False,    True, True,
-		 False,False,    True, True ) -> square x1y1 x2y1 x2y2 x1y2
+		 False,False,    True, True ) -> rsquare x1y1 x2y1 x2y2 x1y2
 
 		(True, True,     True, True,
 		 False,False,    False,False) -> square x1z1 x2z1 x2z2 x1z2
 
 		(False,False,    False,False,
-		 True, True,     True, True ) -> square x1z1 x2z1 x2z2 x1z2
+		 True, True,     True, True ) -> rsquare x1z1 x2z1 x2z2 x1z2
 
 		(False,True,     False,True,
-		 False,True,     False,True ) -> square y1z1 y2z1 y2z2 y1z2
+		 False,True,     False,True ) -> rsquare y1z1 y2z1 y2z2 y1z2
 
 		(True, False,    True, False,
 		 True, False,    True, False) -> square y1z1 y2z1 y2z2 y1z2
 
-
-		-- z single column
+		-- single z column
 
 		(True, False,    True, False,
 		 False,False,    False,False) -> square x1z1 y2z1 y2z2 x1z2
 
 		(False,True,     False,True,
-		 False,False,    False,False) -> square x2z1 y2z1 y2z2 x2z2
+		 False,False,    False,False) -> rsquare x2z1 y2z1 y2z2 x2z2
 
 		(False,False,    False,False,
-		 True, False,    True, False) -> square x1z1 y1z1 y1z2 x1z2
+		 True, False,    True, False) -> rsquare x1z1 y1z1 y1z2 x1z2
 
 		(False,False,    False,False,
-		 False,True,     False,True ) -> square y1z1 x2z1 x2z2 y1z2
+		 False,True,     False,True ) -> rsquare y1z1 x2z1 x2z2 y1z2
 
-		(False,True,     False,True, 
-		 True, True,     True, True ) -> square x1z1 y2z1 y2z2 x1z2
+		(False,True,     False,True,
+		 True, True,     True, True ) -> rsquare x1z1 y2z1 y2z2 x1z2
 
 		(True, False,    True, False,
 		 True, True,     True, True ) -> square x2z1 y2z1 y2z2 x2z2
@@ -221,16 +222,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, False,    False,False) -> square x1y1 y1z1 y2z1 x1y2
 
 		(False,True,     False,False,
-		 False,True,     False,False) -> square x2y1 y1z1 y2z1 x2y2
+		 False,True,     False,False) -> rsquare x2y1 y1z1 y2z1 x2y2
 
 		(False,False,    True, False,
-		 False,False,    True, False) -> square x1y1 y1z2 y2z2 x1y2
+		 False,False,    True, False) -> rsquare x1y1 y1z2 y2z2 x1y2
 
 		(False,False,    False,True, 
 		 False,False,    False,True ) -> square x2y1 y1z2 y2z2 x2y2
 
 		(False,True,     True, True,
-		 False,True,     True, True) -> square x1y1 y1z1 y2z1 x1y2
+		 False,True,     True, True) -> rsquare x1y1 y1z1 y2z1 x1y2
 
 		(True, False,    True, True,
 		 True, False,    True, True) -> square x2y1 y1z1 y2z1 x2y2
@@ -238,25 +239,25 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		(True, True,     False, True,
 		 True, True,     False, True) -> square x1y1 y1z2 y2z2 x1y2
 
-		(True, True,     True, False, 
-		 True, True,     True, False) -> square x2y1 y1z2 y2z2 x2y2
+		(True, True,     True, False,
+		 True, True,     True, False) -> rsquare x2y1 y1z2 y2z2 x2y2
 
-		-- since x column
+		-- single x column
 
 		(True, True,     False,False,
 		 False,False,    False,False) -> square x1y2 x1z1 x2z1 x2y2
 
 		(False,False,    False,False,
-		 True, True,     False,False) -> square x1y1 x1z1 x2z1 x2y1
+		 True, True,     False,False) -> rsquare x1y1 x1z1 x2z1 x2y1
 
 		(False,False,    True, True,
-		 False,False,    False,False) -> square x1y2 x1z2 x2z2 x2y2
+		 False,False,    False,False) -> rsquare x1y2 x1z2 x2z2 x2y2
 
 		(False,False,    False,False,
 		 False,False,    True, True ) -> square x1y1 x1z2 x2z2 x2y1
 
-		(False,False,    True, True, 
-		 True, True,     True, True ) -> square x1y2 x1z1 x2z1 x2y2
+		(False,False,    True, True,
+		 True, True,     True, True ) -> rsquare x1y2 x1z1 x2z1 x2y2
 
 		(True, True,     True, True, 
 		 False,False,    True, True ) -> square x1y1 x1z1 x2z1 x2y1
@@ -264,8 +265,8 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		(True, True,     False,False,
 		 True, True,     True, True ) -> square x1y2 x1z2 x2z2 x2y2
 
-		(True, True,     True, True, 
-		 True, True,     False,False) -> square x1y1 x1z2 x2z2 x2y1
+		(True, True,     True, True,
+		 True, True,     False,False) -> rsquare x1y1 x1z2 x2z2 x2y1
 
 		-- lone points
 
@@ -273,16 +274,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,False,    False,False) -> [(x1z1, y2z1, x1y2)]
 
 		(False,True,     False,False,
-		 False,False,    False,False) -> [(x2z1, y2z1, x2y2)]
+		 False,False,    False,False) -> [rev (x2z1, y2z1, x2y2)]
 
 		(False,False,    False,False,
-		 True, False,    False,False) -> [(x1z1, y1z1, x1y1)]
+		 True, False,    False,False) -> [rev (x1z1, y1z1, x1y1)]
 
 		(False,False,    False,False,
 		 False,True,     False,False) -> [(x2z1, y1z1, x2y1)]
 
 		(False,False,    True, False,
-		 False,False,    False,False) -> [(x1z2, y2z2, x1y2)]
+		 False,False,    False,False) -> [rev (x1z2, y2z2, x1y2)]
 
 		(False,False,    False,True,
 		 False,False,    False,False) -> [(x2z2, y2z2, x2y2)]
@@ -291,10 +292,10 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,False,    True, False) -> [(x1z2, y1z2, x1y1)]
 
 		(False,False,    False,False,
-		 False,False,    False,True ) -> [(x2z2, y1z2, x2y1)]
+		 False,False,    False,True ) -> [rev (x2z2, y1z2, x2y1)]
 
-		(False,True,     True, True, 
-		 True, True,     True, True ) -> [(x1z1, y2z1, x1y2)]
+		(False,True,     True, True,
+		 True, True,     True, True ) -> [rev (x1z1, y2z1, x1y2)]
 
 		(True, False,    True, True, 
 		 True, True,     True, True ) -> [(x2z1, y2z1, x2y2)]
@@ -302,17 +303,17 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		(True, True,     True, True, 
 		 False,True,     True, True ) -> [(x1z1, y1z1, x1y1)]
 
-		(True, True,     True, True, 
-		 True, False,    True, True ) -> [(x2z1, y1z1, x2y1)]
+		(True, True,     True, True,
+		 True, False,    True, True ) -> [rev (x2z1, y1z1, x2y1)]
 
 		(True, True,     False,True, 
 		 True, True,     True, True ) -> [(x1z2, y2z2, x1y2)]
 
 		(True, True,     True, False,
-		 True, True,     True, True ) -> [(x2z2, y2z2, x2y2)]
+		 True, True,     True, True ) -> [rev (x2z2, y2z2, x2y2)]
 
-		(True, True,     True, True, 
-		 True, True,     False,True ) -> [(x1z2, y1z2, x1y1)]
+		(True, True,     True, True,
+		 True, True,     False,True ) -> [rev (x1z2, y1z2, x1y1)]
 
 		(True, True,     True, True, 
 		 True, True,     True, False) -> [(x2z2, y1z2, x2y1)]
@@ -320,7 +321,7 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		-- z flat + 1
 
 		(False,False,    True, False,
-		 False,False,    True, True) -> [(x1y1,x2y1,x2z2), (x1y1,x2z2,y2z2), (x1y1,y2z2,x1y2)]
+		 False,False,    True, True) -> [rev (x1y1,x2y1,x2z2), rev (x1y1,x2z2,y2z2), rev (x1y1,y2z2,x1y2)]
 
 		(True, True,    False,True,
 		 True, True,    False,False) -> [(x1y1,x2y1,x2z2), (x1y1,x2z2,y2z2), (x1y1,y2z2,x1y2)]
@@ -329,16 +330,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,False,    True, True) -> [(x2y1,x1y1,x1z2), (x2y1,x1z2,y2z2), (x2y1,y2z2,x2y2)]
 
 		(True, True,    True, False,
-		 True, True,    False,False) -> [(x2y1,x1y1,x1z2), (x2y1,x1z2,y2z2), (x2y1,y2z2,x2y2)]
+		 True, True,    False,False) -> [rev (x2y1,x1y1,x1z2), rev (x2y1,x1z2,y2z2), rev (x2y1,y2z2,x2y2)]
 
 		(False,False,    True, True,
 		 False,False,    True, False) -> [(x1y2,x2y2,x2z2), (x1y2,x2z2,y1z2), (x1y2,y1z2,x1y1)]
 
 		(True, True,    False,False,
-		 True, True,    False,True ) -> [(x1y2,x2y2,x2z2), (x1y2,x2z2,y1z2), (x1y2,y1z2,x1y1)]
+		 True, True,    False,True ) -> [rev (x1y2,x2y2,x2z2), rev (x1y2,x2z2,y1z2), rev (x1y2,y1z2,x1y1)]
 
 		(False,False,    True, True,
-		 False,False,    False,True) -> [(x2y2,x1y2,x1z2), (x2y2,x1z2,y1z2), (x2y2,y1z2,x2y1)]
+		 False,False,    False,True) -> [rev (x2y2,x1y2,x1z2), rev (x2y2,x1z2,y1z2), rev (x2y2,y1z2,x2y1)]
 
 		(True, True,    False,False,
 		 True, True,    True, False) -> [(x2y2,x1y2,x1z2), (x2y2,x1z2,y1z2), (x2y2,y1z2,x2y1)]
@@ -349,16 +350,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     False,False) -> [(x1y1,x2y1,x2z1), (x1y1,x2z1,y2z1), (x1y1,y2z1,x1y2)]
 
 		(False,True,     True, True,
-		 False,False,     True, True) -> [(x1y1,x2y1,x2z1), (x1y1,x2z1,y2z1), (x1y1,y2z1,x1y2)]
+		 False,False,     True, True) -> [rev (x1y1,x2y1,x2z1), rev (x1y1,x2z1,y2z1), rev (x1y1,y2z1,x1y2)]
 
 		(False,True,    False,False,
-		 True, True,    False,False) -> [(x2y1,x1y1,x1z1), (x2y1,x1z1,y2z1), (x2y1,y2z1,x2y2)]
+		 True, True,    False,False) -> [rev (x2y1,x1y1,x1z1), rev (x2y1,x1z1,y2z1), rev (x2y1,y2z1,x2y2)]
 
 		(True, False,     True, True,
 		 False,False,     True, True) -> [(x2y1,x1y1,x1z1), (x2y1,x1z1,y2z1), (x2y1,y2z1,x2y2)]
 
 		(True, True,    False,False,
-		 True, False,    False,False) -> [(x1y2,x2y2,x2z1), (x1y2,x2z1,y1z1), (x1y2,y1z1,x1y1)]
+		 True, False,    False,False) -> [rev (x1y2,x2y2,x2z1), rev (x1y2,x2z1,y1z1), rev (x1y2,y1z1,x1y1)]
 
 		(False,False,     True, True,
 		 False,True,     True, True) -> [(x1y2,x2y2,x2z1), (x1y2,x2z1,y1z1), (x1y2,y1z1,x1y1)]
@@ -367,7 +368,9 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,True,    False,False) -> [(x2y2,x1y2,x1z1), (x2y2,x1z1,y1z1), (x2y2,y1z1,x2y1)]
 
 		(False,False,     True, True,
-		 True, False,     True, True) -> [(x2y2,x1y2,x1z1), (x2y2,x1z1,y1z1), (x2y2,y1z1,x2y1)]
+		 True, False,     True, True) -> [rev (x2y2,x1y2,x1z1), rev (x2y2,x1z1,y1z1), rev (x2y2,y1z1,x2y1)]
+
+
 
 		-- y flat + 1
 
@@ -375,16 +378,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, False,    True, False) -> [(y2z1,x2y2,x2z2),(y2z1,x2z2,y1z1),(y1z1,x2z2,y1z2)]
 
 		(False,True,     False,False,
-		 False,True,     False,True ) -> [(y2z1,x2y2,x2z2),(y2z1,x2z2,y1z1),(y1z1,x2z2,y1z2)]
+		 False,True,     False,True ) -> [rev (y2z1,x2y2,x2z2),rev (y2z1,x2z2,y1z1),rev (y1z1,x2z2,y1z2)]
 
 		(True, False,    True, False,
-		 True, False,    True, True ) -> [(y1z1,x2y1,x2z2),(y1z1,x2z2,y2z1),(y2z1,x2z2,y2z2)]
+		 True, False,    True, True ) -> [rev (y1z1,x2y1,x2z2),rev (y1z1,x2z2,y2z1),rev (y2z1,x2z2,y2z2)]
 
 		(False,True,     False,True,
 		 False,True,     False,False) -> [(y1z1,x2y1,x2z2),(y1z1,x2z2,y2z1),(y2z1,x2z2,y2z2)]
 
 		(False,True,     True, True,
-		 False,True,     False,True ) -> [(y2z1,x1y2,x1z2),(y2z1,x1z2,y1z1),(y1z1,x1z2,y1z2)]
+		 False,True,     False,True ) -> [rev (y2z1,x1y2,x1z2),rev (y2z1,x1z2,y1z1),rev (y1z1,x1z2,y1z2)]
 
 		(True, False,    False,False,
 		 True, False,    True, False) -> [(y2z1,x1y2,x1z2),(y2z1,x1z2,y1z1),(y1z1,x1z2,y1z2)]
@@ -393,12 +396,12 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,True,     True, True ) -> [(y1z1,x1y1,x1z2),(y1z1,x1z2,y2z1),(y2z1,x1z2,y2z2)]
 
 		(True, False,    True, False,
-		 True, False,    False,False) -> [(y1z1,x1y1,x1z2),(y1z1,x1z2,y2z1),(y2z1,x1z2,y2z2)]
+		 True, False,    False,False) -> [rev (y1z1,x1y1,x1z2),rev (y1z1,x1z2,y2z1),rev (y2z1,x1z2,y2z2)]
 
 
 
 		(True, True,    True, False,
-		 True, False,    True, False) -> [(y2z2,x2y2,x2z1),(y2z2,x2z1,y1z2),(y1z2,x2z1,y1z1)]
+		 True, False,    True, False) -> [rev (y2z2,x2y2,x2z1),rev (y2z2,x2z1,y1z2),rev (y1z2,x2z1,y1z1)]
 
 		(False,False,    False,True,
 		 False,True,     False,True ) -> [(y2z2,x2y2,x2z1),(y2z2,x2z1,y1z2),(y1z2,x2z1,y1z1)]
@@ -407,16 +410,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     True, False) -> [(y1z2,x2y1,x2z1),(y1z2,x2z1,y2z2),(y2z2,x2z1,y2z1)]
 
 		(False,True,     False,True,
-		 False,False,    False,True) -> [(y1z2,x2y1,x2z1),(y1z2,x2z1,y2z2),(y2z2,x2z1,y2z1)]
+		 False,False,    False,True) -> [rev (y1z2,x2y1,x2z1),rev (y1z2,x2z1,y2z2),rev (y2z2,x2z1,y2z1)]
 
 		(True, True,     False,True,
 		 False,True,     False,True) -> [(y2z2,x1y2,x1z1),(y2z2,x1z1,y1z2),(y1z2,x1z1,y1z1)]
 
 		(False,False,    True, False,
-		 True, False,    True, False) -> [(y2z2,x1y2,x1z1),(y2z2,x1z1,y1z2),(y1z2,x1z1,y1z1)]
+		 True, False,    True, False) -> [rev (y2z2,x1y2,x1z1),rev (y2z2,x1z1,y1z2),rev (y1z2,x1z1,y1z1)]
 
 		(False,True,     False,True,
-		 True, True,     False,True) -> [(y1z2,x1y1,x1z1),(y1z2,x1z1,y2z2),(y2z2,x1z1,y2z1)]
+		 True, True,     False,True) -> [rev (y1z2,x1y1,x1z1),rev (y1z2,x1z1,y2z2),rev (y2z2,x1z1,y2z1)]
 
 		(True, False,    True, False,
 		 False,False,    True, False) -> [(y1z2,x1y1,x1z1),(y1z2,x1z1,y2z2),(y2z2,x1z1,y2z1)]
@@ -429,16 +432,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,False,    True, False) -> [(x1z1,x2z1,x1y1),(x1y1,x2z1,x2z2),(x1y1,x2z2,y1z2)]
 
 		(False,False,    False,False,
-		 True, True,     False,True ) -> [(x1z1,x2z1,x1y1),(x1y1,x2z1,x2z2),(x1y1,x2z2,y1z2)]
+		 True, True,     False,True ) -> [rev (x1z1,x2z1,x1y1),rev (x1y1,x2z1,x2z2),rev (x1y1,x2z2,y1z2)]
 
 		(False,False,    True, False,
-		 True, True,     True, True) -> [(x1z1,x2z1,x1y2),(x1y2,x2z1,x2z2),(x1y2,x2z2,y2z2)]
+		 True, True,     True, True) -> [rev (x1z1,x2z1,x1y2),rev (x1y2,x2z1,x2z2),rev (x1y2,x2z2,y2z2)]
 
 		(True, True,     False,True,
 		 False,False,    False,False) -> [(x1z1,x2z1,x1y2),(x1y2,x2z1,x2z2),(x1y2,x2z2,y2z2)]
 
 		(True, True,     True, True,
-		 False,False,    False,True) -> [(x2z1,x1z1,x2y1),(x2y1,x1z1,x1z2),(x2y1,x1z2,y1z2)]
+		 False,False,    False,True) -> [rev (x2z1,x1z1,x2y1),rev (x2y1,x1z1,x1z2),rev (x2y1,x1z2,y1z2)]
 
 		(False,False,    False,False,
 		 True, True,     True, False) -> [(x2z1,x1z1,x2y1),(x2y1,x1z1,x1z2),(x2y1,x1z2,y1z2)]
@@ -447,11 +450,11 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     True, True) -> [(x2z1,x1z1,x2y2),(x2y2,x1z1,x1z2),(x2y2,x1z2,y2z2)]
 
 		(True, True,     True, False,
-		 False,False,    False,False) -> [(x2z1,x1z1,x2y2),(x2y2,x1z1,x1z2),(x2y2,x1z2,y2z2)]
+		 False,False,    False,False) -> [rev (x2z1,x1z1,x2y2),rev (x2y2,x1z1,x1z2),rev (x2y2,x1z2,y2z2)]
 
 
 		(True, True,     True, True,
-		 True, False,    False,False) -> [(x1z2,x2z2,x1y1),(x1y1,x2z2,x2z1),(x1y1,x2z1,y1z1)]
+		 True, False,    False,False) -> [rev (x1z2,x2z2,x1y1),rev (x1y1,x2z2,x2z1),rev (x1y1,x2z1,y1z1)]
 
 		(False,False,    False,False,
 		 False,True,     True, True ) -> [(x1z2,x2z2,x1y1),(x1y1,x2z2,x2z1),(x1y1,x2z1,y1z1)]
@@ -460,16 +463,16 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     True, True ) -> [(x1z2,x2z2,x1y2),(x1y2,x2z2,x2z1),(x1y2,x2z1,y2z1)]
 
 		(False,True,     True, True,
-		 False,False,    False,False) -> [(x1z2,x2z2,x1y2),(x1y2,x2z2,x2z1),(x1y2,x2z1,y2z1)]
+		 False,False,    False,False) -> [rev (x1z2,x2z2,x1y2),rev (x1y2,x2z2,x2z1),rev (x1y2,x2z1,y2z1)]
 
 		(True, True,     True, True,
 		 False,True,     False,False) -> [(x2z2,x1z2,x2y1),(x2y1,x1z2,x1z1),(x2y1,x1z1,y1z1)]
 
 		(False,False,    False,False,
-		 True, False,    True, True) -> [(x2z2,x1z2,x2y1),(x2y1,x1z2,x1z1),(x2y1,x1z1,y1z1)]
+		 True, False,    True, True) -> [rev (x2z2,x1z2,x2y1),rev (x2y1,x1z2,x1z1),rev (x2y1,x1z1,y1z1)]
 
 		(False,True,     False,False,
-		 True, True,     True, True) -> [(x2z2,x1z2,x2y2),(x2y2,x1z2,x1z1),(x2y2,x1z1,y2z1)]
+		 True, True,     True, True) -> [rev (x2z2,x1z2,x2y2),rev (x2y2,x1z2,x1z1),rev (x2y2,x1z1,y2z1)]
 
 		(True, False,    True, True,
 		 False,False,    False,False) -> [(x2z2,x1z2,x2y2),(x2y2,x1z2,x1z1),(x2y2,x1z1,y2z1)]
@@ -477,7 +480,7 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 
 
 		(True, True,     True, False,
-		 True, False,    False,False) -> [(x1y1,x1z2,y1z1),(y1z1,x1z2,y2z2),(y1z1,y2z2,x2z1),(x2z1,y2z2,x2y2)]
+		 True, False,    False,False) -> [rev (x1y1,x1z2,y1z1),rev (y1z1,x1z2,y2z2),rev (y1z1,y2z2,x2z1),rev (x2z1,y2z2,x2y2)]
 
 		(False,False,    False,True,
 		 False,True,     True, True ) -> [(x1y1,x1z2,y1z1),(y1z1,x1z2,y2z2),(y1z1,y2z2,x2z1),(x2z1,y2z2,x2y2)]
@@ -486,7 +489,7 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,True,     False,False) -> [(x2y1,x2z2,y1z1),(y1z1,x2z2,y2z2),(y1z1,y2z2,x1z1),(x1z1,y2z2,x1y2)]
 
 		(False,False,    True, False,
-		 True, False,    True, True ) -> [(x2y1,x2z2,y1z1),(y1z1,x2z2,y2z2),(y1z1,y2z2,x1z1),(x1z1,y2z2,x1y2)]
+		 True, False,    True, True ) -> [rev (x2y1,x2z2,y1z1),rev (y1z1,x2z2,y2z2),rev (y1z1,y2z2,x1z1),rev (x1z1,y2z2,x1y2)]
 
 
 
@@ -495,10 +498,10 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 True, True,     True, False) -> [(x1y2,x1z2,y2z1),(y2z1,x1z2,y1z2),(y2z1,y1z2,x2z1),(x2z1,y1z2,x2y1)]
 
 		(False,True,     True, True,
-		 False,False,    False,True ) -> [(x1y2,x1z2,y2z1),(y2z1,x1z2,y1z2),(y2z1,y1z2,x2z1),(x2z1,y1z2,x2y1)]
+		 False,False,    False,True ) -> [rev (x1y2,x1z2,y2z1),rev (y2z1,x1z2,y1z2),rev (y2z1,y1z2,x2z1),rev (x2z1,y1z2,x2y1)]
 
 		(False,True,     False,False,
-		 True, True,     False,True ) -> [(x2y2,x2z2,y2z1),(y2z1,x2z2,y1z2),(y2z1,y1z2,x1z1),(x1z1,y1z2,x1y1)]
+		 True, True,     False,True ) -> [rev (x2y2,x2z2,y2z1),rev (y2z1,x2z2,y1z2),rev (y2z1,y1z2,x1z1),rev (x1z1,y1z2,x1y1)]
 
 		(True, False,    True, True,
 		 False,False,    True, False) -> [(x2y2,x2z2,y2z1),(y2z1,x2z2,y1z2),(y2z1,y1z2,x1z1),(x1z1,y1z2,x1y1)]
