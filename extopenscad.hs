@@ -4,7 +4,7 @@
 -- Let's make it convenient to run our extended openscad format code
 
 -- Let's be explicit about what we're getting from where :)
-import System (getArgs)
+import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeSTL)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
