@@ -254,7 +254,7 @@ Try ImplicitCAD!
      * extopenscad test results in `bash: extopenscad: command not found` (or similar for your shell)
          * This probably means `~/.cabal/bin/` is not in your `$PATH` variable. 
            Try using `~/.cabal/bin/extopenscad` as your command instead.
-     * Haskell test results in `module is not loaded: `Graphics.Implicit' (./Graphics/Implicit.hs)`
+     * Haskell test results in `module is not loaded: 'Graphics.Implicit' (./Graphics/Implicit.hs)`
          * This is most likely a problem with your Linux distro and cabal not playing nice. 
            GHC is not configured to see the ImplicitCAD libraries. You can confirm this by 
            try the test in `~/.cabal/lib/`. If that works, you should be able to use ghc

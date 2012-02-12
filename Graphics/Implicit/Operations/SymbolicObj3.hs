@@ -25,5 +25,5 @@ instance MagnitudeObj SymbolicObj3 where
 	outset      = Outset3
 	shell       = Shell3
 	unionR      = UnionR3 
-	intersectR  = UnionR3 
+	intersectR  = IntersectR3 
 	differenceR = DifferenceR3
