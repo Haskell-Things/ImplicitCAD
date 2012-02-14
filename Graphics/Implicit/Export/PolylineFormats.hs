@@ -6,6 +6,7 @@ module Graphics.Implicit.Export.PolylineFormats where
 
 import Graphics.Implicit.Definitions
 
+svg :: [Polyline] -> String
 svg polylines = text
 	where
 		-- SVG is stupidly laid out... (0,0) is the top left corner
@@ -22,6 +23,7 @@ svg polylines = text
 			++ svglines		
 			++ "</svg> "
 
+hacklabLaserGCode :: [Polyline] -> String
 hacklabLaserGCode polylines = text
 	where
 		gcodeHeader = 

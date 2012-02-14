@@ -6,7 +6,7 @@
 -- Let's be explicit about what we're getting from where :)
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeSTL)
+import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Data.Map as Map
 
@@ -35,8 +35,12 @@ executeAndExport content targetname = case runOpenscad content of
 				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
 				writeSVG res (targetname ++ ".svg") x
 			(_, _, x:xs)  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
-				writeSTL res (targetname ++ ".stl") x
+				--putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
+				--writeSTL res (targetname ++ ".stl") x
+				-- OBJ is a cooler format :P ... We need a way to select formats
+				putStrLn $ "Rendering 3D object to " ++ targetname++ ".obj"
+				writeOBJ res (targetname ++ ".obj") x
+
 		
 
 main :: IO()

@@ -5,13 +5,32 @@
 
 -- Functions to make meshes/polylines finer.
 
-module Graphics.Implicit.Export.Util (divideMesh2To, divideMeshTo, dividePolylineTo) where
+module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolylineTo)-} where
 
--- import Prelude hiding ((+),(-),(*),(/))
+import Prelude hiding ((+),(-),(*),(/))
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.SaneOperators as S
+import Graphics.Implicit.SaneOperators
 
--- If we need to make a 2D mesh finer...
+normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
+normTriangle res obj tri@(a,b,c) = 
+	(normify a, normify b, normify c) where normify = normVertex res obj
+
+normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
+normVertex res obj p@(x,y,z) = 
+	let
+		-- D_vf(p) = ( f(p) - f(p+v) ) /|v|
+		-- but we'll actually scale v by res, so then |v| = res
+		-- and that f is obj
+		-- and is fixed at p
+		-- so actually: d v = ...
+		d :: ℝ3 -> ℝ
+		d v = ( obj p - obj (p + res*v) ) /res
+		dx = d (1, 0, 0)
+		dy = d (0, 1, 0)
+		dz = d (0, 0, 1)
+	in ((x,y,z), (dx,dy,dz))
+
+{--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]
 divideMesh2To res mesh =
 	let 
@@ -73,4 +92,4 @@ dividePolylineTo res polyline =
 			else [polyline !! n]
 
 
-
+-}

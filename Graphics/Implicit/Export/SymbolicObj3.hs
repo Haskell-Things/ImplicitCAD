@@ -25,11 +25,15 @@ import Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
 import Graphics.Implicit.Export.Symbolic.CoerceSymbolic3
 import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
-import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
+--import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
+import Graphics.Implicit.Export.Util (normTriangle)
 
 
 instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 	discreteAprox res obj = symbolicGetMesh res obj
+
+instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
+	discreteAprox res obj = map (normTriangle res (fst $ coerceSymbolic3 obj)) $ symbolicGetMesh res obj
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 

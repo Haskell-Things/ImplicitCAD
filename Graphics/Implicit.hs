@@ -29,6 +29,7 @@ module Graphics.Implicit(
 	-- Export
 	writeSVG,
 	writeSTL,
+	writeOBJ,
 	runOpenscad
 ) where
 
@@ -59,6 +60,15 @@ writeSTL ::
 	-> IO()     -- ^ Writing action!
 
 writeSTL = Export.writeSTL
+
+writeOBJ ::
+	ℝ           -- ^ Resolution
+	-> FilePath -- ^ STL file to write to
+	-> DObj3    -- ^ 3D object to write
+	-> IO()     -- ^ Writing action!
+
+writeOBJ = Export.writeOBJ
+
 
 writeSVG :: 
 	ℝ           -- ^ Resolution

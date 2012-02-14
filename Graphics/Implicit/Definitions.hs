@@ -18,8 +18,16 @@ type Polyline = [ℝ2]
 -- | A triangle (a,b,c) = a trinagle with vertices a, b and c
 type Triangle = (ℝ3, ℝ3, ℝ3)
 
+-- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
+--   with corresponding normals n1, n2, and n3
+type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
+
+
 -- | A triangle mesh is a bunch of triangles :)
 type TriangleMesh = [Triangle]
+
+-- | A normed triangle mesh is a bunch of normed trianlges!!
+type NormedTriangleMesh = [NormedTriangle]
 
 -- $ In Implicit CAD, we consider objects as functions
 -- of `outwardness'. The boundary is 0, negative is the

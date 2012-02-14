@@ -20,6 +20,7 @@ import Graphics.Implicit.Export.SymbolicObj3
 -- File formats
 import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats
+import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats
 
 -- Write an object in a given formet...
 
@@ -40,6 +41,7 @@ writeObject res format filename obj = writeFile filename text
 writeSVG res = writeObject res PolylineFormats.svg
 
 writeSTL res = writeObject res  TriangleMeshFormats.stl
+writeOBJ res = writeObject res  NormedTriangleMeshFormats.obj
 
 writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 
