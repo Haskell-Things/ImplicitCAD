@@ -6,7 +6,7 @@
 module Graphics.Implicit.Primitives.Obj2 where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.MathUtil
+import qualified Graphics.Implicit.MathUtil as MathUtil
 import Graphics.Implicit.Primitives.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 
@@ -16,8 +16,9 @@ instance PrimitiveSupporter2 Obj2 where
 	circle r = \(x,y) -> sqrt (x**2 + y**2) - r
 
 	rectR r (x1,y1) (x2,y2) = 
-		\(x,y) -> rmaximum  r [abs (x- dx/2.0 -x1) -dx/2.0, abs (y- dy/2.0 -y1) - dy/2.0]
+		\(x,y) -> MathUtil.rmaximum  r [abs (x- dx/2.0 -x1) -dx/2.0, abs (y- dy/2.0 -y1) - dy/2.0]
 			where (dx,dy) = (x2-x1,y2-y1)
+
 	polygonR 0 points =
 		let
 			pairs =
@@ -31,19 +32,8 @@ instance PrimitiveSupporter2 Obj2 where
 						( (y2 < 0) && (y1 > 0) ) || ( (y2 > 0) && (y1 < 0) ) ]
 				in
 					if odd $ length $ filter (>0) crossing_points then -1 else 1
-			dist a@(a1,a2) b@(b1,b2) p@(p1,p2) =
-				let
-					ab = b S.- a
-					nab = (1 / S.norm ab) S.* ab
-					ap = p S.- a
-					d  = nab S.⋅ ap
-					closest
-						| d < 0 = a
-						| d > S.norm ab = b
-						| otherwise = a S.+ d S.* nab
-				in
-					S.norm (closest S.- p)
-			dists = \ p -> map (\(a,b) ->  dist a b p) pairs
+
+			dists = \ p -> map (MathUtil.distFromLineSeg p) pairs
 		in
 			\ p -> isIn p * minimum (dists p)
 

@@ -1,10 +1,26 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum) where
+module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg) where
 
 import Data.List
 import Graphics.Implicit.Definitions
+import qualified Graphics.Implicit.SaneOperators as S
+
+-- | The distance a point p is from a line segment (a,b)
+distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
+distFromLineSeg p@(p1,p2) (a@(a1,a2), b@(b1,b2)) = S.norm (closest S.- p)
+	where
+		ab = b S.- a
+		nab = (1 / S.norm ab) S.* ab
+		ap = p S.- a
+		d  = nab S.⋅ ap
+		closest
+			| d < 0 = a
+			| d > S.norm ab = b
+			| otherwise = a S.+ d S.* nab
+
+		
 
 -- | Rounded Maximum
 -- Consider  max(x,y) = 0, the generated curve 

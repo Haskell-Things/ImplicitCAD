@@ -3,8 +3,9 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Graphics.Implicit.ExtOpenScad (runOpenscad) where
+module Graphics.Implicit.ExtOpenScad (runOpenscad, OpenscadObj (..) ) where
 
+import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (..) )
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 import Graphics.Implicit.ExtOpenScad.Statements (computationStatement, runComputations)
 

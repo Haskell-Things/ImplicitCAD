@@ -25,6 +25,7 @@ Library
         Graphics.Implicit.MathUtil
         Graphics.Implicit.Operations
         Graphics.Implicit.SaneOperators
+        Graphics.Implicit.ExtOpenScad
     Other-Modules:
         Graphics.Implicit.Primitives
         Graphics.Implicit.Primitives.Definitions
@@ -47,7 +48,6 @@ Library
         Graphics.Implicit.Operations.Obj2
         Graphics.Implicit.Operations.Obj3
         Graphics.Implicit.Operations.ObjPair
-        Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Default
         Graphics.Implicit.ExtOpenScad.Expressions

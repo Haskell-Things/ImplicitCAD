@@ -41,9 +41,11 @@ executeAndExport content targetname = case runOpenscad content of
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
+				putStrLn $ show x
 				writeSVG res (targetname ++ ".svg") x
 			(_, _, x:xs)  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
+				putStrLn $ show x
 				writeSTL res (targetname ++ ".stl") x
 
 -- | Give an openscad object to run and the basename of 
