@@ -109,9 +109,13 @@ expression 9 =
 	<|> ( try( do 
 		l <- expression 10;
 		string "[";
+		many space
 		start <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+		many space
 		char ':';
+		many space
 		end   <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+		many space
 		string "]";
 		return $ \varlookup ->
 			case (l varlookup, start varlookup, end varlookup) of
@@ -128,7 +132,9 @@ expression 9 =
 	<|> try (expression 10)
 expression n@8 = try (( do 
 		a <- expression (n+1);
+		many space
 		string "^";
+		many space
 		b <- expression n;
 		return $ \varlookup -> case (a varlookup, b varlookup) of
 			(ONum na, ONum nb) -> ONum (na ** nb)
@@ -147,7 +153,9 @@ expression n@6 =
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
 		div _         _        = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) (char '/')) (char '*')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) 
+			(many space >> char '/' >> many space )) 
+			(many space >> char '*' >> many space)
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
@@ -157,7 +165,7 @@ expression n@5 =
 		append (OString a) (OString b) = OString $ a++b
 		append _           _           = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (expression $ n+1) (string "++")
+		exprs <- sepBy1 (expression $ n+1) (many space >> string "++" >> many space)
 		return $ \varlookup -> foldl1 append $ map ($varlookup) exprs;
 	) <?> "append") 
 	<|>try (expression $ n+1)
@@ -172,7 +180,8 @@ expression n@4 =
 		sub (OList a) (OList b) = OList $ zipWith sub a b
 		sub _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) ( char '-')) (char '+')
+		exprs <- sepBy1 (sepBy1 (expression $ n+1) ( many space >> char '-' >> many space)) 
+			(many space >> char '+' >> many space)
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)
