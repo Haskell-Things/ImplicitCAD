@@ -9,6 +9,7 @@ import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Graphics.Implicit.Primitives.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
+import Data.List (nub)
 
 
 instance PrimitiveSupporter2 Obj2 where
@@ -19,21 +20,16 @@ instance PrimitiveSupporter2 Obj2 where
 		\(x,y) -> MathUtil.rmaximum  r [abs (x- dx/2.0 -x1) -dx/2.0, abs (y- dy/2.0 -y1) - dy/2.0]
 			where (dx,dy) = (x2-x1,y2-y1)
 
-	polygonR 0 points =
-		let
-			pairs =
-			   [ (points !! n, points !! (mod (n+1) (length points) ) ) | n <- [0 .. (length points) - 1] ]
-			isIn p@(p1,p2) =
-				let
-					crossing_points =
-						[x1 + (x2-x1)*y2/(y2-y1) |
-						((x1,y1), (x2,y2)) <-
-							map (\((a1,a2),(b1,b2)) -> ((a1-p1,a2-p2), (b1-p1,b2-p2)) ) pairs,
-						( (y2 < 0) && (y1 > 0) ) || ( (y2 > 0) && (y1 < 0) ) ]
-				in
-					if odd $ length $ filter (>0) crossing_points then -1 else 1
-
-			dists = \ p -> map (MathUtil.distFromLineSeg p) pairs
-		in
-			\ p -> isIn p * minimum (dists p)
+	polygonR 0 points p@(p1,p2) = minimum dists * if isIn then -1 else 1
+		where
+			pair n = (points !! n, points !! (mod (n+1) (length points) ) )
+			pairs =  [ pair n | n <- [0 .. (length points) - 1] ]
+			relativePairs =  map (\(a,b) -> (a S.- p, b S.- p) ) pairs
+			crossing_points =
+				[x2 - y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <-relativePairs,
+				   ( (y2 <= 0) && (y1 >= 0) ) || ( (y2 >= 0) && (y1 <= 0) ) ]
+			seemsInRight = odd $ length $ filter (>0) $ nub crossing_points
+			seemsInLeft = odd $ length $ filter (<0) $ nub crossing_points
+			isIn = seemsInRight && seemsInLeft
+			dists = map (MathUtil.distFromLineSeg p) pairs
 
