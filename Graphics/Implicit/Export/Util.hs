@@ -34,7 +34,9 @@ normVertex res obj p@(x,y,z) =
 		dx = d (1, 0, 0)
 		dy = d (0, 1, 0)
 		dz = d (0, 0, 1)
-	in ((x,y,z), (dx,dy,dz))
+		nonUnitNormal = (dx,dy,dz)
+		normal = nonUnitNormal / norm nonUnitNormal
+	in ((x,y,z), normal)
 
 {--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]

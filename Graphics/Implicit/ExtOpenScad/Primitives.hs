@@ -58,8 +58,8 @@ cube = moduleWithoutSuite "cube" $ do
 
 -- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
-	h  <- realArgumentWithDefault "h"  1;
 	r  <- realArgumentWithDefault "r"  1;
+	h  <- realArgumentWithDefault "h"  1;
 	r1 <- realArgumentWithDefault "r1" 1;
 	r2 <- realArgumentWithDefault "r2" 1;
 	center <- boolArgumentWithDefault "center" False;
