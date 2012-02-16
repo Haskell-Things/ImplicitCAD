@@ -27,6 +27,18 @@ import qualified Graphics.Implicit.SaneOperators as S
 instance DiscreteAproxable SymbolicObj2 [Polyline] where
 	discreteAprox res obj = symbolicGetContour res obj
 
+symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
+symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res symbObj
+	where
+		obj = fst $ coerceSymbolic2 symbObj
+		orient :: Polyline -> Polyline
+		orient points@(x:y:_) = 
+			let 
+				v = (\(a,b) -> (b, -a)) (y S.- x)
+				dv = v S./ (S.norm v / res / 0.1)
+			in if obj (x S.+ dv) - obj x > 0
+			then points
+			else reverse points
 
 symbolicGetContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [[ (x1,y1), (x2,y1), (x2,y2), (x1,y2), (x1,y1) ]]

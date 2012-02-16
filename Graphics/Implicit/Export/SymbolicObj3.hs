@@ -94,6 +94,8 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
 		-- Turn a polyline into a list of its segments
 		segify (a:b:xs) = (a,b):(segify $ b:xs)
 		segify _ = []
+		-- Flip a triangle. It's the same triangle with opposite handedness.
+		flipTri (a,b,c) = (a,c,b)
 		-- Turn a segment a--b into a list of triangles forming (a--b)×(r,h-r)
 		-- The dh stuff is to compensate for rounding errors, etc, and ensure that
 		-- the sides meet the top and bottom
@@ -101,14 +103,14 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
 			[((x1,y1,r-dh x1 y1), (x2,y2,r-dh x2 y2), (x2,y2,h-r+dh x2 y2)), 
 			 ((x1,y1,r-dh x1 y1), (x2,y2,h-r+dh x2 y2), (x1,y1,h-r+dh x1 y1)) ]
 		-- Get a contour polyline for obj2, turn it into a list of segments
-		segs = concat $ map segify $ symbolicGetContour res obj2
+		segs = concat $ map segify $ symbolicGetOrientedContour res obj2
 		-- Create sides for the main body of our object = segs × (r,h-r)
 		side_tris = concat $ map (\(a,b) -> segToSide a b) segs
 		-- Triangles that fill the contour. Make sure the mesh is at least (res/5) fine.
 		-- --res/5 because xyres won't always match up with normal res and we need to compensate.
 		fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
 		-- The bottom. Use dh to determine the z coordinates
-		bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+		bottom_tris = map flipTri $ [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
 				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
 		-- Same idea at the top.
 		top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
@@ -133,6 +135,8 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 		-- Turn a polyline into a list of its segments
 		segify (a:b:xs) = (a,b):(segify $ b:xs)
 		segify _ = []
+		-- Flip a triangle. It's the same triangle with opposite handedness.
+		flipTri (a,b,c) = (a,c,b)
 		-- The number of steps we're going to do the sides in:
 		n = fromIntegral $ ceiling $ h/res
 		-- Turn a segment a--b into a list of triangles forming 
@@ -156,7 +160,7 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 				[((x1,y1,la1), (x2,y2,la2), (x2,y2,lb2)), 
 				 ((x1,y1,la1), (x2,y2,lb2), (x1,y1,lb1)) ]
 		-- Get a contour polyline for obj2, turn it into a list of segments
-		segs = concat $ map segify $ symbolicGetContour res obj2
+		segs = concat $ map segify $ symbolicGetOrientedContour res obj2
 		-- Create sides for the main body of our object = segs × (r,h-r)
 		-- Many layers...
 		side_tris = concat $
@@ -165,7 +169,7 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 		-- --res/5 because xyres won't always match up with normal res and we need to compensate.
 		fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
 		-- The bottom. Use dh to determine the z coordinates
-		bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+		bottom_tris = map flipTri $ [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
 				| ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
 		-- Same idea at the top.
 		top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
