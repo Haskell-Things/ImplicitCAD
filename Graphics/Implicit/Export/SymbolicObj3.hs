@@ -64,17 +64,23 @@ symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) =
 		++ rsquare (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
 
 -- Use spherical coordinates to create an easy tesselation of a sphere
-symbolicGetMesh res (Sphere r) =
-	let
+symbolicGetMesh res (Sphere r) = half1 ++ half2
+	where
+		-- Convenience functions for mesh generation
 		square a b c d = [(a,b,c),(d,a,c)]
-		n = max 5 (fromIntegral $ ceiling $ 3*r/res)
-	in
-		concat [ square
-		 (r*cos(2*pi*m1/n),     r*sin(2*pi*m1/n)*cos(pi*m2/n),     r*sin(2*pi*m1/n)*sin(pi*m2/n) ) 
-		 (r*cos(2*pi*(m1+1)/n), r*sin(2*pi*(m1+1)/n)*cos(pi*m2/n), r*sin(2*pi*(m1+1)/n)*sin(pi*m2/n) ) 
-		 (r*cos(2*pi*(m1+1)/n), r*sin(2*pi*(m1+1)/n)*cos(pi*(m2+1)/n), r*sin(2*pi*(m1+1)/n)*sin(pi*(m2+1)/n) ) 
-		 (r*cos(2*pi*m1/n),     r*sin(2*pi*m1/n)*cos(pi*(m2+1)/n), r*sin(2*pi*m1/n)*sin(pi*(m2+1)/n)) 
-		  | m1 <- [0.. n-1], m2 <- [0.. n-1] ]
+		rsquare a b c d = [(c,b,a),(c,a,d)]
+		-- Number of steps of φ and θ respectivly
+		m = max 3 (fromIntegral $ ceiling $ 1.5*r/res)
+		n = 2*m
+		-- Spherical coordinates
+		spherical θ φ = (r*cos(θ), r*sin(θ)*cos(φ), r*sin(θ)*sin(φ))
+		-- Function placing steps on sphere
+		f n' m' = spherical (2*pi*n'/n) (pi*m'/m)
+		-- Mesh in two pieces..
+		half1 = concat [ square (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1)) 
+		                | m1 <- [0.. m-1], m2 <- [0.. m-1] ]
+		half2 = concat [ rsquare (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1)) 
+		                | m1 <- [m.. n-1], m2 <- [0.. m-1] ]
 
 -- We can compute a mesh of a rounded, extruded object from it contour, 
 -- contour filling trinagles, and magic.
