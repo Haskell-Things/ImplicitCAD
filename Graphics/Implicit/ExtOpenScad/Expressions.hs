@@ -13,6 +13,12 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 
+pad parser = do
+	many space
+	a <- parser
+	many space
+	return a
+
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
 variable :: GenParser Char st (VariableLookup -> OpenscadObj)
@@ -153,7 +159,7 @@ expression n@6 =
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
 		div _         _        = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) 
+		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '/' >> many space )) 
 			(many space >> char '*' >> many space)
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
@@ -180,7 +186,8 @@ expression n@4 =
 		sub (OList a) (OList b) = OList $ zipWith sub a b
 		sub _ _ = OUndefined
 	in try (( do 
-		exprs <- sepBy1 (sepBy1 (expression $ n+1) ( many space >> char '-' >> many space)) 
+		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
+			(many space >> char '-' >> many space )) 
 			(many space >> char '+' >> many space)
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
