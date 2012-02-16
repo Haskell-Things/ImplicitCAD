@@ -202,6 +202,11 @@ expression n@3 =
 		many space
 		expr <- expression $ n+1
 		return $ \varlookup -> negate $ expr varlookup
+	) <|> try (do
+		char '+'
+		many space
+		expr <- expression $ n+1
+		return $ expr
 	) <|> try (expression $ n+1)
 expression n@2 = try (expression $ n+1)
 expression n@1 = try (expression $ n+1)
