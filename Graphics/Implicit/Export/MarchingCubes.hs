@@ -118,10 +118,10 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		y1z2 = (x+dx*x1y1z2/(x1y1z2-x2y1z2), y,    z+dz)
 		y2z1 = (x+dx*x1y2z1/(x1y2z1-x2y2z1), y+dy, z)
 		y2z2 = (x+dx*x1y2z2/(x1y2z2-x2y2z2), y+dy, z+dz)
+
 		--}
-
-
 		{- Non-linearly interpolated
+
 		x1y1 = (x,    y,    z+dz/2)
 		x1y2 = (x,    y+dy, z+dz/2)
 		x2y1 = (x+dx, y,    z+dz/2)
@@ -507,7 +507,150 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		 False,False,    True, False) -> [(x2y2,x2z2,y2z1),(y2z1,x2z2,y1z2),(y2z1,y1z2,x1z1),(x1z1,y1z2,x1y1)]
 
 
+		-- O@ OO
+		-- @O @O
+		(False,True,     False, False,
+		 True, False,    True,  False) -> square y1z1 x2z1 x2y2 y1z2
+		                               ++ rsquare x1z1 y2z1 x2y2 x1z2
+		                               ++ [(y1z2, x2y2, x1z2)]
+		(False,True,     False, True,
+		 True, False,    False, False) -> square y2z1 x1z1 x1y1 y2z2
+		                               ++ rsquare x2z1 y1z1 x1y1 x2z2
+		                               ++ [(y2z2, x1y1, x2z2)]
+		(True, False,    True, False,
+		 False,True,     False,False) -> rsquare y2z1 x2z1 x2y1 y2z2
+		                               ++ square x1z1 y1z1 x2y1 x1z2
+		                               ++ [(y2z2, x1z2, x2y1)]
+		(True,False,     False,False,
+		 False,True,     False,True) -> rsquare y1z1 x1z1 x1y2 y1z2
+		                               ++ square x2z1 y2z1 x1y2 x2z2
+		                               ++ [(y1z2, x2z2, x1y2)]
+		-- OO O@  normals verified
+		-- @O @O
+		(False,False,    False, True,
+		 True, False,    True,  False) -> rsquare y1z2 x2z2 x2y2 y1z1
+		                               ++ square x1z2 y2z2 x2y2 x1z1
+		                               ++ [(y1z1, x1z1, x2y2)]
+		(False,True,     False, True,
+		 False,False,    True,  False) -> rsquare y2z2 x1z2 x1y1 y2z1
+		                               ++ square x2z2 y1z2 x1y1 x2z1
+		                               ++ [(y2z1, x2z1, x1y1)]
+		(True, False,    True, False,
+		 False,False,    False,True) -> square y2z2 x2z2 x2y1 y2z1
+		                               ++ rsquare x1z2 y1z2 x2y1 x1z1
+		                               ++ [(y2z1, x2y1, x1z1)]
+		(False,False,    True, False,
+		 False,True,     False,True) -> square y1z2 x1z2 x1y2 y1z1
+		                               ++ rsquare x2z2 y2z2 x1y2 x2z1
+		                               ++ [(y1z1, x1y2, x2z1)]
+		-- @O @@    -- normals verified
+		-- O@ O@
+		(True,False,     True, True,
+		 False, True,    False,  True) -> rsquare y1z1 x2z1 x2y2 y1z2
+		                               ++ square x1z1 y2z1 x2y2 x1z2
+		                               ++ [(y1z2, x1z2, x2y2)]
+		(True,False,     True, False,
+		 False, True,    True, True) -> rsquare y2z1 x1z1 x1y1 y2z2
+		                             ++ square x2z1 y1z1 x1y1 x2z2
+		                             ++ [(y2z2, x2z2, x1y1)]
+		(False, True,    False, True,
+		 True,False,     True,True) -> square y2z1 x2z1 x2y1 y2z2
+		                            ++ rsquare x1z1 y1z1 x2y1 x1z2
+		                            ++ [(y2z2, x2y1, x1z2)]
+		(False,True,     True,True,
+		 True,False,     True,False) -> square y1z1 x1z1 x1y2 y1z2
+		                             ++ rsquare x2z1 y2z1 x1y2 x2z2
+		                             ++ [(y1z2, x1y2, x2z2)]
+		-- @@ @O
+		-- O@ O@
+		(True,True,    True, False,
+		 False, True,    False,  True) -> rsquare y1z2 x2z2 x2y2 y1z1
+		                               ++ square x1z2 y2z2 x2y2 x1z1
+		                               ++ [(y1z1, x1z1, x2y2)]
+		(True,False,     True, False,
+		 True,True,    False,  True) -> rsquare y2z2 x1z2 x1y1 y2z1
+		                               ++ square x2z2 y1z2 x1y1 x2z1
+		                               ++ [(y2z1, x2z1, x1y1)]
+		(False, True,    False, True,
+		 True,True,    True,False) -> square y2z2 x2z2 x2y1 y2z1
+		                               ++ rsquare x1z2 y1z2 x2y1 x1z1
+		                               ++ [(y2z1, x2y1, x1z1)]
+		(True,True,    False, True,
+		 True,False,     True,False) -> square y1z2 x1z2 x1y2 y1z1
+		                               ++ rsquare x2z2 y2z2 x1y2 x2z1
+		                               ++ [(y1z1, x1y2, x2z1)]
 
 
-		_ -> []
+		-- @@ O@
+		-- @O OO
+		(True, True,     False, True,
+		 True, False,    False, False) -> square x1y1 x1y2 y2z2 x2z2
+		                               ++ square x1y1 x2z2 x2z1 y1z1
+		(False,True,     False, True,
+		 True, True,     False, False) -> square x1y1 x2y1 x2z2 y2z2
+		                               ++ square x1y1 y2z2 y2z1 x1z1
+		(False,True,     False, False,
+		 True, True,     True,  False) -> square x2y2 x2y1 y1z2 x1z2
+		                               ++ square x2y2 x1z2 x1z1 y2z1
+		(True, True,     False, False,
+		 True, False,    True,  False) -> square x2y2 x1y2 x1z2 y1z2
+		                               ++ square x2y2 y1z2 y1z1 x2z1
+
+		(True, False,    False, False,
+		 True, True,     False, True ) -> square x1y2 x1y1 y1z2 x2z2
+		                               ++ square x1y2 x2z2 x2z1 y2z1
+		(True, True,     False, False,
+		 False,True,     False, True ) -> square x1y2 x2y2 x2z2 y1z2
+		                               ++ square x1y2 y2z2 y1z1 x1z1
+		(True, True,     True,  False,
+		 False,True,     False, False) -> square x2y1 x2y2 y2z2 x1z2
+		                               ++ square x2y1 x1z2 x1z1 y1z1
+		(True, False,    True, False,
+		 True, True,     False,False)  -> square x2y1 x1y1 x1z2 y2z2
+		                               ++ square x2y1 y1z2 y2z1 x2z1
+
+
+
+
+--{-
+
+		-- @O OO
+		-- O@ OO
+
+		(True, False,    False, False,
+		 False,True,     False, False) -> square x1z1 y1z1 x1y2 x2y1 ++ square x2z1 y2z1 x1y2 x2y1
+
+		(False,True,     False, False,
+		 True, False,    False, False) -> square y1z1 x2z1 x2y2 x1y1 ++ square y2z1 x1z1 x2y2 x1y1
+
+		(False, False,   True, False,
+		 False, False,   False,True ) -> square x1z2 y1z2 x1y2 x2y1 ++ square x2z2 y2z2 x1y2 x2y1
+
+		(False, False,   False,True,
+		 False, False,   True, False) -> square y1z2 x2z2 x2y2 x1y1 ++ square y2z2 x1z2 x2y2 x1y1
+
+		(False, True,    True, True,
+		 True,False,     True, True) -> square x1z1 y1z1 x1y2 x2y1 ++ square x2z1 y2z1 x1y2 x2y1
+
+		(True,False,     True, True,
+		 False, True,    True, True) -> square y1z1 x2z1 x2y2 x1y1 ++ square y2z1 x1z1 x2y2 x1y1
+
+		(True, True,   False, True,
+		 True, True,   True,False ) -> square x1z2 y1z2 x1y2 x2y1 ++ square x2z2 y2z2 x1y2 x2y1
+
+		(True, True,   True,False,
+		 True, True,   False, True) -> square y1z2 x2z2 x2y2 x1y1 ++ square y2z2 x1z2 x2y2 x1y1
+		---}
+
+
+
+		-- Debuging or fault tolerance, tependin on how you comment it
+		(a,b,  c,d,
+		 e,f,  g,h) -> 
+			{-let
+				s b = if b then "#" else "O"
+			in error $ "Unimplemnted Marching Cubes case:\n"
+				++ s a ++ s b ++ " " ++ s c ++ s d ++ "\n"
+				++ s e ++ s f  ++ " " ++ s g ++ s h ++ "\n"
+			-- -} []
 
