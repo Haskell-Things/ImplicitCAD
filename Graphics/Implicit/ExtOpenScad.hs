@@ -9,11 +9,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (..) )
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 import Graphics.Implicit.ExtOpenScad.Statements (computationStatement, runComputations)
 
-import Text.ParserCombinators.Parsec (parse, many1)
+import Text.ParserCombinators.Parsec (parse, many1, many, space, eof)
 import Control.Monad (liftM)
 
 -- Small wrapper to handle parse errors, etc
-runOpenscad str = case parse (many1 computationStatement) ""  str of
+runOpenscad str = case parse (do {s <- many1 computationStatement; many space; eof; return s}) ""  str of
 	Right res -> Right $ runComputationsDefault res
 	Left  err ->  Left err
 
