@@ -24,6 +24,16 @@ data OpenscadObj = OUndefined
 		 | OString String
 		 | OFunc ( OpenscadObj -> OpenscadObj ) 
 		 | OModule (ArgParser ComputationStateModifier)
+		 | OError [String]
+
+objTypeStr (OUndefined) = "Undefined"
+objTypeStr (OBool   _ ) = "Bool"
+objTypeStr (ONum    _ ) = "Number"
+objTypeStr (OList   _ ) = "List"
+objTypeStr (OString _ ) = "String"
+objTypeStr (OFunc   _ ) = "Function"
+objTypeStr (OModule _ ) = "Module"
+objTypeStr (OError  _ ) = "Error"
 
 instance Show OpenscadObj where
 	show OUndefined = "Undefined"
@@ -32,6 +42,7 @@ instance Show OpenscadObj where
 	show (OList l) = show l
 	show (OString s) = show s
 	show (OFunc f) = "<function>"
+	show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
 
 data ArgParser a = ArgParser String (Maybe OpenscadObj) (OpenscadObj -> ArgParser a) 
                  | ArgParserTerminator a 

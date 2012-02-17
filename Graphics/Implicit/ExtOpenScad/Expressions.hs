@@ -13,6 +13,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 
+errorAsAppropriate _   err@(OError _)   _ = err
+errorAsAppropriate _   _   err@(OError _) = err
+errorAsAppropriate name a b = OError 
+	["Can't " ++ name ++ " objects of types " ++ objTypeStr a ++ " and " ++ objTypeStr b ++ "."]
+
 pad parser = do
 	many space
 	a <- parser
@@ -82,7 +87,7 @@ expression 9 =
 		applyArgs :: OpenscadObj -> [OpenscadObj] -> OpenscadObj
 		applyArgs obj []  = obj
 		applyArgs (OFunc f) (arg:others) = applyArgs (f arg) others 
-		applyArgs _ _ = OUndefined
+		applyArgs a b = errorAsAppropriate "apply" a b
 		-- List splicing, like in Python. 'Cause list splicing is
 		-- awesome!
 		splice :: [a] -> ℝ -> ℝ -> [a]
@@ -153,11 +158,11 @@ expression n@6 =
 		mult (ONum a)  (ONum b)  = ONum  (a*b)
 		mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
 		mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
-		mult _         _         = OUndefined
+		mult a         b         = errorAsAppropriate "multiply" a b
 
 		div (ONum a)  (ONum b) = ONum  (a/b)
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
-		div _         _        = OUndefined
+		div a         b        = errorAsAppropriate "divide" a b
 	in try (( do 
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '/' >> many space )) 
@@ -169,7 +174,7 @@ expression n@5 =
 	let 
 		append (OList   a) (OList   b) = OList   $ a++b
 		append (OString a) (OString b) = OString $ a++b
-		append _           _           = OUndefined
+		append a           b           = errorAsAppropriate "append" a b
 	in try (( do 
 		exprs <- sepBy1 (expression $ n+1) (many space >> string "++" >> many space)
 		return $ \varlookup -> foldl1 append $ map ($varlookup) exprs;
@@ -180,11 +185,11 @@ expression n@4 =
 	let 
 		add (ONum a) (ONum b) = ONum (a+b)
 		add (OList a) (OList b) = OList $ zipWith add a b
-		add _ _ = OUndefined
+		add a b = errorAsAppropriate "add" a b
 
 		sub (ONum a) (ONum b) = ONum (a-b)
 		sub (OList a) (OList b) = OList $ zipWith sub a b
-		sub _ _ = OUndefined
+		sub a b = errorAsAppropriate "subtract" a b
 	in try (( do 
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '-' >> many space )) 
@@ -196,7 +201,7 @@ expression n@3 =
 	let
 		negate (ONum n) = ONum (-n)
 		negate (OList l) = OList $ map negate l
-		negate _ = OUndefined
+		negate a = OError ["Can't negate " ++ objTypeStr a ++ "(" ++ show a ++ ")"]
 	in try (do
 		char '-'
 		many space
