@@ -332,29 +332,26 @@ differenceStatement = moduleWithSuite "difference" $ \suite -> do
 
 translateStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"
-	case v of
-		OList ((ONum x):(ONum y):(ONum z):[]) -> 
+	caseOType v $
+		     \(x,y,z) -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
-		OList ((ONum x):(ONum y):[]) -> 
+		<||> \(x,y)   -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
-		OList ((ONum x):[]) -> 
+		<||> \x -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		ONum x -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		_ -> noChange
+		<||> \_ -> noChange
 
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
-	case a of
-		ONum xy -> getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
-		OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
+	caseOType a $
+		     \xy -> 
+			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
+		<||> \(yz,xz,xy) -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
-		OList ((ONum yz):(ONum xz):[]) -> 
+		<||> \(yz,xz) -> 
 			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
-		OList ((ONum yz):[]) -> 
-			getAndTransformSuiteObjs suite (id) (Op.rotate3 (yz, 0, 0))
-		_ -> noChange
+		<||> _ -> noChange
 
 
 scaleStatement = moduleWithSuite "scale" $ \suite -> do
