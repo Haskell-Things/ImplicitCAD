@@ -61,10 +61,12 @@ cube = moduleWithoutSuite "cube" $ do
 		else Prim.rect3R r (0, 0, 0)  (x, y, z)
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
+	-- Entries must be joined with the operator <||>
+	-- Final entry must be fall through.
 	caseOType size $
 		     ( \(x,y,z) -> addObj3 $ rect3 x y z)
-		<||> (( \w       -> addObj3 $ rect3 w w w)
-		<||> ( \_       -> noChange ))
+		<||> ( \w       -> addObj3 $ rect3 w w w)
+		<||> ( \_       -> noChange )
 
 
 square = moduleWithoutSuite "square" $ do
@@ -88,8 +90,8 @@ square = moduleWithoutSuite "square" $ do
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	caseOType size $
 		     (\(x,y) -> addObj2 $ rect x y)
-		<||> ((\w     -> addObj2 $ rect w w)
-		<||> (\_     -> noChange))
+		<||> (\w     -> addObj2 $ rect w w)
+		<||> (\_     -> noChange)
 
 -- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do

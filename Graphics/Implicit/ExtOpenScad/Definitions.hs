@@ -10,6 +10,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions where
 import Graphics.Implicit.Definitions
 import Data.Typeable (TypeRep)
 import Data.Map (Map)
+import Data.Maybe (isJust)
 
 -- Lets make it easy to change the object types we're using :)
 
@@ -60,17 +61,23 @@ instance OTypeMirror String where
 	fromOObj _ = Nothing
 	toOObj str = OString str
 
-instance forall a. (Eq a, OTypeMirror a) => OTypeMirror [a] where
+instance forall a. (OTypeMirror a) => OTypeMirror (Maybe a) where
+	fromOObj a = Just $ fromOObj a
+	toOObj (Just a) = toOObj a
+	toOObj Nothing  = OUndefined
+
+
+instance forall a. (OTypeMirror a) => OTypeMirror [a] where
 	fromOObj (OList list) = 
 		let 
 			maybeAList = map (\obj -> fromOObj obj :: Maybe a) list
-		in if all (/=Nothing) maybeAList
+		in if all (isJust) maybeAList
 		then Just $ map (\(Just aObj) -> aObj) maybeAList
 		else Nothing
 	fromOObj _ = Nothing
 	toOObj list = OList $ map toOObj list
 
-instance forall a b. (Eq a, OTypeMirror a, Eq b, OTypeMirror b) => OTypeMirror (a,b) where
+instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a,b) where
 	fromOObj (OList (x:y:[])) = 
 		case (fromOObj x :: Maybe a, fromOObj y :: Maybe b) of
 			(Just a, Just b) -> Just (a,b)
@@ -79,14 +86,24 @@ instance forall a b. (Eq a, OTypeMirror a, Eq b, OTypeMirror b) => OTypeMirror (
 	toOObj (a,b) = OList [toOObj a, toOObj b]
 
 
-instance forall a b c. (Eq a, OTypeMirror a, Eq b, OTypeMirror b, Eq c, OTypeMirror c) => 
-				OTypeMirror (a,b,c) where
+instance forall a b c. (OTypeMirror a, OTypeMirror b, OTypeMirror c) => OTypeMirror (a,b,c) where
 	fromOObj (OList (x:y:z:[])) = 
 		case (fromOObj x :: Maybe a, fromOObj y :: Maybe b, fromOObj z :: Maybe c) of
 			(Just a, Just b, Just c) -> Just (a,b,c)
 			_  -> Nothing
 	fromOObj _ = Nothing
 	toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
+
+instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
+	fromOObj (OFunc f) =  Just $ \oObj ->
+		case fromOObj (f $ toOObj oObj) :: Maybe b of
+			Just out -> out
+			Nothing -> error "coercing OpenscadObj to a -> b isn't always safe; use a -> Maybe b"
+	fromOObj _ = Nothing
+	toOObj f = OFunc $ \oObj -> 
+		case fromOObj oObj :: Maybe a of
+			Nothing  -> OError ["bad input type"]
+			Just obj -> toOObj $ f obj
 
 
 objTypeStr (OUndefined) = "Undefined"

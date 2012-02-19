@@ -40,9 +40,10 @@ argument name =
 	ArgParser name Nothing "" $ \oObjVal -> do
 		let
 			val = fromOObj oObjVal :: Maybe desiredType
-		if isJust val -- Using /= Nothing would require Eq desiredType
-		then ArgParserTerminator $ (\(Just a) -> a) val
-		else ArgParserFail $ "arg " ++ show oObjVal ++ " not compatible with " ++ name
+		-- Using /= Nothing would require Eq desiredType
+		if isJust val
+			then ArgParserTerminator $ (\(Just a) -> a) val
+			else ArgParserFail $ "arg " ++ show oObjVal ++ " not compatible with " ++ name
 
 type Any = OpenscadObj
 

@@ -20,6 +20,7 @@ import Data.Map (Map, lookup, insert)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
+import Data.Maybe (fromMaybe)
 
 tryMany = (foldl1 (<|>)) . (map try)
 
@@ -336,25 +337,25 @@ differenceStatement = moduleWithSuite "difference" $ \suite -> do
 translateStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"
 	caseOType v $
-		       ( \(x,y,z) -> 
+		       ( \(x,y,z)-> 
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z)) 
-		) <||> ( \(x,y)   -> 
+		) <||> ( \(x,y) -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0)) 
-		) <||> ( \x -> 
+		) <||> ( \ x -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		) <||> (\_ -> noChange)
+		) <||> (\ _  -> noChange)
 
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	caseOType a $
-		    ( \xy -> 
+		       ( \xy  -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
 		) <||> ( \(yz,xz,xy) -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
 		) <||> ( \(yz,xz) -> 
 			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
-		) <||> ( \_ -> noChange )
+		) <||> ( \_  -> noChange )
 
 
 scaleStatement = moduleWithSuite "scale" $ \suite -> do
@@ -380,22 +381,17 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 			if center
 			then Op.translate (0,0,-height/2.0)
 			else id
-	case twist of
-		ONum 0 -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
-		ONum rot ->
-			getAndModUpObj2s suite (\obj -> 
+	caseOType twist $
+		(\ (0::ℝ) -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
+		) <||> (\ (rot :: ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ Op.extrudeRMod r 
-					(degRotate . (*(rot/height)))  
-					obj height
-				)
-		OFunc rotf ->
-			getAndModUpObj2s suite (\obj -> 
+					(degRotate . (*(rot/height))) obj height
+		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ Op.extrudeRMod r 
-					(\h -> degRotate $ case rotf (ONum h) of
-							ONum n -> n
-							_ -> 0
-					) obj height
-				)
+					(degRotate . (fromMaybe 0) . rotf) obj height
+		) <||> (\_ -> noChange)
 
 {-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
 	h <- realArgument "h"
