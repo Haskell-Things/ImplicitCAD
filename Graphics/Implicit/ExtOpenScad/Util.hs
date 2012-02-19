@@ -1,3 +1,11 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Released under the GNU GPL, see LICENSE
+
+-- We'd like to parse openscad code, with some improvements, for backwards compatability.
+
+
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+
 module Graphics.Implicit.ExtOpenScad.Util where
 
 import Prelude hiding (lookup)
@@ -8,61 +16,70 @@ import Data.Map (Map, lookup, insert)
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
-import Control.Monad (liftM)
+import Data.Maybe (isJust)
 
 instance Monad ArgParser where
-	(ArgParser str fallback f) >>= g = ArgParser str fallback (\a -> (f a) >>= g)
+	(ArgParser str fallback doc f) >>= g = ArgParser str fallback doc (\a -> (f a) >>= g)
 	(ArgParserTerminator a) >>= g = g a
-	(ArgParserFail) >>= g = ArgParserFail
+	(ArgParserFail err) >>= g = ArgParserFail err
 	return a = ArgParserTerminator a
 
 argMap :: [OpenscadObj] -> [(String, OpenscadObj)] -> ArgParser a -> Maybe a
 argMap _ _ (ArgParserTerminator a) = Just a
-argMap _ _ ArgParserFail = Nothing
-argMap (x:unnamedArgs) namedArgs (ArgParser _ _ f) = 
+argMap _ _ (ArgParserFail err) = Nothing
+argMap (x:unnamedArgs) namedArgs (ArgParser _ _ _ f) = 
 	argMap unnamedArgs namedArgs (f x)
-argMap [] namedArgs (ArgParser str fallback f) = case Data.List.lookup str namedArgs of
+argMap [] namedArgs (ArgParser str fallback _ f) = case Data.List.lookup str namedArgs of
 	Just a -> argMap [] namedArgs (f a)
 	Nothing -> case fallback of
 		Just b -> argMap [] namedArgs (f b)
 		Nothing -> Nothing
 
-argument :: String -> ArgParser OpenscadObj
-argument str = ArgParser str Nothing (\a -> return a)
+argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
+argument name = 
+	ArgParser name Nothing "" $ \oObjVal -> do
+		let
+			val = fromOObj oObjVal :: Maybe desiredType
+		if isJust val -- Using /= Nothing would require Eq desiredType
+		then ArgParserTerminator $ (\(Just a) -> a) val
+		else ArgParserFail $ "arg " ++ show oObjVal ++ " not compatible with " ++ name
 
-realArgument :: String -> ArgParser ℝ
-realArgument str = ArgParser str Nothing (\a -> case a of {(ONum a) -> return a; _ -> ArgParserFail;})
+type Any = OpenscadObj
 
-intArgument :: String -> ArgParser Int
-intArgument str = ArgParser str Nothing (\a -> case a of {(ONum a) -> return (floor a); _ -> ArgParserFail;})
+caseOType = flip ($)
 
-boolArgument :: String -> ArgParser Bool
-boolArgument str = ArgParser str Nothing (\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
+doc (ArgParser name defMaybeVal oldDoc next) doc =
+	ArgParser name defMaybeVal doc next
 
-argumentWithDefault :: String -> OpenscadObj -> ArgParser OpenscadObj
-argumentWithDefault str fallback = ArgParser str (Just fallback) (\a -> return a)
+infixr 2 <||>
 
-realArgumentWithDefault :: String -> ℝ -> ArgParser ℝ
-realArgumentWithDefault str fallback = ArgParser str (Just (ONum fallback)) 
-	(\a -> case a of {(ONum a) -> return a; _ -> ArgParserFail;})
+(<||>) :: forall desiredType out. (OTypeMirror desiredType)
+	=> (desiredType -> out) 
+	-> (OpenscadObj -> out)
+	-> (OpenscadObj -> out)
 
-intArgumentWithDefault :: String -> Int -> ArgParser Int
-intArgumentWithDefault str fallback = ArgParser str (Just (ONum (fromIntegral fallback))) 
-	(\a -> case a of {(ONum a) -> return (floor a); _ -> ArgParserFail;})
+(<||>) f g = \input ->
+	let
+		coerceAttempt = fromOObj input :: Maybe desiredType
+	in 
+		if isJust coerceAttempt -- ≅ (/= Nothing) but no Eq req
+		then f $ (\(Just a) -> a) coerceAttempt
+		else g input
 
-boolArgumentWithDefault :: String -> Bool -> ArgParser Bool
-boolArgumentWithDefault str fallback = ArgParser str (Just (OBool fallback)) 
-	(\a -> case a of {(OBool a) -> return a; _ -> ArgParserFail;})
+defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
+defaultTo (ArgParser name oldDefMaybeVal doc next) newDefVal = 
+	ArgParser name (Just $ toOObj newDefVal) doc next
+
 
 addObj2 :: (Monad m) => Obj2Type -> m ComputationStateModifier
 addObj2 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj2s ++ [obj], obj3s)
+		return (varlookup, obj:obj2s, obj3s)
 
 addObj3 :: (Monad m) => Obj3Type -> m ComputationStateModifier
 addObj3 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj2s, obj3s ++ [obj])
+		return (varlookup, obj2s, obj:obj3s)
 
 changeObjs :: (Monad m) => ([Obj2Type] -> [Obj2Type]) -> ([Obj3Type] -> [Obj3Type]) -> m ComputationStateModifier
 changeObjs mod2s mod3s = return $  \ ioWrappedState -> do

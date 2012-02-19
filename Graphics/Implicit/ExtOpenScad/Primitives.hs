@@ -10,6 +10,9 @@
 -- Note: Primitives must be added to the computationStatement parser in
 -- Graphics.Implicit.ExtOpenScad.Statements to have any effect!!!
 
+
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+
 module Graphics.Implicit.ExtOpenScad.Primitives where
 
 import Prelude hiding (lookup)
@@ -31,7 +34,8 @@ sphere = moduleWithoutSuite "sphere" $ do
 	-- The radius, r, which is a (real) number.
 	-- Because we don't provide a default, this ends right
 	-- here if it doesn't get a suitable argument!
-	r :: ℝ <- argument "r" "radius of the sphere"
+	r :: ℝ <- argument "r" 
+	            `doc` "radius of the sphere"
 	-- So what does this module do?
 	-- It adds a 3D object, a sphere of radius r,
 	-- using the sphere implementation in Prim
@@ -42,10 +46,13 @@ cube = moduleWithoutSuite "cube" $ do
 	-- arguments 
 	-- eg.   cube(size = [2,3,4], center = true, r = 0.5)
 	-- eg.   cube(4)
-	size   :: Any  <- argument "size"   "cube size"
-	center :: Bool <- argument "center" "should center?"  
+	size   :: Any  <- argument "size"
+	                    `doc` "cube size"
+	center :: Bool <- argument "center" 
+	                    `doc` "should center?"  
 	                    `defaultTo` False
-	r      :: ℝ    <- argument "r"      "radius of rounding" 
+	r      :: ℝ    <- argument "r"
+	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
 	-- A helper function for making rect3's accounting for centerdness
 	let rect3 x y z = 
@@ -55,31 +62,34 @@ cube = moduleWithoutSuite "cube" $ do
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	caseOType size $
-		     \(x,y,z) -> addObj3 $ rect3 x y z
-		<||> \w       -> addObj3 $ rect3 w w w
-		<||> \_       -> noChange
+		     ( \(x,y,z) -> addObj3 $ rect3 x y z)
+		<||> (( \w       -> addObj3 $ rect3 w w w)
+		<||> ( \_       -> noChange ))
 
 
 square = moduleWithoutSuite "square" $ do
 	-- arguments 
 	-- eg.   square(size = [3,4], center = true, r = 0.5)
 	-- eg.   square(4)
-	size   :: Any  <- argument "size"   "square size"
-	center :: Bool <- argument "center" "should center?"  
+	size   :: Any  <- argument "size"
+	                    `doc`  "square size"
+	center :: Bool <- argument "center" 
+	                    `doc` "should center?"  
 	                    `defaultTo` False
-	r      :: ℝ    <- argument "r"      "radius of rounding" 
+	r      :: ℝ    <- argument "r"
+	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
 	-- A helper function for making rect2's accounting for centerdness
-	let rect2 x y = 
+	let rect x y = 
 		if center  
-		then Prim.rect2R r (-x/2, -y/2) (x/2, y/2)
-		else Prim.rect2R r (  0,    0 ) ( x,   y )
+		then Prim.rectR r (-x/2, -y/2) (x/2, y/2)
+		else Prim.rectR r (  0,    0 ) ( x,   y )
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	caseOType size $
-		     \(x,y) -> addObj2 $ rect2 x y z
-		<||> \w     -> addObj2 $ rect2 w w w
-		<||> \_     -> noChange
+		     (\(x,y) -> addObj2 $ rect x y)
+		<||> ((\w     -> addObj2 $ rect w w)
+		<||> (\_     -> noChange))
 
 -- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
@@ -107,9 +117,11 @@ circle = moduleWithoutSuite "circle" $ do
 
 
 polygon = moduleWithoutSuite "polygon" $ do
-	points :: [ℝ2] <-  argument "points" "vertices of the polygon"
-	pathes :: [ℕ ]  <- argument "pathes" "order to go through vertices; ignored for now"
-	                       `defaultTo` []
+	points :: [ℝ2] <-  argument "points" 
+	                    `doc` "vertices of the polygon"
+	pathes :: [ℕ ]  <- argument "pathes" 
+	                    `doc` "order to go through vertices; ignored for now"
+	                    `defaultTo` []
 	case pathes of
 		[] -> addObj2 $ Prim.polygonR 0 points
 		_ -> noChange;

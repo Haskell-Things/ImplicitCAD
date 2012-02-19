@@ -1,11 +1,11 @@
-
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
 -- Implement statements for things other than primitive objects!
+
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
 
 module Graphics.Implicit.ExtOpenScad.Statements where
 
@@ -313,19 +313,22 @@ getAndTransformSuiteObjs suite obj2modifier obj3modifier =
 
 
 unionStatement = moduleWithSuite "union" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
 		else getAndCompressSuiteObjs suite Op.union Op.union
 
 intersectStatement = moduleWithSuite "intersection" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
 		else getAndCompressSuiteObjs suite Op.intersect Op.intersect
 
 differenceStatement = moduleWithSuite "difference" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
 		else getAndCompressSuiteObjs suite Op.difference Op.difference
@@ -333,25 +336,25 @@ differenceStatement = moduleWithSuite "difference" $ \suite -> do
 translateStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"
 	caseOType v $
-		     \(x,y,z) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
-		<||> \(x,y)   -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
-		<||> \x -> 
+		       ( \(x,y,z) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z)) 
+		) <||> ( \(x,y)   -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0)) 
+		) <||> ( \x -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		<||> \_ -> noChange
+		) <||> (\_ -> noChange)
 
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	caseOType a $
-		     \xy -> 
+		    ( \xy -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
-		<||> \(yz,xz,xy) -> 
+		) <||> ( \(yz,xz,xy) -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
-		<||> \(yz,xz) -> 
+		) <||> ( \(yz,xz) -> 
 			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
-		<||> _ -> noChange
+		) <||> ( \_ -> noChange )
 
 
 scaleStatement = moduleWithSuite "scale" $ \suite -> do
@@ -367,10 +370,10 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
 
 extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
-	height <- realArgument "height"
-	center <- boolArgumentWithDefault "center" False
-	twist  <- argumentWithDefault "twist" (ONum 0)
-	r <- realArgumentWithDefault "r" 0
+	height :: ℝ   <- argument "height"
+	center :: Bool<- argument "center" `defaultTo` False
+	twist  :: Any <- argument "twist"  `defaultTo` (ONum 0)
+	r      :: ℝ   <- argument "r"      `defaultTo` 0
 	let
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
 		shiftAsNeeded =
@@ -403,6 +406,6 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 -}
 
 shellStatement = moduleWithSuite "shell" $ \suite -> do
-	w <- realArgumentWithDefault "w" 0.0
+	w :: ℝ <- argument "w"
 	getAndTransformSuiteObjs suite (Op.shell w) (Op.shell w)
 

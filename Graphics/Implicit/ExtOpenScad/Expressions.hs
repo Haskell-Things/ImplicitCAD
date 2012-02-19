@@ -87,7 +87,7 @@ expression 9 =
 		applyArgs :: OpenscadObj -> [OpenscadObj] -> OpenscadObj
 		applyArgs obj []  = obj
 		applyArgs (OFunc f) (arg:others) = applyArgs (f arg) others 
-		applyArgs a b = errorAsAppropriate "apply" a b
+		applyArgs a b = errorAsAppropriate "apply" a (OList b)
 		-- List splicing, like in Python. 'Cause list splicing is
 		-- awesome!
 		splice :: [a] -> ℝ -> ℝ -> [a]

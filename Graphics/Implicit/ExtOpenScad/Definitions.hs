@@ -45,6 +45,11 @@ instance OTypeMirror ℝ where
 	fromOObj _ = Nothing
 	toOObj n = ONum n
 
+instance OTypeMirror ℕ where
+	fromOObj (ONum n) = if n == fromIntegral (floor n) then Just (floor n) else Nothing
+	fromOObj _ = Nothing
+	toOObj n = ONum $ fromIntegral n
+
 instance OTypeMirror Bool where
 	fromOObj (OBool b) = Just b
 	fromOObj _ = Nothing
@@ -74,6 +79,16 @@ instance forall a b. (Eq a, OTypeMirror a, Eq b, OTypeMirror b) => OTypeMirror (
 	toOObj (a,b) = OList [toOObj a, toOObj b]
 
 
+instance forall a b c. (Eq a, OTypeMirror a, Eq b, OTypeMirror b, Eq c, OTypeMirror c) => 
+				OTypeMirror (a,b,c) where
+	fromOObj (OList (x:y:z:[])) = 
+		case (fromOObj x :: Maybe a, fromOObj y :: Maybe b, fromOObj z :: Maybe c) of
+			(Just a, Just b, Just c) -> Just (a,b,c)
+			_  -> Nothing
+	fromOObj _ = Nothing
+	toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
+
+
 objTypeStr (OUndefined) = "Undefined"
 objTypeStr (OBool   _ ) = "Bool"
 objTypeStr (ONum    _ ) = "Number"
@@ -95,7 +110,7 @@ instance Show OpenscadObj where
 -- | Handles parsing arguments to modules
 data ArgParser a 
                  -- | For actual argument entries:
-                 --   ArgParser (argument name) (default) (next Argparser...)
+                 --   ArgParser (argument name) (default) (doc) (next Argparser...)
                  = ArgParser String (Maybe OpenscadObj) String (OpenscadObj -> ArgParser a) 
                  -- | For returns:
                  --   ArgParserTerminator (return value)
