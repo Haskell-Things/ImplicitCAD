@@ -15,13 +15,16 @@
 
 module Graphics.Implicit.ExtOpenScad.Primitives where
 
-import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.Primitives as Prim
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
+
+import qualified Graphics.Implicit.Primitives as Prim
+import qualified Graphics.Implicit.Operations as Op
+
 import Data.Map (Map, lookup)
+
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 
@@ -95,15 +98,34 @@ square = moduleWithoutSuite "square" $ do
 
 -- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
-	r      :: ℝ    <- argument "r"      `defaultTo` 1
-	h      :: ℝ    <- argument "h"      `defaultTo` 1
-	r1     :: ℝ    <- argument "r1"     `defaultTo` 1
-	r2     :: ℝ    <- argument "r2"     `defaultTo` 1
-	center :: Bool <- argument "center" `defaultTo` False
+	r      :: ℝ    <- argument "r"
+				`defaultTo` 1
+				`doc` "radius of cylinder"
+	h      :: ℝ    <- argument "h"
+				`defaultTo` 1
+				`doc` "height of cylinder"
+	r1     :: ℝ    <- argument "r1"
+				`defaultTo` 1
+				`doc` "bottom raidus; overrides r"
+	r2     :: ℝ    <- argument "r2"
+				`defaultTo` 1
+				`doc` "top raidus; overrides r"
+	fn     :: ℕ    <- argument "$fn"
+				`defaultTo` (-1)
+				`doc` "number of sides, for making prisms"
+	center :: Bool <- argument "center"
+				`defaultTo` False
+				`doc` "center cylinder with respect to z?"
 	if r1 == 1 && r2 == 1
-		then if center
-			then addObj3 $ Prim.cylinderC r h
-			else addObj3 $ Prim.cylinder  r h
+		then let
+			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0
+				[(r*cos θ, r*sin θ )| 
+					θ <- [2*pi*n/fromIntegral fn | 
+					n <- [0.0 .. fromIntegral fn - 1.0]]]
+			obj3 = Op.extrudeR 0 obj2 h
+		in if center
+			then addObj3 $ Op.translate (0,0,-h/2) obj3
+			else addObj3 $ obj3
 		else if center
 			then addObj3 $ Prim.cylinder2C r1 r2 h
 			else addObj3 $ Prim.cylinder2  r1 r2 h
