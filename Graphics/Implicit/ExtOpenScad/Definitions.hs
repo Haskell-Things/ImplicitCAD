@@ -3,7 +3,7 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, IncoherentInstances  #-}
 
 module Graphics.Implicit.ExtOpenScad.Definitions where
 

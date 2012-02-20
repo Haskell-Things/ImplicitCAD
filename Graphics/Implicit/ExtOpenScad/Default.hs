@@ -16,10 +16,10 @@ defaultObjects = fromList $
 	++ defaultFunctions2
 	++ defaultFunctionsSpecial
 
-defaultConstants = map (\(a,b) -> (a, ONum b))
+defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
 	[("pi", pi)]
 
-defaultFunctions = map (\(a,b) -> (a, numericOFunc b))
+defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 	[
 		("sin",   sin),
 		("cos",   cos),
@@ -31,31 +31,17 @@ defaultFunctions = map (\(a,b) -> (a, numericOFunc b))
 		("exp",   exp)
 	]
 
-defaultFunctions2 = map (\(a,b) -> (a, numericOFunc2 b))
+defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 	[
 		("max", max),
 		("min", min)
 	]
 
-defaultFunctionsSpecial = [("map", mapfunc)]
-
--- Stupid functions for convering to openscad objects follow:
-
-mapfunc = OFunc $ \oObj -> case oObj of
-	OFunc f -> OFunc $ \oObj2 -> case oObj2 of
-		OList l -> OList $ map f l
-		_ -> OUndefined
-	_ -> OUndefined
-
-numericOFunc f = OFunc $ \oObj -> case oObj of
-	ONum n -> ONum $ f n
-	_ -> OUndefined
-
-
-numericOFunc2 f = OFunc $ \oObj -> case oObj of
-	ONum n -> OFunc $ \oObj2 -> case oObj2 of
-		ONum n2 -> ONum $ f n n2
-		_ -> OUndefined
-	_ -> OUndefined
-
+defaultFunctionsSpecial = 
+	[
+		("map", toOObj $ flip $ 
+			(map :: (OpenscadObj -> OpenscadObj) -> [OpenscadObj] -> [OpenscadObj] ) 
+		)
+		
+	]
 
