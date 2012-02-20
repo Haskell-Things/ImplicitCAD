@@ -133,12 +133,9 @@ data ArgParser a
                  --   ArgParserTerminator (return value)
                  | ArgParserTerminator a 
                  -- | For failure:
-                 --   ArgParserFail (error message)
-                 | ArgParserFail String
-                 -- | For internal use only:
-                 --   ArgParserAccumulator [error message] [documentation: name, default, description]
-                 --      child
-                 | ArgParserAccumulator [String] [(String, Maybe String, String)] (ArgParser a)
+                 --   ArgParserFailIf (test) (error message) (child for if true)
+                 | ArgParserFailIf Bool String (ArgParser a)
+	deriving (Show)
 
 type ComputationState = IO (VariableLookup, [Obj2Type], [Obj3Type])
 

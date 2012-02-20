@@ -25,8 +25,7 @@ import qualified Graphics.Implicit.Operations as Op
 
 import Data.Map (Map, lookup)
 
-import Text.ParserCombinators.Parsec 
-import Text.ParserCombinators.Parsec.Expr
+primitives = [sphere, cube, square, cylinder, circle, polygon]
 
 -- **Exmaple of implementing a module**
 -- sphere is a module without a suite named sphere,
@@ -116,29 +115,30 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 	center :: Bool <- argument "center"
 				`defaultTo` False
 				`doc` "center cylinder with respect to z?"
-	if r1 == 1 && r2 == 1
+	addObj3 $ if r1 == 1 && r2 == 1
 		then let
-			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0
-				[(r*cos θ, r*sin θ )| 
-					θ <- [2*pi*n/fromIntegral fn | 
-					n <- [0.0 .. fromIntegral fn - 1.0]]]
+			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
+				let sides = fromIntegral fn 
+				in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 			obj3 = Op.extrudeR 0 obj2 h
 		in if center
-			then addObj3 $ Op.translate (0,0,-h/2) obj3
-			else addObj3 $ obj3
+			then Op.translate (0,0,-h/2) obj3
+			else obj3
 		else if center
-			then addObj3 $ Prim.cylinder2C r1 r2 h
-			else addObj3 $ Prim.cylinder2  r1 r2 h
-
+			then Prim.cylinder2C r1 r2 h
+			else Prim.cylinder2  r1 r2 h
 
 circle = moduleWithoutSuite "circle" $ do
 	r  :: ℝ <- argument "r"
-	fn :: ℕ <- argument "$fn" `defaultTo` (-1)
+		`doc` "radius of the circle"
+	fn :: ℕ <- argument "$fn" 
+		`doc` "if defined, makes a regular polygon with n sides instead of a circle"
+		`defaultTo` (-1)
 	if fn < 3
 		then addObj2 $ Prim.circle r
-		else addObj2 $ Prim.polygonR 0 [(r*cos θ, r*sin θ )| θ <- [2*pi*n/fromIntegral fn | n <- [0.0 .. fromIntegral fn - 1.0]]]
-
-
+		else addObj2 $ Prim.polygonR 0 $
+			let sides = fromIntegral fn 
+			in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
 polygon = moduleWithoutSuite "polygon" $ do
 	points :: [ℝ2] <-  argument "points" 
@@ -146,6 +146,9 @@ polygon = moduleWithoutSuite "polygon" $ do
 	pathes :: [ℕ ]  <- argument "pathes" 
 	                    `doc` "order to go through vertices; ignored for now"
 	                    `defaultTo` []
+	r      :: ℝ     <- argument "r"
+	                    `doc` "roudning of the polygon corners; ignored for now"
+	                    `defaultTo` 0
 	case pathes of
 		[] -> addObj2 $ Prim.polygonR 0 points
 		_ -> noChange;

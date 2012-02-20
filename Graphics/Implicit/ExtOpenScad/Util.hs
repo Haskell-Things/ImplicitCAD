@@ -16,17 +16,17 @@ import Data.Map (Map, lookup, insert)
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
-import Data.Maybe (isJust)
+import Data.Maybe (isJust,isNothing)
 
 instance Monad ArgParser where
 	(ArgParser str fallback doc f) >>= g = ArgParser str fallback doc (\a -> (f a) >>= g)
 	(ArgParserTerminator a) >>= g = g a
-	(ArgParserFail err) >>= g = ArgParserFail err
+	(ArgParserFailIf b errmsg child) >>= g = ArgParserFailIf b errmsg (child >>= g)
 	return a = ArgParserTerminator a
 
 argMap :: [OpenscadObj] -> [(String, OpenscadObj)] -> ArgParser a -> Maybe a
 argMap _ _ (ArgParserTerminator a) = Just a
-argMap _ _ (ArgParserFail err) = Nothing
+argMap a b (ArgParserFailIf test err child) = if test then Nothing else argMap a b child
 argMap (x:unnamedArgs) namedArgs (ArgParser _ _ _ f) = 
 	argMap unnamedArgs namedArgs (f x)
 argMap [] namedArgs (ArgParser str fallback _ f) = case Data.List.lookup str namedArgs of
@@ -35,15 +35,22 @@ argMap [] namedArgs (ArgParser str fallback _ f) = case Data.List.lookup str nam
 		Just b -> argMap [] namedArgs (f b)
 		Nothing -> Nothing
 
+-- $ Here there be dragons!
+--   We give undefined (= an error) and let laziness prevent if from ever being touched.
+getArgParserDocs (ArgParser name fallback doc fnext) = 
+	(name, fmap show fallback, doc):(getArgParserDocs $ fnext undefined)
+getArgParserDocs (ArgParserFailIf _ _ child ) = getArgParserDocs child
+-- To look at this one would almost certainly be 
+getArgParserDocs (ArgParserTerminator _ ) = []
+
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument name = 
 	ArgParser name Nothing "" $ \oObjVal -> do
 		let
 			val = fromOObj oObjVal :: Maybe desiredType
+			errmsg = "arg " ++ show oObjVal ++ " not compatible with " ++ name
 		-- Using /= Nothing would require Eq desiredType
-		if isJust val
-			then ArgParserTerminator $ (\(Just a) -> a) val
-			else ArgParserFail $ "arg " ++ show oObjVal ++ " not compatible with " ++ name
+		ArgParserFailIf (isNothing val) errmsg $ ArgParserTerminator $ (\(Just a) -> a) val
 
 type Any = OpenscadObj
 
