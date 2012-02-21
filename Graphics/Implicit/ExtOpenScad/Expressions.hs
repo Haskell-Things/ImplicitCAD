@@ -59,18 +59,18 @@ literal =
 
 expression :: Int -> GenParser Char st (VariableLookup -> OpenscadObj)
 expression 10 = (try literal) <|> (try variable )
-	<|> ((do
+	<|> ((do -- ( 1 + 5 )
 		string "(";
 		expr <- expression 0;
 		string ")";
 		return expr;
 	) <?> "bracketed expression" )
-	<|> ( try ( do
+	<|> ( try ( do -- [ 3, a, a+1, b, a*b ]
 		string "[";
 		exprs <- sepBy (expression 0) (char ',' );
 		string "]";
 		return $ \varlookup -> OList (map ($varlookup) exprs )
-	) <|> ( do
+	) <|> ( do -- eg.  [ a : 1 : a + 10 ]
 		string "[";
 		exprs <- sepBy (expression 0) (char ':' );
 		string "]";
@@ -90,6 +90,7 @@ expression 9 =
 		applyArgs a b = errorAsAppropriate "apply" a (OList b)
 		-- List splicing, like in Python. 'Cause list splicing is
 		-- awesome!
+		-- eg. a = [0:10]; a[2:4] = [2,3,4]
 		splice :: [a] -> ℝ -> ℝ -> [a]
 		splice [] _ _     = []
 		splice (x:xs) a b 
@@ -164,9 +165,16 @@ expression n@6 =
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
 		div a         b        = errorAsAppropriate "divide" a b
 	in try (( do 
+		-- outer list is multiplication, inner division. objects are 
+		-- expressions and take a varlookup to evaluate.
+		-- eg. "1*2*3/4/5*6*7/8"
+		--     [[vl→1],[vl→2],[vl→3,vl→4,vl→5],[vl→6],[vl→7,vl→8]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '/' >> many space )) 
 			(many space >> char '*' >> many space)
+		--     [[1],[2],[3,4,5],[6],[7,8]]
+		--     [ 1,  2,  3/4/5,  6,  7/8 ]
+		--       1 * 2 * 3/4/5 * 6 * 7/8 
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
@@ -191,6 +199,9 @@ expression n@4 =
 		sub (OList a) (OList b) = OList $ zipWith sub a b
 		sub a b = errorAsAppropriate "subtract" a b
 	in try (( do 
+		-- Similar to multiply & divide
+		-- eg. "1+2+3-4-5+6-7" 
+		--     [[1],[2],[3,4,5],[6,7]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '-' >> many space )) 
 			(many space >> char '+' >> many space)
@@ -206,7 +217,7 @@ expression n@3 =
 		char '-'
 		many space
 		expr <- expression $ n+1
-		return $ \varlookup -> negate $ expr varlookup
+		return $ negate . expr
 	) <|> try (do
 		char '+'
 		many space

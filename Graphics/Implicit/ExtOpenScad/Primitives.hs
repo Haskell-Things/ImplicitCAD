@@ -97,6 +97,10 @@ square = moduleWithoutSuite "square" $ do
 
 -- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
+	-- arguments
+	-- eg. cylinder(r=10, h=30, center=true);
+	--     cylinder(r1=4, r2=6, h=10);
+	--     cylinder(r=5, h=10, $fn = 6);
 	r      :: ℝ    <- argument "r"
 				`defaultTo` 1
 				`doc` "radius of cylinder"
@@ -105,16 +109,18 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 				`doc` "height of cylinder"
 	r1     :: ℝ    <- argument "r1"
 				`defaultTo` 1
-				`doc` "bottom raidus; overrides r"
+				`doc` "bottom radius; overrides r"
 	r2     :: ℝ    <- argument "r2"
 				`defaultTo` 1
-				`doc` "top raidus; overrides r"
+				`doc` "top radius; overrides r"
 	fn     :: ℕ    <- argument "$fn"
 				`defaultTo` (-1)
 				`doc` "number of sides, for making prisms"
 	center :: Bool <- argument "center"
 				`defaultTo` False
 				`doc` "center cylinder with respect to z?"
+	-- The result is a computation state modifier that adds a 3D object, 
+	-- based on the args.
 	addObj3 $ if r1 == 1 && r2 == 1
 		then let
 			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
@@ -129,6 +135,9 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 			else Prim.cylinder2  r1 r2 h
 
 circle = moduleWithoutSuite "circle" $ do
+	-- arguments
+	-- eg. circle(r=10); // circle
+	--     circle(r=5, $fn=6); //hexagon
 	r  :: ℝ <- argument "r"
 		`doc` "radius of the circle"
 	fn :: ℕ <- argument "$fn" 
@@ -143,11 +152,11 @@ circle = moduleWithoutSuite "circle" $ do
 polygon = moduleWithoutSuite "polygon" $ do
 	points :: [ℝ2] <-  argument "points" 
 	                    `doc` "vertices of the polygon"
-	pathes :: [ℕ ]  <- argument "pathes" 
+	paths :: [ℕ ]  <- argument "paths" 
 	                    `doc` "order to go through vertices; ignored for now"
 	                    `defaultTo` []
 	r      :: ℝ     <- argument "r"
-	                    `doc` "roudning of the polygon corners; ignored for now"
+	                    `doc` "rounding of the polygon corners; ignored for now"
 	                    `defaultTo` 0
 	case pathes of
 		[] -> addObj2 $ Prim.polygonR 0 points

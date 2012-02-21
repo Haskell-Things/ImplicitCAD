@@ -17,6 +17,7 @@ import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Data.Maybe (isJust,isNothing)
+import qualified Control.Exception as Ex
 
 instance Monad ArgParser where
 	(ArgParser str fallback doc f) >>= g = ArgParser str fallback doc (\a -> (f a) >>= g)
@@ -37,11 +38,17 @@ argMap [] namedArgs (ArgParser str fallback _ f) = case Data.List.lookup str nam
 
 -- $ Here there be dragons!
 --   We give undefined (= an error) and let laziness prevent if from ever being touched.
-getArgParserDocs (ArgParser name fallback doc fnext) = 
-	(name, fmap show fallback, doc):(getArgParserDocs $ fnext undefined)
+--   We're using IO so that we can catch an error if this backfires.
+--   If so, we *back off*.
+getArgParserDocs :: (ArgParser a) -> IO [(String, Maybe String, String)]
+getArgParserDocs (ArgParser name fallback doc fnext) = do
+	otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
+	return $ (name, fmap show fallback, doc):otherDocs
+-- We try to look at as little as possible, to avoid the risk of triggering an error.
+-- Yay laziness!
 getArgParserDocs (ArgParserFailIf _ _ child ) = getArgParserDocs child
 -- To look at this one would almost certainly be 
-getArgParserDocs (ArgParserTerminator _ ) = []
+getArgParserDocs (ArgParserTerminator _ ) = return []
 
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument name = 
