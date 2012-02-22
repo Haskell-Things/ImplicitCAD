@@ -29,7 +29,7 @@ data OpenscadObj = OUndefined
 		 | OList [OpenscadObj]
 		 | OString String
 		 | OFunc ( OpenscadObj -> OpenscadObj ) 
-		 | OModule (ArgParser ComputationStateModifier)
+		 | OModule (ArgParser ([ComputationStateModifier]  -> ComputationStateModifier))
 		 | OError [String]
 
 -- | We'd like to be able to turn OpenscadObjs into a given Haskell type
@@ -122,6 +122,7 @@ instance Show OpenscadObj where
 	show (OList l) = show l
 	show (OString s) = show s
 	show (OFunc f) = "<function>"
+	show (OModule _) = "module"
 	show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
 
 -- | Handles parsing arguments to modules

@@ -158,7 +158,7 @@ polygon = moduleWithoutSuite "polygon" $ do
 	r      :: ℝ     <- argument "r"
 	                    `doc` "rounding of the polygon corners; ignored for now"
 	                    `defaultTo` 0
-	case pathes of
+	case paths of
 		[] -> addObj2 $ Prim.polygonR 0 points
 		_ -> noChange;
 

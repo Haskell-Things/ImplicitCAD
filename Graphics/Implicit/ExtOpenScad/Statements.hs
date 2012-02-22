@@ -5,7 +5,7 @@
 
 -- Implement statements for things other than primitive objects!
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, NoMonomorphismRestriction  #-}
 
 module Graphics.Implicit.ExtOpenScad.Statements where
 
@@ -39,7 +39,8 @@ computationStatement =
 			rotateStatement,
 			scaleStatement,
 			extrudeStatement,
-			shellStatement
+			shellStatement,
+			userModuleDeclaration
 			-- rotateExtrudeStatement
 			]
 		many space
@@ -56,7 +57,8 @@ computationStatement =
 			square,
 			cylinder,
 			circle,
-			polygon
+			polygon,
+			userModule
 			]
 		many space
 		char ';'
@@ -272,6 +274,73 @@ moduleWithSuite name argHandeler = (do
 				Just computationModifier ->  computationModifier (return state)
 				Nothing -> (return state);
 	) <?> (name ++ " statement")
+
+
+userModule :: GenParser Char st ComputationStateModifier
+userModule = do
+	name <- variableSymb;
+	many space;
+	(unnamed, named) <- moduleArgsUnit
+	many space;
+	statements <- ( try suite <|> (many space >> char ';' >> return []))
+	return $ \ ioWrappedState -> do
+		state@(varlookup, obj2s, obj3s) <- ioWrappedState
+		case lookup name varlookup of
+			Just (OModule m) -> 
+				case argMap 
+					(map ($varlookup) unnamed) 
+					(map (\(a,b) -> (a, b varlookup)) named) m
+				of
+					Just computationModifier ->  
+						computationModifier statements (return state)
+					Nothing -> (return state);
+			_ -> return state
+
+
+
+userModuleDeclaration = do
+	string "module"
+	many space;
+	newModuleName <- variableSymb;
+	many space;
+	args <- moduleArgsUnitDecl
+	many space;
+	codeStatements <- suite
+	return $ \ envIOWrappedState -> do
+		(envVarlookup, envObj2s, envObj3s) <- envIOWrappedState
+		let 
+			moduleArgParser :: ArgParser ([ComputationStateModifier] -> ComputationStateModifier)
+			moduleArgParser =  do 
+				argVarlookupModifier <- args envVarlookup
+				return $ \childrenStatements contextIOWrappedState -> do
+					(contextVarLookup, contextObj2s, contextObj3s)
+						<- contextIOWrappedState
+					(_, childObj2s, childObj3s) <- runComputations 
+						(return (argVarlookupModifier contextVarLookup, [],[]) )
+						childrenStatements;
+					let
+						children = ONum $ fromIntegral  
+							(length childObj2s + length childObj3s)
+						child = OModule $ liftM (\statemod suite -> statemod) $ do
+							n :: ℕ <- argument "n";
+							if n >= length childObj3s 
+							         then addObj3 (childObj3s !! n)
+							         else addObj2 (childObj2s !! (n+1-length childObj3s))
+						varlookupForCode = 
+							(insert "child" child) $ 
+							(insert "children" children) $
+							envVarlookup
+					(_, resultObj2s, resultObj3s) 
+						<- runComputations 
+							(return (varlookupForCode, [],[])) 
+							codeStatements
+					return (
+						contextVarLookup, 
+						contextObj2s ++ resultObj2s, 
+						contextObj3s ++ resultObj3s
+						)
+		return (insert newModuleName (OModule moduleArgParser) envVarlookup, envObj2s, envObj3s)
+
 
 
 getAndModUpObj2s :: (Monad m) => [ComputationStateModifier] 

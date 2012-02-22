@@ -154,6 +154,58 @@ moduleArgsUnit = do
 		unnamed = map (\(Left a) -> a) $ filter (not . isRight) $ args
 		in return (unnamed, named)
 
+moduleArgsUnitDecl ::  
+	GenParser Char st (VariableLookup -> ArgParser (VariableLookup -> VariableLookup))
+moduleArgsUnitDecl = do
+	char '(';
+	many space;
+	args <- sepBy ( 
+		(try $ do
+			symb <- variableSymb;
+			many space;
+			char '=';
+			many space;
+			expr <- expression 0;
+			return $ \varlookup -> 
+				ArgParser symb (Just$ expr varlookup) "" (\val -> return $ insert symb val);
+		) <|> (try $ do
+			symb <- variableSymb;
+			many space;
+			char '('
+			many space
+			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
+			char ')'
+			many space
+			char '=';
+			many space;
+			expr <- expression 0;
+			let
+				makeFunc baseExpr (argVar:xs) varlookup' = OFunc $ 
+					\argObj -> makeFunc baseExpr xs (insert argVar argObj varlookup')
+				makeFunc baseExpr [] varlookup' = baseExpr varlookup'
+				funcExpr = makeFunc expr argVars
+			return $ \varlookup ->
+ 				ArgParser symb (Just$ funcExpr varlookup) "" (\val -> return $ insert symb val);
+		) <|> (do {
+			vsymb <- variableSymb;
+			return $ \varlookup ->
+ 				ArgParser vsymb Nothing "" (\val -> return $ insert vsymb val);
+		})
+		) (many space >> char ',' >> many space);
+	many space;	
+	char ')';
+	let
+		merge :: 
+			(ArgParser (VariableLookup -> VariableLookup))
+			->  (ArgParser (VariableLookup -> VariableLookup))
+			->  (ArgParser (VariableLookup -> VariableLookup))
+		merge a b = do
+			a' <- a
+			b' <- b
+			return (b'.a')
+	return $ \varlookup -> foldl1 merge $ map ($varlookup) $ args
+
+
 
 moduleWithoutSuite :: 
 	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
