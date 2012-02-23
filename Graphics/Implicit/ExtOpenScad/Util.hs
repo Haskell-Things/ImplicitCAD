@@ -203,7 +203,7 @@ moduleArgsUnitDecl = do
 			a' <- a
 			b' <- b
 			return (b'.a')
-	return $ \varlookup -> foldl1 merge $ map ($varlookup) $ args
+	return $ \varlookup -> foldl merge (return id) $ map ($varlookup) $ args
 
 
 

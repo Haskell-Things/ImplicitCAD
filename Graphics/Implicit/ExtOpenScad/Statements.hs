@@ -57,14 +57,19 @@ computationStatement =
 			square,
 			cylinder,
 			circle,
-			polygon,
-			userModule
+			polygon
 			]
 		many space
 		char ';'
 		many space
 		return s
-	)<|> (many space >> comment)
+	)<|> (try $ many space >> comment)
+	<|> (try $ do
+		many space
+		s <- userModule
+		many space
+		return s
+	)
 
 
 
@@ -323,7 +328,7 @@ userModuleDeclaration = do
 							(length childObj2s + length childObj3s)
 						child = OModule $ liftM (\statemod suite -> statemod) $ do
 							n :: ℕ <- argument "n";
-							if n >= length childObj3s 
+							if n <= length childObj3s 
 							         then addObj3 (childObj3s !! n)
 							         else addObj2 (childObj2s !! (n+1-length childObj3s))
 						varlookupForCode = 
