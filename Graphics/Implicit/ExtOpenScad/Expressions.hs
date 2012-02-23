@@ -13,6 +13,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 
+errorAsAppropriate _   err@(OError _)   _ = err
+errorAsAppropriate _   _   err@(OError _) = err
+errorAsAppropriate name a b = OError 
+	["Can't " ++ name ++ " objects of types " ++ objTypeStr a ++ " and " ++ objTypeStr b ++ "."]
+
 pad parser = do
 	many space
 	a <- parser
@@ -54,18 +59,18 @@ literal =
 
 expression :: Int -> GenParser Char st (VariableLookup -> OpenscadObj)
 expression 10 = (try literal) <|> (try variable )
-	<|> ((do
+	<|> ((do -- ( 1 + 5 )
 		string "(";
 		expr <- expression 0;
 		string ")";
 		return expr;
 	) <?> "bracketed expression" )
-	<|> ( try ( do
+	<|> ( try ( do -- [ 3, a, a+1, b, a*b ]
 		string "[";
 		exprs <- sepBy (expression 0) (char ',' );
 		string "]";
 		return $ \varlookup -> OList (map ($varlookup) exprs )
-	) <|> ( do
+	) <|> ( do -- eg.  [ a : 1 : a + 10 ]
 		string "[";
 		exprs <- sepBy (expression 0) (char ':' );
 		string "]";
@@ -82,9 +87,10 @@ expression 9 =
 		applyArgs :: OpenscadObj -> [OpenscadObj] -> OpenscadObj
 		applyArgs obj []  = obj
 		applyArgs (OFunc f) (arg:others) = applyArgs (f arg) others 
-		applyArgs _ _ = OUndefined
+		applyArgs a b = errorAsAppropriate "apply" a (OList b)
 		-- List splicing, like in Python. 'Cause list splicing is
 		-- awesome!
+		-- eg. a = [0:10]; a[2:4] = [2,3,4]
 		splice :: [a] -> ℝ -> ℝ -> [a]
 		splice [] _ _     = []
 		splice (x:xs) a b 
@@ -153,15 +159,22 @@ expression n@6 =
 		mult (ONum a)  (ONum b)  = ONum  (a*b)
 		mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
 		mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
-		mult _         _         = OUndefined
+		mult a         b         = errorAsAppropriate "multiply" a b
 
 		div (ONum a)  (ONum b) = ONum  (a/b)
 		div (OList a) (ONum b) = OList (map (\x -> div x (ONum b)) a)
-		div _         _        = OUndefined
+		div a         b        = errorAsAppropriate "divide" a b
 	in try (( do 
+		-- outer list is multiplication, inner division. objects are 
+		-- expressions and take a varlookup to evaluate.
+		-- eg. "1*2*3/4/5*6*7/8"
+		--     [[vl→1],[vl→2],[vl→3,vl→4,vl→5],[vl→6],[vl→7,vl→8]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '/' >> many space )) 
 			(many space >> char '*' >> many space)
+		--     [[1],[2],[3,4,5],[6],[7,8]]
+		--     [ 1,  2,  3/4/5,  6,  7/8 ]
+		--       1 * 2 * 3/4/5 * 6 * 7/8 
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
@@ -169,7 +182,7 @@ expression n@5 =
 	let 
 		append (OList   a) (OList   b) = OList   $ a++b
 		append (OString a) (OString b) = OString $ a++b
-		append _           _           = OUndefined
+		append a           b           = errorAsAppropriate "append" a b
 	in try (( do 
 		exprs <- sepBy1 (expression $ n+1) (many space >> string "++" >> many space)
 		return $ \varlookup -> foldl1 append $ map ($varlookup) exprs;
@@ -180,12 +193,15 @@ expression n@4 =
 	let 
 		add (ONum a) (ONum b) = ONum (a+b)
 		add (OList a) (OList b) = OList $ zipWith add a b
-		add _ _ = OUndefined
+		add a b = errorAsAppropriate "add" a b
 
 		sub (ONum a) (ONum b) = ONum (a-b)
 		sub (OList a) (OList b) = OList $ zipWith sub a b
-		sub _ _ = OUndefined
+		sub a b = errorAsAppropriate "subtract" a b
 	in try (( do 
+		-- Similar to multiply & divide
+		-- eg. "1+2+3-4-5+6-7" 
+		--     [[1],[2],[3,4,5],[6,7]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
 			(many space >> char '-' >> many space )) 
 			(many space >> char '+' >> many space)
@@ -196,12 +212,12 @@ expression n@3 =
 	let
 		negate (ONum n) = ONum (-n)
 		negate (OList l) = OList $ map negate l
-		negate _ = OUndefined
+		negate a = OError ["Can't negate " ++ objTypeStr a ++ "(" ++ show a ++ ")"]
 	in try (do
 		char '-'
 		many space
 		expr <- expression $ n+1
-		return $ \varlookup -> negate $ expr varlookup
+		return $ negate . expr
 	) <|> try (do
 		char '+'
 		many space

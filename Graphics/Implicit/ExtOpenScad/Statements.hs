@@ -1,11 +1,11 @@
-
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
 -- Implement statements for things other than primitive objects!
+
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, NoMonomorphismRestriction  #-}
 
 module Graphics.Implicit.ExtOpenScad.Statements where
 
@@ -20,6 +20,7 @@ import Data.Map (Map, lookup, insert)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
+import Data.Maybe (fromMaybe)
 
 tryMany = (foldl1 (<|>)) . (map try)
 
@@ -38,7 +39,8 @@ computationStatement =
 			rotateStatement,
 			scaleStatement,
 			extrudeStatement,
-			shellStatement
+			shellStatement,
+			userModuleDeclaration
 			-- rotateExtrudeStatement
 			]
 		many space
@@ -61,7 +63,13 @@ computationStatement =
 		char ';'
 		many space
 		return s
-	)<|> (many space >> comment)
+	)<|> (try $ many space >> comment)
+	<|> (try $ do
+		many space
+		s <- userModule
+		many space
+		return s
+	)
 
 
 
@@ -273,6 +281,73 @@ moduleWithSuite name argHandeler = (do
 	) <?> (name ++ " statement")
 
 
+userModule :: GenParser Char st ComputationStateModifier
+userModule = do
+	name <- variableSymb;
+	many space;
+	(unnamed, named) <- moduleArgsUnit
+	many space;
+	statements <- ( try suite <|> (many space >> char ';' >> return []))
+	return $ \ ioWrappedState -> do
+		state@(varlookup, obj2s, obj3s) <- ioWrappedState
+		case lookup name varlookup of
+			Just (OModule m) -> 
+				case argMap 
+					(map ($varlookup) unnamed) 
+					(map (\(a,b) -> (a, b varlookup)) named) m
+				of
+					Just computationModifier ->  
+						computationModifier statements (return state)
+					Nothing -> (return state);
+			_ -> return state
+
+
+
+userModuleDeclaration = do
+	string "module"
+	many space;
+	newModuleName <- variableSymb;
+	many space;
+	args <- moduleArgsUnitDecl
+	many space;
+	codeStatements <- suite
+	return $ \ envIOWrappedState -> do
+		(envVarlookup, envObj2s, envObj3s) <- envIOWrappedState
+		let 
+			moduleArgParser :: ArgParser ([ComputationStateModifier] -> ComputationStateModifier)
+			moduleArgParser =  do 
+				argVarlookupModifier <- args envVarlookup
+				return $ \childrenStatements contextIOWrappedState -> do
+					(contextVarLookup, contextObj2s, contextObj3s)
+						<- contextIOWrappedState
+					(_, childObj2s, childObj3s) <- runComputations 
+						(return (argVarlookupModifier contextVarLookup, [],[]) )
+						childrenStatements;
+					let
+						children = ONum $ fromIntegral  
+							(length childObj2s + length childObj3s)
+						child = OModule $ liftM (\statemod suite -> statemod) $ do
+							n :: ℕ <- argument "n";
+							if n <= length childObj3s 
+							         then addObj3 (childObj3s !! n)
+							         else addObj2 (childObj2s !! (n+1-length childObj3s))
+						varlookupForCode = 
+							(insert "child" child) $ 
+							(insert "children" children) $
+							envVarlookup
+					(_, resultObj2s, resultObj3s) 
+						<- runComputations 
+							(return (varlookupForCode, [],[])) 
+							codeStatements
+					return (
+						contextVarLookup, 
+						contextObj2s ++ resultObj2s, 
+						contextObj3s ++ resultObj3s
+						)
+		return (insert newModuleName (OModule moduleArgParser) envVarlookup, envObj2s, envObj3s)
+
+
+
 getAndModUpObj2s :: (Monad m) => [ComputationStateModifier] 
 	-> (Obj2Type -> Obj3Type)
 	-> m ComputationStateModifier
@@ -313,48 +388,48 @@ getAndTransformSuiteObjs suite obj2modifier obj3modifier =
 
 
 unionStatement = moduleWithSuite "union" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
 		else getAndCompressSuiteObjs suite Op.union Op.union
 
 intersectStatement = moduleWithSuite "intersection" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
 		else getAndCompressSuiteObjs suite Op.intersect Op.intersect
 
 differenceStatement = moduleWithSuite "difference" $ \suite -> do
-	r <- realArgumentWithDefault "r" 0.0
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
 	if r > 0
 		then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
 		else getAndCompressSuiteObjs suite Op.difference Op.difference
 
 translateStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"
-	case v of
-		OList ((ONum x):(ONum y):(ONum z):[]) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
-		OList ((ONum x):(ONum y):[]) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
-		OList ((ONum x):[]) -> 
+	caseOType v $
+		       ( \(x,y,z)-> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z)) 
+		) <||> ( \(x,y) -> 
+			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0)) 
+		) <||> ( \ x -> 
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		ONum x -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
-		_ -> noChange
+		) <||> (\ _  -> noChange)
 
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
-	case a of
-		ONum xy -> getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
-		OList ((ONum yz):(ONum xz):(ONum xy):[]) -> 
+	caseOType a $
+		       ( \xy  -> 
+			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
+		) <||> ( \(yz,xz,xy) -> 
 			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
-		OList ((ONum yz):(ONum xz):[]) -> 
+		) <||> ( \(yz,xz) -> 
 			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
-		OList ((ONum yz):[]) -> 
-			getAndTransformSuiteObjs suite (id) (Op.rotate3 (yz, 0, 0))
-		_ -> noChange
+		) <||> ( \_  -> noChange )
 
 
 scaleStatement = moduleWithSuite "scale" $ \suite -> do
@@ -370,32 +445,27 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
 
 extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
-	height <- realArgument "height"
-	center <- boolArgumentWithDefault "center" False
-	twist  <- argumentWithDefault "twist" (ONum 0)
-	r <- realArgumentWithDefault "r" 0
+	height :: ℝ   <- argument "height"
+	center :: Bool<- argument "center" `defaultTo` False
+	twist  :: Any <- argument "twist"  `defaultTo` (ONum 0)
+	r      :: ℝ   <- argument "r"      `defaultTo` 0
 	let
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
 		shiftAsNeeded =
 			if center
 			then Op.translate (0,0,-height/2.0)
 			else id
-	case twist of
-		ONum 0 -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
-		ONum rot ->
-			getAndModUpObj2s suite (\obj -> 
+	caseOType twist $
+		(\ (0::ℝ) -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
+		) <||> (\ (rot :: ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ Op.extrudeRMod r 
-					(degRotate . (*(rot/height)))  
-					obj height
-				)
-		OFunc rotf ->
-			getAndModUpObj2s suite (\obj -> 
+					(degRotate . (*(rot/height))) obj height
+		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ Op.extrudeRMod r 
-					(\h -> degRotate $ case rotf (ONum h) of
-							ONum n -> n
-							_ -> 0
-					) obj height
-				)
+					(degRotate . (fromMaybe 0) . rotf) obj height
+		) <||> (\_ -> noChange)
 
 {-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
 	h <- realArgument "h"
@@ -406,6 +476,6 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 -}
 
 shellStatement = moduleWithSuite "shell" $ \suite -> do
-	w <- realArgumentWithDefault "w" 0.0
+	w :: ℝ <- argument "w"
 	getAndTransformSuiteObjs suite (Op.shell w) (Op.shell w)
 

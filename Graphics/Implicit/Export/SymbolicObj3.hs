@@ -82,6 +82,13 @@ symbolicGetMesh res (Sphere r) = half1 ++ half2
 		half2 = concat [ rsquare (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1)) 
 		                | m1 <- [m.. n-1], m2 <- [0.. m-1] ]
 
+{-symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb]) 
+	| ha == hb && ra == rb = symbolicGetMesh res $ ExtrudeR ra (UnionR2 r [obja, objb]) ha
+
+symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb, ExtrudeR rc objc hc]) 
+	| ha == hb && ha == hc && ra == rb && ra == rc = 
+		symbolicGetMesh res $ ExtrudeR ra (UnionR2 r [obja, objb, objc]) ha-}
+
 -- We can compute a mesh of a rounded, extruded object from it contour, 
 -- contour filling trinagles, and magic.
 -- General approach:
