@@ -318,10 +318,10 @@ userModuleDeclaration = do
 			moduleArgParser =  do 
 				argVarlookupModifier <- args envVarlookup
 				return $ \childrenStatements contextIOWrappedState -> do
-					(contextVarLookup, contextObj2s, contextObj3s)
+					contextState@(contextVarLookup, contextObj2s, contextObj3s)
 						<- contextIOWrappedState
 					(_, childObj2s, childObj3s) <- runComputations 
-						(return (argVarlookupModifier contextVarLookup, [],[]) )
+						(return contextState)
 						childrenStatements;
 					let
 						children = ONum $ fromIntegral  
@@ -337,7 +337,7 @@ userModuleDeclaration = do
 							envVarlookup
 					(_, resultObj2s, resultObj3s) 
 						<- runComputations 
-							(return (varlookupForCode, [],[])) 
+							(return (argVarlookupModifier varlookupForCode,[],[]))
 							codeStatements
 					return (
 						contextVarLookup, 
