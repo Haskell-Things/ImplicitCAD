@@ -41,7 +41,15 @@ computationStatement =
 			scaleStatement,
 			extrudeStatement,
 			shellStatement,
-			userModuleDeclaration
+			userModuleDeclaration,
+			unimplemented "mirror",
+			unimplemented "multmatrix",
+			unimplemented "color",
+			unimplemented "render",
+			unimplemented "surface",
+			unimplemented "projection",
+			unimplemented "rotate_extrude",
+			unimplemented "import_stl"
 			-- rotateExtrudeStatement
 			]
 		many space
@@ -292,6 +300,18 @@ moduleWithSuite name argHandeler = (do
 				Just computationModifier ->  computationModifier (return state)
 				Nothing -> (return state);
 	) <?> (name ++ " statement")
+
+unimplemented :: String -> GenParser Char st ComputationStateModifier
+unimplemented name = do
+	string name
+	many space;
+	moduleArgsUnit
+	many space;
+	(try suite <|> (many space >> char ';' >> return []))
+	return $ \ ioWrappedState -> do
+		state <- ioWrappedState
+		putStrLn $ "OpenSCAD command " ++ name ++ " not yet implemented"
+		return state
 
 
 userModule :: GenParser Char st ComputationStateModifier
