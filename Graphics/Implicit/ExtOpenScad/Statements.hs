@@ -16,11 +16,12 @@ import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
 import Graphics.Implicit.ExtOpenScad.Primitives
 import qualified Graphics.Implicit.Operations as Op
-import Data.Map (Map, lookup, insert)
+import Data.Map (Map, lookup, insert, union)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 import Data.Maybe (fromMaybe)
+import System.Plugins.Load (load_, LoadStatus(..))
 
 tryMany = (foldl1 (<|>)) . (map try)
 
@@ -125,14 +126,26 @@ includeStatement = (do
 	string ">"
 	return $ \ ioWrappedState -> do
 		state@(varlookup,obj2s,obj3s) <- ioWrappedState;
-		content <- readFile filename
-		case parse (many1 computationStatement) ""  content of
-			Left  err ->  do
-				putStrLn $ "Error parsing included file " ++ filename
-				putStrLn $ show err
-				putStrLn $ "Ignoring included file " ++ filename ++ "..."
-				return state
-			Right result -> runComputations (return state) result
+		case reverse filename of
+			'o':'.':_ -> do
+				loaded :: LoadStatus VariableLookup
+					<- load_ filename ["."] "openscadAPI"
+				case loaded of
+					LoadFailure errs -> do
+						putStrLn $ show errs
+						return state
+					LoadSuccess _ newapi -> do
+						putStrLn "Loaded Haskell Module..."
+						return (union varlookup newapi, obj2s, obj3s)
+			_ -> do
+				content <- readFile filename
+				case parse (many1 computationStatement) ""  content of
+					Left  err ->  do
+						putStrLn $ "Error parsing included file " ++ filename
+						putStrLn $ show err
+						putStrLn $ "Ignoring included file " ++ filename ++ "..."
+						return state
+					Right result -> runComputations (return state) result
 	) <?> "include statement"
 
 -- In a use statement, variables are imported but we drop any existing 2D/3D objects.

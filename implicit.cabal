@@ -15,7 +15,7 @@ build-type:          Simple
 Category:            Graphics
 
 Library
-    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers
+    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers, plugins
     ghc-options:         -O2
     Extensions:          MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances
     Exposed-Modules:   
