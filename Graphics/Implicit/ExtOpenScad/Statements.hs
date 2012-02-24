@@ -314,8 +314,7 @@ userModuleDeclaration = do
 	return $ \ envIOWrappedState -> do
 		(envVarlookup, envObj2s, envObj3s) <- envIOWrappedState
 		let 
-			moduleArgParser :: ArgParser ([ComputationStateModifier] -> ComputationStateModifier)
-			moduleArgParser =  do 
+			newModule = OModule $  do 
 				argVarlookupModifier <- args envVarlookup
 				return $ \childrenStatements contextIOWrappedState -> do
 					contextState@(contextVarLookup, contextObj2s, contextObj3s)
@@ -334,6 +333,7 @@ userModuleDeclaration = do
 						varlookupForCode = 
 							(insert "child" child) $ 
 							(insert "children" children) $
+							(insert newModuleName newModule) $
 							envVarlookup
 					(_, resultObj2s, resultObj3s) 
 						<- runComputations 
@@ -344,7 +344,7 @@ userModuleDeclaration = do
 						contextObj2s ++ resultObj2s, 
 						contextObj3s ++ resultObj3s
 						)
-		return (insert newModuleName (OModule moduleArgParser) envVarlookup, envObj2s, envObj3s)
+		return (insert newModuleName (newModule) envVarlookup, envObj2s, envObj3s)
 
 
 
@@ -456,11 +456,11 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 			then Op.translate (0,0,-height/2.0)
 			else id
 	caseOType twist $
-		(\ (0::ℝ) -> getAndModUpObj2s suite (\obj -> shiftAsNeeded $ Op.extrudeR r obj height) 
-		) <||> (\ (rot :: ℝ) ->
+		(\ (rot :: ℝ) ->
 			getAndModUpObj2s suite $ \obj -> 
-				shiftAsNeeded $ Op.extrudeRMod r 
-					(degRotate . (*(rot/height))) obj height
+				shiftAsNeeded $ if rot == 0 
+					then Op.extrudeR    r                               obj height
+					else Op.extrudeRMod r (degRotate . (*(rot/height))) obj height
 		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
 			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ Op.extrudeRMod r 

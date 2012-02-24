@@ -116,14 +116,14 @@ moduleArgsUnit = do
 	char '(';
 	many space;
 	args <- sepBy ( 
-		(try $ do
+		(try $ do -- eg. a = 12
 			symb <- variableSymb;
 			many space;
 			char '=';
 			many space;
 			expr <- expression 0;
 			return $ Right (symb, expr);
-		) <|> (try $ do
+		) <|> (try $ do -- eg. a(x,y) = 12
 			symb <- variableSymb;
 			many space;
 			char '('
@@ -140,7 +140,7 @@ moduleArgsUnit = do
 				makeFunc baseExpr [] varlookup' = baseExpr varlookup'
 				funcExpr = makeFunc expr argVars
 			return $ Right (symb, funcExpr);
-		) <|> (do {
+		) <|> (do { -- eg. 12
 			expr <- expression 0;
 			return $ Left expr;
 		})

@@ -225,6 +225,30 @@ expression n@3 =
 		return $ expr
 	) <|> try (expression $ n+1)
 expression n@2 = try (expression $ n+1)
-expression n@1 = try (expression $ n+1)
+expression n@1 = 
+	try ( do
+		let 
+			numCompareToExprCompare f a b varlookup =
+				case (fromOObj (a varlookup) :: Maybe ℝ, fromOObj (b varlookup) :: Maybe ℝ) of
+					(Just a, Just b) -> f a b
+					_ -> False
+			numericComparisons = fmap numCompareToExprCompare $
+				    (try $ string "==" >> return (==) )
+				<|> (try $ string "!=" >> return (/=) )
+				<|> (try $ string ">=" >> return (>=) )
+				<|> (try $ string "<=" >> return (<=) )
+				<|> (try $ string ">"  >> return (>)  )
+				<|> (try $ string "<"  >> return (<)  )
+		firstExpr <- expression $ n+1
+		otherExpr <- many $ do
+			comparison <- numericComparisons
+			expr <- expression $ n+1
+			return (comparison, expr)
+		return $ if null otherExpr then firstExpr else fmap toOObj $ fst $ foldl 
+			(\(bstart, prevExpr) (comp, nextExpr) -> 
+				(\vlookup -> bstart vlookup && comp prevExpr nextExpr vlookup, nextExpr) )
+			(\vlookup -> True, firstExpr)
+			otherExpr
+	)<|> try (expression $ n+1)
 expression n@0 = try (do { many space; expr <- expression $ n+1; many space; return expr}) <|> try (expression $ n+1)
 
