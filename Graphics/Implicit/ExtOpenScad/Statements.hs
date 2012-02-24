@@ -332,7 +332,9 @@ userModule = do
 					Just computationModifier ->  
 						computationModifier statements (return state)
 					Nothing -> (return state);
-			_ -> return state
+			_ -> do
+				putStrLn $ "module " ++ name ++ " is not in scope"
+				return state
 
 
 
