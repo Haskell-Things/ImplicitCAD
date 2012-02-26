@@ -233,14 +233,17 @@ Try ImplicitCAD!
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
          * Homebrew: `brew install ghc cabal-install`
-         * *Fink doesn't seem to have a package for cabal*
+         * *Fink doesn't seem to have a package for cabal* Install the Haskell Platform manually as described [here](http://hackage.haskell.org/platform/mac.html).
+     * Windows: Follows [these install instructions](http://hackage.haskell.org/platform/windows.html).
+     * Other unices: If your package manager does not include ghc and cabal you should install the Haskell platform as described [here](
  2. You now have two options for installation:
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
      * Development version:
+         * Install the dependencies: `cabal update && cabal install hashmap parallel parsec plugins`
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
-         * cabal install it: `cabal update && cabal configure && cabal install`
+         * cabal install it: `cabal configure && cabal install`
  3. Try it!
      * extopenscad test:
           * Make a test file: `echo "circle(30);" > test.escad`
@@ -266,9 +269,9 @@ Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.1, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.1/doc/html/Graphics-Implicit.html).
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.1, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.1/doc/html/Graphics-Implicit.html) (for some reason the latest version doesn't seem to have built).
 
-A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post.
+A description of the mathematical ideas underpinning ImplicitCAD are described in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post. You can also look at the [0.0.1 relase notes](http://christopherolah.wordpress.com/2012/02/06/implicitcad-0-0-1-release/).
 
 Status
 ------
