@@ -94,53 +94,76 @@ expression 9 =
 		splice :: [a] -> ℝ -> ℝ -> [a]
 		splice [] _ _     = []
 		splice (x:xs) a b 
-			| floor a < 0 =      splice xs (fromIntegral $ length xs + floor a) (fromIntegral $ floor b)
-			| floor b < 0 =      splice xs (fromIntegral $ floor a) ( fromIntegral $ length xs + floor b)
-			| floor a > 0 =      splice xs (fromIntegral $ floor a - 1) (fromIntegral $ floor b)
-			| floor b > 0 = x : (splice xs (fromIntegral $ floor a) (fromIntegral $ floor b - 1 ) )
+			| floor a < 0 =   splice xs 
+				(fromIntegral $ length xs + floor a) (fromIntegral $ floor b)
+			| floor b < 0 =   splice xs 
+				(fromIntegral $ floor a) ( fromIntegral $ length xs + floor b)
+			| floor a > 0 =   splice xs 
+				(fromIntegral $ floor a - 1) (fromIntegral $ floor b)
+			| floor b > 0 =
+				x : (splice xs (fromIntegral $ floor a) (fromIntegral $ floor b - 1 ) )
 			| otherwise = []
+		modifier = 
+			(try $ (do
+				many space
+				string "("
+				args <- sepBy 
+					(expression 0) 
+					(many space >> char ',' >> many space)
+				string ")"
+				many space
+				return $ \f varlookup -> applyArgs (f varlookup) (map ($varlookup) args) 
+			<?> "function application"
+			)) <|> (try $ (do
+				many space
+				string "[";
+				i <- pad $ expression 0;
+				string "]";
+				many space
+				return $ \l varlookup ->
+					case (l varlookup, i varlookup) of
+						(OList actual_list, ONum ind) -> actual_list !! (floor ind)
+						(OString str, ONum ind) -> OString $ [str !! (floor ind)]
+						_ -> OUndefined
+			<?> "list indexing"
+			)) <|> (try $ ( do
+				string "[";
+				many space
+				start <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+				many space
+				char ':';
+				many space
+				end   <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
+				many space
+				string "]";
+				return $ \l varlookup ->
+					case (l varlookup, start varlookup, end varlookup) of
+						(OList  list, ONum a,     ONum b    ) -> 
+									OList   $ splice list a b
+						(OString str, ONum a,     ONum b    ) -> 
+									OString $ splice str  a b
+						(OList  list, OUndefined, ONum b    ) -> 
+									OList   $ splice list 0 b
+						(OString str, OUndefined, ONum b    ) -> 
+									OString $ splice str  0 b
+						(OList  list, ONum a,     OUndefined) -> 
+									OList   $ splice list a (1.0/0.0)
+						(OString str, ONum a,     OUndefined) -> 
+									OString $ splice str  a (1.0/0.0)
+						(OList  list, OUndefined, OUndefined) -> 
+									OList   $ splice list 0 (1.0/0.0)
+						(OString str, OUndefined, OUndefined) -> 
+									OString $ splice str  0 (1.0/0.0)
+						_ -> OUndefined
+			<?> "list splicing"))
+		
 	in ( try( do 
-		f <- expression 10;
+		obj <- expression 10;
 		many space
-		string "(";
-		args <- sepBy (expression 0) (many space >> char ',' >> many space);
-		string ")";
-		return $ \varlookup -> applyArgs (f varlookup) (map ($varlookup) args) 
-	) <?> "function appliation" )
-	<|> ( try( do 
-		l <- expression 10;
-		string "[";
-		i <- expression 0;
-		string "]";
-		return $ \varlookup ->
-			case (l varlookup, i varlookup) of
-				(OList actual_list, ONum ind) -> actual_list !! (floor ind)
-				(OString str, ONum ind) -> OString $ [str !! (floor ind)]
-				_ -> OUndefined
-	) <?> "list indexing" )
-	<|> ( try( do 
-		l <- expression 10;
-		string "[";
+		mods <- modifier `sepBy` (many space)
 		many space
-		start <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
-		many space
-		char ':';
-		many space
-		end   <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
-		many space
-		string "]";
-		return $ \varlookup ->
-			case (l varlookup, start varlookup, end varlookup) of
-				(OList  list, ONum a,     ONum b    ) -> OList   $ splice list a b
-				(OString str, ONum a,     ONum b    ) -> OString $ splice str  a b
-				(OList  list, OUndefined, ONum b    ) -> OList   $ splice list 0 b
-				(OString str, OUndefined, ONum b    ) -> OString $ splice str  0 b
-				(OList  list, ONum a,     OUndefined) -> OList   $ splice list a (1.0/0.0)
-				(OString str, ONum a,     OUndefined) -> OString $ splice str  a (1.0/0.0)
-				(OList  list, OUndefined, OUndefined) -> OList   $ splice list 0 (1.0/0.0)
-				(OString str, OUndefined, OUndefined) -> OString $ splice str  0 (1.0/0.0)
-				_ -> OUndefined
-	) <?> "list splicing" )
+		return $ \varlookup -> foldl (\a b -> b a) obj mods $ varlookup
+		) <?> "list splicing" )
 	<|> try (expression 10)
 expression n@8 = try (( do 
 		a <- expression (n+1);
@@ -153,8 +176,7 @@ expression n@8 = try (( do
 			_ -> OUndefined
 	) <?> "exponentiation")
 	<|> try (expression $ n+1)
-expression n@7 =  try (expression $ n+1)
-expression n@6 = 
+expression n@7 = 
 	let 
 		mult (ONum a)  (ONum b)  = ONum  (a*b)
 		mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
@@ -177,6 +199,15 @@ expression n@6 =
 		--       1 * 2 * 3/4/5 * 6 * 7/8 
 		return $ \varlookup -> foldl1 mult $ map ( (foldl1 div) . (map ($varlookup) ) ) exprs;
 	) <?> "multiplication/division")
+	<|>try (expression $ n+1)
+expression n@6 =
+	let 
+		omod (ONum a) (ONum b) = ONum $ fromIntegral $ mod (floor a) (floor b)
+		omod a        b        = errorAsAppropriate "modulo" a b
+	in try (( do 
+		exprs <- sepBy1 (expression $ n+1) (many space >> string "%" >> many space)
+		return $ \varlookup -> foldl1 omod $ map ($varlookup) exprs;
+	) <?> "modulo") 
 	<|>try (expression $ n+1)
 expression n@5 =
 	let 

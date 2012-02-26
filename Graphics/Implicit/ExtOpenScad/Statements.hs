@@ -40,6 +40,7 @@ computationStatement =
 			rotateStatement,
 			scaleStatement,
 			extrudeStatement,
+			throwAway,
 			shellStatement,
 			userModuleDeclaration,
 			unimplemented "mirror",
@@ -123,6 +124,13 @@ comment =
 		string "/*"
 		manyTill anyChar (try $ string "*/")
 	)) >> return id) <?> "comment"
+
+throwAway = do
+	many space
+	oneOf "%*"
+	many space
+	computationStatement
+	return id
 
 -- An included statement! Basically, inject another openscad file here...
 includeStatement :: GenParser Char st ComputationStateModifier

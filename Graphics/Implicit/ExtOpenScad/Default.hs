@@ -16,6 +16,9 @@ defaultObjects = fromList $
 	++ defaultFunctions2
 	++ defaultFunctionsSpecial
 
+-- Missing standard ones:
+-- rand, lookup, 
+
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
 	[("pi", pi)]
 
@@ -24,17 +27,27 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 		("sin",   sin),
 		("cos",   cos),
 		("tan",   tan),
+		("asin",  asin),
+		("acos",  acos),
+		("atan",  atan),
 		("abs",   abs),
 		("sign",  signum),
 		("floor", fromIntegral . floor ),
 		("ceil",  fromIntegral . ceiling ),
-		("exp",   exp)
+		("round", fromIntegral . round ),
+		("exp",   exp),
+		("ln",    log),
+		("log",   log),
+		("sign",  signum),
+		("sqrt",  sqrt)
 	]
 
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 	[
 		("max", max),
-		("min", min)
+		("min", min),
+		("atan2", atan2),
+		("pow", (**))
 	]
 
 defaultFunctionsSpecial = 
