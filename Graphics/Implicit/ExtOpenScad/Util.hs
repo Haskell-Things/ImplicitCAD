@@ -89,7 +89,7 @@ defaultTo (ArgParser name oldDefMaybeVal doc next) newDefVal =
 addObj2 :: (Monad m) => Obj2Type -> m ComputationStateModifier
 addObj2 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj:obj2s, obj3s)
+		return (varlookup, obj2s ++ [obj], obj3s)
 
 addObj3 :: (Monad m) => Obj3Type -> m ComputationStateModifier
 addObj3 obj = return $  \ ioWrappedState -> do
