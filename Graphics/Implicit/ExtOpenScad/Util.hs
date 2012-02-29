@@ -94,7 +94,7 @@ addObj2 obj = return $  \ ioWrappedState -> do
 addObj3 :: (Monad m) => Obj3Type -> m ComputationStateModifier
 addObj3 obj = return $  \ ioWrappedState -> do
 		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj2s, obj:obj3s)
+		return (varlookup, obj2s, obj3s ++ [obj])
 
 changeObjs :: (Monad m) => ([Obj2Type] -> [Obj2Type]) -> ([Obj3Type] -> [Obj3Type]) -> m ComputationStateModifier
 changeObjs mod2s mod3s = return $  \ ioWrappedState -> do
