@@ -22,6 +22,7 @@ import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
 import Data.Maybe (fromMaybe)
 import System.Plugins.Load (load_, LoadStatus(..))
+import Control.Monad (forM_)
 
 tryMany = (foldl1 (<|>)) . (map try)
 
@@ -305,8 +306,18 @@ moduleWithSuite name argHandeler = (do
 			(map ($varlookup) unnamed) 
 			(map (\(a,b) -> (a, b varlookup)) named) (argHandeler statements)
 			of
-				Just computationModifier ->  computationModifier (return state)
-				Nothing -> (return state);
+				(Just computationModifier, []) ->  computationModifier (return state)
+				(Nothing, []) -> do
+					putStrLn $ "Module " ++ name ++ " failed without a message"
+					return state
+				(Nothing, errs) -> do
+					putStrLn $ "Module " ++ name ++ " failed with the following messages:"
+					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					return state
+				(Just computationModifier, errs) -> do
+					putStrLn $ "Module " ++ name ++ " gave the following warnings:"
+					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					computationModifier (return state)
 	) <?> (name ++ " statement")
 
 unimplemented :: String -> GenParser Char st ComputationStateModifier
@@ -337,9 +348,19 @@ userModule = do
 					(map ($varlookup) unnamed) 
 					(map (\(a,b) -> (a, b varlookup)) named) m
 				of
-					Just computationModifier ->  
-						computationModifier statements (return state)
-					Nothing -> (return state);
+				(Just computationModifier, []) ->  
+					computationModifier statements (return state)
+				(Nothing, []) -> do
+					putStrLn $ "Module " ++ name ++ " failed without a message"
+					return state
+				(Nothing, errs) -> do
+					putStrLn $ "Module " ++ name ++ " failed with the following messages:"
+					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					return state
+				(Just computationModifier, errs) -> do
+					putStrLn $ "Module " ++ name ++ " gave the following warnings:"
+					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					computationModifier statements (return state)
 			_ -> do
 				putStrLn $ "module " ++ name ++ " is not in scope"
 				return state
