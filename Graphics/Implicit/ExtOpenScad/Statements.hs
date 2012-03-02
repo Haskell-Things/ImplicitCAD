@@ -229,12 +229,28 @@ echoStatement = do
 	many space
 	char '('
 	many space
-	val <- expression 0
+	exprs <- expression 0 `sepBy` (many space >> char ',' >> many space)
 	many space
 	char ')'
 	return $  \ ioWrappedState -> do
 		state@(varlookup, _, _) <- ioWrappedState
-		putStrLn $ show $ val varlookup
+		let 
+			vals = map ($varlookup) exprs
+			isError (OError _) = True
+			isError _ = False
+			show2 (OString str) = str
+			show2 a = show a
+		putStrLn $ 
+			if any isError vals 
+			then 
+				"In module echo:"
+				++ ( concat $ concat $ 
+					map (map ("\n   "++)) $ 
+						map (\(OError errs) -> errs) $ filter isError vals
+				   )
+			else
+				concat $ map show2 vals
+
 		return state
 
 ifStatement = (do
@@ -249,11 +265,20 @@ ifStatement = (do
 	statementsFalseCase <- try (string "else" >> many space >> suite ) <|> (return [])
 	return $  \ ioWrappedState -> do
 		state@(varlookup, _, _) <- ioWrappedState
-		if case bexpr varlookup of  
-				OBool b -> b
-				_ -> False
-			then runComputations (return state) statementsTrueCase
-			else runComputations (return state) statementsFalseCase
+		case bexpr varlookup of
+			OBool bval -> 
+				if bval
+				then runComputations (return state) statementsTrueCase
+				else runComputations (return state) statementsFalseCase
+			OError errs -> do
+				putStrLn ( "Error while evaluating if statement conditional:" 
+				         ++ concat (map ("\n    " ++) errs)
+				         )
+				return state
+			obj -> do
+				putStrLn $ "Inappropriate type for if statement conditional:\n"
+				        ++ "   value " ++ show obj ++ " is not a boolean."
+				return state
 	) <?> "if statement"
 
 forStatement = (do
@@ -286,9 +311,18 @@ forStatement = (do
 					vsymbSetState = return (insert vsymb val varlookup, a, b)
 				runComputations vsymbSetState loopStatements
 		-- Then loops once for every entry in vexpr
-		foldl (loopOnce) (return state) $ case vexpr varlookup of 
-			OList l -> l;
-			_       -> [];
+		case vexpr varlookup of 
+			OList l -> foldl (loopOnce) (return state) l
+			OError errs -> do
+				putStrLn ( "Error while evaluating for loop array:" 
+				         ++ concat (map ("\n    " ++) errs)
+				         )
+				return state
+			obj     -> do
+				putStrLn $ "Error in for loop iteration array:\n"
+				        ++ "   Inappropriate type for loop iterated array:\n"
+				        ++ "       value " ++ show obj ++ " is not a list."
+				return state
 	) <?> "for statement"
 
 moduleWithSuite ::
