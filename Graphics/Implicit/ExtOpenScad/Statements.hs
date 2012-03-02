@@ -249,7 +249,7 @@ echoStatement = do
 						map (\(OError errs) -> errs) $ filter isError vals
 				   )
 			else
-				concat $ map show2 vals
+				unwords $ map show2 vals
 
 		return state
 
