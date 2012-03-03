@@ -13,6 +13,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Data.Map (Map, lookup, insert)
+import qualified Data.Map as Map
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
@@ -27,23 +28,28 @@ instance Monad ArgParser where
 	return a = ArgParserTerminator a
 
 argMap :: [OpenscadObj] -> [(String, OpenscadObj)] -> ArgParser a -> (Maybe a, [String])
-argMap a b (ArgParserTerminator val) = 
+argMap a b = argMap2 a (Map.fromList b)
+
+argMap2 a b (ArgParserTerminator val) = 
 	(Just val,
-		if length a + length b > 0
+		if length a + Map.size b > 0
 		then ["unused arguments"]
 		else []
 	)
-argMap a b (ArgParserFailIf test err child) = 
+argMap2 a b (ArgParserFailIf test err child) = 
 	if test 
 	then (Nothing, [err])
-	else argMap a b child
-argMap unnamedArgs namedArgs (ArgParser name fallback _ f) = 
-	case Data.List.lookup name namedArgs of
-		Just a -> argMap unnamedArgs namedArgs (f a)
+	else argMap2 a b child
+argMap2 unnamedArgs namedArgs (ArgParser name fallback _ f) = 
+	case Map.lookup name namedArgs of
+		Just a -> argMap2 
+			unnamedArgs 
+			(Map.delete name namedArgs) 
+			(f a)
 		Nothing -> case unnamedArgs of
-			x:xs -> argMap xs namedArgs (f x)
+			x:xs -> argMap2 xs namedArgs (f x)
 			[]   -> case fallback of
-				Just b  -> argMap [] namedArgs (f b)
+				Just b  -> argMap2 [] namedArgs (f b)
 				Nothing -> (Nothing, ["No value and no default for argument " ++ name])
 	
 -- $ Here there be dragons!
