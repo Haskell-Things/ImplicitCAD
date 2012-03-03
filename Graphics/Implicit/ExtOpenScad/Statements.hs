@@ -201,7 +201,8 @@ assigmentStatement =
 				val = valExpr varlookup
 			return (insert varSymb val varlookup, obj2s, obj3s) 
 	) <|> (try $ do 
-		varSymb <- variableSymb
+		varSymb <- (try $ string "function" >> many1 space >> variableSymb) 
+		            <|> variableSymb
 		many space
 		char '('
 		many space
