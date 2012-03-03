@@ -22,6 +22,7 @@ module Graphics.Implicit(
 	rect3R,
 	circle,
 	cylinder,
+	cylinder2,
 	rectR,
 	--regularPolygon,
 	--zsurface,

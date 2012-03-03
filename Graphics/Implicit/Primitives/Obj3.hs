@@ -17,5 +17,5 @@ instance PrimitiveSupporter3 Obj3 where
 				where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
 	cylinder2 r1 r2 h 
 		| r1 == r2  = \(x,y,z) -> max (sqrt(x^2+y^2) - r1) (abs(z-h/2.0) - h/2.0)
-		| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - r1*(1.0 - z/2.0) - r2*z/2.0) (abs(z-h/2.0) - h/2.0)
+		| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)) (abs(z-h/2.0) - h/2.0)
 
