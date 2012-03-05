@@ -518,16 +518,18 @@ translateStatement = moduleWithSuite "translate" $ \suite -> do
 			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
 		) <||> (\ _  -> noChange)
 
+deg2rad x = x / 180.0 * pi
+
 -- This is mostly insane
 rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	caseOType a $
-		       ( \xy  -> 
-			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (xy, 0, 0) )
-		) <||> ( \(yz,xz,xy) -> 
-			getAndTransformSuiteObjs suite (Op.rotateXY xy ) (Op.rotate3 (yz, xz, xy) )
-		) <||> ( \(yz,xz) -> 
-			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (yz, xz, 0))
+		       ( \xy  ->
+			getAndTransformSuiteObjs suite (Op.rotateXY $ deg2rad xy ) (Op.rotate3 (deg2rad xy, 0, 0) )
+		) <||> ( \(yz,xy,xz) ->
+			getAndTransformSuiteObjs suite (Op.rotateXY $ deg2rad xy ) (Op.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) )
+		) <||> ( \(yz,xz) ->
+			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (deg2rad yz, deg2rad xz, 0))
 		) <||> ( \_  -> noChange )
 
 
