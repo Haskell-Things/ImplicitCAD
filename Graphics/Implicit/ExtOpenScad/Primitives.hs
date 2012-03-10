@@ -20,8 +20,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
 
-import qualified Graphics.Implicit.Primitives as Prim
-import qualified Graphics.Implicit.Operations as Op
+import qualified Graphics.Implicit.Interface as Prim
 
 import Data.Map (Map, lookup)
 
@@ -126,12 +125,12 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
 				let sides = fromIntegral fn 
 				in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
-			obj3 = Op.extrudeR 0 obj2 h
+			obj3 = Prim.extrudeR 0 obj2 h
 		in if center
-			then Op.translate (0,0,-h/2) obj3
+			then Prim.translate (0,0,-h/2) obj3
 			else obj3
 		else if center
-			then Prim.cylinder2C r1 r2 h
+			then  Prim.translate (0,0,-h/2) $ Prim.cylinder2 r1 r2 h
 			else Prim.cylinder2  r1 r2 h
 
 circle = moduleWithoutSuite "circle" $ do

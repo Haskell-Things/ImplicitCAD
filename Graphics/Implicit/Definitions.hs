@@ -87,6 +87,7 @@ data SymbolicObj3 =
 	-- Some simple primitives
 	  Rect3R ℝ ℝ3 ℝ3
 	| Sphere ℝ
+	| Cylinder ℝ ℝ ℝ -- h r1 r2
 	-- Some (rounded) CSG
 	| Complement3 SymbolicObj3
 	| UnionR3 ℝ [SymbolicObj3]

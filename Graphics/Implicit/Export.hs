@@ -12,8 +12,6 @@ import System.IO (writeFile)
 import Graphics.Implicit.Export.Definitions
 
 -- instances of DiscreteApproxable...
-import Graphics.Implicit.Export.BoxedObj2
-import Graphics.Implicit.Export.BoxedObj3
 import Graphics.Implicit.Export.SymbolicObj2
 import Graphics.Implicit.Export.SymbolicObj3
 

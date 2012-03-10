@@ -23,31 +23,15 @@ Library
         Graphics.Implicit.Definitions
         Graphics.Implicit.Export
         Graphics.Implicit.MathUtil
-        Graphics.Implicit.Operations
         Graphics.Implicit.SaneOperators
         Graphics.Implicit.ExtOpenScad
     Other-Modules:
-        Graphics.Implicit.Primitives
-        Graphics.Implicit.Primitives.Definitions
-        Graphics.Implicit.Primitives.BoxedObj2
-        Graphics.Implicit.Primitives.BoxedObj3
-        Graphics.Implicit.Primitives.SymbolicObj2
-        Graphics.Implicit.Primitives.SymbolicObj3
-        Graphics.Implicit.Primitives.Obj2
-        Graphics.Implicit.Primitives.Obj3
-        Graphics.Implicit.Operations.Definitions
-        Graphics.Implicit.Operations.Box2
-        Graphics.Implicit.Operations.Box3
-        Graphics.Implicit.Operations.BoxPair
-        Graphics.Implicit.Operations.BoxedObj2
-        Graphics.Implicit.Operations.BoxedObj3
-        Graphics.Implicit.Operations.BoxedObjPair
-        Graphics.Implicit.Operations.SymbolicObj2
-        Graphics.Implicit.Operations.SymbolicObj3
-        Graphics.Implicit.Operations.SymbolicObjPair
-        Graphics.Implicit.Operations.Obj2
-        Graphics.Implicit.Operations.Obj3
-        Graphics.Implicit.Operations.ObjPair
+        Graphics.Implicit.Interface
+        Graphics.Implicit.ObjectUtil
+        Graphics.Implicit.ObjectUtil.GetBox2
+        Graphics.Implicit.ObjectUtil.GetBox3
+        Graphics.Implicit.ObjectUtil.GetImplicit2
+        Graphics.Implicit.ObjectUtil.GetImplicit3
         Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Default
         Graphics.Implicit.ExtOpenScad.Expressions
@@ -58,16 +42,12 @@ Library
         Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill
         Graphics.Implicit.Export.MarchingCubes
-        Graphics.Implicit.Export.BoxedObj2
-        Graphics.Implicit.Export.BoxedObj3
         Graphics.Implicit.Export.SymbolicObj2
         Graphics.Implicit.Export.SymbolicObj3
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.NormedTriangleMeshFormats
         Graphics.Implicit.Export.Util
-        Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
-        Graphics.Implicit.Export.Symbolic.CoerceSymbolic3
         Graphics.Implicit.Export.Symbolic.Rebound2
         Graphics.Implicit.Export.Symbolic.Rebound3
 

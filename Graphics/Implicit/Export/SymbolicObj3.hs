@@ -14,15 +14,14 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.MarchingCubes
 
-import Graphics.Implicit.Operations
-import Graphics.Implicit.Primitives
+import Graphics.Implicit.Interface
+import Graphics.Implicit.ObjectUtil
 
 import Graphics.Implicit.Export.SymbolicObj2
 
 import qualified Graphics.Implicit.SaneOperators as S
 
-import Graphics.Implicit.Export.Symbolic.CoerceSymbolic2
-import Graphics.Implicit.Export.Symbolic.CoerceSymbolic3
+
 import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
 --import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
@@ -33,7 +32,7 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 	discreteAprox res obj = symbolicGetMesh res obj
 
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
-	discreteAprox res obj = map (normTriangle res (fst $ coerceSymbolic3 obj)) $ symbolicGetMesh res obj
+	discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
@@ -99,7 +98,7 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
 	let
 		-- Get a Obj2 (magnitude descriptor object)
 		obj2mag :: ℝ2 -> ℝ -- Obj2
-		obj2mag = fst $ coerceSymbolic2 obj2
+		obj2mag = getImplicit2 obj2
 		-- The amount that a point (x,y) on the top should be lifted
 		-- from h-r. Because of rounding, the edges should be h-r,
 		-- but it should increase inwards.
@@ -140,7 +139,7 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 	let
 		-- Get a Obj2 (magnitude descriptor object)
 		obj2mag :: Obj2 -- = ℝ2 -> ℝ
-		obj2mag = fst $ coerceSymbolic2 obj2
+		obj2mag = getImplicit2 obj2
 		-- The amount that a point (x,y) on the top should be lifted
 		-- from h-r. Because of rounding, the edges should be h-r,
 		-- but it should increase inwards.
@@ -205,6 +204,6 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 --  it slightly streches it to make sure nothing will 
 --  have problems because it is right at the edge )
 symbolicGetMesh res  obj = 
-	case rebound3 (coerceSymbolic3 obj) of
+	case rebound3 (getImplicit3 obj, getBox3 obj) of
 		(obj, (a,b)) -> getMesh a b res obj 
 
