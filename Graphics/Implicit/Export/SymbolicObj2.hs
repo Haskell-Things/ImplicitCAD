@@ -14,7 +14,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.MarchingSquares
 import Graphics.Implicit.Export.MarchingSquaresFill
-import Graphics.Implicit.Interface
+import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
 
 import Graphics.Implicit.Export.Symbolic.Rebound2

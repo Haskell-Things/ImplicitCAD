@@ -35,8 +35,7 @@ module Graphics.Implicit(
 ) where
 
 -- Let's be explicit about where things come from :)
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3)
-import Graphics.Implicit.Interface
+import Graphics.Implicit.Primitives
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
 import Graphics.Implicit.Export
 

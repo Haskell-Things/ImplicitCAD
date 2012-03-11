@@ -20,7 +20,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
 
-import qualified Graphics.Implicit.Interface as Prim
+import qualified Graphics.Implicit.Primitives as Prim
 
 import Data.Map (Map, lookup)
 

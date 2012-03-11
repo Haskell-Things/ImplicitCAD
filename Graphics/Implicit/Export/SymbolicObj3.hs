@@ -14,7 +14,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.MarchingCubes
 
-import Graphics.Implicit.Interface
+import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
 
 import Graphics.Implicit.Export.SymbolicObj2

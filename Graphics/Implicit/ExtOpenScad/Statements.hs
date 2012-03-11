@@ -15,7 +15,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
 import Graphics.Implicit.ExtOpenScad.Primitives
-import qualified Graphics.Implicit.Interface as Op
+import qualified Graphics.Implicit.Primitives as Prim
 import Data.Map (Map, lookup, insert, union)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
@@ -43,6 +43,7 @@ computationStatement =
 			extrudeStatement,
 			throwAway,
 			shellStatement,
+			packStatement,
 			userModuleDeclaration,
 			unimplemented "mirror",
 			unimplemented "multmatrix",
@@ -490,32 +491,32 @@ unionStatement = moduleWithSuite "union" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
 	if r > 0
-		then getAndCompressSuiteObjs suite (Op.unionR r) (Op.unionR r)
-		else getAndCompressSuiteObjs suite Op.union Op.union
+		then getAndCompressSuiteObjs suite (Prim.unionR r) (Prim.unionR r)
+		else getAndCompressSuiteObjs suite Prim.union Prim.union
 
 intersectStatement = moduleWithSuite "intersection" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
 	if r > 0
-		then getAndCompressSuiteObjs suite (Op.intersectR r) (Op.intersectR r)
-		else getAndCompressSuiteObjs suite Op.intersect Op.intersect
+		then getAndCompressSuiteObjs suite (Prim.intersectR r) (Prim.intersectR r)
+		else getAndCompressSuiteObjs suite Prim.intersect Prim.intersect
 
 differenceStatement = moduleWithSuite "difference" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
 	if r > 0
-		then getAndCompressSuiteObjs suite (Op.differenceR r) (Op.differenceR r)
-		else getAndCompressSuiteObjs suite Op.difference Op.difference
+		then getAndCompressSuiteObjs suite (Prim.differenceR r) (Prim.differenceR r)
+		else getAndCompressSuiteObjs suite Prim.difference Prim.difference
 
 translateStatement = moduleWithSuite "translate" $ \suite -> do
 	v <- argument "v"
 	caseOType v $
 		       ( \(x,y,z)-> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z)) 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z)) 
 		) <||> ( \(x,y) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0)) 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0)) 
 		) <||> ( \ x -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0))
+			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0))
 		) <||> (\ _  -> noChange)
 
 deg2rad x = x / 180.0 * pi
@@ -525,11 +526,11 @@ rotateStatement = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 	caseOType a $
 		       ( \xy  ->
-			getAndTransformSuiteObjs suite (Op.rotate $ deg2rad xy ) (Op.rotate3 (deg2rad xy, 0, 0) )
+			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad xy, 0, 0) )
 		) <||> ( \(yz,xy,xz) ->
-			getAndTransformSuiteObjs suite (Op.rotate $ deg2rad xy ) (Op.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) )
+			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) )
 		) <||> ( \(yz,xz) ->
-			getAndTransformSuiteObjs suite (id ) (Op.rotate3 (deg2rad yz, deg2rad xz, 0))
+			getAndTransformSuiteObjs suite (id ) (Prim.rotate3 (deg2rad yz, deg2rad xz, 0))
 		) <||> ( \_  -> noChange )
 
 
@@ -537,13 +538,13 @@ scaleStatement = moduleWithSuite "scale" $ \suite -> do
 	v <- argument "v"
 	case v of
 		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,z))
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z))
 		OList ((ONum x):(ONum y):[]) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,y) ) (Op.translate (x,y,0.0))
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0))
 		OList ((ONum x):[]) -> 
-			getAndTransformSuiteObjs suite (Op.translate (x,0.0) ) (Op.translate (x,0.0,0.0)-}
+			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0)-}
 		ONum s ->
-			getAndTransformSuiteObjs suite (Op.scale s) (Op.scale s)
+			getAndTransformSuiteObjs suite (Prim.scale s) (Prim.scale s)
 
 extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 	height :: ℝ   <- argument "height"
@@ -554,17 +555,17 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
 		shiftAsNeeded =
 			if center
-			then Op.translate (0,0,-height/2.0)
+			then Prim.translate (0,0,-height/2.0)
 			else id
 	caseOType twist $
 		(\ (rot :: ℝ) ->
 			getAndModUpObj2s suite $ \obj -> 
 				shiftAsNeeded $ if rot == 0 
-					then Op.extrudeR    r                               obj height
-					else Op.extrudeRMod r (degRotate . (*(rot/height))) obj height
+					then Prim.extrudeR    r                               obj height
+					else Prim.extrudeRMod r (degRotate . (*(rot/height))) obj height
 		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
 			getAndModUpObj2s suite $ \obj -> 
-				shiftAsNeeded $ Op.extrudeRMod r 
+				shiftAsNeeded $ Prim.extrudeRMod r 
 					(degRotate . (fromMaybe 0) . rotf) obj height
 		) <||> (\_ -> noChange)
 
@@ -573,10 +574,21 @@ extrudeStatement = moduleWithSuite "linear_extrude" $ \suite -> do
 	center <- boolArgumentWithDefault "center" False
 	twist <- realArgumentWithDefault 0.0
 	r <- realArgumentWithDefault "r" 0.0
-	getAndModUpObj2s suite (\obj -> Op.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h) 
+	getAndModUpObj2s suite (\obj -> Prim.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h) 
 -}
 
 shellStatement = moduleWithSuite "shell" $ \suite -> do
 	w :: ℝ <- argument "w"
-	getAndTransformSuiteObjs suite (Op.shell w) (Op.shell w)
+	getAndTransformSuiteObjs suite (Prim.shell w) (Prim.shell w)
+
+-- Not a perenant solution! Breaks if can't pack.
+packStatement = moduleWithSuite "pack" $ \suite -> do
+	size :: ℝ2 <- argument "size"
+	sep  :: ℝ  <- argument "sep"
+	let
+		pack2 objs = case Prim.pack2 size sep objs of
+			Just a -> a
+		pack3 objs = case Prim.pack3 size sep objs of
+			Just a -> a
+	getAndCompressSuiteObjs  suite pack2 pack3
 
