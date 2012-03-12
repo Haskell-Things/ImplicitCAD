@@ -26,7 +26,7 @@ Library
         Graphics.Implicit.SaneOperators
         Graphics.Implicit.ExtOpenScad
     Other-Modules:
-        Graphics.Implicit.Interface
+        Graphics.Implicit.Primitives
         Graphics.Implicit.ObjectUtil
         Graphics.Implicit.ObjectUtil.GetBox2
         Graphics.Implicit.ObjectUtil.GetBox3
