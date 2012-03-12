@@ -6,9 +6,9 @@
 module Graphics.Implicit.Primitives where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.ObjectUtil
 import Data.List (sortBy)
-import Debug.Trace
+import Graphics.Implicit.MathUtil   (pack)
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 
 -- $ 3D Primitives
 
@@ -112,9 +112,20 @@ class Object obj vec | obj -> vec where
 		-> obj   -- ^ object to take shell of
 		-> obj   -- ^ resulting shell
 
-	getBox :: obj -> (vec, vec)
-	getImplicit :: obj -> (vec -> ℝ)
-	implicit :: (vec -> ℝ) -> (vec, vec) -> obj
+	-- | Get the bounding box an object
+	getBox :: 
+		obj           -- ^ Object to get box of
+		-> (vec, vec) -- ^ Bounding box
+
+	-- | Get the implicit function for an object
+	getImplicit :: 
+		obj           -- ^ Object to get implicit function of
+		-> (vec -> ℝ) -- ^ Implicit function
+
+	implicit :: 
+		(vec -> ℝ)     -- ^ Implicit function
+		-> (vec, vec)  -- ^ Bounding box
+		-> obj         -- ^ Resulting object
 	
 
 instance Object SymbolicObj2 ℝ2 where
@@ -164,29 +175,8 @@ pack3 (dx, dy) sep objs =
 		boxDropZ ((a,b,c),(d,e,f)) = ((a,b),(d,e))
 		withBoxes :: [(Box2, SymbolicObj3)]
 		withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
-		sortedWithBoxes = sortBy 
-			(\(((_, ay1), (_, ay2)), obj1) (((_, by1), (_, by2)),obj2) -> 
-				compare (abs $ by2-by1) (abs $ ay2 - ay1)  )
-			withBoxes
-		packSome :: [(Box2, SymbolicObj3)] -> Box2 -> ([SymbolicObj3], [(Box2, SymbolicObj3)])
-		packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) = 
-			trace (show box ++ "  --  " ++ show ((x1,y1),(x2,y2)) ) $ if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
-			then 
-				let
-					row = (\(a,b) -> (((translate (bx1-x1,by1-y1,0) obj) : a), b)) $
-						packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
-					rowAndUp = 
-						if abs (by2-by1) - abs (y2-y1) > sep
-						then (\(a,b) -> ((fst row) ++ a, b) ) $
-							packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
-						else row
-				in
-					rowAndUp
-			else
-				(\(a,b) -> (a, presObj:b)) $ packSome otherBoxedObjs box
-		packSome [] _ = ([],[])
-	in case packSome sortedWithBoxes ((0,0),(dy,dy)) of
-			(a, []) -> Just $ union a
+	in case pack ((0,0),(dy,dy)) sep withBoxes of
+			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
 			_ -> Nothing
 				
 
@@ -199,29 +189,8 @@ pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
 pack2 (dx, dy) sep objs = 
 	let
 		withBoxes :: [(Box2, SymbolicObj2)]
-		withBoxes = map (\obj -> (getBox2 obj, obj)) objs
-		sortedWithBoxes = sortBy 
-			(\(((_, ay1), (_, ay2)), obj1) (((_, by1), (_, by2)),obj2) -> 
-				compare (abs $ ay2 - ay1) (abs $ by2-by1) )
-			withBoxes
-		packSome :: [(Box2, SymbolicObj2)] -> Box2 -> ([SymbolicObj2], [(Box2, SymbolicObj2)])
-		packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) = 
-			if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
-			then 
-				let
-					row = (\(a,b) -> (((translate (bx1-x1,by1-y1) obj) : a), b)) $
-						packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
-					rowAndUp = 
-						if abs (by2-by1) - abs (y2-y1) > sep
-						then (\(a,b) -> ((fst row) ++ a, b) ) $
-							packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
-						else row
-				in
-					rowAndUp
-			else
-				(\(a,b) -> (a, presObj:b)) $ packSome otherBoxedObjs box
-		packSome [] _ = ([],[])
-	in case packSome sortedWithBoxes ((0,0),(dy,dy)) of
-			(a, []) -> Just $ union a
+		withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
+	in case pack ((0,0),(dy,dy)) sep withBoxes of
+			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
 			_ -> Nothing
 
