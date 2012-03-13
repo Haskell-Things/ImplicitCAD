@@ -191,16 +191,21 @@ useStatement = (do
 assigmentStatement :: GenParser Char st ComputationStateModifier
 assigmentStatement = 
 	(try $ do
-		varSymb <- variableSymb
+		pattern <- patternMatcher
 		many space
 		char '='
 		many space
 		valExpr <- expression 0
 		return $ \ ioWrappedState -> do
-			(varlookup, obj2s, obj3s) <- ioWrappedState
+			state@(varlookup, obj2s, obj3s) <- ioWrappedState
 			let
 				val = valExpr varlookup
-			return (insert varSymb val varlookup, obj2s, obj3s) 
+				match = pattern val
+			case match of
+				Just dictWithNew -> return (union dictWithNew varlookup, obj2s, obj3s) 
+				Nothing -> do
+					putStrLn "Pattern match fail in assignment statement"
+					return state
 	) <|> (try $ do 
 		varSymb <- (try $ string "function" >> many1 space >> variableSymb) 
 		            <|> variableSymb
@@ -286,12 +291,13 @@ ifStatement = (do
 forStatement = (do
 	-- a for loop is of the form:
 	--      for ( vsymb = vexpr   ) loopStatements
-	-- eg.  for ( a     = [1,2,3] ) {echo(a); echo "lol";}
+	-- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
+	-- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
 	string "for"
 	many space
 	char '('
 	many space
-	vsymb <- variableSymb
+	pattern <- patternMatcher
 	many space
 	char '='
 	vexpr <- expression 0
@@ -308,9 +314,14 @@ forStatement = (do
 				-> OpenscadObj      -- ^ The value of vsymb for this iteration
 				-> ComputationState -- ^ The resulting state
 			loopOnce ioWrappedState val =  do
-				(varlookup, a, b) <- ioWrappedState;
+				state@(varlookup, a, b) <- ioWrappedState;
 				let
-					vsymbSetState = return (insert vsymb val varlookup, a, b)
+					match = pattern val
+					vsymbSetState = case match of
+						Just dictWithNew -> return (union dictWithNew varlookup, a, b) 
+						Nothing -> do
+							putStrLn "Pattern match fail in for loop step"
+							return state
 				runComputations vsymbSetState loopStatements
 		-- Then loops once for every entry in vexpr
 		case vexpr varlookup of 

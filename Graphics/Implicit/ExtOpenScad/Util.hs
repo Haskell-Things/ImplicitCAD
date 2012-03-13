@@ -14,6 +14,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Data.Map (Map, lookup, insert)
 import qualified Data.Map as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.List
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
@@ -261,4 +262,33 @@ pad parser = do
 	many space
 	return a
 
+
+
+patternMatcher :: GenParser Char st (OpenscadObj -> Maybe VariableLookup)
+patternMatcher =
+	(do 
+		char '_'
+		return (\obj -> Just Map.empty)
+	) <|> ( do
+		a <- literal
+		return $ \obj ->
+			if obj == (a undefined)
+			then Just (Map.empty)
+			else Nothing
+	) <|> ( do
+		symb <- variableSymb
+		return $ \obj -> Just $ Map.singleton symb obj
+	) <|> ( do
+		char '['
+		many space
+		components <- patternMatcher `sepBy` (many space >> char ',' >> many space)
+		many space
+		char ']'
+		return $ \obj -> case obj of
+			OList l -> 
+				if length l == length components
+				then fmap Map.unions $ sequence $ zipWith ($) components l
+				else Nothing
+			_ -> Nothing
+	)
 

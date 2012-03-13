@@ -4,14 +4,15 @@
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel (par, pseq)
+import Control.Parallel.Strategies (using, parList, rdeepseq)
+import Debug.Trace
 
 -- | getContour gets a polyline describe the edge of your 2D
 --  object. It's really the only function in this file you need
 --  to care about from an external perspective.
 
-getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour (x1, y1) (x2, y2) (dx, dy) obj = 
+getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour2 (x1, y1) (x2, y2) (dx, dy) obj = 
 	let
 		-- How many steps will we take on each axis?
 		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
@@ -25,7 +26,32 @@ getContour (x1, y1) (x2, y2) (dx, dy) obj =
 		     | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
 		-- Cleanup, cleanup, everybody cleanup!
 		-- (We connect multilines, delete redundant vertices on them, etc)
-		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesP $ linesOnGrid
+		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
+	in
+		multilines
+
+getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour (x1, y1) (x2, y2) (dx, dy) obj = 
+	let
+		-- How many steps will we take on each axis?
+		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
+		ny = fromIntegral $ ceiling $ (y2 - y1) / dy
+		-- Grid mapping funcs
+		fromGrid (mx, my) = (x1 + (x2 - x1)*mx/nx, y1 + (y2 - y1)*my/ny)
+		toGrid (x,y) =(\a-> traceShow a a) (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1) ) :: (ℕ, ℕ)
+		-- Evalueate obj on a grid, in parallel.
+		valsOnGrid :: [[ℝ]]
+		valsOnGrid = [[ obj (fromGrid (mx, my)) | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+		              `using` parList rdeepseq
+		-- A faster version of the obj. Sort of like memoization, but done in advance, in parallel.
+		preEvaledObj p = valsOnGrid !! my !! mx where (mx,my) = toGrid p
+		-- Divide it up and compute the polylines
+		linesOnGrid :: [[[Polyline]]]
+		linesOnGrid = [[getSquareLineSegs (fromGrid (mx, my)) (fromGrid (mx+1, my+1)) preEvaledObj
+		     | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+		-- Cleanup, cleanup, everybody cleanup!
+		-- (We connect multilines, delete redundant vertices on them, etc)
+		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
 	in
 		multilines
 		
@@ -139,6 +165,7 @@ reducePolyline ((x1,y1):(x2,y2):others) =
 	if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
 reducePolyline l = l
 
+
 orderLinesDC :: [[[Polyline]]] -> [Polyline]
 orderLinesDC segs =
 	let
@@ -151,6 +178,7 @@ orderLinesDC segs =
 			((a,b),(c,d)) ->orderLines $ 
 				orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
 
+{-
 orderLinesP :: [[[Polyline]]] -> [Polyline]
 orderLinesP segs =
 	let
@@ -172,6 +200,7 @@ orderLinesP segs =
 					d' = orderLinesP d
 				in (force a' `par` force b' `par` force c' `par` force d') `pseq` 
 					(a' ++ b' ++ c' ++ d')
+-}
 
 
 polylineNotNull (a:l) = not (null l)

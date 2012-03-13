@@ -32,6 +32,13 @@ data OpenscadObj = OUndefined
 		 | OModule (ArgParser ([ComputationStateModifier]  -> ComputationStateModifier))
 		 | OError [String]
 
+instance Eq OpenscadObj where
+	(ONum a) == (ONum b) = a == b
+	(OBool a) == (OBool b) = a == b
+	(OList a) == (OList b) = a == b
+	(OString a) == (OString b) = a == b
+	_ == _ = False
+
 -- | We'd like to be able to turn OpenscadObjs into a given Haskell type
 class OTypeMirror a where
 	fromOObj :: OpenscadObj -> Maybe a
