@@ -110,6 +110,7 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 					rowAndUp
 			else
 				tmap2 (presObj:) $ packSome otherBoxedObjs box
+		packSome [] _ = ([], [])
 
 
 
