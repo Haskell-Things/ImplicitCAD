@@ -16,9 +16,12 @@ getImplicit3 :: SymbolicObj3 -> Obj3
 
 getImplicit3 (EmbedBoxedObj3 (obj,box)) = obj
 
-getImplicit3 (Cylinder h r1 r2) 
-	| r1 == r2  = \(x,y,z) -> max (sqrt(x^2+y^2) - r1) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
-	| otherwise = \(x,y,z) -> max (sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
+getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
+	let
+		d = sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)
+		θ = atan2 (r2-r1) h
+	in
+		max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
 
 getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
 	[abs (x-dx/(2::ℝ)-x1) - dx/(2::ℝ), abs (y-dy/(2::ℝ)-y1) - dy/(2::ℝ), abs (z-dz/(2::ℝ)-z1) - dz/(2::ℝ)]

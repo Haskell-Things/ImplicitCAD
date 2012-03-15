@@ -32,7 +32,7 @@ cylinder2 ::
 	-> ℝ                -- ^ Height of the cylinder
 	-> SymbolicObj3     -- ^ Resulting cylinder
 
-cylinder2 r1 r2 h = Cylinder r1 r2 h
+cylinder2 r1 r2 h = Cylinder h r1 r2
 
 cylinder r = cylinder2 r r
 
