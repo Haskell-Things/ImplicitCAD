@@ -11,8 +11,8 @@ import Debug.Trace
 --  object. It's really the only function in this file you need
 --  to care about from an external perspective.
 
-getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour2 (x1, y1) (x2, y2) (dx, dy) obj = 
+getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour (x1, y1) (x2, y2) (dx, dy) obj = 
 	let
 		-- How many steps will we take on each axis?
 		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
@@ -30,8 +30,8 @@ getContour2 (x1, y1) (x2, y2) (dx, dy) obj =
 	in
 		multilines
 
-getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour (x1, y1) (x2, y2) (dx, dy) obj = 
+getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour2 (x1, y1) (x2, y2) (dx, dy) obj = 
 	let
 		-- How many steps will we take on each axis?
 		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
