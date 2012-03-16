@@ -138,36 +138,6 @@ moduleArgsUnitDecl = do
 	return $ \varlookup -> foldl merge (return id) $ map ($varlookup) $ args
 
 
-
-moduleWithoutSuite :: 
-	String -> ArgParser ComputationStateModifier -> GenParser Char st ComputationStateModifier
-
-moduleWithoutSuite name argHandeler = (do
-	string name;
-	many space;
-	(unnamed, named) <- moduleArgsUnit
-	return $ \ ioWrappedState -> do
-		state@(varlookup, obj2s, obj3s) <- ioWrappedState
-		case argMap 
-			(map ($varlookup) unnamed)
-			(map (\(a,b) -> (a, b varlookup)) named)
-			argHandeler
-			of
-				(Just computationModifier, []) ->  computationModifier (return state)
-				(Nothing, []) -> do
-					putStrLn $ "Module " ++ name ++ " failed without a message"
-					return state
-				(Nothing, errs) -> do
-					putStrLn $ "Module " ++ name ++ " failed with the following messages:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
-					return state
-				(Just computationModifier, errs) -> do
-					putStrLn $ "Module " ++ name ++ " gave the following warnings:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
-					computationModifier (return state)
-	) <?> name
-
-
 pad parser = do
 	many space
 	a <- parser

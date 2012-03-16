@@ -29,7 +29,7 @@ data OpenscadObj = OUndefined
 		 | OList [OpenscadObj]
 		 | OString String
 		 | OFunc ( OpenscadObj -> OpenscadObj ) 
-		 | OModule (ArgParser ([ComputationStateModifier]  -> ComputationStateModifier))
+		 | OModule ([ComputationStateModifier]  -> ArgParser ComputationStateModifier)
 		 | OError [String]
 
 instance Eq OpenscadObj where

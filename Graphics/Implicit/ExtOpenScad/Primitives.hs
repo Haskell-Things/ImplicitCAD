@@ -18,22 +18,20 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 import qualified Graphics.Implicit.Primitives as Prim
+import Data.Maybe (fromMaybe)
 
-primitives :: [(String, ArgParser ComputationStateModifier)]
-primitives = [
-	("sphere", sphere), 
-	("cube", cube),
-	("square", square), 
-	("cylinder", cylinder), 
-	("circle", circle), 
-	("polygon", polygon)
-	]
+primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
+primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell ]
+
+moduleWithSuite name modArgMapper = (name, modArgMapper)
+moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
+
 
 -- **Exmaple of implementing a module**
 -- sphere is a module without a suite named sphere,
 -- this means that the parser will look for this like
 --       sphere(args...);
-sphere = do
+sphere = moduleWithoutSuite "sphere" $ do
 	-- What are the arguments?
 	-- The radius, r, which is a (real) number.
 	-- Because we don't provide a default, this ends right
@@ -46,7 +44,7 @@ sphere = do
 	-- (Graphics.Implicit.Primitives)
 	addObj3 $ Prim.sphere r
 
-cube = do
+cube = moduleWithoutSuite "cube" $ do
 
 	-- examples
 	example "cube(size = [2,3,4], center = true, r = 0.5);"
@@ -84,7 +82,7 @@ cube = do
 		<||> ( \_       -> noChange )
 
 
-square = do
+square = moduleWithoutSuite "square" $ do
 
 	-- examples 
 	example "square(size = [3,4], center = true, r = 0.5);"
@@ -119,7 +117,7 @@ square = do
 		<||> (\w     -> addObj2 $ rect w w)
 		<||> (\_     -> noChange)
 
-cylinder = do
+cylinder = moduleWithoutSuite "cylinder" $ do
 
 	example "cylinder(r=10, h=30, center=true);"
 	example "cylinder(r1=4, r2=6, h=10);"
@@ -166,7 +164,7 @@ cylinder = do
 			then  Prim.translate (0,0,-h/2) $ Prim.cylinder2 r1 r2 h
 			else Prim.cylinder2  r1 r2 h
 
-circle = do
+circle = moduleWithoutSuite "circle" $ do
 	
 	example "circle(r=10); // circle"
 	example "circle(r=5, $fn=6); //hexagon"
@@ -187,7 +185,7 @@ circle = do
 			let sides = fromIntegral fn 
 			in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
-polygon = do
+polygon = moduleWithoutSuite "polygon" $ do
 	points :: [ℝ2] <-  argument "points" 
 	                    `doc` "vertices of the polygon"
 	paths :: [ℕ ]  <- argument "paths" 
@@ -200,5 +198,112 @@ polygon = do
 		[] -> addObj2 $ Prim.polygonR 0 points
 		_ -> noChange;
 
+
+
+
+union = moduleWithSuite "union" $ \suite -> do
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
+	if r > 0
+		then getAndCompressSuiteObjs suite (Prim.unionR r) (Prim.unionR r)
+		else getAndCompressSuiteObjs suite Prim.union Prim.union
+
+intersect = moduleWithSuite "intersection" $ \suite -> do
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
+	if r > 0
+		then getAndCompressSuiteObjs suite (Prim.intersectR r) (Prim.intersectR r)
+		else getAndCompressSuiteObjs suite Prim.intersect Prim.intersect
+
+difference = moduleWithSuite "difference" $ \suite -> do
+	r :: ℝ <- argument "r"
+		`defaultTo` 0.0
+	if r > 0
+		then getAndCompressSuiteObjs suite (Prim.differenceR r) (Prim.differenceR r)
+		else getAndCompressSuiteObjs suite Prim.difference Prim.difference
+
+translate = moduleWithSuite "translate" $ \suite -> do
+	v <- argument "v"
+	caseOType v $
+		       ( \(x,y,z)-> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z)) 
+		) <||> ( \(x,y) -> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0)) 
+		) <||> ( \ x -> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0))
+		) <||> (\ _  -> noChange)
+
+deg2rad x = x / 180.0 * pi
+
+-- This is mostly insane
+rotate = moduleWithSuite "rotate" $ \suite -> do
+	a <- argument "a"
+	caseOType a $
+		       ( \xy  ->
+			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad xy, 0, 0) )
+		) <||> ( \(yz,xy,xz) ->
+			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) )
+		) <||> ( \(yz,xz) ->
+			getAndTransformSuiteObjs suite (id ) (Prim.rotate3 (deg2rad yz, deg2rad xz, 0))
+		) <||> ( \_  -> noChange )
+
+
+scale = moduleWithSuite "scale" $ \suite -> do
+	v <- argument "v"
+	case v of
+		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z))
+		OList ((ONum x):(ONum y):[]) -> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0))
+		OList ((ONum x):[]) -> 
+			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0)-}
+		ONum s ->
+			getAndTransformSuiteObjs suite (Prim.scale s) (Prim.scale s)
+
+extrude = moduleWithSuite "linear_extrude" $ \suite -> do
+	height :: ℝ   <- argument "height"
+	center :: Bool<- argument "center" `defaultTo` False
+	twist  :: Any <- argument "twist"  `defaultTo` (ONum 0)
+	r      :: ℝ   <- argument "r"      `defaultTo` 0
+	let
+		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
+		shiftAsNeeded =
+			if center
+			then Prim.translate (0,0,-height/2.0)
+			else id
+	caseOType twist $
+		(\ (rot :: ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
+				shiftAsNeeded $ if rot == 0 
+					then Prim.extrudeR    r                               obj height
+					else Prim.extrudeRMod r (degRotate . (*(rot/height))) obj height
+		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
+			getAndModUpObj2s suite $ \obj -> 
+				shiftAsNeeded $ Prim.extrudeRMod r 
+					(degRotate . (fromMaybe 0) . rotf) obj height
+		) <||> (\_ -> noChange)
+
+{-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
+	h <- realArgument "h"
+	center <- boolArgumentWithDefault "center" False
+	twist <- realArgumentWithDefault 0.0
+	r <- realArgumentWithDefault "r" 0.0
+	getAndModUpObj2s suite (\obj -> Prim.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h) 
+-}
+
+shell = moduleWithSuite "shell" $ \suite -> do
+	w :: ℝ <- argument "w"
+	getAndTransformSuiteObjs suite (Prim.shell w) (Prim.shell w)
+
+-- Not a perenant solution! Breaks if can't pack.
+pack = moduleWithSuite "pack" $ \suite -> do
+	size :: ℝ2 <- argument "size"
+	sep  :: ℝ  <- argument "sep"
+	let
+		pack2 objs = case Prim.pack2 size sep objs of
+			Just a -> a
+		pack3 objs = case Prim.pack3 size sep objs of
+			Just a -> a
+	getAndCompressSuiteObjs  suite pack2 pack3
 
 

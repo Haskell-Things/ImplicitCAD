@@ -62,13 +62,6 @@ defaultFunctionsSpecial =
 
 
 defaultModules =
-	let
-		dropSuites :: 
-			ArgParser ComputationStateModifier 
-			->  ArgParser ([ComputationStateModifier] ->  ComputationStateModifier)
-		dropSuites modparser = modparser >>= (\mod -> return $ \suite -> mod)
-		makeModule = OModule . dropSuites
-	in
-		map (\(a,b) -> (a, makeModule b)) primitives
+	map (\(a,b) -> (a, OModule b)) primitives
 
 
