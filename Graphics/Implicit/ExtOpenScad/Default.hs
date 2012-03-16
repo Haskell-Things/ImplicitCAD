@@ -7,6 +7,7 @@ module Graphics.Implicit.ExtOpenScad.Default where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Primitives
 import Data.Map (Map, fromList)
 
 defaultObjects :: VariableLookup -- = Map String OpenscadObj
@@ -15,6 +16,7 @@ defaultObjects = fromList $
 	++ defaultFunctions
 	++ defaultFunctions2
 	++ defaultFunctionsSpecial
+	++ defaultModules
 
 -- Missing standard ones:
 -- rand, lookup, 
@@ -57,4 +59,16 @@ defaultFunctionsSpecial =
 		)
 		
 	]
+
+
+defaultModules =
+	let
+		dropSuites :: 
+			ArgParser ComputationStateModifier 
+			->  ArgParser ([ComputationStateModifier] ->  ComputationStateModifier)
+		dropSuites modparser = modparser >>= (\mod -> return $ \suite -> mod)
+		makeModule = OModule . dropSuites
+	in
+		map (\(a,b) -> (a, makeModule b)) primitives
+
 

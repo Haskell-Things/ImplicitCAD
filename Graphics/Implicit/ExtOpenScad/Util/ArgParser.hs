@@ -9,7 +9,7 @@
 --   Our tool of choice is ArgParser. 
 --   It handles argument input, but also examples and unit tests for modules
 
-module Graphics.Implicit.ExtOpenScad.ArgParserUtil (
+module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
 
 	-- $ Note: The actual definition of ArgParser is in Defintions, 
 	--   to avoid the pain of circular dependencies.

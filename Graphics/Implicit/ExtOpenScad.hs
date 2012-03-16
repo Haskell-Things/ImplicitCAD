@@ -7,7 +7,8 @@ module Graphics.Implicit.ExtOpenScad (runOpenscad, OpenscadObj (..) ) where
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (..) )
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
-import Graphics.Implicit.ExtOpenScad.Statements (computationStatement, runComputations)
+import Graphics.Implicit.ExtOpenScad.Statements (computationStatement)
+import Graphics.Implicit.ExtOpenScad.Util.Computation (runComputations)
 
 import Text.ParserCombinators.Parsec (parse, many1, many, space, eof)
 import Control.Monad (liftM)

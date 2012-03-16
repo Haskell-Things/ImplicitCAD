@@ -12,7 +12,7 @@ import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
-import Graphics.Implicit.ExtOpenScad.ArgParserUtil
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Data.Map (Map, lookup, insert)
 import qualified Data.Map as Map
 import qualified Data.Maybe as Maybe
@@ -41,30 +41,6 @@ infixr 2 <||>
 		if isJust coerceAttempt -- ≅ (/= Nothing) but no Eq req
 		then f $ (\(Just a) -> a) coerceAttempt
 		else g input
-
-addObj2 :: (Monad m) => Obj2Type -> m ComputationStateModifier
-addObj2 obj = return $  \ ioWrappedState -> do
-		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj2s ++ [obj], obj3s)
-
-addObj3 :: (Monad m) => Obj3Type -> m ComputationStateModifier
-addObj3 obj = return $  \ ioWrappedState -> do
-		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, obj2s, obj3s ++ [obj])
-
-changeObjs :: (Monad m) => ([Obj2Type] -> [Obj2Type]) -> ([Obj3Type] -> [Obj3Type]) -> m ComputationStateModifier
-changeObjs mod2s mod3s = return $  \ ioWrappedState -> do
-		(varlookup, obj2s, obj3s) <- ioWrappedState
-		return (varlookup, mod2s obj2s, mod3s obj3s)
-
-runIO ::  (Monad m) => IO() -> m ComputationStateModifier
-runIO newio = return $  \ ioWrappedState -> do
-		state <- ioWrappedState
-		newio
-		return state
-
-noChange :: (Monad m) => m ComputationStateModifier
-noChange = return id
 
 moduleArgsUnit ::  
 	GenParser Char st ([VariableLookup -> OpenscadObj], [(String, VariableLookup -> OpenscadObj)])

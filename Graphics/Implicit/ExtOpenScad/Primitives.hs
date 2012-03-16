@@ -7,27 +7,33 @@
 -- The code is fairly straightforward; an explanation of how 
 -- the first one works is provided.
 
--- Note: Primitives must be added to the computationStatement parser in
--- Graphics.Implicit.ExtOpenScad.Statements to have any effect!!!
-
-
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
 
-module Graphics.Implicit.ExtOpenScad.Primitives where
+module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util
-import Graphics.Implicit.ExtOpenScad.ArgParserUtil
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser
+import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 import qualified Graphics.Implicit.Primitives as Prim
 
-primitives = [sphere, cube, square, cylinder, circle, polygon]
+primitives :: [(String, ArgParser ComputationStateModifier)]
+primitives = [
+	("sphere", sphere), 
+	("cube", cube),
+	("square", square), 
+	("cylinder", cylinder), 
+	("circle", circle), 
+	("polygon", polygon)
+	]
 
 -- **Exmaple of implementing a module**
 -- sphere is a module without a suite named sphere,
 -- this means that the parser will look for this like
 --       sphere(args...);
-sphere = moduleWithoutSuite "sphere" $ do
+sphere = do
 	-- What are the arguments?
 	-- The radius, r, which is a (real) number.
 	-- Because we don't provide a default, this ends right
@@ -40,7 +46,7 @@ sphere = moduleWithoutSuite "sphere" $ do
 	-- (Graphics.Implicit.Primitives)
 	addObj3 $ Prim.sphere r
 
-cube = moduleWithoutSuite "cube" $ do
+cube = do
 
 	-- examples
 	example "cube(size = [2,3,4], center = true, r = 0.5);"
@@ -78,7 +84,7 @@ cube = moduleWithoutSuite "cube" $ do
 		<||> ( \_       -> noChange )
 
 
-square = moduleWithoutSuite "square" $ do
+square = do
 
 	-- examples 
 	example "square(size = [3,4], center = true, r = 0.5);"
@@ -113,7 +119,7 @@ square = moduleWithoutSuite "square" $ do
 		<||> (\w     -> addObj2 $ rect w w)
 		<||> (\_     -> noChange)
 
-cylinder = moduleWithoutSuite "cylinder" $ do
+cylinder = do
 
 	example "cylinder(r=10, h=30, center=true);"
 	example "cylinder(r1=4, r2=6, h=10);"
@@ -160,7 +166,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 			then  Prim.translate (0,0,-h/2) $ Prim.cylinder2 r1 r2 h
 			else Prim.cylinder2  r1 r2 h
 
-circle = moduleWithoutSuite "circle" $ do
+circle = do
 	
 	example "circle(r=10); // circle"
 	example "circle(r=5, $fn=6); //hexagon"
@@ -181,7 +187,7 @@ circle = moduleWithoutSuite "circle" $ do
 			let sides = fromIntegral fn 
 			in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
-polygon = moduleWithoutSuite "polygon" $ do
+polygon = do
 	points :: [ℝ2] <-  argument "points" 
 	                    `doc` "vertices of the polygon"
 	paths :: [ℕ ]  <- argument "paths" 

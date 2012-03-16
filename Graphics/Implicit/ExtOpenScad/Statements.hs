@@ -23,7 +23,8 @@ import Control.Monad (liftM)
 import Data.Maybe (fromMaybe)
 import System.Plugins.Load (load_, LoadStatus(..))
 import Control.Monad (forM_)
-import Graphics.Implicit.ExtOpenScad.ArgParserUtil
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser
+import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 tryMany = (foldl1 (<|>)) . (map try)
 
@@ -64,13 +65,7 @@ computationStatement =
 			echoStatement,
 			assigmentStatement,
 			includeStatement,
-			useStatement,
-			sphere,
-			cube,
-			square,
-			cylinder,
-			circle,
-			polygon
+			useStatement
 			]
 		many space
 		char ';'
@@ -112,10 +107,6 @@ suite = (liftM return computationStatement <|> do
 	return stmts
 	) <?> "statement suite"
 
--- | Run a list of computations!
---   We start with a state and run it through a bunch of ComputationStateModifier s.
-runComputations :: ComputationState -> [ComputationStateModifier]  -> ComputationState
-runComputations = foldl (\a b -> b $ a)
 
 -- | We think of comments as statements that do nothing. It's just convenient.
 comment = 
@@ -458,45 +449,6 @@ userModuleDeclaration = do
 						)
 		return (insert newModuleName (newModule) envVarlookup, envObj2s, envObj3s)
 
-
-
-getAndModUpObj2s :: (Monad m) => [ComputationStateModifier] 
-	-> (Obj2Type -> Obj3Type)
-	-> m ComputationStateModifier
-getAndModUpObj2s suite obj2mod = 
-	return $  \ ioWrappedState -> do
-		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
-		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
-		return 
-			(varlookup2,
-			 obj2s, 
-			 obj3s ++ (case obj2s2 of [] -> []; x:xs -> [obj2mod x])  )
-
-getAndCompressSuiteObjs :: (Monad m) => [ComputationStateModifier] 
-	-> ([Obj2Type] -> Obj2Type)
-	-> ([Obj3Type] -> Obj3Type)
-	-> m ComputationStateModifier
-getAndCompressSuiteObjs suite obj2modifier obj3modifier = 
-	return $  \ ioWrappedState -> do
-		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
-		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
-		return 
-			(varlookup2,
-			 obj2s ++ (case obj2s2 of [] -> []; _ -> [obj2modifier obj2s2]), 
-			 obj3s ++ (case obj3s2 of [] -> []; _ -> [obj3modifier obj3s2])  )
-
-getAndTransformSuiteObjs :: (Monad m) => [ComputationStateModifier] 
-	-> (Obj2Type -> Obj2Type)
-	-> (Obj3Type -> Obj3Type)
-	-> m ComputationStateModifier
-getAndTransformSuiteObjs suite obj2modifier obj3modifier = 
-	return $  \ ioWrappedState -> do
-		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
-		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
-		return 
-			(varlookup2,
-			 obj2s ++ (map obj2modifier obj2s2),
-			 obj3s ++ (map obj3modifier obj3s2)   )
 
 
 unionStatement = moduleWithSuite "union" $ \suite -> do
