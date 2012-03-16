@@ -38,6 +38,7 @@ Library
         Graphics.Implicit.ExtOpenScad.Primitives
         Graphics.Implicit.ExtOpenScad.Statements
         Graphics.Implicit.ExtOpenScad.Util
+        Graphics.Implicit.ExtOpenScad.ArgParserUtil
         Graphics.Implicit.Export.Definitions
         Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill

@@ -23,6 +23,7 @@ import Control.Monad (liftM)
 import Data.Maybe (fromMaybe)
 import System.Plugins.Load (load_, LoadStatus(..))
 import Control.Monad (forM_)
+import Graphics.Implicit.ExtOpenScad.ArgParserUtil
 
 tryMany = (foldl1 (<|>)) . (map try)
 

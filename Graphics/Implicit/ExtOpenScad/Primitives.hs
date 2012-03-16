@@ -16,13 +16,10 @@
 module Graphics.Implicit.ExtOpenScad.Primitives where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
+import Graphics.Implicit.ExtOpenScad.ArgParserUtil
 
 import qualified Graphics.Implicit.Primitives as Prim
-
-import Data.Map (Map, lookup)
 
 primitives = [sphere, cube, square, cylinder, circle, polygon]
 
@@ -44,9 +41,12 @@ sphere = moduleWithoutSuite "sphere" $ do
 	addObj3 $ Prim.sphere r
 
 cube = moduleWithoutSuite "cube" $ do
-	-- arguments 
-	-- eg.   cube(size = [2,3,4], center = true, r = 0.5)
-	-- eg.   cube(4)
+
+	-- examples
+	example "cube(size = [2,3,4], center = true, r = 0.5);"
+	example "cube(4);"
+
+	-- arguments
 	size   :: Any  <- argument "size"
 	                    `doc` "cube size"
 	center :: Bool <- argument "center" 
@@ -55,11 +55,19 @@ cube = moduleWithoutSuite "cube" $ do
 	r      :: ℝ    <- argument "r"
 	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
+
+	-- Tests
+	test "cube(4);"
+		`eulerCharacteristic` 2
+	test "cube(size=[2,3,4]);"
+		`eulerCharacteristic` 2
+
 	-- A helper function for making rect3's accounting for centerdness
 	let rect3 x y z = 
 		if center  
 		then Prim.rect3R r (-x/2, -y/2, -z/2) (x/2, y/2, z/2)
 		else Prim.rect3R r (0, 0, 0)  (x, y, z)
+
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	-- Entries must be joined with the operator <||>
@@ -71,9 +79,12 @@ cube = moduleWithoutSuite "cube" $ do
 
 
 square = moduleWithoutSuite "square" $ do
-	-- arguments 
-	-- eg.   square(size = [3,4], center = true, r = 0.5)
-	-- eg.   square(4)
+
+	-- examples 
+	example "square(size = [3,4], center = true, r = 0.5);"
+	example "square(4);"
+
+	-- arguments
 	size   :: Any  <- argument "size"
 	                    `doc`  "square size"
 	center :: Bool <- argument "center" 
@@ -82,11 +93,19 @@ square = moduleWithoutSuite "square" $ do
 	r      :: ℝ    <- argument "r"
 	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
+
+	-- Tests
+	test "square(2);"
+		`eulerCharacteristic` 0
+	test "square(size=[2,3]);"
+		`eulerCharacteristic` 0
+
 	-- A helper function for making rect2's accounting for centerdness
 	let rect x y = 
 		if center  
 		then Prim.rectR r (-x/2, -y/2) (x/2, y/2)
 		else Prim.rectR r (  0,    0 ) ( x,   y )
+
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	caseOType size $
@@ -94,12 +113,13 @@ square = moduleWithoutSuite "square" $ do
 		<||> (\w     -> addObj2 $ rect w w)
 		<||> (\_     -> noChange)
 
--- What about $fn for regular n-gon prisms? This will break models..
 cylinder = moduleWithoutSuite "cylinder" $ do
+
+	example "cylinder(r=10, h=30, center=true);"
+	example "cylinder(r1=4, r2=6, h=10);"
+	example	"cylinder(r=5, h=10, $fn = 6);"
+
 	-- arguments
-	-- eg. cylinder(r=10, h=30, center=true);
-	--     cylinder(r1=4, r2=6, h=10);
-	--     cylinder(r=5, h=10, $fn = 6);
 	r      :: ℝ    <- argument "r"
 				`defaultTo` 1
 				`doc` "radius of cylinder"
@@ -118,6 +138,13 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 	center :: Bool <- argument "center"
 				`defaultTo` False
 				`doc` "center cylinder with respect to z?"
+
+	-- Tests
+	test "cylinder(r=10, h=30, center=true);"
+		`eulerCharacteristic` 0
+	test "cylinder(r=5, h=10, $fn = 6);"
+		`eulerCharacteristic` 0
+
 	-- The result is a computation state modifier that adds a 3D object, 
 	-- based on the args.
 	addObj3 $ if r1 == 1 && r2 == 1
@@ -134,14 +161,20 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 			else Prim.cylinder2  r1 r2 h
 
 circle = moduleWithoutSuite "circle" $ do
-	-- arguments
-	-- eg. circle(r=10); // circle
-	--     circle(r=5, $fn=6); //hexagon
+	
+	example "circle(r=10); // circle"
+	example "circle(r=5, $fn=6); //hexagon"
+
+	-- Arguments
 	r  :: ℝ <- argument "r"
 		`doc` "radius of the circle"
 	fn :: ℕ <- argument "$fn" 
 		`doc` "if defined, makes a regular polygon with n sides instead of a circle"
 		`defaultTo` (-1)
+
+	test "circle(r=10);"
+		`eulerCharacteristic` 0
+
 	if fn < 3
 		then addObj2 $ Prim.circle r
 		else addObj2 $ Prim.polygonR 0 $

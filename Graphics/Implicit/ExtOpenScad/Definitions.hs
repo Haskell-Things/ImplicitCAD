@@ -143,6 +143,13 @@ data ArgParser a
                  -- | For failure:
                  --   ArgParserFailIf (test) (error message) (child for if true)
                  | ArgParserFailIf Bool String (ArgParser a)
+                 --  An example, then next
+                 | ArgParserExample String (ArgParser a)
+                 --  A string to run as a test, then invariants for the results, then next
+                 | ArgParserTest String [TestInvariant] (ArgParser a)
+	deriving (Show)
+
+data TestInvariant = EulerCharacteristic Int 
 	deriving (Show)
 
 type ComputationState = IO (VariableLookup, [Obj2Type], [Obj3Type])
