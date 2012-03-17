@@ -27,7 +27,8 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
 
 	-- * Tools for handeling ArgParsers	
 	argMap,
-	getArgParserDocs	
+	getArgParserDocs,
+	Doc (..), DocPart (..)
 
 	)where
 
@@ -142,7 +143,17 @@ argMap2 a b (ArgParserExample str child) = argMap2 a b child
 argMap2 a b (ArgParserTest str tests child) = argMap2 a b child
 
 
+-- | We need a format to extract documentation into
+data Doc = Doc String [DocPart]
+             deriving (Show)
+
+data DocPart = ExampleDoc String
+             | ArgumentDoc String (Maybe String) String
+             deriving (Show)
+
+
 --   Here there be dragons!
+--   Because we made this a Monad instead of applicative functor, there's now sane way to do this.
 --   We give undefined (= an error) and let laziness prevent if from ever being touched.
 --   We're using IO so that we can catch an error if this backfires.
 --   If so, we *back off*.
@@ -150,16 +161,26 @@ argMap2 a b (ArgParserTest str tests child) = argMap2 a b child
 -- | Extract Documentation from an ArgParser
 
 getArgParserDocs :: 
-	(ArgParser a)                           -- ^ ArgParser
-	-> IO [(String, Maybe String, String)]  -- ^ Docs (sadly IO wrapped)
+	(ArgParser a)    -- ^ ArgParser
+	-> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
-getArgParserDocs (ArgParser name fallback doc fnext) = do
-	otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
-	return $ (name, fmap show fallback, doc):otherDocs
+getArgParserDocs (ArgParser name fallback doc fnext) = 
+	do
+		otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
+		return $ (ArgumentDoc name (fmap show fallback) doc):otherDocs
+
+getArgParserDocs (ArgParserExample str child) =
+	do
+		childResults <- getArgParserDocs child
+		return $ (ExampleDoc str) : childResults
+
 -- We try to look at as little as possible, to avoid the risk of triggering an error.
 -- Yay laziness!
+
+getArgParserDocs (ArgParserTest   _ _ child ) = getArgParserDocs child
 getArgParserDocs (ArgParserFailIf _ _ child ) = getArgParserDocs child
--- To look at this one would almost certainly be 
+
+-- To look at this one would almost certainly be death (exception)
 getArgParserDocs (ArgParserTerminator _ ) = return []
 
 
