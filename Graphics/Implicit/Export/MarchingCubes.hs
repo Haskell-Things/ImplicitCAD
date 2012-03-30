@@ -81,6 +81,34 @@ getMesh3 (x1,y1,z1) (x2,y2,z2) res obj =
 
 
 
+-- | Interpolate between two (x,y,z) pairs to find the zero
+-- using binary search
+
+interpolate ::  ℝ3 -> ℝ3 -> Obj3 -> ℝ3
+interpolate (x1, y1, z1) (x2, y2, z2) obj =
+	let
+		eps = 1e-6
+		dx = abs $ x2 - x1
+		dy = abs $ y2 - y1
+		dz = abs $ z2 - z1
+		d = maximum [dx, dy, dz]
+		mid = (x1 + dx/2, y1 + dy/2, z1 + dz/2)
+		left_obj  = obj (x1, y1, z1)
+		mid_obj   = obj mid
+		right_obj = obj (x2, y2, z2)
+	in
+		-- if product is positive, both sides are on the same side of zero
+		if (left_obj * right_obj > 0) then (x1, y1, z1)	-- no cut so dummy result
+		else
+		if (d < eps) then (x1, y1, z1)			-- too close, finish
+		else
+		if (left_obj * mid_obj < 0) then		-- on the left
+			interpolate (x1, y1, z1) mid obj
+		else						-- on the right
+			interpolate mid (x2, y2, z2) obj
+				
+
+
 -- | This monstrosity of a function gives triangles to divde negative interior
 --  regions and positive exterior ones inside a cube, based on its vertices.
 --  It is based on the linearly-interpolated marching cubes algorithm.
@@ -88,8 +116,21 @@ getMesh3 (x1,y1,z1) (x2,y2,z2) res obj =
 getCubeTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
 getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 	let
-		(x,y,z) = (x1, y1, z1)
-		
+		x1y1 = interpolate (x1, y1, z1) (x1, y1, z2) obj
+		x1y2 = interpolate (x1, y2, z1) (x1, y2, z2) obj
+		x2y1 = interpolate (x2, y1, z1) (x2, y1, z2) obj
+		x2y2 = interpolate (x2, y2, z1) (x2, y2, z2) obj
+
+		x1z1 = interpolate (x1, y1, z1) (x1, y2, z1) obj
+		x1z2 = interpolate (x1, y1, z2) (x1, y2, z2) obj
+		x2z1 = interpolate (x2, y1, z1) (x2, y2, z1) obj
+		x2z2 = interpolate (x2, y1, z2) (x2, y2, z2) obj
+
+		y1z1 = interpolate (x1, y1, z1) (x2, y1, z1) obj
+		y1z2 = interpolate (x1, y1, z2) (x2, y1, z2) obj
+		y2z1 = interpolate (x1, y2, z1) (x2, y2, z1) obj
+		y2z2 = interpolate (x1, y2, z2) (x2, y2, z2) obj
+
 		x1y1z1 = obj (x1, y1, z1)
 		x2y1z1 = obj (x2, y1, z1)
 		x1y2z1 = obj (x1, y2, z1)
@@ -99,10 +140,13 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		x1y2z2 = obj (x1, y2, z2)
 		x2y2z2 = obj (x2, y2, z2)
 
+{-
+		(x,y,z) = (x1, y1, z1)
+
 		dx = x2 - x1
 		dy = y2 - y1
 		dz = z2 - z1
-		
+
 		--{- Linearly interpolated
 		x1y1 = (x,    y,    z+dz*x1y1z1/(x1y1z1-x1y1z2))
 		x1y2 = (x,    y+dy, z+dz*x1y2z1/(x1y2z1-x1y2z2))
@@ -137,6 +181,7 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		y2z1 = (x+dx/2, y+dy,z)
 		y2z2 = (x+dx/2, y+dy,z+dz)
 		--}
+--}
 
 		-- Convenience function
 		square a b c d = [(a,b,c),(d,a,c)]
