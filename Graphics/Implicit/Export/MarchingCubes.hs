@@ -88,10 +88,10 @@ interpolate ::  ℝ3 -> ℝ3 -> Obj3 -> ℝ3
 interpolate (x1, y1, z1) (x2, y2, z2) obj =
 	let
 		eps = 1e-6
-		dx = abs $ x2 - x1
-		dy = abs $ y2 - y1
-		dz = abs $ z2 - z1
-		d = maximum [dx, dy, dz]
+		dx = x2 - x1
+		dy = y2 - y1
+		dz = z2 - z1
+		d = sqrt (dx**2 + dy**2 + dz**2)
 		mid = (x1 + dx/2, y1 + dy/2, z1 + dz/2)
 		left_obj  = obj (x1, y1, z1)
 		mid_obj   = obj mid
