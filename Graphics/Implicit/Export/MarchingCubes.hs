@@ -92,13 +92,18 @@ interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
 		dy = y2 - y1
 		dz = z2 - z1
 		d = sqrt (dx**2 + dy**2 + dz**2)
-		mid = (x1 + dx/2, y1 + dy/2, z1 + dz/2)
+		guess = 0.5 -- (abs left_obj) / ((abs left_obj) + (abs right_obj))
+		mid = (x1 + dx*guess, y1 + dy*guess, z1 + dz*guess)
 		mid_obj   = obj mid
 	in
 		-- if product is positive, both sides are on the same side of zero
 		if (left_obj * right_obj > 0) then (x1, y1, z1)	-- no cut so dummy result
 		else
 		if (d < eps) then (x1, y1, z1)			-- too close, finish
+		else
+		if (left_obj < eps) then (x1, y1, z1)
+		else
+		if (right_obj < eps) then (x2, y2, z2)
 		else
 		if (left_obj * mid_obj < 0) then		-- on the left
 			interpolate (x1, y1, z1) left_obj mid mid_obj obj
