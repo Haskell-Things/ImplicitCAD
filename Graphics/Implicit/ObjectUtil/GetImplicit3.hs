@@ -35,7 +35,7 @@ getImplicit3 (UnionR3 r symbObjs) =
 		objs = map getImplicit3 symbObjs
 	in
 		if r == 0
-		then \p -> minimum $ map ($p) objs 
+		then \p -> minimum $ map ($p) objs 		-- contested!
 		else \p -> MathUtil.rminimum r $ map ($p) objs
 
 getImplicit3 (IntersectR3 r symbObjs) = 
