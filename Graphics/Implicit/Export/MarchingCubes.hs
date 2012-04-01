@@ -25,8 +25,11 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		           (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny, z1 + (z2 - z1)*(mz+1)/nz)
 		           obj
 		     | mx <- [0.. nx-1], my <- [0..ny-1], mz <- [0..nz-1] ]
+		-- Remove degenerated triangles
+		sane :: Triangle -> Bool
+		sane (a, b, c) = not (a == b || a == c || b == c)
 	in
-		concat $ triangles
+		[triangle | triangle <- concat $ triangles, sane triangle]
 
 
 getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
