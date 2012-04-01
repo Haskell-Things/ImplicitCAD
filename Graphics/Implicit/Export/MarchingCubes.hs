@@ -123,7 +123,10 @@ interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
 		mid = (x1 + dx*guess, y1 + dy*guess, z1 + dz*guess)
 		mid_obj   = obj mid
 	in
-		mid
+		if (left_obj * right_obj > 0) then
+			(0, 0, 0)	-- no cut so dummy result
+		else
+			mid
 
 -- | This function gives triangles to divide negative interior
 --  regions and positive exterior ones inside a cube, based on its vertices.
