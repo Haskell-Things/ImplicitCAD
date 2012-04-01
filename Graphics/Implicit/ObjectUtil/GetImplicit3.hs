@@ -43,7 +43,7 @@ getImplicit3 (IntersectR3 r symbObjs) =
 		objs = map getImplicit3 symbObjs
 	in
 		if r == 0
-		then \p -> maximum $ map ($p) objs 
+		then \p -> maximum $ map ($p) objs 		-- contested!
 		else \p -> MathUtil.rmaximum r $ map ($p) objs
 
 getImplicit3 (DifferenceR3 r symbObjs) =
@@ -52,7 +52,7 @@ getImplicit3 (DifferenceR3 r symbObjs) =
 		complement obj = \p -> - obj p
 	in
 		if r == 0
-		then \p -> maximum $ map ($p) $ obj:(map complement objs) 
+		then \p -> maximum $ map ($p) $ obj:(map complement objs) -- contested!
 		else \p -> MathUtil.rmaximum r $ map ($p) $ obj:(map complement objs) 
 
 getImplicit3 (Complement3 symbObj) = 
