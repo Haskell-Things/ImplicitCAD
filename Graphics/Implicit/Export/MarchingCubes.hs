@@ -216,13 +216,14 @@ getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
 		caseNr = index (x1y1z1<=0, x2y1z1<=0,    x2y2z1<=0, x1y2z1<=0,
 		                x1y1z2<=0, x2y1z2<=0,    x2y2z2<=0, x1y2z2<=0)
 		edges = mcCaseTable !! caseNr
+
+		-- Create the triangles from the list of vertices
+		intoTriangles :: [ℝ3] -> [Triangle]
+		intoTriangles [] = []
+		intoTriangles (a:b:c:rest) = (c, b, a) : intoTriangles rest
 	in
 		intoTriangles (map (edgelookup !!) edges)
 
--- Create the triangles from the list of vertices
-intoTriangles :: [ℝ3] -> [Triangle]
-intoTriangles [] = []
-intoTriangles (a:b:c:rest) = (c, b, a) : intoTriangles rest
 
 -- The classic marching cubes table.  One entry for every possible
 -- combination of vertices within or outside the threshold value.
