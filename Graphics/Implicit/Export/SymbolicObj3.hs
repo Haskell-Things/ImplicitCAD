@@ -36,6 +36,7 @@ instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
+{--
 -- A translated objects mesh is its mesh translated.
 symbolicGetMesh res (Translate3 v obj) = 
 	map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
@@ -198,6 +199,7 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 
 	in
 		map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
+-}
 
 -- If all that fails, coerce and apply marching cubes :(
 -- (rebound is for being safe about the bounding box --
