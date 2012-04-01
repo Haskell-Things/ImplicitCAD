@@ -17,7 +17,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		-- How many steps will we take on each axis?
 		nx = fromIntegral $ ceiling $ (x2 - x1) / res
 		ny = fromIntegral $ ceiling $ (y2 - y1) / res
-		nz = fromIntegral $ ceiling $ (y2 - y1) / res
+		nz = fromIntegral $ ceiling $ (z2 - z1) / res
 		-- Divide it up and compute the polylines
 		triangles :: [TriangleMesh]
 		triangles = [getCubeTriangles
