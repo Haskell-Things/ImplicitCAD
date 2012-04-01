@@ -32,6 +32,8 @@ moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
 -- this means that the parser will look for this like
 --       sphere(args...);
 sphere = moduleWithoutSuite "sphere" $ do
+	example "sphere(3);"
+	example "sphere(r=5);"
 	-- What are the arguments?
 	-- The radius, r, which is a (real) number.
 	-- Because we don't provide a default, this ends right
@@ -186,6 +188,9 @@ circle = moduleWithoutSuite "circle" $ do
 			in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
 polygon = moduleWithoutSuite "polygon" $ do
+	
+	example "polygon ([(0,0), (0,10), (10,0)]);"
+	
 	points :: [ℝ2] <-  argument "points" 
 	                    `doc` "vertices of the polygon"
 	paths :: [ℕ ]  <- argument "paths" 
@@ -204,6 +209,7 @@ polygon = moduleWithoutSuite "polygon" $ do
 union = moduleWithSuite "union" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
+		`doc` "Radius of rounding for the union interface"
 	if r > 0
 		then getAndCompressSuiteObjs suite (Prim.unionR r) (Prim.unionR r)
 		else getAndCompressSuiteObjs suite Prim.union Prim.union
@@ -211,6 +217,7 @@ union = moduleWithSuite "union" $ \suite -> do
 intersect = moduleWithSuite "intersection" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
+		`doc` "Radius of rounding for the intersection interface"
 	if r > 0
 		then getAndCompressSuiteObjs suite (Prim.intersectR r) (Prim.intersectR r)
 		else getAndCompressSuiteObjs suite Prim.intersect Prim.intersect
@@ -218,12 +225,19 @@ intersect = moduleWithSuite "intersection" $ \suite -> do
 difference = moduleWithSuite "difference" $ \suite -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
+		`doc` "Radius of rounding for the difference interface"
 	if r > 0
 		then getAndCompressSuiteObjs suite (Prim.differenceR r) (Prim.differenceR r)
 		else getAndCompressSuiteObjs suite Prim.difference Prim.difference
 
 translate = moduleWithSuite "translate" $ \suite -> do
+
+	example "translate ([2,3]) circle (4);"
+	example "translate ([5,6,7]) sphere(5);"
+
 	v <- argument "v"
+		`doc` "vector to translate by"
+
 	caseOType v $
 		       ( \(x,y,z)-> 
 			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z)) 
@@ -238,6 +252,7 @@ deg2rad x = x / 180.0 * pi
 -- This is mostly insane
 rotate = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
+		`doc` "value to rotate by; angle or list of angles"
 	caseOType a $
 		       ( \xy  ->
 			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad xy, 0, 0) )
@@ -249,7 +264,13 @@ rotate = moduleWithSuite "rotate" $ \suite -> do
 
 
 scale = moduleWithSuite "scale" $ \suite -> do
+
+	example "scale(2) square(5);"
+	example "scale([2,3]) square(5);"
+	example "scale([2,3,4]) cube(5);"
+
 	v <- argument "v"
+		`doc` "vector or scalar to scale by"
 	case v of
 		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 
 			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z))
@@ -261,10 +282,17 @@ scale = moduleWithSuite "scale" $ \suite -> do
 			getAndTransformSuiteObjs suite (Prim.scale s) (Prim.scale s)
 
 extrude = moduleWithSuite "linear_extrude" $ \suite -> do
+	example "extrude(10) square(5);"
+
 	height :: ℝ   <- argument "height"
+		`doc` "height to extrude to..."
 	center :: Bool<- argument "center" `defaultTo` False
+		`doc` "center? (the z component)"
 	twist  :: Any <- argument "twist"  `defaultTo` (ONum 0)
+		`doc` "twist as we extrude, either a total amount to twist or a function..."
 	r      :: ℝ   <- argument "r"      `defaultTo` 0
+		`doc` "round the top?"
+
 	let
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
 		shiftAsNeeded =
@@ -293,17 +321,34 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 
 shell = moduleWithSuite "shell" $ \suite -> do
 	w :: ℝ <- argument "w"
+			`doc` "width of the shell..."
+
 	getAndTransformSuiteObjs suite (Prim.shell w) (Prim.shell w)
 
 -- Not a perenant solution! Breaks if can't pack.
 pack = moduleWithSuite "pack" $ \suite -> do
-	size :: ℝ2 <- argument "size"
-	sep  :: ℝ  <- argument "sep"
-	let
-		pack2 objs = case Prim.pack2 size sep objs of
-			Just a -> a
-		pack3 objs = case Prim.pack3 size sep objs of
-			Just a -> a
-	getAndCompressSuiteObjs  suite pack2 pack3
 
+	example "pack ([45,45], sep=2) { circle(10); circle(10); circle(10); circle(10); }"
+
+	-- arguments
+	size :: ℝ2 <- argument "size"
+		`doc` "size of 2D box to pack objects within"
+	sep  :: ℝ  <- argument "sep"
+		`doc` "mandetory space between objects"
+
+	-- The actual work...
+	return $  \ ioWrappedState -> do
+		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
+		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
+		if not $ null obj3s
+			then case Prim.pack3 size sep obj3s of
+				Just solution -> return (varlookup2, obj2s, obj3s ++ [solution] )
+				Nothing       -> do 
+					putStrLn "Can't pack given objects in given box with present algorithm"
+					return (varlookup2, obj2s2, obj3s2)
+			else case Prim.pack2 size sep obj2s of
+				Just solution -> return (varlookup2, obj2s ++ [solution], obj3s)
+				Nothing       -> do 
+					putStrLn "Can't pack given objects in given box with present algorithm"
+					return (varlookup2, obj2s2, obj3s2)
 
