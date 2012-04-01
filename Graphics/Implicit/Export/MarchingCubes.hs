@@ -82,6 +82,7 @@ getMesh3 (x1,y1,z1) (x2,y2,z2) res obj =
 
 
 
+{-
 -- | Interpolate between two (x,y,z) pairs to find the zero
 -- using binary search
 
@@ -98,20 +99,33 @@ interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
 		mid_obj   = obj mid
 	in
 		-- if product is positive, both sides are on the same side of zero
-		if (left_obj * right_obj > 0) then (x1, y1, z1)	-- no cut so dummy result
+		if (left_obj * right_obj > 0) then (0, 0, 0)	-- no cut so dummy result
 		else
 		if (d < eps) then (x1, y1, z1)			-- too close, finish
-		else
-		if (left_obj < eps) then (x1, y1, z1)
-		else
-		if (right_obj < eps) then (x2, y2, z2)
 		else
 		if (left_obj * mid_obj < 0) then		-- on the left
 			interpolate (x1, y1, z1) left_obj mid mid_obj obj
 		else						-- on the right
 			interpolate mid mid_obj (x2, y2, z2) right_obj obj
+-}
 
--- | This function gives triangles to divde negative interior
+-- | Interpolate between two (x,y,z) pairs to find the zero
+
+interpolate ::  ℝ3 -> ℝ -> ℝ3 -> ℝ -> Obj3 -> ℝ3
+interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
+	let
+		eps = 1e-6
+		dx = x2 - x1
+		dy = y2 - y1
+		dz = z2 - z1
+		d = sqrt (dx**2 + dy**2 + dz**2)
+		guess = (abs left_obj) / ((abs left_obj) + (abs right_obj))
+		mid = (x1 + dx*guess, y1 + dy*guess, z1 + dz*guess)
+		mid_obj   = obj mid
+	in
+		mid
+
+-- | This function gives triangles to divide negative interior
 --  regions and positive exterior ones inside a cube, based on its vertices.
 --  It is based on the linearly-interpolated marching cubes algorithm.
 
