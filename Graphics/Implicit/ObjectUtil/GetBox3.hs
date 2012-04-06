@@ -76,11 +76,11 @@ getBox3 (Translate3 v symbObj) =
 	in
 		(a+v, b+v)
 
-getBox3 (Scale3 s symbObj) =
+getBox3 (Scale3 (sx,sy,sz) symbObj) =
 	let
-		(a,b) = getBox3 symbObj
+		((ax,ay,az),(bx,by,bz)) = getBox3 symbObj
 	in
-		(s*a, s*b)
+		((sx*ax,sy*ay,sz*az), (sx*bx,sy*by,sz*bz))
 
 getBox3 (Outset3 d symbObj) =
 	let

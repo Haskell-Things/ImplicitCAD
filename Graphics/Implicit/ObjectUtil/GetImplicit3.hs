@@ -73,11 +73,12 @@ getImplicit3 (Translate3 v symbObj) =
 	in
 		\p -> obj (p-v)
 
-getImplicit3 (Scale3 s symbObj) =
+getImplicit3 (Scale3 (sx,sy,sz) symbObj) =
 	let
 		obj = getImplicit3 symbObj
 	in
-		\p -> s * obj (p/s)
+		\(x,y,z) -> obj (x*sx, y*sy, z*sz)
+--		\p -> s * obj (p/s)
 
 getImplicit3 (Outset3 d symbObj) =
 	let

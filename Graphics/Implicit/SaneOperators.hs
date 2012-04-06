@@ -36,6 +36,10 @@ class Normable a where
 class InnerProductSpace a where
 	(⋅) :: a -> a -> ℝ
 
+class ComponentWiseMultiplicative a b c | a b -> c where
+	(⨱) :: a -> b -> c
+	infixl 7 ⨱
+
 -- * I should be able to create instances for all Num instances,
 -- but Haskell's type checker doesn't seem to play nice with them.
 
@@ -122,6 +126,15 @@ instance Multiplicative ℝ ℝ3 ℝ3 where
 
 instance Multiplicative ℝ3 ℝ ℝ3 where
 	(x,y,z) * s = (s*x, s*y, s*z)
+
+instance ComponentWiseMultiplicative ℝ ℝ ℝ where
+	a ⨱ x = a*x
+
+instance ComponentWiseMultiplicative ℝ2 ℝ2 ℝ2 where
+	(a,b) ⨱ (x,y) = (a*x,b*y)
+
+instance ComponentWiseMultiplicative ℝ3 ℝ3 ℝ3 where
+	(a,b,c) ⨱ (x,y,z) = (a*x,b*y,c*z)
 
 instance AdditiveInvertable ℝ2 where
 	additiveInverse (x, y) = (additiveInverse x, additiveInverse y)

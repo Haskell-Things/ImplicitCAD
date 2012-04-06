@@ -271,15 +271,15 @@ scale = moduleWithSuite "scale" $ \suite -> do
 
 	v <- argument "v"
 		`doc` "vector or scalar to scale by"
-	case v of
-		{-OList ((ONum x):(ONum y):(ONum z):[]) -> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z))
-		OList ((ONum x):(ONum y):[]) -> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0))
-		OList ((ONum x):[]) -> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0)-}
-		ONum s ->
-			getAndTransformSuiteObjs suite (Prim.scale s) (Prim.scale s)
+	caseOType v $
+		( \(x,y,z)-> 
+			getAndTransformSuiteObjs suite (Prim.scale (x,y) ) (Prim.scale (x,y,z)) 
+		) <||> ( \(x,y) -> 
+			getAndTransformSuiteObjs suite (Prim.scale (x,y) ) (Prim.scale (x,y,1.0)) 
+		) <||> ( \ x -> 
+			getAndTransformSuiteObjs suite (Prim.scale (x,x) ) (Prim.scale (x,x,x))
+		) <||> (\ _  -> noChange)
+
 
 extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 	example "extrude(10) square(5);"

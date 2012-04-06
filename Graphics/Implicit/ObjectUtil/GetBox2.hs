@@ -75,11 +75,11 @@ getBox2 (Translate2 v symbObj) =
 		then ((0,0),(0,0))
 		else (a+v, b+v)
 
-getBox2 (Scale2 s symbObj) =
+getBox2 (Scale2 (sx, sy) symbObj) =
 	let
 		(a,b) = getBox2 symbObj
 	in
-		(s*a, s*b)
+		(sx*a, sy*b)
 
 getBox2 (Rotate2 θ symbObj) = 
 	let
