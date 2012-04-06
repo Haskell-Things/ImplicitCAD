@@ -84,11 +84,11 @@ getImplicit2 (Translate2 v symbObj) =
 	in
 		\p -> obj (p-v)
 
-getImplicit2 (Scale2 (sx, sy) symbObj) =
+getImplicit2 (Scale2 s symbObj) =
 	let
 		obj = getImplicit2 symbObj
 	in
-		\(x,y) -> obj (x*sx, y*sy)
+		\p -> obj (p ⨱ s)
 
 getImplicit2 (Rotate2 θ symbObj) = 
 	let
