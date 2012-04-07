@@ -77,8 +77,7 @@ getImplicit3 (Scale3 s symbObj) =
 	let
 		obj = getImplicit3 symbObj
 	in
-		\p -> obj (p ⨱ s)
---		\p -> s * obj (p/s)
+		\p -> s ⋯* obj (p ⋯/ s)
 
 getImplicit3 (Outset3 d symbObj) =
 	let

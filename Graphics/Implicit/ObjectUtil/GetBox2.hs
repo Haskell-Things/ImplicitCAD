@@ -79,7 +79,7 @@ getBox2 (Scale2 s symbObj) =
 	let
 		(a,b) = getBox2 symbObj
 	in
-		(s ⨱ a, s ⨱ b)
+		(s ⋯* a, s ⋯* b)
 
 getBox2 (Rotate2 θ symbObj) = 
 	let
