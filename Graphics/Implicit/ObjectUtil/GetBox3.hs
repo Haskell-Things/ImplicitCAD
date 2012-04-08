@@ -80,7 +80,7 @@ getBox3 (Scale3 s symbObj) =
 	let
 		(a,b) = getBox3 symbObj
 	in
-		(s*a, s*b)
+		(s ⋯* a, s ⋯* b)
 
 getBox3 (Outset3 d symbObj) =
 	let

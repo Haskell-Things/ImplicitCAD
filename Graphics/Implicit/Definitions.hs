@@ -72,7 +72,7 @@ data SymbolicObj2 =
 	| IntersectR2 ℝ [SymbolicObj2]
 	-- Simple transforms
 	| Translate2 ℝ2 SymbolicObj2
-	| Scale2 ℝ SymbolicObj2
+	| Scale2 ℝ2 SymbolicObj2
 	| Rotate2 ℝ SymbolicObj2
 	-- Boundary mods
 	| Outset2 ℝ SymbolicObj2
@@ -95,7 +95,7 @@ data SymbolicObj3 =
 	| DifferenceR3 ℝ [SymbolicObj3]
 	-- Some simple transofrms
 	| Translate3 ℝ3 SymbolicObj3
-	| Scale3 ℝ SymbolicObj3
+	| Scale3 ℝ3 SymbolicObj3
 	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
 	-- Some boundary based transforms
 	| Outset3 ℝ SymbolicObj3

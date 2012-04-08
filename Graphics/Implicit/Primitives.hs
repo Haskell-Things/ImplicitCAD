@@ -73,7 +73,7 @@ class Object obj vec | obj -> vec where
 
 	-- | Scale an object
 	scale :: 
-		ℝ       -- ^ Amount to scale by
+		vec     -- ^ Amount to scale by
 		-> obj  -- ^ Object to scale
 		-> obj  -- ^ Resulting scaled object	
 	
