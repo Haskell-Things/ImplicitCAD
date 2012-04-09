@@ -47,7 +47,7 @@ symbolicGetMesh res (Scale3 s obj) =
 		mesh :: [(ℝ3, ℝ3, ℝ3)]
 		mesh = symbolicGetMesh res obj
 		scaleTriangle :: (ℝ3, ℝ3, ℝ3) -> (ℝ3, ℝ3, ℝ3)
-		scaleTriangle (a,b,c) = (s S.* a, s S.* b, s S.* c)
+		scaleTriangle (a,b,c) = (s S.⋯* a, s S.⋯* b, s S.⋯* c)
 	in map scaleTriangle  mesh
 
 -- A couple triangles make a cube...

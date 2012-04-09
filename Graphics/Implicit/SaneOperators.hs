@@ -36,6 +36,13 @@ class Normable a where
 class InnerProductSpace a where
 	(⋅) :: a -> a -> ℝ
 
+class ComponentWiseMultiplicative a b c | a b -> c where
+	(⋯*) :: a -> b -> c
+	infixl 7 ⋯*
+
+class ComponentWiseMultiplicativeInvertable a where
+	componentWiseMultiplicativeInverse :: a -> a
+
 -- * I should be able to create instances for all Num instances,
 -- but Haskell's type checker doesn't seem to play nice with them.
 
@@ -163,4 +170,26 @@ instance InnerProductSpace ℝ3 where
 	(a1, a2, a3) ⋅ (b1, b2, b3) = a1*b1 + a2*b2+a3*b3
 
 
+-- ComponentWiseMultiplicative Instances
 
+instance ComponentWiseMultiplicativeInvertable ℝ where
+	componentWiseMultiplicativeInverse a = 1 P./ a
+
+instance ComponentWiseMultiplicativeInvertable ℝ2 where
+	componentWiseMultiplicativeInverse (a, b) = (1 P./ a, 1 P./ b)
+
+instance ComponentWiseMultiplicativeInvertable ℝ3 where
+	componentWiseMultiplicativeInverse (a, b, c) = (1 P./ a, 1 P./ b, 1 P./ c)
+
+instance ComponentWiseMultiplicative ℝ ℝ ℝ where
+	a ⋯* x = a*x
+
+instance ComponentWiseMultiplicative ℝ2 ℝ2 ℝ2 where
+	(a,b) ⋯* (x,y) = (a*x,b*y)
+
+instance ComponentWiseMultiplicative ℝ3 ℝ3 ℝ3 where
+	(a,b,c) ⋯* (x,y,z) = (a*x,b*y,c*z)
+
+(⋯/) :: (ComponentWiseMultiplicative a b c) => (ComponentWiseMultiplicativeInvertable b) => a -> b -> c
+x ⋯/ y = x ⋯* (componentWiseMultiplicativeInverse y)
+infixl 7 ⋯/
