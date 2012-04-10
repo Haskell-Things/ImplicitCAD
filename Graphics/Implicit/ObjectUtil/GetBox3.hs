@@ -14,13 +14,16 @@ import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2)
 
 getBox3 :: SymbolicObj3 -> Box3
 
-getBox3 (EmbedBoxedObj3 (obj,box)) = box
-
-getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
-
+-- Primitives
 getBox3 (Rect3R r a b) = (a,b)
 
 getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
+
+getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
+
+-- (Rounded) CSG
+getBox3 (Complement3 symbObj) = 
+	((-infty, -infty, -infty), (infty, infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
 
 getBox3 (UnionR3 r symbObjs) = ((left,bot,inward), (right,top,out))
 	where 
@@ -59,17 +62,7 @@ getBox3 (DifferenceR3 r symbObjs) = firstBox
 	where
 		firstBox:_ = map getBox3 symbObjs
 
-getBox3 (Complement3 symbObj) = 
-	((-infty, -infty, -infty), (infty, infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
-
-getBox3 (Shell3 w symbObj) = 
-	let
-		(a,b) = getBox3 symbObj
-		d = w/(2.0::ℝ)
-	in
-		(a - (d,d,d), b + (d,d,d))
-
-
+-- Simple transforms
 getBox3 (Translate3 v symbObj) =
 	let
 		(a,b) = getBox3 symbObj
@@ -82,17 +75,29 @@ getBox3 (Scale3 s symbObj) =
 	in
 		(s ⋯* a, s ⋯* b)
 
+getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
+	where
+		((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
+		d = (sqrt (2::ℝ) *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+
+-- Boundary mods
+getBox3 (Shell3 w symbObj) = 
+	let
+		(a,b) = getBox3 symbObj
+		d = w/(2.0::ℝ)
+	in
+		(a - (d,d,d), b + (d,d,d))
+
 getBox3 (Outset3 d symbObj) =
 	let
 		(a,b) = getBox3 symbObj
 	in
 		(a - (d,d,d), b + (d,d,d))
 
-getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
-	where
-		((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-		d = (sqrt (2::ℝ) *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+-- Misc
+getBox3 (EmbedBoxedObj3 (obj,box)) = box
 
+-- 2D Based
 getBox3 (ExtrudeR r symbObj h) = ((x1,y1,0),(x2,y2,h))
 	where
 		((x1,y1),(x2,y2)) = getBox2 symbObj
@@ -105,13 +110,10 @@ getBox3 (ExtrudeRMod r mod symbObj h) =
 	in
 		((x1 - dx, y1 - dy, 0),(x2 + dx, y2+ dy, h)) 
 
-
-
 getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 	let
 		((ax1,ay1),(ax2,ay2)) = getBox2 symbObj1
 		((bx1,by1),(bx2,by2)) = getBox2 symbObj2
 	in
 		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
-
 
