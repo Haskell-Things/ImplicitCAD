@@ -84,17 +84,6 @@ getImplicit2 (Translate2 v symbObj) =
 	in
 		\p -> obj (p-v)
 
---getImplicit2 :: SymbolicObj2 -> (ℝ2 -> ℝ)
---getImplicit2 (Scale2 (sx,sy)@s symbObj) =
---	let
---		obj = getImplicit2 symbObj
---	in
---		\p -> s * obj (p/s)
---		\(x,y) -> max s * obj (x/s, y/s)
---		\p -> (max sx sy) * obj (p / s)
---Originally: \ℝ2 -> ℝ * (ℝ2 -> ℝ)(ℝ2 / ℝ)
---Now:        \ℝ2 -> ℝ2 * (ℝ2 -> ℝ)(ℝ2 .../ ℝ2)
-
 getImplicit2 (Scale2 s@(sx,sy) symbObj) =
 	let
 		obj = getImplicit2 symbObj
