@@ -84,20 +84,20 @@ data SymbolicObj2 =
 -- | A symbolic 3D format!
 
 data SymbolicObj3 = 
-	-- Some simple primitives
+	-- Primitives
 	  Rect3R ℝ ℝ3 ℝ3
 	| Sphere ℝ
 	| Cylinder ℝ ℝ ℝ -- h r1 r2
-	-- Some (rounded) CSG
+	-- (Rounded) CSG
 	| Complement3 SymbolicObj3
 	| UnionR3 ℝ [SymbolicObj3]
 	| IntersectR3 ℝ [SymbolicObj3]
 	| DifferenceR3 ℝ [SymbolicObj3]
-	-- Some simple transofrms
+	-- Simple transforms
 	| Translate3 ℝ3 SymbolicObj3
 	| Scale3 ℝ3 SymbolicObj3
 	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
-	-- Some boundary based transforms
+	-- Boundary mods
 	| Outset3 ℝ SymbolicObj3
 	| Shell3 ℝ SymbolicObj3
 	-- Misc
