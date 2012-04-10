@@ -109,11 +109,11 @@ data SymbolicObj3 =
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show
 
--- | Rectiliniar 2D set
-type Rectiliniar2 = [Box2]
+-- | Rectilinear 2D set
+type Rectilinear2 = [Box2]
 
--- | Rectiliniar 2D set
-type Rectiliniar3 = [Box3]
+-- | Rectilinear 2D set
+type Rectilinear3 = [Box3]
 
 -- | Make ALL the functions Showable!
 --   This is very handy when testing functions in interactive mode...
