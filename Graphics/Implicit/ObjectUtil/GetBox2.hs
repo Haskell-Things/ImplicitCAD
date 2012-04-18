@@ -14,8 +14,7 @@ import Data.List (nub)
 
 getBox2 :: SymbolicObj2 -> Box2
 
-getBox2 (EmbedBoxedObj2 (obj,box)) = box
-
+-- Primitives
 getBox2 (RectR r a b) = (a,b)
 
 getBox2 (Circle r ) =  ((-r, -r), (r,r))
@@ -23,6 +22,9 @@ getBox2 (Circle r ) =  ((-r, -r), (r,r))
 getBox2 (PolygonR r points) = ((minimum xs, minimum ys), (maximum xs, maximum ys)) 
 	 where (xs, ys) = unzip points
 
+-- (Rounded) CSG
+getBox2 (Complement2 symbObj) = 
+	((-infty, -infty), (infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
 
 getBox2 (UnionR2 r symbObjs) =
 	let 
@@ -38,6 +40,12 @@ getBox2 (UnionR2 r symbObjs) =
 	in
 		((left-r,bot-r),(right+r,top+r))
 
+getBox2 (DifferenceR2 r symbObjs) =
+	let 
+		firstBox:_ = map getBox2 symbObjs
+	in
+		firstBox
+
 getBox2 (IntersectR2 r symbObjs) = 
 	let 
 		boxes = map getBox2 symbObjs
@@ -51,22 +59,7 @@ getBox2 (IntersectR2 r symbObjs) =
 	in
 		((left-r,bot-r),(right+r,top+r))
 
-getBox2 (DifferenceR2 r symbObjs) =
-	let 
-		firstBox:_ = map getBox2 symbObjs
-	in
-		firstBox
-
-getBox2 (Complement2 symbObj) = 
-	((-infty, -infty), (infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
-
-getBox2 (Shell2 w symbObj) = 
-	let
-		(a,b) = getBox2 symbObj
-		d = w/(2.0::ℝ)
-	in
-		(a - (d,d), b + (d,d))
-
+-- Simple transforms
 getBox2 (Translate2 v symbObj) =
 	let
 		(a,b) = getBox2 symbObj
@@ -96,10 +89,19 @@ getBox2 (Rotate2 θ symbObj) =
 	in
 		((minx, miny), (maxx, maxy))
 
+-- Boundary mods
+getBox2 (Shell2 w symbObj) = 
+	let
+		(a,b) = getBox2 symbObj
+		d = w/(2.0::ℝ)
+	in
+		(a - (d,d), b + (d,d))
+
 getBox2 (Outset2 d symbObj) =
 	let
 		(a,b) = getBox2 symbObj
 	in
 		(a - (d,d), b + (d,d))
 
-
+-- Misc
+getBox2 (EmbedBoxedObj2 (obj,box)) = box
