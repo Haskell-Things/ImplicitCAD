@@ -32,7 +32,7 @@ Generally, normal openscad code should work. For example, save the following as 
 ```c
 union() {
 	square([80,80]);
-	translate ([40,40]) circle(30);
+	translate ([80,80]) circle(30);
 }
 ``` 
 
@@ -47,7 +47,7 @@ However, there are additional ImplicitCAD specific features. For example a round
 ```c
 union(r=14) {
 	square([80,80]);
-	translate ([40,40]) circle(30);
+	translate ([80,80]) circle(30);
 }
 ``` 
 
