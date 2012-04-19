@@ -14,7 +14,13 @@ import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 
 getImplicit3 :: SymbolicObj3 -> Obj3
 
-getImplicit3 (EmbedBoxedObj3 (obj,box)) = obj
+-- Primitives
+getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
+	[abs (x-dx/(2::ℝ)-x1) - dx/(2::ℝ), abs (y-dy/(2::ℝ)-y1) - dy/(2::ℝ), abs (z-dz/(2::ℝ)-z1) - dz/(2::ℝ)]
+		where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
+
+getImplicit3 (Sphere r ) = 
+	\(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
 	let
@@ -23,12 +29,12 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
 	in
 		max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
 
-getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
-	[abs (x-dx/(2::ℝ)-x1) - dx/(2::ℝ), abs (y-dy/(2::ℝ)-y1) - dy/(2::ℝ), abs (z-dz/(2::ℝ)-z1) - dz/(2::ℝ)]
-		where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
-
-getImplicit3 (Sphere r ) = 
-	\(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
+-- (Rounded) CSG
+getImplicit3 (Complement3 symbObj) = 
+	let
+		obj = getImplicit3 symbObj
+	in
+		\p -> - obj p
 
 getImplicit3 (UnionR3 r symbObjs) =
 	let 
@@ -55,18 +61,7 @@ getImplicit3 (DifferenceR3 r symbObjs) =
 		then \p -> maximum $ map ($p) $ obj:(map complement objs) -- contested!
 		else \p -> MathUtil.rmaximum r $ map ($p) $ obj:(map complement objs) 
 
-getImplicit3 (Complement3 symbObj) = 
-	let
-		obj = getImplicit3 symbObj
-	in
-		\p -> - obj p
-
-getImplicit3 (Shell3 w symbObj) = 
-	let
-		obj = getImplicit3 symbObj
-	in
-		\p -> abs (obj p) - w/(2::ℝ)
-
+-- Simple transforms
 getImplicit3 (Translate3 v symbObj) =
 	let
 		obj = getImplicit3 symbObj
@@ -78,18 +73,6 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 		obj = getImplicit3 symbObj
 	in
 		\p -> (maximum [sx, sy, sz]) * obj (p ⋯/ s)
-
---getImplicit3 (Scale3 s symbObj) =
---	let
---		obj = getImplicit3 symbObj
---	in
---		\p -> s ⋯* obj (p ⋯/ s)
-
-getImplicit3 (Outset3 d symbObj) =
-	let
-		obj = getImplicit3 symbObj
-	in
-		\p -> obj p - d
 
 getImplicit3 (Rotate3 (yz, xz, xy) symbObj) = 
 	let
@@ -103,6 +86,23 @@ getImplicit3 (Rotate3 (yz, xz, xy) symbObj) =
 	in
 		rotateYZ yz $ rotateXZ xz $ rotateXY xy $ obj
 
+-- Boundary mods
+getImplicit3 (Shell3 w symbObj) = 
+	let
+		obj = getImplicit3 symbObj
+	in
+		\p -> abs (obj p) - w/(2::ℝ)
+
+getImplicit3 (Outset3 d symbObj) =
+	let
+		obj = getImplicit3 symbObj
+	in
+		\p -> obj p - d
+
+-- Misc
+getImplicit3 (EmbedBoxedObj3 (obj,box)) = obj
+
+-- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) = 
 	let
 		obj = getImplicit2 symbObj
@@ -121,5 +121,3 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		obj2 = getImplicit2 symbObj2
 	in
 		\(x,y,z) -> obj1 (obj2 (x,y), z)
-
-
