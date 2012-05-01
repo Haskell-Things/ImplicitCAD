@@ -6,7 +6,7 @@
 -- Let's be explicit about what we're getting from where :)
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ)
+import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeGCodeHacklabLaser)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Data.Map as Map
 
@@ -65,6 +65,9 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 			("svg", (_, x:xs, _)) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname
 				writeSVG res targetname x
+			("ngc", (_, x:xs, _)) -> do
+				putStrLn $ "Rendering 2D object to " ++ targetname
+				writeGCodeHacklabLaser res targetname x
 			("stl", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeSTL res targetname x
