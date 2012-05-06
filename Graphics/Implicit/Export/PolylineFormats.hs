@@ -6,6 +6,8 @@ module Graphics.Implicit.Export.PolylineFormats where
 
 import Graphics.Implicit.Definitions
 
+import Text.Printf (printf)
+
 svg :: [Polyline] -> String
 svg polylines = text
 	where
@@ -38,8 +40,9 @@ hacklabLaserGCode polylines = text
 			"M5 (disable laser)\n"
 			++"G00 X0.0 Y0.0 (move to 0)\n"
 			++"M2 (end)"
+		showF n = printf "%.4f" n
 		gcodeXY :: ℝ2 -> [Char]
-		gcodeXY (x,y) = "X"++ show x ++" Y"++ show y 
+		gcodeXY (x,y) = "X"++ showF x ++" Y"++ showF y 
 		interpretPolyline (start:others) = 
 			"G00 "++ gcodeXY start ++ "\n"
 			++ "M62 P0 (laser on)\n"
