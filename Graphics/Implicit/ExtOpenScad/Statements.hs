@@ -11,6 +11,7 @@ module Graphics.Implicit.ExtOpenScad.Statements where
 
 import Prelude hiding (lookup)
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Expressions
 import Graphics.Implicit.ExtOpenScad.Util
@@ -424,9 +425,16 @@ userModuleDeclaration = do
 							if n <= length childObj3s 
 							         then addObj3 (childObj3s !! n)
 							         else addObj2 (childObj2s !! (n+1-length childObj3s))
+						childBox = OFunc $ \n -> case fromOObj n :: Maybe ℕ of
+							Just n  | n < length childObj3s + length childObj2s ->  
+								if n <= length childObj3s 
+							         then toOObj $ getBox3 (childObj3s !! n)
+							         else toOObj $ getBox2 (childObj2s !! (n+1-length childObj3s))
+							Nothing -> OUndefined
 						varlookupForCode = 
 							(insert "child" child) $ 
 							(insert "children" children) $
+							(insert "childBox" childBox) $
 							(insert newModuleName newModule) $
 							envVarlookup
 					(_, resultObj2s, resultObj3s) 
