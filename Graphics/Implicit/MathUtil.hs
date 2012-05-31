@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack) where
+module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 import Data.List
 import Graphics.Implicit.Definitions
@@ -21,6 +21,16 @@ distFromLineSeg p@(p1,p2) (a@(a1,a2), b@(b1,b2)) = S.norm (closest S.- p)
 			| otherwise = a S.+ d S.* nab
 
 		
+
+box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3,ℝ3) -> Bool
+box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)) =
+	let
+		near (a1, a2) (b1, b2) = not $ (a2 + r < b1) || (b2 + r < a1)
+	in
+		   (ax1,ax2) `near` (bx1, bx2)
+		&& (ay1,ay2) `near` (by1, by2)
+		&& (az1,az2) `near` (bz1, bz2)
+
 
 -- | Rounded Maximum
 -- Consider  max(x,y) = 0, the generated curve 
