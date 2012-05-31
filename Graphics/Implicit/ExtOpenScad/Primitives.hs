@@ -340,15 +340,15 @@ pack = moduleWithSuite "pack" $ \suite -> do
 	return $  \ ioWrappedState -> do
 		(varlookup,  obj2s,  obj3s)  <- ioWrappedState
 		(varlookup2, obj2s2, obj3s2) <- runComputations (return (varlookup, [], [])) suite
-		if not $ null obj3s
-			then case Prim.pack3 size sep obj3s of
+		if not $ null obj3s2
+			then case Prim.pack3 size sep obj3s2 of
 				Just solution -> return (varlookup2, obj2s, obj3s ++ [solution] )
 				Nothing       -> do 
 					putStrLn "Can't pack given objects in given box with present algorithm"
-					return (varlookup2, obj2s2, obj3s2)
-			else case Prim.pack2 size sep obj2s of
+					return (varlookup2, obj2s, obj3s)
+			else case Prim.pack2 size sep obj2s2 of
 				Just solution -> return (varlookup2, obj2s ++ [solution], obj3s)
 				Nothing       -> do 
 					putStrLn "Can't pack given objects in given box with present algorithm"
-					return (varlookup2, obj2s2, obj3s2)
+					return (varlookup2, obj2s, obj3s)
 
