@@ -16,6 +16,7 @@ import Graphics.Implicit.Export.MarchingCubes
 
 import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
+import Graphics.Implicit.MathUtil
 
 import Graphics.Implicit.Export.SymbolicObj2
 
@@ -200,6 +201,27 @@ symbolicGetMesh res  (ExtrudeRMod r mod obj2 h) =
 	in
 		map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
 -}
+
+symbolicGetMesh res inputObj@(UnionR3 r objs) = 
+	let
+		boxes = map getBox3 objs
+		boxedObjs = zip boxes objs
+		
+		sepFree ((box,obj):others) = 
+			if length (filter (box3sWithin r box) boxes) > 1
+			then (\(a,b) -> (obj:a,b)) $ sepFree others
+			else (\(a,b) -> (a,obj:b)) $ sepFree others
+		sepFree [] = ([],[])
+
+		(dependants, independents) = sepFree boxedObjs
+	in if null independents
+	then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
+		(obj, (a,b)) -> getMesh a b res obj 
+	else if null dependants
+	then concat $ map (symbolicGetMesh res) independents
+	else concat $ 
+		map (symbolicGetMesh res) independents 
+		++ [symbolicGetMesh res (UnionR3 r dependants)]
 
 -- If all that fails, coerce and apply marching cubes :(
 -- (rebound is for being safe about the bounding box --
