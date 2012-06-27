@@ -49,6 +49,7 @@ Library
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.NormedTriangleMeshFormats
+        Graphics.Implicit.Export.SymbolicFormats
         Graphics.Implicit.Export.Util
         Graphics.Implicit.Export.Symbolic.Rebound2
         Graphics.Implicit.Export.Symbolic.Rebound3

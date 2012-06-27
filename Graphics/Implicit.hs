@@ -31,6 +31,8 @@ module Graphics.Implicit(
 	writeSVG,
 	writeSTL,
 	writeOBJ,
+	writeSCAD2,
+	writeSCAD3,
 	writeGCodeHacklabLaser,
 	runOpenscad
 ) where

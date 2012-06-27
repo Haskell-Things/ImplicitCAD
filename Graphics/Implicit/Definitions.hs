@@ -11,6 +11,12 @@ type ℝ3 = (ℝ,ℝ,ℝ)
 
 type ℕ = Int
 
+-- nxn matrices
+-- eg. M2 ℝ = M₂(ℝ)
+type M2 a = ((a,a),(a,a))
+type M3 a = ((a,a,a),(a,a,a),(a,a,a))
+
+
 -- | A chain of line segments, as in SVG
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
