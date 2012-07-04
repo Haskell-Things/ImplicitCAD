@@ -3,7 +3,7 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, IncoherentInstances  #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, IncoherentInstances, ViewPatterns  #-}
 
 module Graphics.Implicit.ExtOpenScad.Definitions where
 
@@ -11,6 +11,7 @@ import Graphics.Implicit.Definitions
 import Data.Typeable (TypeRep)
 import Data.Map (Map)
 import Data.Maybe (isJust)
+import Control.Monad as Monad
 
 -- Lets make it easy to change the object types we're using :)
 
@@ -73,45 +74,47 @@ instance forall a. (OTypeMirror a) => OTypeMirror (Maybe a) where
 	toOObj (Just a) = toOObj a
 	toOObj Nothing  = OUndefined
 
-
 instance forall a. (OTypeMirror a) => OTypeMirror [a] where
-	fromOObj (OList list) = 
-		let 
-			maybeAList = map (\obj -> fromOObj obj :: Maybe a) list
-		in if all (isJust) maybeAList
-		then Just $ map (\(Just aObj) -> aObj) maybeAList
-		else Nothing
+	fromOObj (OList list) = Monad.sequence . map fromOObj $ list
 	fromOObj _ = Nothing
 	toOObj list = OList $ map toOObj list
 
 instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a,b) where
-	fromOObj (OList (x:y:[])) = 
-		case (fromOObj x :: Maybe a, fromOObj y :: Maybe b) of
-			(Just a, Just b) -> Just (a,b)
-			_  -> Nothing
+	fromOObj (OList ((fromOObj -> Just a):(fromOObj -> Just b):[])) = Just (a,b)
 	fromOObj _ = Nothing
 	toOObj (a,b) = OList [toOObj a, toOObj b]
 
 
 instance forall a b c. (OTypeMirror a, OTypeMirror b, OTypeMirror c) => OTypeMirror (a,b,c) where
-	fromOObj (OList (x:y:z:[])) = 
-		case (fromOObj x :: Maybe a, fromOObj y :: Maybe b, fromOObj z :: Maybe c) of
-			(Just a, Just b, Just c) -> Just (a,b,c)
-			_  -> Nothing
+	fromOObj (OList ((fromOObj -> Just a):(fromOObj -> Just b):(fromOObj -> Just c):[])) = 
+		Just (a,b,c)
 	fromOObj _ = Nothing
 	toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
 
 instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
-	fromOObj (OFunc f) =  Just $ \oObj ->
-		case fromOObj (f $ toOObj oObj) :: Maybe b of
+	fromOObj (OFunc f) =  Just $ \input ->
+		let
+			oInput = toOObj input
+			oOutput = f oInput
+			output = fromOObj oOutput :: Maybe b
+		in case output of
 			Just out -> out
-			Nothing -> error "coercing OpenscadObj to a -> b isn't always safe; use a -> Maybe b"
+			Nothing -> error $ "coercing OpenscadObj to a -> b isn't always safe; use a -> Maybe b"
+			              ++ " (trace: " ++ show oInput ++ " -> " ++ show oOutput ++ " )"
 	fromOObj _ = Nothing
 	toOObj f = OFunc $ \oObj -> 
 		case fromOObj oObj :: Maybe a of
 			Nothing  -> OError ["bad input type"]
 			Just obj -> toOObj $ f obj
 
+
+instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
+	fromOObj (fromOObj -> Just (x :: a)) = Just $ Left  x
+	fromOObj (fromOObj -> Just (x :: b)) = Just $ Right x
+	fromOObj _ = Nothing
+
+	toOObj (Right x) = toOObj x
+	toOObj (Left  x) = toOObj x
 
 objTypeStr (OUndefined) = "Undefined"
 objTypeStr (OBool   _ ) = "Bool"

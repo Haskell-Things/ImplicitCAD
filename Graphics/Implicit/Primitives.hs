@@ -164,6 +164,8 @@ extrudeR = ExtrudeR
 
 extrudeRMod = ExtrudeRMod
 
+extrudeRM = ExtrudeRM
+
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
 rotate3 = Rotate3

@@ -117,3 +117,16 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 	in
 		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
 
+
+getBox3 (ExtrudeRM r twist Nothing Nothing symbObj (Left h)) = 
+	let
+		((x1,y1),(x2,y2)) = getBox2 symbObj
+		dx = x2 - x1
+		dy = y2 - y1
+		d = max (abs dx) (abs dy)
+	in
+		((-d, -d, 0),(d, d, h)) 
+
+
+
+

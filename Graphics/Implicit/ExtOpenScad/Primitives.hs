@@ -18,7 +18,8 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 import qualified Graphics.Implicit.Primitives as Prim
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
+import qualified Graphics.Implicit.SaneOperators as S
 
 primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell ]
@@ -53,7 +54,7 @@ cube = moduleWithoutSuite "cube" $ do
 	example "cube(4);"
 
 	-- arguments
-	size   :: Any  <- argument "size"
+	size   :: Either ℝ ℝ3  <- argument "size"
 	                    `doc` "cube size"
 	center :: Bool <- argument "center" 
 	                    `doc` "should center?"  
@@ -74,14 +75,10 @@ cube = moduleWithoutSuite "cube" $ do
 		then Prim.rect3R r (-x/2, -y/2, -z/2) (x/2, y/2, z/2)
 		else Prim.rect3R r (0, 0, 0)  (x, y, z)
 
-	-- caseOType matches depending on whether size can be coerced into
-	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
-	-- Entries must be joined with the operator <||>
-	-- Final entry must be fall through.
-	caseOType size $
-		     ( \(x,y,z) -> addObj3 $ rect3 x y z)
-		<||> ( \w       -> addObj3 $ rect3 w w w)
-		<||> ( \_       -> noChange )
+	case size of
+		Right (x,y,z) -> addObj3 $ rect3 x y z
+		Left   w      -> addObj3 $ rect3 w w w
+
 
 
 square = moduleWithoutSuite "square" $ do
@@ -91,7 +88,7 @@ square = moduleWithoutSuite "square" $ do
 	example "square(4);"
 
 	-- arguments
-	size   :: Any  <- argument "size"
+	size   :: Either ℝ ℝ2  <- argument "size"
 	                    `doc`  "square size"
 	center :: Bool <- argument "center" 
 	                    `doc` "should center?"  
@@ -114,10 +111,11 @@ square = moduleWithoutSuite "square" $ do
 
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
-	caseOType size $
-		     (\(x,y) -> addObj2 $ rect x y)
-		<||> (\w     -> addObj2 $ rect w w)
-		<||> (\_     -> noChange)
+	case size of
+		Left   w    -> addObj2 $ rect w w
+		Right (x,y) -> addObj2 $ rect x y
+
+
 
 cylinder = moduleWithoutSuite "cylinder" $ do
 
@@ -235,17 +233,17 @@ translate = moduleWithSuite "translate" $ \suite -> do
 	example "translate ([2,3]) circle (4);"
 	example "translate ([5,6,7]) sphere(5);"
 
-	v <- argument "v"
+	v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
 		`doc` "vector to translate by"
-
-	caseOType v $
-		       ( \(x,y,z)-> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,z)) 
-		) <||> ( \(x,y) -> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,y) ) (Prim.translate (x,y,0.0)) 
-		) <||> ( \ x -> 
-			getAndTransformSuiteObjs suite (Prim.translate (x,0.0) ) (Prim.translate (x,0.0,0.0))
-		) <||> (\ _  -> noChange)
+	
+	let 
+		translateObjs shift2 shift3 = 
+			getAndTransformSuiteObjs suite (Prim.translate shift2) (Prim.translate shift3)
+	
+	case v of
+		Left   x              -> translateObjs (x,0) (x,0,0)
+		Right (Left (x,y))    -> translateObjs (x,y) (x,y,0.0)
+		Right (Right (x,y,z)) -> translateObjs (x,y) (x,y,z)
 
 deg2rad x = x / 180.0 * pi
 
@@ -253,6 +251,11 @@ deg2rad x = x / 180.0 * pi
 rotate = moduleWithSuite "rotate" $ \suite -> do
 	a <- argument "a"
 		`doc` "value to rotate by; angle or list of angles"
+
+	-- caseOType matches depending on whether size can be coerced into
+	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
+	-- Entries must be joined with the operator <||>
+	-- Final entry must be fall through.
 	caseOType a $
 		       ( \xy  ->
 			getAndTransformSuiteObjs suite (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad xy, 0, 0) )
@@ -269,47 +272,63 @@ scale = moduleWithSuite "scale" $ \suite -> do
 	example "scale([2,3]) square(5);"
 	example "scale([2,3,4]) cube(5);"
 
-	v <- argument "v"
+	v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
 		`doc` "vector or scalar to scale by"
-	caseOType v $
-		( \(x,y,z)-> 
-			getAndTransformSuiteObjs suite (Prim.scale (x,y) ) (Prim.scale (x,y,z)) 
-		) <||> ( \(x,y) -> 
-			getAndTransformSuiteObjs suite (Prim.scale (x,y) ) (Prim.scale (x,y,1.0)) 
-		) <||> ( \ x -> 
-			getAndTransformSuiteObjs suite (Prim.scale (x,x) ) (Prim.scale (x,x,x))
-		) <||> (\ _  -> noChange)
-
+	
+	let
+		scaleObjs strech2 strech3 = 
+			getAndTransformSuiteObjs suite (Prim.scale strech2) (Prim.scale strech3)
+	
+	case v of
+		Left   x              -> scaleObjs (x,0) (x,0,0)
+		Right (Left (x,y))    -> scaleObjs (x,y) (x,y,0.0)
+		Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
 extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 	example "extrude(10) square(5);"
 
-	height :: ℝ   <- argument "height"
+	height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` (Left 1)
 		`doc` "height to extrude to..."
-	center :: Bool<- argument "center" `defaultTo` False
+	center :: Bool <- argument "center" `defaultTo` False
 		`doc` "center? (the z component)"
-	twist  :: Any <- argument "twist"  `defaultTo` (ONum 0)
+	twist  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "twist"  `defaultTo` Nothing
 		`doc` "twist as we extrude, either a total amount to twist or a function..."
+	scale  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "scale"  `defaultTo` Nothing
+		`doc` "scale according to this funciton as we extrud..."
+	translate :: Maybe (Either ℝ2 (ℝ -> ℝ2)) <- argument "translate"  `defaultTo` Nothing
+		`doc` "translate according to this funciton as we extrude..."
 	r      :: ℝ   <- argument "r"      `defaultTo` 0
 		`doc` "round the top?"
-
+	
 	let
 		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
+
+		heightn = case height of
+				Left  h -> h
+				Right f -> f 0 0
+
+		height' = case height of
+			Right f -> Right $ uncurry f
+			Left a -> Left a
+
 		shiftAsNeeded =
 			if center
-			then Prim.translate (0,0,-height/2.0)
+			then Prim.translate (0,0,-heightn/2.0)
 			else id
-	caseOType twist $
-		(\ (rot :: ℝ) ->
-			getAndModUpObj2s suite $ \obj -> 
-				shiftAsNeeded $ if rot == 0 
-					then Prim.extrudeR    r                               obj height
-					else Prim.extrudeRMod r (degRotate . (*(rot/height))) obj height
-		) <||> (\ (rotf :: ℝ -> Maybe ℝ) ->
-			getAndModUpObj2s suite $ \obj -> 
-				shiftAsNeeded $ Prim.extrudeRMod r 
-					(degRotate . (fromMaybe 0) . rotf) obj height
-		) <||> (\_ -> noChange)
+		
+		funcify (Left val) h = val S.* (h/heightn)
+		funcify (Right f ) h = f h
+		
+		twist' = fmap funcify twist
+		scale' = fmap funcify scale
+		translate' = fmap funcify translate
+	
+	getAndModUpObj2s suite $ \obj -> case height of
+		Left constHeight | isNothing twist && isNothing scale && isNothing translate ->
+			shiftAsNeeded $ Prim.extrudeR r obj constHeight
+		_ -> 
+			shiftAsNeeded $ Prim.extrudeRM r twist' scale' translate' obj height'
+
 
 {-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
 	h <- realArgument "h"
@@ -322,7 +341,7 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 shell = moduleWithSuite "shell" $ \suite -> do
 	w :: ℝ <- argument "w"
 			`doc` "width of the shell..."
-
+	
 	getAndTransformSuiteObjs suite (Prim.shell w) (Prim.shell w)
 
 -- Not a perenant solution! Breaks if can't pack.

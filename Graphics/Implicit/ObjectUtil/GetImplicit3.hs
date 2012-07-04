@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ViewPatterns #-}
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
@@ -9,6 +9,7 @@ import Prelude hiding ((+),(-),(*),(/))
 import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
+import qualified Data.Maybe as Maybe
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 
@@ -114,6 +115,32 @@ getImplicit3 (ExtrudeRMod r mod symbObj h) =
 		obj = getImplicit2 symbObj
 	in
 		\(x,y,z) -> MathUtil.rmax r (obj $ mod z (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
+
+getImplicit3 (ExtrudeRM r twist scale translate symbObj height) = 
+	let
+		obj = getImplicit2 symbObj
+		twist' = Maybe.fromMaybe (const 0) twist
+		scale' = Maybe.fromMaybe (const 1) scale
+		translate' = Maybe.fromMaybe (const (0,0)) translate
+		height' (x,y) = case height of
+			Left n -> n
+			Right f -> f (x,y)
+		scaleVec :: ℝ -> ℝ2 -> ℝ2
+		scaleVec  s = \(x,y) -> (x/s, y/s)
+		rotateVec :: ℝ -> ℝ2 -> ℝ2
+		rotateVec θ (x,y) = (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) 
+	in
+		\(x,y,z) -> let h = height' (x,y) in
+			MathUtil.rmax r 
+				(obj . rotateVec (-twist' (z*(pi::ℝ)/(180::ℝ))) . scaleVec (scale' z) . (\a -> a- translate' z) $ (x,y))
+				(abs (z - h/(2::ℝ)) - h/(2::ℝ))
+
+{-getImplicit3 (ExtrudeRMod r transform symbObj h) = 
+	let
+		obj = getImplicit2 symbObj
+	in
+		\(x,y,z) -> MathUtil.rmax r (obj $ mod z (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
+-}
 
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 	let
