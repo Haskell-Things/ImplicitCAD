@@ -110,12 +110,6 @@ getImplicit3 (ExtrudeR r symbObj h) =
 	in
 		\(x,y,z) -> MathUtil.rmax r (obj (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
 
-getImplicit3 (ExtrudeRMod r mod symbObj h) = 
-	let
-		obj = getImplicit2 symbObj
-	in
-		\(x,y,z) -> MathUtil.rmax r (obj $ mod z (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
-
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) = 
 	let
 		obj = getImplicit2 symbObj
@@ -135,12 +129,6 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
 				(obj . rotateVec (-twist' (z*(pi::ℝ)/(180::ℝ))) . scaleVec (scale' z) . (\a -> a- translate' z) $ (x,y))
 				(abs (z - h/(2::ℝ)) - h/(2::ℝ))
 
-{-getImplicit3 (ExtrudeRMod r transform symbObj h) = 
-	let
-		obj = getImplicit2 symbObj
-	in
-		\(x,y,z) -> MathUtil.rmax r (obj $ mod z (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
--}
 
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 	let

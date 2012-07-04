@@ -102,14 +102,6 @@ getBox3 (ExtrudeR r symbObj h) = ((x1,y1,0),(x2,y2,h))
 	where
 		((x1,y1),(x2,y2)) = getBox2 symbObj
 
-getBox3 (ExtrudeRMod r mod symbObj h) = 
-	let
-		((x1,y1),(x2,y2)) = getBox2 symbObj
-		dx = x2 - x1
-		dy = y2 - y1
-	in
-		((x1 - dx, y1 - dy, 0),(x2 + dx, y2+ dy, h)) 
-
 getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 	let
 		((ax1,ay1),(ax2,ay2)) = getBox2 symbObj1

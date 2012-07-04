@@ -162,8 +162,6 @@ intersect = intersectR 0
 
 extrudeR = ExtrudeR
 
-extrudeRMod = ExtrudeRMod
-
 extrudeRM = ExtrudeRM
 
 extrudeOnEdgeOf = ExtrudeOnEdgeOf

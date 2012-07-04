@@ -44,8 +44,8 @@ scad3 res (ExtrudeRM 0 (Just twist) Nothing Nothing obj (Left height)) =
 		for a b = map b a
 		a ++! b = a ++ show b
 	in (\pieces -> "union(){" ++ concat pieces ++ "}") . for (init [0, res.. height]) $ \h ->
-		"rotate ([0,0," ++ show (twist h) ++ "]) "
-		++ "linear_extrude(" ++ show res ++ ", twist = " ++ show (twist (h+res) - twist h) ++ " )"
+		"rotate ([0,0," ++! twist h ++ "]) "
+		++ "linear_extrude(" ++! res ++ ", twist = " ++! (twist (h+res) - twist h) ++ " )"
 		++ scad2 res obj
 
 scad2 res (UnionR2 0 objs) = 

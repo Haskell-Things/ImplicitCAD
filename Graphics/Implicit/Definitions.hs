@@ -111,7 +111,6 @@ data SymbolicObj3 =
 	-- 2D based
 	| ExtrudeR ℝ SymbolicObj2 ℝ
 	| ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
-	| ExtrudeRMod ℝ (ℝ -> ℝ2 -> ℝ2) SymbolicObj2 ℝ
 	| ExtrudeRM 
 		ℝ                 -- ^ rounding radius
 		(Maybe (ℝ -> ℝ))  -- ^ twist
