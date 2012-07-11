@@ -8,7 +8,9 @@ import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
+import Graphics.Implicit.Definitions (xmlErrorOn)
 import Data.Map as Map
+import Data.IORef (writeIORef)
 
 -- | strip a .scad or .escad file to its basename.
 strip :: String -> String
@@ -87,17 +89,27 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 main :: IO()
 main = do
 	args <- getArgs
-	case length args of
-		0 -> putStrLn $ 
+	if Prelude.null args || args == ["--help"] || args == ["-help"]
+		then putStrLn $ 
 			"syntax: extopenscad inputfile.escad [outputfile.format]\n"
 			++ "eg. extopenscad input.escad out.stl"
-		1 -> do
-			f <- openFile (args !! 0) ReadMode
-			content <- hGetContents f 
-			executeAndExport content (strip $ args !! 0)
-			hClose f
-		2 -> do
-			f <- openFile (args !! 0) ReadMode
-			content <- hGetContents f 
-			executeAndExportSpecifiedTargetType content (args !! 1) (fileType $ args !! 1)
-			hClose f
+		else do
+			let
+				args' = if head args == "-xml-error" then tail args else args
+			writeIORef xmlErrorOn (head args == "-xml-error")
+			case length args' of
+				0 -> putStrLn $ 
+					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
+					++ "eg. extopenscad input.escad out.stl"
+				1 -> do
+					f <- openFile (args' !! 0) ReadMode
+					content <- hGetContents f 
+					executeAndExport content (strip $ args' !! 0)
+					hClose f
+				2 -> do
+					f <- openFile (args' !! 0) ReadMode
+					content <- hGetContents f 
+					executeAndExportSpecifiedTargetType 
+						content (args' !! 1) (fileType $ args' !! 1)
+					hClose f
+

@@ -120,6 +120,7 @@ throwAway = do
 -- An included statement! Basically, inject another openscad file here...
 includeStatement :: GenParser Char st ComputationStateModifier
 includeStatement = (do
+	line <- fmap sourceLine getPosition
 	string "include"
 	many space
 	string "<"
@@ -142,9 +143,10 @@ includeStatement = (do
 				content <- readFile filename
 				case parse (many1 computationStatement) ""  content of
 					Left  err ->  do
-						putStrLn $ "Error parsing included file " ++ filename
-						putStrLn $ show err
-						putStrLn $ "Ignoring included file " ++ filename ++ "..."
+						errorMessage line $ 
+							"Error parsing included file <file>" ++ filename ++ "</file>\n"
+							++ show err
+							++ "Ignoring included file <file>" ++ filename ++ "</file>..."
 						return state
 					Right result -> runComputations (return state) result
 	) <?> "include statement"
@@ -152,6 +154,7 @@ includeStatement = (do
 -- In a use statement, variables are imported but we drop any existing 2D/3D objects.
 useStatement :: GenParser Char st ComputationStateModifier
 useStatement = (do
+	line <- fmap sourceLine getPosition
 	string "use"
 	many space
 	string "<"
@@ -162,9 +165,10 @@ useStatement = (do
 		content <- readFile filename
 		case parse (many1 computationStatement) ""  content of
 			Left  err ->  do
-				putStrLn $ "Error parsing used file " ++ filename
-				putStrLn $ show err
-				putStrLn $ "Ignoring used file " ++ filename ++ "..."
+				errorMessage line $ 
+					"Error parsing included file <file>" ++ filename ++ "</file>\n"
+					++ show err
+					++ "Ignoring included file <file>" ++ filename ++ "</file>..."
 				return state
 			Right result -> runComputations (return (varlookup,[],[])) result
 	) <?> "use statement"
@@ -174,6 +178,7 @@ useStatement = (do
 assigmentStatement :: GenParser Char st ComputationStateModifier
 assigmentStatement = 
 	(try $ do
+		line <- fmap sourceLine getPosition
 		pattern <- patternMatcher
 		many space
 		char '='
@@ -185,11 +190,18 @@ assigmentStatement =
 				val = valExpr varlookup
 				match = pattern val
 			case match of
-				Just dictWithNew -> return (union dictWithNew varlookup, obj2s, obj3s) 
+				Just dictWithNew -> case val of
+					OError e -> do
+						errorMessage line $ 
+							"error in evaluating assignment statement assigned value:"
+							++ concat (map ("\n   "++) e)
+						return (union dictWithNew varlookup, obj2s, obj3s) 
+					_ -> return (union dictWithNew varlookup, obj2s, obj3s) 
 				Nothing -> do
-					putStrLn "Pattern match fail in assignment statement"
+					errorMessage line $ "pattern match fail in assignment statement"
 					return state
 	) <|> (try $ do 
+		line <- fmap sourceLine getPosition
 		varSymb <- (try $ string "function" >> many1 space >> variableSymb) 
 		            <|> variableSymb
 		many space
@@ -209,12 +221,18 @@ assigmentStatement =
 					\argObj -> makeFunc baseExpr xs (insert argVar argObj varlookup')
 				makeFunc baseExpr [] varlookup' = baseExpr varlookup'
 				val = makeFunc valExpr argVars varlookup
-			return (insert varSymb val varlookup, obj2s, obj3s)
+			case val of
+				OError e -> do
+					errorMessage line $ "error in evaluating assignment statement assigned value:"
+						++ concat (map ("\n   "++) e)
+					return (insert varSymb val varlookup, obj2s, obj3s)
+				_ -> return (insert varSymb val varlookup, obj2s, obj3s)
 	)<?> "assignment statement"
 
 -- | An echo statement (parser)
 echoStatement :: GenParser Char st ComputationStateModifier
 echoStatement = do
+	line <- fmap sourceLine getPosition
 	string "echo"
 	many space
 	char '('
@@ -230,10 +248,10 @@ echoStatement = do
 			isError _ = False
 			show2 (OString str) = str
 			show2 a = show a
-		putStrLn $ 
+		errorMessage line $ 
 			if any isError vals 
 			then 
-				"In module echo:"
+				"in module <module>echo</module>:"
 				++ ( concat $ concat $ 
 					map (map ("\n   "++)) $ 
 						map (\(OError errs) -> errs) $ filter isError vals
@@ -244,6 +262,7 @@ echoStatement = do
 		return state
 
 ifStatement = (do
+	line <- fmap sourceLine getPosition
 	string "if"
 	many space
 	char '('
@@ -261,17 +280,17 @@ ifStatement = (do
 				then runComputations (return state) statementsTrueCase
 				else runComputations (return state) statementsFalseCase
 			OError errs -> do
-				putStrLn ( "Error while evaluating if statement conditional:" 
+				errorMessage line $ " error while evaluating if statement conditional:" 
 				         ++ concat (map ("\n    " ++) errs)
-				         )
 				return state
 			obj -> do
-				putStrLn $ "Inappropriate type for if statement conditional:\n"
+				errorMessage line $ "inappropriate type for if statement conditional:\n"
 				        ++ "   value " ++ show obj ++ " is not a boolean."
 				return state
 	) <?> "if statement"
 
 forStatement = (do
+	line <- fmap sourceLine getPosition
 	-- a for loop is of the form:
 	--      for ( vsymb = vexpr   ) loopStatements
 	-- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
@@ -303,19 +322,18 @@ forStatement = (do
 					vsymbSetState = case match of
 						Just dictWithNew -> return (union dictWithNew varlookup, a, b) 
 						Nothing -> do
-							putStrLn "Pattern match fail in for loop step"
+							errorMessage line $ "Pattern match fail in for loop step"
 							return state
 				runComputations vsymbSetState loopStatements
 		-- Then loops once for every entry in vexpr
 		case vexpr varlookup of 
 			OList l -> foldl (loopOnce) (return state) l
 			OError errs -> do
-				putStrLn ( "Error while evaluating for loop array:" 
+				errorMessage line $ "Error while evaluating for loop array:" 
 				         ++ concat (map ("\n    " ++) errs)
-				         )
 				return state
 			obj     -> do
-				putStrLn $ "Error in for loop iteration array:\n"
+				errorMessage line $ "Error in for loop iteration array:\n"
 				        ++ "   Inappropriate type for loop iterated array:\n"
 				        ++ "       value " ++ show obj ++ " is not a list."
 				return state
@@ -325,6 +343,7 @@ moduleWithSuite ::
 	String -> ([ComputationStateModifier] -> ArgParser ComputationStateModifier)
 	-> GenParser Char st ComputationStateModifier
 moduleWithSuite name argHandeler = (do
+	line <- fmap sourceLine getPosition
 	string name;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
@@ -338,20 +357,24 @@ moduleWithSuite name argHandeler = (do
 			of
 				(Just computationModifier, []) ->  computationModifier (return state)
 				(Nothing, []) -> do
-					putStrLn $ "Module " ++ name ++ " failed without a message"
+					errorMessage line $ "Module <module>" ++ name 
+						++ "</module> failed without a message"
 					return state
 				(Nothing, errs) -> do
-					putStrLn $ "Module " ++ name ++ " failed with the following messages:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					errorMessage line $  "Module <module>" ++ name 
+						++ "</module> failed with the following messages:"
+						++ concat (map ("  "++) errs)
 					return state
 				(Just computationModifier, errs) -> do
-					putStrLn $ "Module " ++ name ++ " gave the following warnings:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					errorMessage line $ "Module <module>" ++ name 
+						++ "</module> gave the following warnings:"
+						++ concat (map ("  "++) errs)
 					computationModifier (return state)
 	) <?> (name ++ " statement")
 
 unimplemented :: String -> GenParser Char st ComputationStateModifier
 unimplemented name = do
+	line <- fmap sourceLine getPosition
 	string name
 	many space;
 	moduleArgsUnit
@@ -359,12 +382,13 @@ unimplemented name = do
 	(try suite <|> (many space >> char ';' >> return []))
 	return $ \ ioWrappedState -> do
 		state <- ioWrappedState
-		putStrLn $ "OpenSCAD command " ++ name ++ " not yet implemented"
+		errorMessage line $ "OpenSCAD command " ++ name ++ " not yet implemented"
 		return state
 
 
 userModule :: GenParser Char st ComputationStateModifier
 userModule = do
+	line <- fmap sourceLine getPosition
 	name <- variableSymb;
 	many space;
 	(unnamed, named) <- moduleArgsUnit
@@ -382,18 +406,21 @@ userModule = do
 				(Just computationModifier, []) ->  
 					computationModifier (return state)
 				(Nothing, []) -> do
-					putStrLn $ "Module " ++ name ++ " failed without a message"
+					errorMessage line $ "Module <module>" ++ name 
+						++ "</module> failed without a message"
 					return state
 				(Nothing, errs) -> do
-					putStrLn $ "Module " ++ name ++ " failed with the following messages:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					errorMessage line $  "Module <module>" ++ name 
+						++ "</module> failed with the following messages:"
+						++ concat (map ("  "++) errs)
 					return state
 				(Just computationModifier, errs) -> do
-					putStrLn $ "Module " ++ name ++ " gave the following warnings:"
-					forM_ errs (\err -> putStrLn $ "  " ++ err)
+					errorMessage line $ "Module <module>" ++ name 
+						++ "</module> gave the following warnings:"
+						++ concat (map ("  "++) errs)
 					computationModifier (return state)
 			_ -> do
-				putStrLn $ "module " ++ name ++ " is not in scope"
+				errorMessage line $  "module <module>" ++ name ++ "</module> is not in scope"
 				return state
 
 

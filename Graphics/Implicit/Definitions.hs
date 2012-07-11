@@ -3,6 +3,11 @@
 
 module Graphics.Implicit.Definitions where
 
+-- a few imports for great evil :(
+-- we want global IO refs.
+import Data.IORef (IORef, newIORef)
+import System.IO.Unsafe (unsafePerformIO)
+
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...
 type ℝ = Float
@@ -131,4 +136,15 @@ type Rectilinear3 = [Box3]
 --   This is very handy when testing functions in interactive mode...
 instance Show (a -> b) where
 	show f = "<function>"
+
+-- | Now for something that makes me a bad person...
+--   I promise I'll use it for good, not evil!
+--   I don't want to reparse the program arguments 
+--   everytime I want to know if XML errors are needed.
+
+{-# NOINLINE xmlErrorOn #-}
+
+xmlErrorOn :: IORef Bool
+xmlErrorOn = unsafePerformIO $ newIORef False
+
 

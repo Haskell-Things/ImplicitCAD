@@ -9,6 +9,7 @@ module Graphics.Implicit.ExtOpenScad.Util.Computation where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
+import Data.IORef (readIORef)
 
 -- | Run a list of computations!
 --   We start with a state and run it through a bunch of ComputationStateModifier s.
@@ -35,6 +36,22 @@ runIO newio = return $  \ ioWrappedState -> do
 		state <- ioWrappedState
 		newio
 		return state
+
+errorMessage :: Int -> String -> IO()
+errorMessage line msg = do
+		useXML <- readIORef xmlErrorOn
+		let
+			msg' = "At line <line>" ++ show line ++ "</line>:" ++ msg
+			-- dropXML inTag (x:xs)
+			dropXML False ('<':xs) =   dropXML True  xs
+			dropXML True  ('>':xs) =   dropXML False xs
+			dropXML True  ( _ :xs) =   dropXML True  xs
+			dropXML False ( x :xs) = x:dropXML False xs
+			dropXML  _       []    = []
+		if useXML 
+			then putStrLn $ "<error>" ++ msg' ++ "</error>"
+			else putStrLn $ dropXML False $ msg'
+		return ()
 
 noChange :: (Monad m) => m ComputationStateModifier
 noChange = return id
