@@ -5,7 +5,7 @@ module Graphics.Implicit.Definitions where
 
 -- a few imports for great evil :(
 -- we want global IO refs.
-import Data.IORef (IORef, newIORef)
+import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
 
 -- Let's make things a bit nicer. 
@@ -147,4 +147,20 @@ instance Show (a -> b) where
 xmlErrorOn :: IORef Bool
 xmlErrorOn = unsafePerformIO $ newIORef False
 
-
+errorMessage :: Int -> String -> IO()
+errorMessage line msg = do
+		useXML <- readIORef xmlErrorOn
+		let
+			msg' = "At line <line>" ++ show line ++ "</line>:" ++ msg
+			-- dropXML inTag (x:xs)
+			dropXML inQuote False ('"':xs) = '"':dropXML (not inQuote) False  xs
+			dropXML True    _     ( x :xs) = x:dropXML True    False  xs
+			dropXML False   False ('<':xs) =   dropXML False   True  xs
+			dropXML False   True  ('>':xs) =   dropXML False   False xs
+			dropXML inQuote True  ( _ :xs) =   dropXML inQuote True  xs
+			dropXML inQuote False ( x :xs) = x:dropXML inQuote False xs
+			dropXML _       _        []    = []
+		if useXML 
+			then putStrLn $ "<error>" ++ msg' ++ "</error>"
+			else putStrLn $ dropXML False False $ msg'
+		return ()

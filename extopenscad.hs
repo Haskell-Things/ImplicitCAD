@@ -8,8 +8,10 @@ import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
-import Graphics.Implicit.Definitions (xmlErrorOn)
+import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
 import Data.Map as Map
+import Text.ParserCombinators.Parsec (errorPos, sourceLine)
+import Text.ParserCombinators.Parsec.Error
 import Data.IORef (writeIORef)
 
 -- | strip a .scad or .escad file to its basename.
@@ -31,7 +33,13 @@ fileType filename = reverse $ beforeFirstPeriod $ reverse filename
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> IO ()
 executeAndExport content targetname = case runOpenscad content of
-	Left err -> putStrLn $ show $ err
+	Left err -> 
+		let
+			line = sourceLine . errorPos $ err
+			msgs = errorMessages err
+		in errorMessage line $ showErrorMessages 
+			"or" "unknown parse error" "expecting" "unexpected" "end of input"
+            (errorMessages err)
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
