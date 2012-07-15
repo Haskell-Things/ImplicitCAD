@@ -8,6 +8,7 @@ import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
 import Data.Map as Map
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
@@ -43,8 +44,17 @@ executeAndExport content targetname = case runOpenscad content of
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
-			res = case Map.lookup "$res" vars of 
-				Nothing -> 1
+			res = case Map.lookup "$res" vars of
+				Nothing -> case s of
+					(_, _, obj:_) -> min (minimum [x,y,z]/5) ((x*y*z)**(1/3) / 25)
+						where
+							((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+							(x,y,z) = (x2-x1, y2-y1, z2-z1)
+					(_, obj:_, _) -> min (min x y /5) ((x*y)**0.5 / 25)
+						where
+							((x1,y1),(x2,y2)) = getBox2 obj
+							(x,y) = (x2-x1, y2-y1)
+					_ -> 1
 				Just (ONum n) -> n
 				Just (_) -> 1
 		case s of 
@@ -67,7 +77,15 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
 			res = case Map.lookup "$res" vars of 
-				Nothing -> 1
+				Nothing -> case s of
+					(_, _, obj:_) -> min (minimum [x,y,z]/5) ((x*y*z)**(1/3) / 25)
+						where
+							((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+							(x,y,z) = (x2-x1, y2-y1, z2-z1)
+					(_, obj:_, _) -> min (min x y /5) ((x*y)**0.5 / 25)
+						where
+							((x1,y1),(x2,y2)) = getBox2 obj
+							(x,y) = (x2-x1, y2-y1)
 				Just (ONum n) -> n
 				Just (_) -> 1
 		case (formatname, s) of 
