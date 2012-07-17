@@ -23,21 +23,24 @@ main = do
 			examples = filter isExample moduleDocList
 			arguments = filter isArgument moduleDocList
 		putStrLn moduleName
-		if not $ null examples then putStrLn "   examples:" else return ()
-		forM_ examples $ \(ExampleDoc example) ->
-			putStrLn $ "      " ++ example
-		putStrLn "   arguments:"
+		putStrLn (map (const '-') moduleName)
+		putStrLn ""
+		if not $ null examples then putStrLn "**Examples:**\n" else return ()
+		forM_ examples $ \(ExampleDoc example) -> do
+			putStrLn $ "   * `" ++ example ++ "`"
+		putStrLn ""
+		putStrLn "**Arguments:**\n"
 		forM_ arguments $ \(ArgumentDoc name posfallback description) ->
 			case (posfallback, description) of
 				(Nothing, "") -> do
-					putStrLn $ "      " ++ name
+					putStrLn $ "   * `" ++ name  ++ "`"
 				(Just fallback, "") -> do
-					putStrLn $ "      " ++ name ++ " = " ++ fallback
+					putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
 				(Nothing, _) -> do
-					putStrLn $ "      " ++ name
-					putStrLn $ "          " ++ description
+					putStrLn $ "   * `" ++ name ++ "`"
+					putStrLn $ "     " ++ description
 				(Just fallback, _) -> do
-					putStrLn $ "      " ++ name ++ " = " ++ fallback
-					putStrLn $ "          " ++ description
+					putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
+					putStrLn $ "     " ++ description
 		putStrLn ""
 
