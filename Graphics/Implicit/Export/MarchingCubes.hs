@@ -1,104 +1,66 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh2) where
+module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel (par, pseq)
+import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 
--- | getMesh gets a triangle mesh describe the boundary of your 3D
---  object. 
---  There are many getMesh functions in this file. This one is the
---  simplest and should be least bug prone. Use it for debugging.
-getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh (x1, y1, z1) (x2, y2, z2) res obj = 
+getMesh = getMesh'
+
+getMesh' :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
+getMesh' (x1, y1, z1) (x2, y2, z2) res obj = 
 	let
+		dx = x2-x1
+		dy = y2-y1
+		dz = z2-z1
 		-- How many steps will we take on each axis?
-		nx = fromIntegral $ ceiling $ (x2 - x1) / res
-		ny = fromIntegral $ ceiling $ (y2 - y1) / res
-		nz = fromIntegral $ ceiling $ (y2 - y1) / res
+		nx = fromIntegral $ ceiling $ dx / res
+		ny = fromIntegral $ ceiling $ dy / res
+		nz = fromIntegral $ ceiling $ dz / res
+		vals = [[[ obj (x1 + dx*mx/nx, y1 + dy*my/ny, z1 + dz*mz/nz) 
+		       | mz <- [0..nx] ] | my <- [0..ny] ] | mx <- [0..nz] ] 
+		       `using` (parListChunk 2 rdeepseq)
+		tris = [ let (x,y,z) = (floor mx, floor my, floor mz) in 
+		           getCubeTriangles 
+		           (x1+dx*mx/nx,y1+dy*my/ny,z1+dz*mz/nz) 
+		           (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
+		           (vals !! (x  ) !! (y  ) !! (z  )) (vals !! (x+1) !! (y  ) !! (z  ))
+		           (vals !! (x  ) !! (y+1) !! (z  )) (vals !! (x+1) !! (y+1) !! (z  ))
+		           (vals !! (x  ) !! (y  ) !! (z+1)) (vals !! (x+1) !! (y  ) !! (z+1))
+		           (vals !! (x  ) !! (y+1) !! (z+1)) (vals !! (x+1) !! (y+1) !! (z+1))
+		       | mx <- [0..nx-1], my <- [0..ny-1], mz <- [0..nz-1] 
+		       ] `using` (parListChunk (2*62*62) rdeepseq)
+	in concat tris
+
+{-getMesh' :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
+getMesh' (x1, y1, z1) (x2, y2, z2) res obj = 
+	let
+		dx = x2-x1
+		dy = y2-y1
+		dz = z2-z1
+		-- How many steps will we take on each axis?
+		nx = fromIntegral $ ceiling $ dx / res
+		ny = fromIntegral $ ceiling $ dy / res
+		nz = fromIntegral $ ceiling $ dz / res
 		-- Divide it up and compute the polylines
 		triangles :: [TriangleMesh]
 		triangles = [getCubeTriangles
-		           (x1 + (x2 - x1)*mx/nx,     y1 + (y2 - y1)*my/ny,     z1 + (z2 - z1)*mz/nz)
-		           (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny, z1 + (z2 - z1)*(mz+1)/nz)
+		           (x1 + dx*mx/nx,     y1 + dy*my/ny,     z1 + dz*mz/nz)
+		           (x1 + dx*(mx+1)/nx, y1 + dy*(my+1)/ny, z1 + dz*(mz+1)/nz)
 		           obj
 		     | mx <- [0.. nx-1], my <- [0..ny-1], mz <- [0..nz-1] ]
+		       `using` (parListChunk (div (floor nz) 16) rdeepseq)
 	in
-		concat $ triangles
+		concat triangles
+-}
 
-
-getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
-	let 
-		dx = abs $ x2 - x1
-		dy = abs $ y2 - y1
-		dz = abs $ z2 - z1
-		d = maximum [dx, dy, dz]
-		ffloor = fromIntegral . floor
-		fceil = fromIntegral . ceiling
-	in
-		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
-		else
-		if d <= res
-		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
-		else let
-			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
-				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
-			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
-				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
-			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
-				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
-			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
-				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
-		in
-			concat partitions
-
-
-getMesh3 (x1,y1,z1) (x2,y2,z2) res obj = 
-	let 
-		dx = abs $ x2 - x1
-		dy = abs $ y2 - y1
-		dz = abs $ z2 - z1
-		d = maximum [dx, dy, dz]
-		ffloor = fromIntegral . floor
-		fceil = fromIntegral . ceiling
-	in
-		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
-		else
-		if d <= res
-		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
-		else let
-			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
-				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
-			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
-				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
-			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
-				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
-			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
-				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
-		in
-			foldr1 par partitions `pseq` concat partitions
-
-
-
--- | This monstrosity of a function gives triangles to divde negative interior
---  regions and positive exterior ones inside a cube, based on its vertices.
---  It is based on the linearly-interpolated marching cubes algorithm.
-
-getCubeTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
-getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
+getCubeTriangles :: ℝ3 -> ℝ3 -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> [Triangle]
+{-# INLINE getCubeTriangles #-}
+getCubeTriangles (x1, y1, z1) (x2, y2, z2) x1y1z1 x2y1z1 x1y2z1 x2y2z1 x1y1z2 x2y1z2 x1y2z2 x2y2z2 =
 	let
-		(x,y,z) = (x1, y1, z1)
 		
-		x1y1z1 = obj (x1, y1, z1)
-		x2y1z1 = obj (x2, y1, z1)
-		x1y2z1 = obj (x1, y2, z1)
-		x2y2z1 = obj (x2, y2, z1)
-		x1y1z2 = obj (x1, y1, z2)
-		x2y1z2 = obj (x2, y1, z2)
-		x1y2z2 = obj (x1, y2, z2)
-		x2y2z2 = obj (x2, y2, z2)
-
+		(x,y,z) = (x1, y1, z1)
 		dx = x2 - x1
 		dy = y2 - y1
 		dz = z2 - z1
