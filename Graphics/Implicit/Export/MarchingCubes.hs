@@ -19,7 +19,7 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		ny = fromIntegral $ ceiling $ dy / res
 		nz = fromIntegral $ ceiling $ dz / res
 		vals = [[[ obj (x1 + dx*mx/nx, y1 + dy*my/ny, z1 + dz*mz/nz) 
-		       | mz <- [0..nx] ] | my <- [0..ny] ] | mx <- [0..nz] ] 
+		       | mz <- [0..nz] ] | my <- [0..ny] ] | mx <- [0..nx] ] 
 		       `using` (parListChunk 2 rdeepseq)
 		tris = [ let (x,y,z) = (floor mx, floor my, floor mz) in 
 		           getCubeTriangles 
@@ -30,7 +30,7 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		           (vals !! (x  ) !! (y  ) !! (z+1)) (vals !! (x+1) !! (y  ) !! (z+1))
 		           (vals !! (x  ) !! (y+1) !! (z+1)) (vals !! (x+1) !! (y+1) !! (z+1))
 		       | mx <- [0..nx-1], my <- [0..ny-1], mz <- [0..nz-1] 
-		       ] `using` (parListChunk (2*62*62) rdeepseq)
+		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
 	in concat tris
 
 {-getMesh' :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
