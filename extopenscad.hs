@@ -108,6 +108,9 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 			("obj", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeOBJ res targetname x
+			("js", (_, _, x:xs))  -> do
+				putStrLn $ "Rendering 3D object to " ++ targetname
+				writeTHREEJS res targetname x
 			(otherFormat, _) -> putStrLn $ "Unrecognized format: " ++ otherFormat
 
 		

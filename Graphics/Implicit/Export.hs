@@ -41,6 +41,7 @@ writeSVG res = writeObject res PolylineFormats.svg
 
 writeSTL res = writeObject res  TriangleMeshFormats.stl
 writeOBJ res = writeObject res  NormedTriangleMeshFormats.obj
+writeTHREEJS res = writeObject res  NormedTriangleMeshFormats.jsTHREE
 
 writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 

@@ -31,6 +31,7 @@ module Graphics.Implicit(
 	writeSVG,
 	writeSTL,
 	writeOBJ,
+	writeTHREEJS,
 	writeSCAD2,
 	writeSCAD3,
 	writeGCodeHacklabLaser,
