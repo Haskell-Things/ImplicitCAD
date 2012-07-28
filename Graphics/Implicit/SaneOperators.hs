@@ -193,3 +193,8 @@ instance ComponentWiseMultiplicative ℝ3 ℝ3 ℝ3 where
 (⋯/) :: (ComponentWiseMultiplicative a b c) => (ComponentWiseMultiplicativeInvertable b) => a -> b -> c
 x ⋯/ y = x ⋯* (componentWiseMultiplicativeInverse y)
 infixl 7 ⋯/
+
+
+(a1,a2,a3) ⨯ (b1,b2,b3) = (a2*b3-a3*b2, a3*b1-a1*b3, a1*b2-a2*b1)
+
+normalized v = v / norm v

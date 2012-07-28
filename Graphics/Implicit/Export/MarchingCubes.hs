@@ -4,7 +4,10 @@
 module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 
 import Graphics.Implicit.Definitions
+import qualified Graphics.Implicit.SaneOperators as S
 import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
+import Debug.Trace
+
 
 getMesh = getMesh'
 
@@ -18,601 +21,171 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		nx = fromIntegral $ ceiling $ dx / res
 		ny = fromIntegral $ ceiling $ dy / res
 		nz = fromIntegral $ ceiling $ dz / res
-		vals = [[[ obj (x1 + dx*mx/nx, y1 + dy*my/ny, z1 + dz*mz/nz) 
-		       | mz <- [0..nz] ] | my <- [0..ny] ] | mx <- [0..nx] ] 
-		       `using` (parListChunk 2 rdeepseq)
-		tris = [ let (x,y,z) = (floor mx, floor my, floor mz) in 
-		           getCubeTriangles 
+		tris = [
+		           getTriangles 
 		           (x1+dx*mx/nx,y1+dy*my/ny,z1+dz*mz/nz) 
 		           (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
-		           (vals !! (x  ) !! (y  ) !! (z  )) (vals !! (x+1) !! (y  ) !! (z  ))
-		           (vals !! (x  ) !! (y+1) !! (z  )) (vals !! (x+1) !! (y+1) !! (z  ))
-		           (vals !! (x  ) !! (y  ) !! (z+1)) (vals !! (x+1) !! (y  ) !! (z+1))
-		           (vals !! (x  ) !! (y+1) !! (z+1)) (vals !! (x+1) !! (y+1) !! (z+1))
-		       | mx <- [0..nx-1], my <- [0..ny-1], mz <- [0..nz-1] 
+		           obj		       | mx <- [0..nx-1], my <- [0..ny-1], mz <- [0..nz-1] 
 		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
 	in concat tris
 
-{-getMesh' :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh' (x1, y1, z1) (x2, y2, z2) res obj = 
-	let
-		dx = x2-x1
-		dy = y2-y1
-		dz = z2-z1
-		-- How many steps will we take on each axis?
-		nx = fromIntegral $ ceiling $ dx / res
-		ny = fromIntegral $ ceiling $ dy / res
-		nz = fromIntegral $ ceiling $ dz / res
-		-- Divide it up and compute the polylines
-		triangles :: [TriangleMesh]
-		triangles = [getCubeTriangles
-		           (x1 + dx*mx/nx,     y1 + dy*my/ny,     z1 + dz*mz/nz)
-		           (x1 + dx*(mx+1)/nx, y1 + dy*(my+1)/ny, z1 + dz*(mz+1)/nz)
-		           obj
-		     | mx <- [0.. nx-1], my <- [0..ny-1], mz <- [0..nz-1] ]
-		       `using` (parListChunk (div (floor nz) 16) rdeepseq)
-	in
-		concat triangles
--}
 
-getCubeTriangles :: ℝ3 -> ℝ3 -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> ℝ -> [Triangle]
-{-# INLINE getCubeTriangles #-}
-getCubeTriangles (x1, y1, z1) (x2, y2, z2) x1y1z1 x2y1z1 x1y2z1 x2y2z1 x1y1z2 x2y1z2 x1y2z2 x2y2z2 =
+getTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
+{-- INLINE getTriangles #-}
+getTriangles (x1,y1,z1) (x2,y2,z2) obj =
 	let
-		
-		(x,y,z) = (x1, y1, z1)
+		res = x2 - x1
+
+		inj1 a (b,c) = (a,b,c)
+		inj2 b (a,c) = (a,b,c)
+		inj3 c (a,b) = (a,b,c)
+
+		infixr 0 $**
+		infixr 0 *$*
+		infixr 0 **$
+		f $** a = \(b,c) -> f (a,b,c)
+		f *$* b = \(a,c) -> f (a,b,c)
+		f **$ c = \(a,b) -> f (a,b,c)
+
+		map2 f = map (map f)
+		map2R f = map (reverse . map f)
+
+		segs = concat $ [
+				map2  (inj3 z1) $ getSegs (x1,y1) (x2,y2) (obj **$ z1),
+				map2R (inj3 z2) $ getSegs (x1,y1) (x2,y2) (obj **$ z2),
+				map2R (inj2 y1) $ getSegs (x1,z1) (x2,z2) (obj *$* y1),
+				map2  (inj2 y2) $ getSegs (x1,z1) (x2,z2) (obj *$* y2),
+				map2  (inj1 x1) $ getSegs (y1,z1) (y2,z2) (obj $** x1),
+				map2R (inj1 x2) $ getSegs (y1,z1) (y2,z2) (obj $** x2)
+			]
+		loops = getLoops segs
+
+		fillLoop3 :: [ ℝ3 ] -> [(ℝ3, ℝ3, ℝ3)]
+		{-- INLINE fillLoop3 #-}
+		fillLoop3 []      = []
+		fillLoop3 [a]     = []
+		fillLoop3 [a,b]   = []
+		fillLoop3 [a,b,c] = [(a,b,c)]
+		fillLoop3 path    =
+			let
+				len = fromIntegral $ length path :: ℝ
+				mid@(midx,midy,midz) = (foldl1 (S.+) path) S./ len
+				midval = obj mid
+				normal = S.normalized $ foldl1 (S.+) $
+					[ a S.⨯ b | (a,b) <- zip path (tail path ++ [head path]) ]
+				deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
+			in if abs midval < res/100 || abs deriv < 0.5
+				then case path of 
+					[a@(a1,a2,a3),b,c@(c1,c2,c3),d] -> 
+						if obj ((a1+c1)/2,(a2+c2)/2,(a3+c3)/2) < res/100
+							then [(a,b,c), (a,c,d)]
+							else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+					_ -> [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+				else let
+					mid' = mid S.- normal S.* (midval/deriv)
+				in [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+
+		tris = concat $ map fillLoop3 loops
+	in tris
+
+getLoops :: (Show a, Eq a) => [[a]] -> [[a]]
+{-- INLINE getLoops #-}
+getLoops [] = []
+getLoops (loop:loops) | head loop == last loop =
+	init loop : getLoops loops
+getLoops (loop:loops) | head loop /= last loop && traceShow (loop:loops) True =
+	let
+		loopEnd = last loop
+		connectsToLoop (x:xs) = x == loopEnd
+		possibleConts = filter connectsToLoop loops
+		nonConts = filter (not . connectsToLoop) loops
+		(newLoop, unused) = if null possibleConts
+			then trace ("unclosed loop in paths given: \n" ++ show (loop:loops) 
+				      ++"\nnothing attaches to " ++ show loopEnd) ([], nonConts)
+			else (loop ++ tail (head possibleConts), tail possibleConts ++ nonConts)
+	in
+		getLoops ( if null newLoop then unused else newLoop:unused)
+
+
+getSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+{-- INLINE getSegs #-}
+getSegs (x1, y1) (x2, y2) obj = 
+	let 
+		(x,y) = (x1, y1)
+
+		-- Let's evlauate obj at a few points...
+		x1y1 = obj (x1, y1)
+		x2y1 = obj (x2, y1)
+		x1y2 = obj (x1, y2)
+		x2y2 = obj (x2, y2)
+		c = obj ((x1+x2)/2, (y1+y2)/2)
+
 		dx = x2 - x1
 		dy = y2 - y1
-		dz = z2 - z1
-		
-		--{- Linearly interpolated
-		x1y1 = (x,    y,    z+dz*x1y1z1/(x1y1z1-x1y1z2))
-		x1y2 = (x,    y+dy, z+dz*x1y2z1/(x1y2z1-x1y2z2))
-		x2y1 = (x+dx, y,    z+dz*x2y1z1/(x2y1z1-x2y1z2))
-		x2y2 = (x+dx, y+dy, z+dz*x2y2z1/(x2y2z1-x2y2z2))
+		res = sqrt (dx*dy)
 
-		x1z1 = (x,    y+dy*x1y1z1/(x1y1z1-x1y2z1), z)
-		x1z2 = (x,    y+dy*x1y1z2/(x1y1z2-x1y2z2), z+dz)
-		x2z1 = (x+dx, y+dy*x2y1z1/(x2y1z1-x2y2z1), z)
-		x2z2 = (x+dx, y+dy*x2y1z2/(x2y1z2-x2y2z2), z+dz)
+		-- linearly interpolated midpoints on the relevant axis
 
-		y1z1 = (x+dx*x1y1z1/(x1y1z1-x2y1z1), y,    z)
-		y1z2 = (x+dx*x1y1z2/(x1y1z2-x2y1z2), y,    z+dz)
-		y2z1 = (x+dx*x1y2z1/(x1y2z1-x2y2z1), y+dy, z)
-		y2z2 = (x+dx*x1y2z2/(x1y2z2-x2y2z2), y+dy, z+dz)
+		midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
+		midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
+		midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
+		midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 
-		--}
-		{- Non-linearly interpolated
+		notPointLine (p1:p2:[]) = p1 /= p2
 
-		x1y1 = (x,    y,    z+dz/2)
-		x1y2 = (x,    y+dy, z+dz/2)
-		x2y1 = (x+dx, y,    z+dz/2)
-		x2y2 = (x+dx, y+dy, z+dz/2)
+		detail [p1@(x1,y1), p2@(x2,y2)] =
+			let
+				mid@(midx, midy) = (p1 S.+ p2) S./ (2 :: ℝ)
+				midval = obj mid 
+			in if traceShow (mid, midval) $ abs midval < res / 100
+				then [(x1,y1), (x2,y2)]
+				else let
+					normal = (\(a,b) -> (b,-a) ) $ S.normalized (p2 S.- p1)
+					deriv = (obj (mid S.+ normal S.* (res/100)) - midval) S.* (100/res)
+				in if deriv == 0 || abs (midval / deriv) > res || abs (midval / deriv) < res/100
+					then [(x1,y1), (x2,y2)]
+					else [(x1,y1), (mid S.- normal S.* (midval/deriv)) , (x2,y2)]
+		detail x = x
 
-		x1z1 = (x,    y+dy/2, z)
-		x1z2 = (x,    y+dy/2, z+dz)
-		x2z1 = (x+dx, y+dy/2, z)
-		x2z2 = (x+dx, y+dy/2, z+dz)
-
-		y1z1 = (x+dx/2, y,   z)
-		y1z2 = (x+dx/2, y,   z+dz)
-		y2z1 = (x+dx/2, y+dy,z)
-		y2z2 = (x+dx/2, y+dy,z+dz)
-		--}
-
-		-- Convenience function
-		square a b c d = [(a,b,c),(d,a,c)]
-		rsquare a b c d = [(c,b,a),(c,a,d)]
-		rev (a, b, c) = (c, b, a)
-	in case 
-		-- whether the vertices are "in" or "out" form the topological 
-		-- basis of our triangles constructions. We must consider every 
-		-- possible case.
-
-		-- We arrange the vertices in a human readable way
-
-		-- BOTTOM LAYER             TOP LAYER
-		(x1y2z1<=0, x2y2z1<=0,    x1y2z2<=0, x2y2z2<=0,
-		 x1y1z1<=0, x2y1z1<=0,    x1y1z2<=0, x2y1z2<=0)
-	of
-
-		-- There are 256 cases to implement.
-		-- Only about half are, but they're the most common ones.
-		-- In practice, this has no issues redering reasonable objects.
+	in map detail $ filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
+	                                 x1y1 <= 0, x2y1 <= 0) of
 
 		-- Yes, there's some symetries that could reduce the amount of code...
 		-- But I don't think they're worth exploiting...
-		-- In particular, since we're not implementing any case, 
-		-- it would make catching the ones we don't implement... problematic.
-
-		-- Uniform cases = empty
-		(False,False,    False,False,
-		 False,False,    False,False) -> []
-
-		(True, True,     True, True,
-		 True, True,     True, True ) -> []
-
-		-- 2 uniform layers
-
-		(True, True,     False,False,
-		 True, True,     False,False) -> square x1y1 x2y1 x2y2 x1y2
-
-		(False,False,    True, True,
-		 False,False,    True, True ) -> rsquare x1y1 x2y1 x2y2 x1y2
-
-		(True, True,     True, True,
-		 False,False,    False,False) -> square x1z1 x2z1 x2z2 x1z2
-
-		(False,False,    False,False,
-		 True, True,     True, True ) -> rsquare x1z1 x2z1 x2z2 x1z2
-
-		(False,True,     False,True,
-		 False,True,     False,True ) -> rsquare y1z1 y2z1 y2z2 y1z2
-
-		(True, False,    True, False,
-		 True, False,    True, False) -> square y1z1 y2z1 y2z2 y1z2
-
-		-- single z column
-
-		(True, False,    True, False,
-		 False,False,    False,False) -> square x1z1 y2z1 y2z2 x1z2
-
-		(False,True,     False,True,
-		 False,False,    False,False) -> rsquare x2z1 y2z1 y2z2 x2z2
-
-		(False,False,    False,False,
-		 True, False,    True, False) -> rsquare x1z1 y1z1 y1z2 x1z2
-
-		(False,False,    False,False,
-		 False,True,     False,True ) -> rsquare y1z1 x2z1 x2z2 y1z2
-
-		(False,True,     False,True,
-		 True, True,     True, True ) -> rsquare x1z1 y2z1 y2z2 x1z2
-
-		(True, False,    True, False,
-		 True, True,     True, True ) -> square x2z1 y2z1 y2z2 x2z2
-
-		(True, True,     True, True, 
-		 False,True,     False,True ) -> square x1z1 y1z1 y1z2 x1z2
-
-		(True, True,     True, True, 
-		 True, False,    True, False) -> square y1z1 x2z1 x2z2 y1z2
-
-		-- single y column
-
-		(True, False,    False,False,
-		 True, False,    False,False) -> square x1y1 y1z1 y2z1 x1y2
-
-		(False,True,     False,False,
-		 False,True,     False,False) -> rsquare x2y1 y1z1 y2z1 x2y2
-
-		(False,False,    True, False,
-		 False,False,    True, False) -> rsquare x1y1 y1z2 y2z2 x1y2
-
-		(False,False,    False,True, 
-		 False,False,    False,True ) -> square x2y1 y1z2 y2z2 x2y2
-
-		(False,True,     True, True,
-		 False,True,     True, True) -> rsquare x1y1 y1z1 y2z1 x1y2
-
-		(True, False,    True, True,
-		 True, False,    True, True) -> square x2y1 y1z1 y2z1 x2y2
-
-		(True, True,     False, True,
-		 True, True,     False, True) -> square x1y1 y1z2 y2z2 x1y2
-
-		(True, True,     True, False,
-		 True, True,     True, False) -> rsquare x2y1 y1z2 y2z2 x2y2
-
-		-- single x column
-
-		(True, True,     False,False,
-		 False,False,    False,False) -> square x1y2 x1z1 x2z1 x2y2
-
-		(False,False,    False,False,
-		 True, True,     False,False) -> rsquare x1y1 x1z1 x2z1 x2y1
-
-		(False,False,    True, True,
-		 False,False,    False,False) -> rsquare x1y2 x1z2 x2z2 x2y2
-
-		(False,False,    False,False,
-		 False,False,    True, True ) -> square x1y1 x1z2 x2z2 x2y1
-
-		(False,False,    True, True,
-		 True, True,     True, True ) -> rsquare x1y2 x1z1 x2z1 x2y2
-
-		(True, True,     True, True, 
-		 False,False,    True, True ) -> square x1y1 x1z1 x2z1 x2y1
-
-		(True, True,     False,False,
-		 True, True,     True, True ) -> square x1y2 x1z2 x2z2 x2y2
-
-		(True, True,     True, True,
-		 True, True,     False,False) -> rsquare x1y1 x1z2 x2z2 x2y1
-
-		-- lone points
-
-		(True, False,    False,False,
-		 False,False,    False,False) -> [(x1z1, y2z1, x1y2)]
-
-		(False,True,     False,False,
-		 False,False,    False,False) -> [rev (x2z1, y2z1, x2y2)]
-
-		(False,False,    False,False,
-		 True, False,    False,False) -> [rev (x1z1, y1z1, x1y1)]
-
-		(False,False,    False,False,
-		 False,True,     False,False) -> [(x2z1, y1z1, x2y1)]
-
-		(False,False,    True, False,
-		 False,False,    False,False) -> [rev (x1z2, y2z2, x1y2)]
-
-		(False,False,    False,True,
-		 False,False,    False,False) -> [(x2z2, y2z2, x2y2)]
-
-		(False,False,    False,False,
-		 False,False,    True, False) -> [(x1z2, y1z2, x1y1)]
-
-		(False,False,    False,False,
-		 False,False,    False,True ) -> [rev (x2z2, y1z2, x2y1)]
-
-		(False,True,     True, True,
-		 True, True,     True, True ) -> [rev (x1z1, y2z1, x1y2)]
-
-		(True, False,    True, True, 
-		 True, True,     True, True ) -> [(x2z1, y2z1, x2y2)]
-
-		(True, True,     True, True, 
-		 False,True,     True, True ) -> [(x1z1, y1z1, x1y1)]
-
-		(True, True,     True, True,
-		 True, False,    True, True ) -> [rev (x2z1, y1z1, x2y1)]
-
-		(True, True,     False,True, 
-		 True, True,     True, True ) -> [(x1z2, y2z2, x1y2)]
-
-		(True, True,     True, False,
-		 True, True,     True, True ) -> [rev (x2z2, y2z2, x2y2)]
-
-		(True, True,     True, True,
-		 True, True,     False,True ) -> [rev (x1z2, y1z2, x1y1)]
-
-		(True, True,     True, True, 
-		 True, True,     True, False) -> [(x2z2, y1z2, x2y1)]
-
-		-- z flat + 1
-
-		(False,False,    True, False,
-		 False,False,    True, True) -> [rev (x1y1,x2y1,x2z2), rev (x1y1,x2z2,y2z2), rev (x1y1,y2z2,x1y2)]
-
-		(True, True,    False,True,
-		 True, True,    False,False) -> [(x1y1,x2y1,x2z2), (x1y1,x2z2,y2z2), (x1y1,y2z2,x1y2)]
-
-		(False,False,    False,True,
-		 False,False,    True, True) -> [(x2y1,x1y1,x1z2), (x2y1,x1z2,y2z2), (x2y1,y2z2,x2y2)]
-
-		(True, True,    True, False,
-		 True, True,    False,False) -> [rev (x2y1,x1y1,x1z2), rev (x2y1,x1z2,y2z2), rev (x2y1,y2z2,x2y2)]
-
-		(False,False,    True, True,
-		 False,False,    True, False) -> [(x1y2,x2y2,x2z2), (x1y2,x2z2,y1z2), (x1y2,y1z2,x1y1)]
-
-		(True, True,    False,False,
-		 True, True,    False,True ) -> [rev (x1y2,x2y2,x2z2), rev (x1y2,x2z2,y1z2), rev (x1y2,y1z2,x1y1)]
-
-		(False,False,    True, True,
-		 False,False,    False,True) -> [rev (x2y2,x1y2,x1z2), rev (x2y2,x1z2,y1z2), rev (x2y2,y1z2,x2y1)]
-
-		(True, True,    False,False,
-		 True, True,    True, False) -> [(x2y2,x1y2,x1z2), (x2y2,x1z2,y1z2), (x2y2,y1z2,x2y1)]
-
-
-
-		(True, False,    False,False,
-		 True, True,     False,False) -> [(x1y1,x2y1,x2z1), (x1y1,x2z1,y2z1), (x1y1,y2z1,x1y2)]
-
-		(False,True,     True, True,
-		 False,False,     True, True) -> [rev (x1y1,x2y1,x2z1), rev (x1y1,x2z1,y2z1), rev (x1y1,y2z1,x1y2)]
-
-		(False,True,    False,False,
-		 True, True,    False,False) -> [rev (x2y1,x1y1,x1z1), rev (x2y1,x1z1,y2z1), rev (x2y1,y2z1,x2y2)]
-
-		(True, False,     True, True,
-		 False,False,     True, True) -> [(x2y1,x1y1,x1z1), (x2y1,x1z1,y2z1), (x2y1,y2z1,x2y2)]
-
-		(True, True,    False,False,
-		 True, False,    False,False) -> [rev (x1y2,x2y2,x2z1), rev (x1y2,x2z1,y1z1), rev (x1y2,y1z1,x1y1)]
-
-		(False,False,     True, True,
-		 False,True,     True, True) -> [(x1y2,x2y2,x2z1), (x1y2,x2z1,y1z1), (x1y2,y1z1,x1y1)]
-
-		(True, True,    False,False,
-		 False,True,    False,False) -> [(x2y2,x1y2,x1z1), (x2y2,x1z1,y1z1), (x2y2,y1z1,x2y1)]
-
-		(False,False,     True, True,
-		 True, False,     True, True) -> [rev (x2y2,x1y2,x1z1), rev (x2y2,x1z1,y1z1), rev (x2y2,y1z1,x2y1)]
-
-
-
-		-- y flat + 1
-
-		(True, False,    True, True,
-		 True, False,    True, False) -> [(y2z1,x2y2,x2z2),(y2z1,x2z2,y1z1),(y1z1,x2z2,y1z2)]
-
-		(False,True,     False,False,
-		 False,True,     False,True ) -> [rev (y2z1,x2y2,x2z2),rev (y2z1,x2z2,y1z1),rev (y1z1,x2z2,y1z2)]
-
-		(True, False,    True, False,
-		 True, False,    True, True ) -> [rev (y1z1,x2y1,x2z2),rev (y1z1,x2z2,y2z1),rev (y2z1,x2z2,y2z2)]
-
-		(False,True,     False,True,
-		 False,True,     False,False) -> [(y1z1,x2y1,x2z2),(y1z1,x2z2,y2z1),(y2z1,x2z2,y2z2)]
-
-		(False,True,     True, True,
-		 False,True,     False,True ) -> [rev (y2z1,x1y2,x1z2),rev (y2z1,x1z2,y1z1),rev (y1z1,x1z2,y1z2)]
-
-		(True, False,    False,False,
-		 True, False,    True, False) -> [(y2z1,x1y2,x1z2),(y2z1,x1z2,y1z1),(y1z1,x1z2,y1z2)]
-
-		(False,True,     False,True,
-		 False,True,     True, True ) -> [(y1z1,x1y1,x1z2),(y1z1,x1z2,y2z1),(y2z1,x1z2,y2z2)]
-
-		(True, False,    True, False,
-		 True, False,    False,False) -> [rev (y1z1,x1y1,x1z2),rev (y1z1,x1z2,y2z1),rev (y2z1,x1z2,y2z2)]
-
-
-
-		(True, True,    True, False,
-		 True, False,    True, False) -> [rev (y2z2,x2y2,x2z1),rev (y2z2,x2z1,y1z2),rev (y1z2,x2z1,y1z1)]
-
-		(False,False,    False,True,
-		 False,True,     False,True ) -> [(y2z2,x2y2,x2z1),(y2z2,x2z1,y1z2),(y1z2,x2z1,y1z1)]
-
-		(True, False,    True, False,
-		 True, True,     True, False) -> [(y1z2,x2y1,x2z1),(y1z2,x2z1,y2z2),(y2z2,x2z1,y2z1)]
-
-		(False,True,     False,True,
-		 False,False,    False,True) -> [rev (y1z2,x2y1,x2z1),rev (y1z2,x2z1,y2z2),rev (y2z2,x2z1,y2z1)]
-
-		(True, True,     False,True,
-		 False,True,     False,True) -> [(y2z2,x1y2,x1z1),(y2z2,x1z1,y1z2),(y1z2,x1z1,y1z1)]
-
-		(False,False,    True, False,
-		 True, False,    True, False) -> [rev (y2z2,x1y2,x1z1),rev (y2z2,x1z1,y1z2),rev (y1z2,x1z1,y1z1)]
-
-		(False,True,     False,True,
-		 True, True,     False,True) -> [rev (y1z2,x1y1,x1z1),rev (y1z2,x1z1,y2z2),rev (y2z2,x1z1,y2z1)]
-
-		(True, False,    True, False,
-		 False,False,    True, False) -> [(y1z2,x1y1,x1z1),(y1z2,x1z1,y2z2),(y2z2,x1z1,y2z1)]
-
-
-
-		-- x flat +1
-
-		(True, True,     True, True,
-		 False,False,    True, False) -> [(x1z1,x2z1,x1y1),(x1y1,x2z1,x2z2),(x1y1,x2z2,y1z2)]
-
-		(False,False,    False,False,
-		 True, True,     False,True ) -> [rev (x1z1,x2z1,x1y1),rev (x1y1,x2z1,x2z2),rev (x1y1,x2z2,y1z2)]
-
-		(False,False,    True, False,
-		 True, True,     True, True) -> [rev (x1z1,x2z1,x1y2),rev (x1y2,x2z1,x2z2),rev (x1y2,x2z2,y2z2)]
-
-		(True, True,     False,True,
-		 False,False,    False,False) -> [(x1z1,x2z1,x1y2),(x1y2,x2z1,x2z2),(x1y2,x2z2,y2z2)]
-
-		(True, True,     True, True,
-		 False,False,    False,True) -> [rev (x2z1,x1z1,x2y1),rev (x2y1,x1z1,x1z2),rev (x2y1,x1z2,y1z2)]
-
-		(False,False,    False,False,
-		 True, True,     True, False) -> [(x2z1,x1z1,x2y1),(x2y1,x1z1,x1z2),(x2y1,x1z2,y1z2)]
-
-		(False,False,    False,True,
-		 True, True,     True, True) -> [(x2z1,x1z1,x2y2),(x2y2,x1z1,x1z2),(x2y2,x1z2,y2z2)]
-
-		(True, True,     True, False,
-		 False,False,    False,False) -> [rev (x2z1,x1z1,x2y2),rev (x2y2,x1z1,x1z2),rev (x2y2,x1z2,y2z2)]
-
-
-		(True, True,     True, True,
-		 True, False,    False,False) -> [rev (x1z2,x2z2,x1y1),rev (x1y1,x2z2,x2z1),rev (x1y1,x2z1,y1z1)]
-
-		(False,False,    False,False,
-		 False,True,     True, True ) -> [(x1z2,x2z2,x1y1),(x1y1,x2z2,x2z1),(x1y1,x2z1,y1z1)]
-
-		(True, False,    False,False,
-		 True, True,     True, True ) -> [(x1z2,x2z2,x1y2),(x1y2,x2z2,x2z1),(x1y2,x2z1,y2z1)]
-
-		(False,True,     True, True,
-		 False,False,    False,False) -> [rev (x1z2,x2z2,x1y2),rev (x1y2,x2z2,x2z1),rev (x1y2,x2z1,y2z1)]
-
-		(True, True,     True, True,
-		 False,True,     False,False) -> [(x2z2,x1z2,x2y1),(x2y1,x1z2,x1z1),(x2y1,x1z1,y1z1)]
-
-		(False,False,    False,False,
-		 True, False,    True, True) -> [rev (x2z2,x1z2,x2y1),rev (x2y1,x1z2,x1z1),rev (x2y1,x1z1,y1z1)]
-
-		(False,True,     False,False,
-		 True, True,     True, True) -> [rev (x2z2,x1z2,x2y2),rev (x2y2,x1z2,x1z1),rev (x2y2,x1z1,y2z1)]
-
-		(True, False,    True, True,
-		 False,False,    False,False) -> [(x2z2,x1z2,x2y2),(x2y2,x1z2,x1z1),(x2y2,x1z1,y2z1)]
-
-
-
-		(True, True,     True, False,
-		 True, False,    False,False) -> [rev (x1y1,x1z2,y1z1),rev (y1z1,x1z2,y2z2),rev (y1z1,y2z2,x2z1),rev (x2z1,y2z2,x2y2)]
-
-		(False,False,    False,True,
-		 False,True,     True, True ) -> [(x1y1,x1z2,y1z1),(y1z1,x1z2,y2z2),(y1z1,y2z2,x2z1),(x2z1,y2z2,x2y2)]
-
-		(True, True,     False,True,
-		 False,True,     False,False) -> [(x2y1,x2z2,y1z1),(y1z1,x2z2,y2z2),(y1z1,y2z2,x1z1),(x1z1,y2z2,x1y2)]
-
-		(False,False,    True, False,
-		 True, False,    True, True ) -> [rev (x2y1,x2z2,y1z1),rev (y1z1,x2z2,y2z2),rev (y1z1,y2z2,x1z1),rev (x1z1,y2z2,x1y2)]
-
-
-
-
-		(True, False,    False,False,
-		 True, True,     True, False) -> [(x1y2,x1z2,y2z1),(y2z1,x1z2,y1z2),(y2z1,y1z2,x2z1),(x2z1,y1z2,x2y1)]
-
-		(False,True,     True, True,
-		 False,False,    False,True ) -> [rev (x1y2,x1z2,y2z1),rev (y2z1,x1z2,y1z2),rev (y2z1,y1z2,x2z1),rev (x2z1,y1z2,x2y1)]
-
-		(False,True,     False,False,
-		 True, True,     False,True ) -> [rev (x2y2,x2z2,y2z1),rev (y2z1,x2z2,y1z2),rev (y2z1,y1z2,x1z1),rev (x1z1,y1z2,x1y1)]
-
-		(True, False,    True, True,
-		 False,False,    True, False) -> [(x2y2,x2z2,y2z1),(y2z1,x2z2,y1z2),(y2z1,y1z2,x1z1),(x1z1,y1z2,x1y1)]
-
-
-		-- O@ OO
-		-- @O @O
-		(False,True,     False, False,
-		 True, False,    True,  False) -> square y1z1 x2z1 x2y2 y1z2
-		                               ++ rsquare x1z1 y2z1 x2y2 x1z2
-		                               ++ [(y1z2, x2y2, x1z2)]
-		(False,True,     False, True,
-		 True, False,    False, False) -> square y2z1 x1z1 x1y1 y2z2
-		                               ++ rsquare x2z1 y1z1 x1y1 x2z2
-		                               ++ [(y2z2, x1y1, x2z2)]
-		(True, False,    True, False,
-		 False,True,     False,False) -> rsquare y2z1 x2z1 x2y1 y2z2
-		                               ++ square x1z1 y1z1 x2y1 x1z2
-		                               ++ [(y2z2, x1z2, x2y1)]
-		(True,False,     False,False,
-		 False,True,     False,True) -> rsquare y1z1 x1z1 x1y2 y1z2
-		                               ++ square x2z1 y2z1 x1y2 x2z2
-		                               ++ [(y1z2, x2z2, x1y2)]
-		-- OO O@  normals verified
-		-- @O @O
-		(False,False,    False, True,
-		 True, False,    True,  False) -> rsquare y1z2 x2z2 x2y2 y1z1
-		                               ++ square x1z2 y2z2 x2y2 x1z1
-		                               ++ [(y1z1, x1z1, x2y2)]
-		(False,True,     False, True,
-		 False,False,    True,  False) -> rsquare y2z2 x1z2 x1y1 y2z1
-		                               ++ square x2z2 y1z2 x1y1 x2z1
-		                               ++ [(y2z1, x2z1, x1y1)]
-		(True, False,    True, False,
-		 False,False,    False,True) -> square y2z2 x2z2 x2y1 y2z1
-		                               ++ rsquare x1z2 y1z2 x2y1 x1z1
-		                               ++ [(y2z1, x2y1, x1z1)]
-		(False,False,    True, False,
-		 False,True,     False,True) -> square y1z2 x1z2 x1y2 y1z1
-		                               ++ rsquare x2z2 y2z2 x1y2 x2z1
-		                               ++ [(y1z1, x1y2, x2z1)]
-		-- @O @@    -- normals verified
-		-- O@ O@
-		(True,False,     True, True,
-		 False, True,    False,  True) -> rsquare y1z1 x2z1 x2y2 y1z2
-		                               ++ square x1z1 y2z1 x2y2 x1z2
-		                               ++ [(y1z2, x1z2, x2y2)]
-		(True,False,     True, False,
-		 False, True,    True, True) -> rsquare y2z1 x1z1 x1y1 y2z2
-		                             ++ square x2z1 y1z1 x1y1 x2z2
-		                             ++ [(y2z2, x2z2, x1y1)]
-		(False, True,    False, True,
-		 True,False,     True,True) -> square y2z1 x2z1 x2y1 y2z2
-		                            ++ rsquare x1z1 y1z1 x2y1 x1z2
-		                            ++ [(y2z2, x2y1, x1z2)]
-		(False,True,     True,True,
-		 True,False,     True,False) -> square y1z1 x1z1 x1y2 y1z2
-		                             ++ rsquare x2z1 y2z1 x1y2 x2z2
-		                             ++ [(y1z2, x1y2, x2z2)]
-		-- @@ @O
-		-- O@ O@
-		(True,True,    True, False,
-		 False, True,    False,  True) -> rsquare y1z2 x2z2 x2y2 y1z1
-		                               ++ square x1z2 y2z2 x2y2 x1z1
-		                               ++ [(y1z1, x1z1, x2y2)]
-		(True,False,     True, False,
-		 True,True,    False,  True) -> rsquare y2z2 x1z2 x1y1 y2z1
-		                               ++ square x2z2 y1z2 x1y1 x2z1
-		                               ++ [(y2z1, x2z1, x1y1)]
-		(False, True,    False, True,
-		 True,True,    True,False) -> square y2z2 x2z2 x2y1 y2z1
-		                               ++ rsquare x1z2 y1z2 x2y1 x1z1
-		                               ++ [(y2z1, x2y1, x1z1)]
-		(True,True,    False, True,
-		 True,False,     True,False) -> square y1z2 x1z2 x1y2 y1z1
-		                               ++ rsquare x2z2 y2z2 x1y2 x2z1
-		                               ++ [(y1z1, x1y2, x2z1)]
-
-
-		-- @@ O@
-		-- @O OO
-		(True, True,     False, True,
-		 True, False,    False, False) -> square x1y1 x1y2 y2z2 x2z2
-		                               ++ square x1y1 x2z2 x2z1 y1z1
-		(False,True,     False, True,
-		 True, True,     False, False) -> square x1y1 x2y1 x2z2 y2z2
-		                               ++ square x1y1 y2z2 y2z1 x1z1
-		(False,True,     False, False,
-		 True, True,     True,  False) -> square x2y2 x2y1 y1z2 x1z2
-		                               ++ square x2y2 x1z2 x1z1 y2z1
-		(True, True,     False, False,
-		 True, False,    True,  False) -> square x2y2 x1y2 x1z2 y1z2
-		                               ++ square x2y2 y1z2 y1z1 x2z1
-
-		(True, False,    False, False,
-		 True, True,     False, True ) -> square x1y2 x1y1 y1z2 x2z2
-		                               ++ square x1y2 x2z2 x2z1 y2z1
-		(True, True,     False, False,
-		 False,True,     False, True ) -> square x1y2 x2y2 x2z2 y1z2
-		                               ++ square x1y2 y2z2 y1z1 x1z1
-		(True, True,     True,  False,
-		 False,True,     False, False) -> square x2y1 x2y2 y2z2 x1z2
-		                               ++ square x2y1 x1z2 x1z1 y1z1
-		(True, False,    True, False,
-		 True, True,     False,False)  -> square x2y1 x1y1 x1z2 y2z2
-		                               ++ square x2y1 y1z2 y2z1 x2z1
-
-
-
-
---{-
-
-		-- @O OO
-		-- O@ OO
-
-		(True, False,    False, False,
-		 False,True,     False, False) -> square x1z1 y1z1 x1y2 x2y1 ++ square x2z1 y2z1 x1y2 x2y1
-
-		(False,True,     False, False,
-		 True, False,    False, False) -> square y1z1 x2z1 x2y2 x1y1 ++ square y2z1 x1z1 x2y2 x1y1
-
-		(False, False,   True, False,
-		 False, False,   False,True ) -> square x1z2 y1z2 x1y2 x2y1 ++ square x2z2 y2z2 x1y2 x2y1
-
-		(False, False,   False,True,
-		 False, False,   True, False) -> square y1z2 x2z2 x2y2 x1y1 ++ square y2z2 x1z2 x2y2 x1y1
-
-		(False, True,    True, True,
-		 True,False,     True, True) -> square x1z1 y1z1 x1y2 x2y1 ++ square x2z1 y2z1 x1y2 x2y1
-
-		(True,False,     True, True,
-		 False, True,    True, True) -> square y1z1 x2z1 x2y2 x1y1 ++ square y2z1 x1z1 x2y2 x1y1
-
-		(True, True,   False, True,
-		 True, True,   True,False ) -> square x1z2 y1z2 x1y2 x2y1 ++ square x2z2 y2z2 x1y2 x2y1
-
-		(True, True,   True,False,
-		 True, True,   False, True) -> square y1z2 x2z2 x2y2 x1y1 ++ square y2z2 x1z2 x2y2 x1y1
-		---}
-
-
-
-		-- Debuging or fault tolerance, tependin on how you comment it
-		(a,b,  c,d,
-		 e,f,  g,h) -> 
-			{-let
-				s b = if b then "#" else "O"
-			in error $ "Unimplemnted Marching Cubes case:\n"
-				++ s a ++ s b ++ " " ++ s c ++ s d ++ "\n"
-				++ s e ++ s f  ++ " " ++ s g ++ s h ++ "\n"
-			-- -} []
+		(True,  True, 
+		 True,  True)  -> []
+		(False, False,
+		 False, False) -> []
+		(True,  True, 
+		 False, False) -> [[midx1, midx2]]
+		(False, False,
+		 True,  True)  -> [[midx2, midx1]]
+		(False, True, 
+		 False, True)  -> [[midy2, midy1]]
+		(True,  False,
+		 True,  False) -> [[midy1, midy2]]
+		(True,  False,
+		 False, False) -> [[midx1, midy2]]
+		(False, True, 
+		 True,  True)  -> [[midy2, midx1]]
+		(True,  True, 
+		 False, True)  -> [[midx1, midy1]]
+		(False, False,
+		 True,  False) -> [[midy1, midx1]]
+		(True,  True, 
+		 True,  False) -> [[midy1, midx2]]
+		(False, False,
+		 False, True)  -> [[midx2, midy1]]
+		(True,  False,
+		 True,  True)  -> [[midx2, midy2]]
+		(False, True, 
+		 False, False) -> [[midy2, midx2]]
+		(True,  False,
+		 False, True)  -> if c > 0
+			then [[midx1, midy2], [midx2, midy1]]
+			else [[midx1, midy1], [midx2, midy2]]
+		(False, True, 
+		 True,  False) -> if c <= 0
+			then [[midx1, midy2], [midx2, midy1]]
+			else [[midx1, midy1], [midx2, midy2]]
 
