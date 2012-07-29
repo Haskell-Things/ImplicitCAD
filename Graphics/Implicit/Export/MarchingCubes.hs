@@ -1,12 +1,22 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE NoMonomorphismRestriction #-}
+
 module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 import Debug.Trace
+
+(⋅)  = (S.⋅)
+(⨯)  = (S.⨯)
+(^+) = (S.+)
+(^-) = (S.-)
+(^*) = (S.*)
+(^/) = (S./)
+norm = S.norm
 
 
 getMesh = getMesh'
@@ -74,7 +84,7 @@ getTriangles (x1,y1,z1) (x2,y2,z2) obj =
 				normal = S.normalized $ foldl1 (S.+) $
 					[ a S.⨯ b | (a,b) <- zip path (tail path ++ [head path]) ]
 				deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
-			in if abs midval < res/100 || abs deriv < 0.5
+			in if True -- abs midval < res/100 || abs deriv < 0.5
 				then case path of 
 					[a@(a1,a2,a3),b,c@(c1,c2,c3),d] -> 
 						if obj ((a1+c1)/2,(a2+c2)/2,(a3+c3)/2) < res/100
@@ -93,7 +103,7 @@ getLoops :: (Show a, Eq a) => [[a]] -> [[a]]
 getLoops [] = []
 getLoops (loop:loops) | head loop == last loop =
 	init loop : getLoops loops
-getLoops (loop:loops) | head loop /= last loop && traceShow (loop:loops) True =
+getLoops (loop:loops) | head loop /= last loop =
 	let
 		loopEnd = last loop
 		connectsToLoop (x:xs) = x == loopEnd
@@ -106,6 +116,73 @@ getLoops (loop:loops) | head loop /= last loop && traceShow (loop:loops) True =
 	in
 		getLoops ( if null newLoop then unused else newLoop:unused)
 
+
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/25 = 
+		detail 0 res obj [p1,p2]
+detail' _ _ a = a
+
+detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
+detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 5 =
+	let
+		mid@(midX, midY) = (p1 S.+ p2) S./ (2 :: ℝ)
+		midval = obj mid 
+	in if abs midval < res / 100
+		then [(x1,y1), (x2,y2)]
+		else let
+			derivX = (obj (midX + res/100, midY) - midval)*100/res
+			derivY = (obj (midX, midY + res/100) - midval)*100/res
+			derivNormSq = derivX^2+derivY^2
+		in if abs derivNormSq > 0.5 && abs derivNormSq < 2
+			then let
+				(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
+				mid'@(midX', midY') = 
+					(midX + dX, midY + dY)
+				midval' = obj mid'
+				posRatio = midval/(midval - midval')
+				mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
+			in 
+				detail (n+1) res obj [(x1,y1), mid''] ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
+			else let
+				derivA = (obj (midX + res/141, midY + res/141) - midval)*100/res
+				derivB = (obj (midX - res/141, midY + res/141) - midval)*100/res
+				derivNormSqAB = derivA^2+derivB^2
+			in if abs derivNormSqAB > 0.5 && abs derivNormSqAB < 2
+			then let
+				(dX, dY) = ((derivB - derivA)*midval/derivNormSqAB/sqrt 2,
+				            (- derivA - derivB)*midval/derivNormSqAB/sqrt 2)
+				mid'@(midX', midY') = 
+					(midX + dX, midY + dY)
+				midval' = obj mid'
+				posRatio = midval/(midval - midval')
+				mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
+			in detail (n+1) res obj [(x1,y1), mid''] 
+			   ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
+			else [(x1,y1), (x2,y2)]
+
+
+detail _ _ _ x = x
+
+simplify res = simplify3 . simplify2 res . simplify1
+
+simplify1 :: [ℝ2] -> [ℝ2]
+simplify1 (a:b:c:xs) =
+	if abs ( ((b ^- a) ⋅ (c ^- a)) - norm (b ^- a) * norm (c ^- a) ) < 0.00001
+	then simplify1 (a:c:xs)
+	else a : simplify1 (b:c:xs)
+simplify1 a = a
+
+simplify2 :: ℝ -> [ℝ2] -> [ℝ2]
+simplify2 res [a,b,c,d] = 
+	if norm (b ^- c) < res/10
+	then [a, ((b ^+ c) ^/ (2::ℝ)), d]
+	else [a,b,c,d]
+simplify2 _ a = a
+
+simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) ++ [last as]
+	where
+		half (a:b:xs) = a : half xs
+		half a = a
+simplify3 a = a
 
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 {-- INLINE getSegs #-}
@@ -133,21 +210,7 @@ getSegs (x1, y1) (x2, y2) obj =
 
 		notPointLine (p1:p2:[]) = p1 /= p2
 
-		detail [p1@(x1,y1), p2@(x2,y2)] =
-			let
-				mid@(midx, midy) = (p1 S.+ p2) S./ (2 :: ℝ)
-				midval = obj mid 
-			in if traceShow (mid, midval) $ abs midval < res / 100
-				then [(x1,y1), (x2,y2)]
-				else let
-					normal = (\(a,b) -> (b,-a) ) $ S.normalized (p2 S.- p1)
-					deriv = (obj (mid S.+ normal S.* (res/100)) - midval) S.* (100/res)
-				in if deriv == 0 || abs (midval / deriv) > res || abs (midval / deriv) < res/100
-					then [(x1,y1), (x2,y2)]
-					else [(x1,y1), (mid S.- normal S.* (midval/deriv)) , (x2,y2)]
-		detail x = x
-
-	in map detail $ filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
+	in map (simplify res . detail' res obj) $ filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
 	                                 x1y1 <= 0, x2y1 <= 0) of
 
 		-- Yes, there's some symetries that could reduce the amount of code...
