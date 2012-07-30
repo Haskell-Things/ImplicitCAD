@@ -8,6 +8,8 @@ module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
+import GHC.Exts (groupWith)
+import Control.DeepSeq (NFData, rnf)
 import Debug.Trace
 
 (⋅)  = (S.⋅)
@@ -20,6 +22,12 @@ norm = S.norm
 normalized = S.normalized
 
 mid (x:xs) = init xs
+
+data TriSquare = Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2 | Tris [Triangle]
+
+instance Control.DeepSeq.NFData TriSquare where
+	rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
+	rnf (Tris tris) = rnf tris
 
 
 getMesh = getMesh'
@@ -74,8 +82,8 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz-1]
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
  
-		tris :: [ [(ℝ3,ℝ3,ℝ3)] ]
-		tris = [
+		--tris :: [ [(ℝ3,ℝ3,ℝ3)] ]
+		sqTris = [
 		        concat $ map (tesselateLoop res obj) $ getLoops2' $ concat [
 		                     segsX !! mz     !! my     !! mx,
 		              mapR $ segsX !! mz     !! my     !!(mx + 1),
@@ -87,20 +95,88 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		       | mx <- [0.. floor nx-1], my <- [0.. floor ny-1], mz <- [0..floor nz-1]
 		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
 	
-	in concat tris
+	in genTris $ concat sqTris
 
-tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [(ℝ3,ℝ3,ℝ3)]
+genTris sqTris = 
+	let
+		isTris (Tris _) = True
+		isTris _ = False
+		triTriangles = concat $ map (\(Tris a) -> a) $ filter isTris sqTris	
+		squares = filter (not . isTris) sqTris
+		planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
+		joinXaligned (pres@(Sq b z xS (y1,y2)):sqs) = 
+			let
+				isNext (Sq _ _ _ (a,_)) = a == y2
+				isPrev (Sq _ _ _ (_,a)) = a == y1
+			in case filter isNext sqs of
+				[Sq _ _ _ (_, y3)] -> 
+					joinXaligned ((Sq b z xS (y1,y3)):(filter (not.isNext) sqs))
+				_ -> case filter isPrev sqs of
+					[Sq _ _ _ (y0, _)] -> 
+						joinXaligned ((Sq b z xS (y0,y2)):(filter (not.isPrev) sqs))
+					_ -> pres : joinXaligned sqs
+		joinXaligned [] = []
+		joinYaligned (pres@(Sq b z (x1,x2) yS):sqs) = 
+			let
+				isNext (Sq _ _ (a,_) _) = a == x2
+				isPrev (Sq _ _ (_,a) _) = a == x1
+			in case filter isNext sqs of
+				[Sq _ _ (_, x3) _] -> 
+					joinYaligned ((Sq b z (x1,x3) yS):(filter (not.isNext) sqs))
+				_ -> case filter isPrev sqs of
+					[Sq _ _ (x0, _) _] -> 
+						joinYaligned ((Sq b z (x0,x2) yS):(filter (not.isPrev) sqs))
+					_ -> pres : joinYaligned sqs
+		joinYaligned [] = []
+		joined = map 
+			( concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
+			. concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)) 
+			planeAligned
+		finishedSquares = concat joined
+		squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
+			let
+				zV = b3 ^* z
+				(x1V, x2V) = (x1 ^* b1, x2 ^* b1)
+				(y1V, y2V) = (y1 ^* b2, y2 ^* b2)
+				a = zV ^+ x1V ^+ y1V
+				b = zV ^+ x2V ^+ y1V
+				c = zV ^+ x1V ^+ y2V
+				d = zV ^+ x2V ^+ y2V
+			in
+				[(a,b,c),(c,b,d)]
+	in
+		triTriangles ++ concat (map squareToTri finishedSquares)
+				
+
+tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
+
 tesselateLoop _ _ [] = []
-tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [(a,b,c)]
+
+tesselateLoop _ _ [[a,b],[_,c],[_,_]] = return $ Tris [(a,b,c)]
+
 tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
 	concat $ map (tesselateLoop res obj) $ 
 		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
 			where pairs = zip (reverse as) bs
+
 tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == length bs =
 	concat $ map (tesselateLoop res obj) $ 
 		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
 			where pairs = zip (reverse as) bs
-tesselateLoop res obj pathSides =
+
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a ^+ c) == (b ^+ d) =
+	let
+		b1 = normalized $ a ^- b
+		b2 = normalized $ c ^- b
+		b3 = b1 ⨯ b2
+	in if norm b3 == 1
+	then [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
+	else return $ Tris $ [(a,b,c),(a,c,d)]
+
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a ^+ c) ^/ (2 :: ℝ)) < res/30 =
+	return $ Tris $ [(a,b,c),(a,c,d)]
+
+tesselateLoop res obj pathSides = return $ Tris $
 	let
 		path = concat $ map init pathSides
 		len = fromIntegral $ length path :: ℝ
@@ -111,16 +187,11 @@ tesselateLoop res obj pathSides =
 		preNormalNorm = norm preNormal
 		normal = preNormal ^/ preNormalNorm
 		deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
-	in if abs midval > res/100 && preNormalNorm > 0.5 && abs deriv > 0.5
-		then let
-			mid' = mid S.- normal S.* (midval/deriv)
-		in [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
-		else case path of 
-			[a@(a1,a2,a3),b,c@(c1,c2,c3),d] -> 
-				if abs (obj ((a1+c1)/2,(a2+c2)/2,(a3+c3)/2)) < res/15
-					then [(a,b,c), (a,c,d)]
-					else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
-			_ -> [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+		mid' = mid S.- normal S.* (midval/deriv)
+	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5
+	               && 5*abs (obj mid') < abs midval
+		then [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+		else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 
 getLoops2' a = getLoops2 a []
 
