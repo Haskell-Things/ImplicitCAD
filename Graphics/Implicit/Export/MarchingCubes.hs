@@ -1,7 +1,7 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE NoMonomorphismRestriction, ViewPatterns #-}
 
 module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 
@@ -17,6 +17,9 @@ import Debug.Trace
 (^*) = (S.*)
 (^/) = (S./)
 norm = S.norm
+normalized = S.normalized
+
+mid (x:xs) = init xs
 
 
 getMesh = getMesh'
@@ -31,20 +34,6 @@ getMesh' (x1, y1, z1) (x2, y2, z2) res obj =
 		nx = fromIntegral $ ceiling $ dx / res
 		ny = fromIntegral $ ceiling $ dy / res
 		nz = fromIntegral $ ceiling $ dz / res
-		tris = [
-		           getTriangles 
-		           (x1+dx*mx/nx,y1+dy*my/ny,z1+dz*mz/nz) 
-		           (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
-		           obj		       | mx <- [0..nx-1], my <- [0..ny-1], mz <- [0..nz-1] 
-		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
-	in concat tris
-
-
-getTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
-{-- INLINE getTriangles #-}
-getTriangles (x1,y1,z1) (x2,y2,z2) obj =
-	let
-		res = x2 - x1
 
 		inj1 a (b,c) = (a,b,c)
 		inj2 b (a,c) = (a,b,c)
@@ -56,65 +45,106 @@ getTriangles (x1,y1,z1) (x2,y2,z2) obj =
 		f $** a = \(b,c) -> f (a,b,c)
 		f *$* b = \(a,c) -> f (a,b,c)
 		f **$ c = \(a,b) -> f (a,b,c)
-
 		map2 f = map (map f)
 		map2R f = map (reverse . map f)
+		mapR = map reverse
 
-		segs = concat $ [
-				map2  (inj3 z1) $ getSegs (x1,y1) (x2,y2) (obj **$ z1),
-				map2R (inj3 z2) $ getSegs (x1,y1) (x2,y2) (obj **$ z2),
-				map2R (inj2 y1) $ getSegs (x1,z1) (x2,z2) (obj *$* y1),
-				map2  (inj2 y2) $ getSegs (x1,z1) (x2,z2) (obj *$* y2),
-				map2  (inj1 x1) $ getSegs (y1,z1) (y2,z2) (obj $** x1),
-				map2R (inj1 x2) $ getSegs (y1,z1) (y2,z2) (obj $** x2)
-			]
-		loops = getLoops segs
 
-		fillLoop3 :: [ ℝ3 ] -> [(ℝ3, ℝ3, ℝ3)]
-		{-- INLINE fillLoop3 #-}
-		fillLoop3 []      = []
-		fillLoop3 [a]     = []
-		fillLoop3 [a,b]   = []
-		fillLoop3 [a,b,c] = [(a,b,c)]
-		fillLoop3 path    =
-			let
-				len = fromIntegral $ length path :: ℝ
-				mid@(midx,midy,midz) = (foldl1 (S.+) path) S./ len
-				midval = obj mid
-				normal = S.normalized $ foldl1 (S.+) $
-					[ a S.⨯ b | (a,b) <- zip path (tail path ++ [head path]) ]
-				deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
-			in if True -- abs midval < res/100 || abs deriv < 0.5
-				then case path of 
-					[a@(a1,a2,a3),b,c@(c1,c2,c3),d] -> 
-						if obj ((a1+c1)/2,(a2+c2)/2,(a3+c3)/2) < res/100
-							then [(a,b,c), (a,c,d)]
-							else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
-					_ -> [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
-				else let
-					mid' = mid S.- normal S.* (midval/deriv)
-				in [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+		segsZ =[[[
+		       map2  (inj3 (z1+dz*mz/nz)) $ getSegs 
+		           (x1+dx*mx/nx,    y1+dy*my/ny)
+                   (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny)
+                   (obj **$ (z1+dz*mz/nz))
+		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz  ]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-		tris = concat $ map fillLoop3 loops
-	in tris
+		segsY = [[[
+		       map2  (inj2 (y1+dy*my/ny)) $ getSegs 
+		           (x1+dx*mx/nx,    z1+dz*mz/nz)
+                   (x1+dx*(mx+1)/nx,z1+dz*(mz+1)/nz)
+                   (obj *$* (y1+dy*my/ny))
+		       | mx <- [0..nx-1] ] | my <- [0..ny  ] ] | mz <- [0..nz-1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-getLoops :: (Show a, Eq a) => [[a]] -> [[a]]
-{-- INLINE getLoops #-}
-getLoops [] = []
-getLoops (loop:loops) | head loop == last loop =
-	init loop : getLoops loops
-getLoops (loop:loops) | head loop /= last loop =
+		segsX =[[[
+		       map2  (inj1 (x1+dx*mx/nx)) $ getSegs 
+		           (y1+dy*my/ny,    z1+dz*mz/nz)
+                   (y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
+                   (obj $** (x1+dx*mx/nx))
+		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz-1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
+ 
+		tris :: [ [(ℝ3,ℝ3,ℝ3)] ]
+		tris = [
+		        concat $ map (tesselateLoop res obj) $ getLoops2' $ concat [
+		                     segsX !! mz     !! my     !! mx,
+		              mapR $ segsX !! mz     !! my     !!(mx + 1),
+		              mapR $ segsY !! mz     !! my     !! mx,
+		                     segsY !! mz     !!(my + 1)!! mx,
+		                     segsZ !! mz     !! my     !! mx,
+		              mapR $ segsZ !!(mz + 1)!! my     !! mx
+		          ]
+		       | mx <- [0.. floor nx-1], my <- [0.. floor ny-1], mz <- [0..floor nz-1]
+		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
+	
+	in concat tris
+
+tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [(ℝ3,ℝ3,ℝ3)]
+tesselateLoop _ _ [] = []
+tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [(a,b,c)]
+tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
+	concat $ map (tesselateLoop res obj) $ 
+		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
+			where pairs = zip (reverse as) bs
+tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == length bs =
+	concat $ map (tesselateLoop res obj) $ 
+		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
+			where pairs = zip (reverse as) bs
+tesselateLoop res obj pathSides =
 	let
-		loopEnd = last loop
-		connectsToLoop (x:xs) = x == loopEnd
-		possibleConts = filter connectsToLoop loops
-		nonConts = filter (not . connectsToLoop) loops
-		(newLoop, unused) = if null possibleConts
-			then trace ("unclosed loop in paths given: \n" ++ show (loop:loops) 
-				      ++"\nnothing attaches to " ++ show loopEnd) ([], nonConts)
-			else (loop ++ tail (head possibleConts), tail possibleConts ++ nonConts)
+		path = concat $ map init pathSides
+		len = fromIntegral $ length path :: ℝ
+		mid@(midx,midy,midz) = (foldl1 (S.+) path) S./ len
+		midval = obj mid
+		preNormal = foldl1 (S.+) $
+			[ a S.⨯ b | (a,b) <- zip path (tail path ++ [head path]) ]
+		preNormalNorm = norm preNormal
+		normal = preNormal ^/ preNormalNorm
+		deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
+	in if abs midval > res/100 && preNormalNorm > 0.5 && abs deriv > 0.5
+		then let
+			mid' = mid S.- normal S.* (midval/deriv)
+		in [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+		else case path of 
+			[a@(a1,a2,a3),b,c@(c1,c2,c3),d] -> 
+				if abs (obj ((a1+c1)/2,(a2+c2)/2,(a3+c3)/2)) < res/15
+					then [(a,b,c), (a,c,d)]
+					else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+			_ -> [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+
+getLoops2' a = getLoops2 a []
+
+getLoops2 :: (Show a, Eq a) => [[a]] -> [[a]] -> [[[a]]]
+{-- INLINE getLoops2 #-}
+getLoops2 [] [] = []
+getLoops2 (x:xs) [] = getLoops2 xs [x]
+getLoops2 segs workingLoop | head (head workingLoop) == last (last workingLoop) =
+	workingLoop : getLoops2 segs []
+getLoops2 segs workingLoop =
+	let
+		presEnd = last $ last workingLoop
+		connects (x:xs) = x == presEnd
+		possibleConts = filter connects segs
+		nonConts = filter (not . connects) segs
+		(next, unused) = if null possibleConts
+			then trace ("unclosed loop in paths given\n" 
+			          ++ show segs ++ "\n" ++ show workingLoop) ([], nonConts)
+			else (head possibleConts, tail possibleConts ++ nonConts)
 	in
-		getLoops ( if null newLoop then unused else newLoop:unused)
+		if null next
+		then workingLoop : getLoops2 segs []
+		else getLoops2 unused (workingLoop ++ [next])
+		
 
 
 detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/25 = 
@@ -122,51 +152,44 @@ detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/25 =
 detail' _ _ a = a
 
 detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
-detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 5 =
+detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
 	let
 		mid@(midX, midY) = (p1 S.+ p2) S./ (2 :: ℝ)
 		midval = obj mid 
-	in if abs midval < res / 100
-		then [(x1,y1), (x2,y2)]
-		else let
-			derivX = (obj (midX + res/100, midY) - midval)*100/res
-			derivY = (obj (midX, midY + res/100) - midval)*100/res
-			derivNormSq = derivX^2+derivY^2
-		in if abs derivNormSq > 0.5 && abs derivNormSq < 2
-			then let
-				(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
-				mid'@(midX', midY') = 
-					(midX + dX, midY + dY)
-				midval' = obj mid'
-				posRatio = midval/(midval - midval')
-				mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
-			in 
-				detail (n+1) res obj [(x1,y1), mid''] ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
-			else let
-				derivA = (obj (midX + res/141, midY + res/141) - midval)*100/res
-				derivB = (obj (midX - res/141, midY + res/141) - midval)*100/res
-				derivNormSqAB = derivA^2+derivB^2
-			in if abs derivNormSqAB > 0.5 && abs derivNormSqAB < 2
-			then let
-				(dX, dY) = ((derivB - derivA)*midval/derivNormSqAB/sqrt 2,
-				            (- derivA - derivB)*midval/derivNormSqAB/sqrt 2)
-				mid'@(midX', midY') = 
-					(midX + dX, midY + dY)
-				midval' = obj mid'
-				posRatio = midval/(midval - midval')
-				mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
-			in detail (n+1) res obj [(x1,y1), mid''] 
-			   ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
-			else [(x1,y1), (x2,y2)]
+	in if abs midval < res / 30
+	then [(x1,y1), (x2,y2)]
+	else let
+		normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^- p1) 
+		derivN = -(obj (mid ^- (normal ^* (midval/2))) - midval) ^* (2/midval)
+	in if abs derivN > 0.5 && abs derivN < 2
+	then let
+		mid' = mid ^- (normal ^* (midval / derivN))
+	in detail (n+1) res obj [(x1,y1), mid'] 
+	   ++ tail (detail (n+1) res obj [mid', (x2,y2)] )
+	else let
+		derivX = (obj (midX + res/100, midY) - midval)*100/res
+		derivY = (obj (midX, midY + res/100) - midval)*100/res
+		derivNormSq = derivX^2+derivY^2
+	in if abs derivNormSq > 0.5 && abs derivNormSq < 2
+	then let
+		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
+		mid'@(midX', midY') = 
+			(midX + dX, midY + dY)
+		midval' = obj mid'
+		posRatio = midval/(midval - midval')
+		mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
+	in 
+		detail (n+1) res obj [(x1,y1), mid''] ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
+	else [(x1,y1), (x2,y2)]
 
 
 detail _ _ _ x = x
 
-simplify res = simplify3 . simplify2 res . simplify1
+simplify res = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: [ℝ2] -> [ℝ2]
 simplify1 (a:b:c:xs) =
-	if abs ( ((b ^- a) ⋅ (c ^- a)) - norm (b ^- a) * norm (c ^- a) ) < 0.00001
+	if abs ( ((b ^- a) ⋅ (c ^- a)) - norm (b ^- a) * norm (c ^- a) ) < 0.0001
 	then simplify1 (a:c:xs)
 	else a : simplify1 (b:c:xs)
 simplify1 a = a
@@ -201,12 +224,25 @@ getSegs (x1, y1) (x2, y2) obj =
 		dy = y2 - y1
 		res = sqrt (dx*dy)
 
+		interpolate _ (a, 0) _ _ = a
+		interpolate _ _ (b, 0) _ = b
+		interpolate n (a, aval) (b, bval) obj | aval /= bval= 
+			let
+				mid = a + (b-a)*aval/(aval-bval)
+				midval = obj mid
+			in if abs midval < res/300
+			then mid
+			else if midval * aval > 0
+			then interpolate (n+1) (mid, midval) (b, bval) obj
+			else interpolate (n+1) (a,aval) (mid, midval) obj
+		interpolate _ (a, _) _ _ = a
+
 		-- linearly interpolated midpoints on the relevant axis
 
-		midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
-		midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
-		midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
-		midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
+		midx1 = (x,             interpolate 0 (y1, x1y1) (y2,x1y2) (\a -> obj (x1,a) ) )
+		midx2 = (x + dx,        interpolate 0 (y1, x2y1) (y2,x2y2) (\a -> obj (x2,a) ) )
+		midy1 = (interpolate 0 (x1, x1y1) (x2,x2y1) (\a -> obj (a, y1) ) , y )
+		midy2 = (interpolate 0 (x1, x1y2) (x2,x2y2) (\a -> obj (a, y2) ), y + dy)
 
 		notPointLine (p1:p2:[]) = p1 /= p2
 
@@ -244,11 +280,11 @@ getSegs (x1, y1) (x2, y2) obj =
 		(False, True, 
 		 False, False) -> [[midy2, midx2]]
 		(True,  False,
-		 False, True)  -> if c > 0
-			then [[midx1, midy2], [midx2, midy1]]
-			else [[midx1, midy1], [midx2, midy2]]
+		 False, True)  -> if c <= 0
+			then [[midx1, midy1], [midx2, midy2]]
+			else [[midx1, midy2], [midx2, midy1]]
 		(False, True, 
 		 True,  False) -> if c <= 0
-			then [[midx1, midy2], [midx2, midy1]]
-			else [[midx1, midy1], [midx2, midy2]]
+			then [[midy2, midx1], [midy1, midx2]]
+			else [[midy1, midx1], [midy2, midx2]]
 
