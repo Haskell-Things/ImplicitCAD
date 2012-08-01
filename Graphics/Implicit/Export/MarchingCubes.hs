@@ -232,7 +232,7 @@ detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
 	else let
 		normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^- p1) 
 		derivN = -(obj (mid ^- (normal ^* (midval/2))) - midval) ^* (2/midval)
-	in if abs derivN > 0.5 && abs derivN < 2
+	in if abs derivN > 0.3 && abs derivN < 2
 	then let
 		mid' = mid ^- (normal ^* (midval / derivN))
 	in detail (n+1) res obj [(x1,y1), mid'] 
@@ -241,7 +241,7 @@ detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
 		derivX = (obj (midX + res/100, midY) - midval)*100/res
 		derivY = (obj (midX, midY + res/100) - midval)*100/res
 		derivNormSq = derivX^2+derivY^2
-	in if abs derivNormSq > 0.5 && abs derivNormSq < 2
+	in if abs derivNormSq > 0.09 && abs derivNormSq < 4
 	then let
 		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
 		mid'@(midX', midY') = 
