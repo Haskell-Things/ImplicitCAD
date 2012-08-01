@@ -9,6 +9,7 @@ import Prelude hiding ((+),(-),(*),(/))
 import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
+import Data.Maybe (fromMaybe)
 
 import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2)
 
@@ -110,15 +111,34 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
 
 
-getBox3 (ExtrudeRM r twist Nothing Nothing symbObj (Left h)) = 
+getBox3 (ExtrudeRM r twist scale translate symbObj (Left h)) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
 		dx = x2 - x1
 		dy = y2 - y1
-		d = max (abs dx) (abs dy)
+		svals =  map (fromMaybe (const 1) scale) $ [0,h/(2::ℝ),h]
+		sval = maximum $ map abs $ svals
+		d = sval * sqrt (dx^2 + dy^2)
+		(tvalsx, tvalsy) = unzip $ map (fromMaybe (const (0,0)) translate) $ [0,h/(2::ℝ),h]
+		(tminx, tminy) = (minimum tvalsx, minimum tvalsy)
+		(tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
 	in
-		((-d, -d, 0),(d, d, h)) 
+		((-d+tminx, -d+tminy, 0),(d+tmaxx, d+tmaxy, h)) 
 
+getBox3 (ExtrudeRM r twist scale translate symbObj (Right hf)) = 
+	let
+		((x1,y1),(x2,y2)) = getBox2 symbObj
+		dx = x2 - x1
+		dy = y2 - y1
+		h = maximum [hf (x1,y1), hf (x2,y1), hf (x2,y2), hf (x1,y2), hf ((x1+x2)/(2::ℝ), (y1+y2)/(2::ℝ))]
+		svals =  map (fromMaybe (const 1) scale) $ [0,h/(2::ℝ),h]
+		sval = maximum $ map abs $ svals
+		d = sval * sqrt (dx^2 + dy^2)
+		(tvalsx, tvalsy) = unzip $ map (fromMaybe (const (0,0)) translate) $ [0,h/(2::ℝ),h]
+		(tminx, tminy) = (minimum tvalsx, minimum tvalsy)
+		(tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
+	in
+		((-d+tminx, -d+tminy, 0),(d+tmaxx, d+tmaxy, h))
 
 
 
