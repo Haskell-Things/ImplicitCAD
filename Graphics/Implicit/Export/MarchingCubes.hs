@@ -6,6 +6,7 @@ module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 import Graphics.Implicit.Definitions
 import Control.Parallel (par, pseq)
 
+getMesh' = getMesh
 
 -- | getMesh gets a triangle mesh describe the boundary of your 3D
 --  object. 

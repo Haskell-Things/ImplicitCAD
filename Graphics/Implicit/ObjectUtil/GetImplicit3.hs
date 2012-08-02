@@ -42,7 +42,7 @@ getImplicit3 (UnionR3 r symbObjs) =
 		objs = map getImplicit3 symbObjs
 	in
 		if r == 0
-		then \p -> minimum $ map ($p) objs 		-- contested!
+		then \p -> minimum $ map ($p) objs 
 		else \p -> MathUtil.rminimum r $ map ($p) objs
 
 getImplicit3 (IntersectR3 r symbObjs) = 
@@ -50,7 +50,7 @@ getImplicit3 (IntersectR3 r symbObjs) =
 		objs = map getImplicit3 symbObjs
 	in
 		if r == 0
-		then \p -> maximum $ map ($p) objs 		-- contested!
+		then \p -> maximum $ map ($p) objs 
 		else \p -> MathUtil.rmaximum r $ map ($p) objs
 
 getImplicit3 (DifferenceR3 r symbObjs) =
@@ -59,7 +59,7 @@ getImplicit3 (DifferenceR3 r symbObjs) =
 		complement obj = \p -> - obj p
 	in
 		if r == 0
-		then \p -> maximum $ map ($p) $ obj:(map complement objs) -- contested!
+		then \p -> maximum $ map ($p) $ obj:(map complement objs) 
 		else \p -> MathUtil.rmaximum r $ map ($p) $ obj:(map complement objs) 
 
 -- Simple transforms
