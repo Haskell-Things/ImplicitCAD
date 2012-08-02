@@ -21,7 +21,7 @@ import Data.Map (Map, lookup, insert, union)
 import Text.ParserCombinators.Parsec 
 import Text.ParserCombinators.Parsec.Expr
 import Control.Monad (liftM)
-import System.Plugins.Load (load_, LoadStatus(..))
+--import System.Plugins.Load (load_, LoadStatus(..))
 import Control.Monad (forM_)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.Computation
@@ -129,16 +129,16 @@ includeStatement = (do
 	return $ \ ioWrappedState -> do
 		state@(varlookup,obj2s,obj3s) <- ioWrappedState;
 		case reverse filename of
-			'o':'.':_ -> do
-				loaded :: LoadStatus VariableLookup
-					<- load_ filename ["."] "openscadAPI"
-				case loaded of
-					LoadFailure errs -> do
-						putStrLn $ show errs
-						return state
-					LoadSuccess _ newapi -> do
-						putStrLn "Loaded Haskell Module..."
-						return (union varlookup newapi, obj2s, obj3s)
+--			'o':'.':_ -> do
+--				loaded :: LoadStatus VariableLookup
+--					<- load_ filename ["."] "openscadAPI"
+--				case loaded of
+--					LoadFailure errs -> do
+--						putStrLn $ show errs
+--						return state
+--					LoadSuccess _ newapi -> do
+--						putStrLn "Loaded Haskell Module..."
+--						return (union varlookup newapi, obj2s, obj3s)
 			_ -> do
 				content <- readFile filename
 				case parse (many1 computationStatement) ""  content of
