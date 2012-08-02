@@ -1,10 +1,33 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE NoMonomorphismRestriction, ViewPatterns #-}
+
 module Graphics.Implicit.Export.MarchingCubes (getMesh, getMesh') where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel (par, pseq)
+import qualified Graphics.Implicit.SaneOperators as S
+import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
+import GHC.Exts (groupWith)
+import Control.DeepSeq (NFData, rnf)
+import Debug.Trace
+
+(⋅)  = (S.⋅)
+(⨯)  = (S.⨯)
+(^+) = (S.+)
+(^-) = (S.-)
+(^*) = (S.*)
+(^/) = (S./)
+norm = S.norm
+normalized = S.normalized
+
+mid (x:xs) = init xs
+
+data TriSquare = Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2 | Tris [Triangle]
+
+instance Control.DeepSeq.NFData TriSquare where
+	rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
+	rnf (Tris tris) = rnf tris
 
 getMesh' = getMesh
 
@@ -19,480 +42,323 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		dy = y2-y1
 		dz = z2-z1
 		-- How many steps will we take on each axis?
-		nx = fromIntegral $ ceiling $ (x2 - x1) / res
-		ny = fromIntegral $ ceiling $ (y2 - y1) / res
-		nz = fromIntegral $ ceiling $ (z2 - z1) / res
-		-- Divide it up and compute the polylines
-		triangles :: [TriangleMesh]
-		triangles = [getCubeTriangles
-		           (x1 + dx*mx/nx,     y1 + dy*my/ny,     z1 + dz*mz/nz)
-		           (x1 + dx*(mx+1)/nx, y1 + dy*(my+1)/ny, z1 + dz*(mz+1)/nz)
-		           obj
-		     | mx <- [0.. nx-1], my <- [0..ny-1], mz <- [0..nz-1] ]
-		-- Remove degenerated triangles
-		sane :: Triangle -> Bool
-		sane (a, b, c) = not (a == b || a == c || b == c)
-	in
-		[triangle | triangle <- concat $ triangles, sane triangle]
+		nx = fromIntegral $ ceiling $ dx / res
+		ny = fromIntegral $ ceiling $ dy / res
+		nz = fromIntegral $ ceiling $ dz / res
+
+		inj1 a (b,c) = (a,b,c)
+		inj2 b (a,c) = (a,b,c)
+		inj3 c (a,b) = (a,b,c)
+
+		infixr 0 $**
+		infixr 0 *$*
+		infixr 0 **$
+		f $** a = \(b,c) -> f (a,b,c)
+		f *$* b = \(a,c) -> f (a,b,c)
+		f **$ c = \(a,b) -> f (a,b,c)
+		map2 f = map (map f)
+		map2R f = map (reverse . map f)
+		mapR = map reverse
 
 
-getMesh2 (x1,y1,z1) (x2,y2,z2) res obj = 
-	let 
-		dx = abs $ x2 - x1
-		dy = abs $ y2 - y1
-		dz = abs $ z2 - z1
-		d = maximum [dx, dy, dz]
-		ffloor = fromIntegral . floor
-		fceil = fromIntegral . ceiling
-	in
-		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
-		else
-		if d <= res
-		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
-		else let
-			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
-				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
-			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
-				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
-			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
-				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
-			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
-				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
-		in
-			concat partitions
+		segsZ =[[[
+		       map2  (inj3 (z1+dz*mz/nz)) $ getSegs 
+		           (x1+dx*mx/nx,    y1+dy*my/ny)
+                   (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny)
+                   (obj **$ (z1+dz*mz/nz))
+		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz  ]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
+		segsY = [[[
+		       map2  (inj2 (y1+dy*my/ny)) $ getSegs 
+		           (x1+dx*mx/nx,    z1+dz*mz/nz)
+                   (x1+dx*(mx+1)/nx,z1+dz*(mz+1)/nz)
+                   (obj *$* (y1+dy*my/ny))
+		       | mx <- [0..nx-1] ] | my <- [0..ny  ] ] | mz <- [0..nz-1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-getMesh3 (x1,y1,z1) (x2,y2,z2) res obj = 
-	let 
-		dx = abs $ x2 - x1
-		dy = abs $ y2 - y1
-		dz = abs $ z2 - z1
-		d = maximum [dx, dy, dz]
-		ffloor = fromIntegral . floor
-		fceil = fromIntegral . ceiling
-	in
-		if (abs.obj) ( (x1 + x2)/2, (y1 + y2)/2, (z1 + z2)/2) > d*0.9 then []
-		else
-		if d <= res
-		then getCubeTriangles (x1,y1,z1) (x1+res,y1+res,z1+res) obj
-		else let
-			xs = if dx <= res then [(x1, x2)] else [(x1,xm), (xm, x2)] 
-				where xm = x1 + res * fceil ( ffloor (dx/res) / 2.0)
-			ys = if dy <= res then [(y1, y2)] else [(y1,xm), (xm, y2)] 
-				where xm = y1 + res * fceil ( ffloor (dy/res) / 2.0)
-			zs = if dz <= res then [(z1, z2)] else [(z1,xm), (xm, z2)] 
-				where xm = z1 + res * fceil ( ffloor (dz/res) / 2.0)
-			partitions = [getMesh (x1', y1', z1') (x2', y2', z2') res obj
-				|  (x1',x2') <- xs, (y1', y2') <- ys, (z1',z2') <- zs ]
-		in
-			foldr1 par partitions `pseq` concat partitions
+		segsX =[[[
+		       map2  (inj1 (x1+dx*mx/nx)) $ getSegs 
+		           (y1+dy*my/ny,    z1+dz*mz/nz)
+                   (y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
+                   (obj $** (x1+dx*mx/nx))
+		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz-1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
+ 
+		--tris :: [ [(ℝ3,ℝ3,ℝ3)] ]
+		sqTris = [
+		        concat $ map (tesselateLoop res obj) $ getLoops2' $ concat [
+		                     segsX !! mz     !! my     !! mx,
+		              mapR $ segsX !! mz     !! my     !!(mx + 1),
+		              mapR $ segsY !! mz     !! my     !! mx,
+		                     segsY !! mz     !!(my + 1)!! mx,
+		                     segsZ !! mz     !! my     !! mx,
+		              mapR $ segsZ !!(mz + 1)!! my     !! mx
+		          ]
+		       | mx <- [0.. floor nx-1], my <- [0.. floor ny-1], mz <- [0..floor nz-1]
+		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
+	
+	in genTris $ concat sqTris
 
-
-
-{-
--- | Interpolate between two (x,y,z) pairs to find the zero
--- using binary search
-
-interpolate ::  ℝ3 -> ℝ -> ℝ3 -> ℝ -> Obj3 -> ℝ3
-interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
+genTris sqTris = 
 	let
-		eps = 1e-6
+		isTris (Tris _) = True
+		isTris _ = False
+		triTriangles = concat $ map (\(Tris a) -> a) $ filter isTris sqTris	
+		squares = filter (not . isTris) sqTris
+		planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
+		joinXaligned (pres@(Sq b z xS (y1,y2)):sqs) = 
+			let
+				isNext (Sq _ _ _ (a,_)) = a == y2
+				isPrev (Sq _ _ _ (_,a)) = a == y1
+			in case filter isNext sqs of
+				[Sq _ _ _ (_, y3)] -> 
+					joinXaligned ((Sq b z xS (y1,y3)):(filter (not.isNext) sqs))
+				_ -> case filter isPrev sqs of
+					[Sq _ _ _ (y0, _)] -> 
+						joinXaligned ((Sq b z xS (y0,y2)):(filter (not.isPrev) sqs))
+					_ -> pres : joinXaligned sqs
+		joinXaligned [] = []
+		joinYaligned (pres@(Sq b z (x1,x2) yS):sqs) = 
+			let
+				isNext (Sq _ _ (a,_) _) = a == x2
+				isPrev (Sq _ _ (_,a) _) = a == x1
+			in case filter isNext sqs of
+				[Sq _ _ (_, x3) _] -> 
+					joinYaligned ((Sq b z (x1,x3) yS):(filter (not.isNext) sqs))
+				_ -> case filter isPrev sqs of
+					[Sq _ _ (x0, _) _] -> 
+						joinYaligned ((Sq b z (x0,x2) yS):(filter (not.isPrev) sqs))
+					_ -> pres : joinYaligned sqs
+		joinYaligned [] = []
+		joined = map 
+			( concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
+			. concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)) 
+			planeAligned
+		finishedSquares = concat joined
+		squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
+			let
+				zV = b3 ^* z
+				(x1V, x2V) = (x1 ^* b1, x2 ^* b1)
+				(y1V, y2V) = (y1 ^* b2, y2 ^* b2)
+				a = zV ^+ x1V ^+ y1V
+				b = zV ^+ x2V ^+ y1V
+				c = zV ^+ x1V ^+ y2V
+				d = zV ^+ x2V ^+ y2V
+			in
+				[(a,b,c),(c,b,d)]
+	in
+		triTriangles ++ concat (map squareToTri finishedSquares)
+				
+
+tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
+
+tesselateLoop _ _ [] = []
+
+tesselateLoop _ _ [[a,b],[_,c],[_,_]] = return $ Tris [(a,b,c)]
+
+tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
+	concat $ map (tesselateLoop res obj) $ 
+		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
+			where pairs = zip (reverse as) bs
+
+tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == length bs =
+	concat $ map (tesselateLoop res obj) $ 
+		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
+			where pairs = zip (reverse as) bs
+
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a ^+ c) == (b ^+ d) =
+	let
+		b1 = normalized $ a ^- b
+		b2 = normalized $ c ^- b
+		b3 = b1 ⨯ b2
+	in if norm b3 == 1
+	then [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
+	else return $ Tris $ [(a,b,c),(a,c,d)]
+
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a ^+ c) ^/ (2 :: ℝ)) < res/30 =
+	return $ Tris $ [(a,b,c),(a,c,d)]
+
+tesselateLoop res obj pathSides = return $ Tris $
+	let
+		path = concat $ map init pathSides
+		len = fromIntegral $ length path :: ℝ
+		mid@(midx,midy,midz) = (foldl1 (S.+) path) S./ len
+		midval = obj mid
+		preNormal = foldl1 (S.+) $
+			[ a S.⨯ b | (a,b) <- zip path (tail path ++ [head path]) ]
+		preNormalNorm = norm preNormal
+		normal = preNormal ^/ preNormalNorm
+		deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
+		mid' = mid S.- normal S.* (midval/deriv)
+	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5
+	               && 5*abs (obj mid') < abs midval
+		then [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+		else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+
+getLoops2' a = getLoops2 a []
+
+getLoops2 :: (Show a, Eq a) => [[a]] -> [[a]] -> [[[a]]]
+{-- INLINE getLoops2 #-}
+getLoops2 [] [] = []
+getLoops2 (x:xs) [] = getLoops2 xs [x]
+getLoops2 segs workingLoop | head (head workingLoop) == last (last workingLoop) =
+	workingLoop : getLoops2 segs []
+getLoops2 segs workingLoop =
+	let
+		presEnd = last $ last workingLoop
+		connects (x:xs) = x == presEnd
+		possibleConts = filter connects segs
+		nonConts = filter (not . connects) segs
+		(next, unused) = if null possibleConts
+			then trace ("unclosed loop in paths given\n" 
+			          ++ show segs ++ "\n" ++ show workingLoop) ([], nonConts)
+			else (head possibleConts, tail possibleConts ++ nonConts)
+	in
+		if null next
+		then workingLoop : getLoops2 segs []
+		else getLoops2 unused (workingLoop ++ [next])
+		
+
+
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/25 = 
+		detail 0 res obj [p1,p2]
+detail' _ _ a = a
+
+detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
+detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
+	let
+		mid@(midX, midY) = (p1 S.+ p2) S./ (2 :: ℝ)
+		midval = obj mid 
+	in if abs midval < res / 30
+	then [(x1,y1), (x2,y2)]
+	else let
+		normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^- p1) 
+		derivN = -(obj (mid ^- (normal ^* (midval/2))) - midval) ^* (2/midval)
+	in if abs derivN > 0.3 && abs derivN < 2
+	then let
+		mid' = mid ^- (normal ^* (midval / derivN))
+	in detail (n+1) res obj [(x1,y1), mid'] 
+	   ++ tail (detail (n+1) res obj [mid', (x2,y2)] )
+	else let
+		derivX = (obj (midX + res/100, midY) - midval)*100/res
+		derivY = (obj (midX, midY + res/100) - midval)*100/res
+		derivNormSq = derivX^2+derivY^2
+	in if abs derivNormSq > 0.09 && abs derivNormSq < 4
+	then let
+		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
+		mid'@(midX', midY') = 
+			(midX + dX, midY + dY)
+		midval' = obj mid'
+		posRatio = midval/(midval - midval')
+		mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
+	in 
+		detail (n+1) res obj [(x1,y1), mid''] ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
+	else [(x1,y1), (x2,y2)]
+
+
+detail _ _ _ x = x
+
+simplify res = {-simplify3 . simplify2 res . -} simplify1
+
+simplify1 :: [ℝ2] -> [ℝ2]
+simplify1 (a:b:c:xs) =
+	if abs ( ((b ^- a) ⋅ (c ^- a)) - norm (b ^- a) * norm (c ^- a) ) < 0.0001
+	then simplify1 (a:c:xs)
+	else a : simplify1 (b:c:xs)
+simplify1 a = a
+
+simplify2 :: ℝ -> [ℝ2] -> [ℝ2]
+simplify2 res [a,b,c,d] = 
+	if norm (b ^- c) < res/10
+	then [a, ((b ^+ c) ^/ (2::ℝ)), d]
+	else [a,b,c,d]
+simplify2 _ a = a
+
+simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) ++ [last as]
+	where
+		half (a:b:xs) = a : half xs
+		half a = a
+simplify3 a = a
+
+getSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+{-- INLINE getSegs #-}
+getSegs (x1, y1) (x2, y2) obj = 
+	let 
+		(x,y) = (x1, y1)
+
+		-- Let's evlauate obj at a few points...
+		x1y1 = obj (x1, y1)
+		x2y1 = obj (x2, y1)
+		x1y2 = obj (x1, y2)
+		x2y2 = obj (x2, y2)
+		c = obj ((x1+x2)/2, (y1+y2)/2)
+
 		dx = x2 - x1
 		dy = y2 - y1
-		dz = z2 - z1
-		d = sqrt (dx**2 + dy**2 + dz**2)
-		guess = 0.5 -- (abs left_obj) / ((abs left_obj) + (abs right_obj))
-		mid = (x1 + dx*guess, y1 + dy*guess, z1 + dz*guess)
-		mid_obj   = obj mid
-	in
-		-- if product is positive, both sides are on the same side of zero
-		if (left_obj * right_obj > 0) then (0, 0, 0)	-- no cut so dummy result
-		else
-		if (d < eps) then (x1, y1, z1)			-- too close, finish
-		else
-		if (left_obj * mid_obj < 0) then		-- on the left
-			interpolate (x1, y1, z1) left_obj mid mid_obj obj
-		else						-- on the right
-			interpolate mid mid_obj (x2, y2, z2) right_obj obj
--}
+		res = sqrt (dx*dy)
 
--- | Interpolate between two (x,y,z) pairs to find the zero
+		interpolate _ (a, 0) _ _ = a
+		interpolate _ _ (b, 0) _ = b
+		interpolate n (a, aval) (b, bval) obj | aval /= bval= 
+			let
+				mid = a + (b-a)*aval/(aval-bval)
+				midval = obj mid
+			in if abs midval < res/300
+			then mid
+			else if midval * aval > 0
+			then interpolate (n+1) (mid, midval) (b, bval) obj
+			else interpolate (n+1) (a,aval) (mid, midval) obj
+		interpolate _ (a, _) _ _ = a
 
-interpolate ::  ℝ3 -> ℝ -> ℝ3 -> ℝ -> Obj3 -> ℝ3
-interpolate (x1, y1, z1) left_obj (x2, y2, z2) right_obj obj =
-	let
-		eps = 1e-6
-		dx = x2 - x1
-		dy = y2 - y1
-		dz = z2 - z1
-		d = sqrt (dx**2 + dy**2 + dz**2)
-		guess = (abs left_obj) / ((abs left_obj) + (abs right_obj))
-		mid = (x1 + dx*guess, y1 + dy*guess, z1 + dz*guess)
-		mid_obj   = obj mid
-	in
-		if (left_obj * right_obj > 0) then
-			(0, 0, 0)	-- no cut so dummy result
-		else
-			mid
+		-- linearly interpolated midpoints on the relevant axis
 
--- | This function gives triangles to divide negative interior
---  regions and positive exterior ones inside a cube, based on its vertices.
---  It is based on the linearly-interpolated marching cubes algorithm.
+		midx1 = (x,             interpolate 0 (y1, x1y1) (y2,x1y2) (\a -> obj (x1,a) ) )
+		midx2 = (x + dx,        interpolate 0 (y1, x2y1) (y2,x2y2) (\a -> obj (x2,a) ) )
+		midy1 = (interpolate 0 (x1, x1y1) (x2,x2y1) (\a -> obj (a, y1) ) , y )
+		midy2 = (interpolate 0 (x1, x1y2) (x2,x2y2) (\a -> obj (a, y2) ), y + dy)
 
-{-
- Cube description:
-         3 ________ 2           _____2__     
-         /|       /|         / |       /|    
-       /  |     /  |      11/  3   10/  |    
-   7 /_______ /    |      /__6_|__ /    |1   
-    |     |  |6    |     |     |  |     |
-    |    0|__|_____|1    |     |__|__0__|    
-    |    /   |    /      7   8/   5    /     
-    |  /     |  /        |  /     |  /9      
-    |/_______|/          |/___4___|/         
-   4          5                  
+		notPointLine (p1:p2:[]) = p1 /= p2
 
-   point 4 is at (x1, y1, z1), point 2 is at (x2, y2, z2)
--}
+	in map (simplify res . detail' res obj) $ filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
+	                                 x1y1 <= 0, x2y1 <= 0) of
 
-
-getCubeTriangles :: ℝ3 -> ℝ3 -> Obj3 -> [Triangle]
-getCubeTriangles (x1, y1, z1) (x2, y2, z2) obj =
-	let
-		x1y1z1 = obj (x1, y1, z1)
-		x2y1z1 = obj (x2, y1, z1)
-		x1y2z1 = obj (x1, y2, z1)
-		x2y2z1 = obj (x2, y2, z1)
-		x1y1z2 = obj (x1, y1, z2)
-		x2y1z2 = obj (x2, y1, z2)
-		x1y2z2 = obj (x1, y2, z2)
-		x2y2z2 = obj (x2, y2, z2)
-
-		x1y1 = interpolate (x1, y1, z1) x1y1z1 (x1, y1, z2) x1y1z2 obj
-		x1y2 = interpolate (x1, y2, z1) x1y2z1 (x1, y2, z2) x1y2z2 obj
-		x2y1 = interpolate (x2, y1, z1) x2y1z1 (x2, y1, z2) x2y1z2 obj
-		x2y2 = interpolate (x2, y2, z1) x2y2z1 (x2, y2, z2) x2y2z2 obj
-
-		x1z1 = interpolate (x1, y1, z1) x1y1z1 (x1, y2, z1) x1y2z1 obj
-		x1z2 = interpolate (x1, y1, z2) x1y1z2 (x1, y2, z2) x1y2z2 obj
-		x2z1 = interpolate (x2, y1, z1) x2y1z1 (x2, y2, z1) x2y2z1 obj
-		x2z2 = interpolate (x2, y1, z2) x2y1z2 (x2, y2, z2) x2y2z2 obj
-
-		y1z1 = interpolate (x1, y1, z1) x1y1z1 (x2, y1, z1) x2y1z1 obj
-		y1z2 = interpolate (x1, y1, z2) x1y1z2 (x2, y1, z2) x2y1z2 obj
-		y2z1 = interpolate (x1, y2, z1) x1y2z1 (x2, y2, z1) x2y2z1 obj
-		y2z2 = interpolate (x1, y2, z2) x1y2z2 (x2, y2, z2) x2y2z2 obj
-
-		-- Convenience functions
-		index (a, b, c, d, e, f, g, h) =
-			(if (a) then 1 else 0)
-			+
-			(if (b) then 2 else 0)
-			+
-			(if (c) then 4 else 0)
-			+
-			(if (d) then 8 else 0)
-			+
-			(if (e) then 16 else 0)
-			+
-			(if (f) then 32 else 0)
-			+
-			(if (g) then 64 else 0)
-			+
-			(if (h) then 128 else 0)
-
-		edgelookup = [  y1z1,	--  0
-				x2z1,	--  1
-				y2z1,	--  2
-				x1z1,	--  3
-
-				y1z2,	--  4
-				x2z2,	--  5
-				y2z2,	--  6
-				x1z2,	--  7
-
-				x1y1,	--  8
-				x2y1,	--  9
-				x2y2,	-- 10
-				x1y2 	-- 11
-			     ]
-
-		caseNr = index (x1y1z1<=0, x2y1z1<=0,    x2y2z1<=0, x1y2z1<=0,
-		                x1y1z2<=0, x2y1z2<=0,    x2y2z2<=0, x1y2z2<=0)
-		edges = mcCaseTable !! caseNr
-
-		-- Create the triangles from the list of vertices
-		intoTriangles :: [ℝ3] -> [Triangle]
-		intoTriangles [] = []
-		intoTriangles (a:b:c:rest) = (c, b, a) : intoTriangles rest
-	in
-		intoTriangles (map (edgelookup !!) edges)
-
-
--- The classic marching cubes table.  One entry for every possible
--- combination of vertices within or outside the threshold value.
--- No exploitation of symmetry etc.  The table index is a bit-vector
--- of the eight vertices.  The stored value is a sequence of triples
--- of edges, representing iso-surface triangles passing through the cube.
-
-mcCaseTable :: [[ℕ]]
-mcCaseTable = 
-              [ {- 0: 				 -}  [],
-		{-   1: 0,                       -}  [  0,  8,  3 ],
-		{-   2:    1,                    -}  [  0,  1,  9 ],
-		{-   3: 0, 1,                    -}  [  1,  8,  3,  9,  8,  1 ],
-		{-   4:       2,                 -}  [  1,  2, 10 ],
-		{-   5: 0,    2,                 -}  [  0,  8,  3,  1,  2, 10 ],
-		{-   6:    1, 2,                 -}  [  9,  2, 10,  0,  2,  9 ],
-		{-   7: 0, 1, 2,                 -}  [  2,  8,  3,  2, 10,  8, 10,  9,  8 ],
-		{-   8:          3,              -}  [  3, 11,  2 ],
-		{-   9: 0,       3,              -}  [  0, 11,  2,  8, 11,  0 ],
-		{-  10:    1,    3,              -}  [  1,  9,  0,  2,  3, 11 ],
-		{-  11: 0, 1,    3,              -}  [  1, 11,  2,  1,  9, 11,  9,  8, 11 ],
-		{-  12:       2, 3,              -}  [  3, 10,  1, 11, 10,  3 ],
-		{-  13: 0,    2, 3,              -}  [  0, 10,  1,  0,  8, 10,  8, 11, 10 ],
-		{-  14:    1, 2, 3,              -}  [  3,  9,  0,  3, 11,  9, 11, 10,  9 ],
-		{-  15: 0, 1, 2, 3,              -}  [  9,  8, 10, 10,  8, 11 ],
-		{-  16:             4,           -}  [  4,  7,  8 ],
-		{-  17: 0,          4,           -}  [  4,  3,  0,  7,  3,  4 ],
-		{-  18:    1,       4,           -}  [  0,  1,  9,  8,  4,  7 ],
-		{-  19: 0, 1,       4,           -}  [  4,  1,  9,  4,  7,  1,  7,  3,  1 ],
-		{-  20:       2,    4,           -}  [  1,  2, 10,  8,  4,  7 ],
-		{-  21: 0,    2,    4,           -}  [  3,  4,  7,  3,  0,  4,  1,  2, 10 ],
-		{-  22:    1, 2,    4,           -}  [  9,  2, 10,  9,  0,  2,  8,  4,  7 ],
-		{-  23: 0, 1, 2,    4,           -}  [  2, 10,  9,  2,  9,  7,  2,  7,  3,  7,  9,  4 ],
-		{-  24:          3, 4,           -}  [  8,  4,  7,  3, 11,  2 ],
-		{-  25: 0,       3, 4,           -}  [ 11,  4,  7, 11,  2,  4,  2,  0,  4 ],
-		{-  26:    1,    3, 4,           -}  [  9,  0,  1,  8,  4,  7,  2,  3, 11 ],
-		{-  27: 0, 1,    3, 4,           -}  [  4,  7, 11,  9,  4, 11,  9, 11,  2,  9,  2,  1 ],
-		{-  28:       2, 3, 4,           -}  [  3, 10,  1,  3, 11, 10,  7,  8,  4 ],
-		{-  29: 0,    2, 3, 4,           -}  [  1, 11, 10,  1,  4, 11,  1,  0,  4,  7, 11,  4 ],
-		{-  30:    1, 2, 3, 4,           -}  [  4,  7,  8,  9,  0, 11,  9, 11, 10, 11,  0,  3 ],
-		{-  31: 0, 1, 2, 3, 4,           -}  [  4,  7, 11,  4, 11,  9,  9, 11, 10 ],
-		{-  32:                5,        -}  [  9,  5,  4 ],
-		{-  33: 0,             5,        -}  [  9,  5,  4,  0,  8,  3 ],
-		{-  34:    1,          5,        -}  [  0,  5,  4,  1,  5,  0 ],
-		{-  35: 0, 1,          5,        -}  [  8,  5,  4,  8,  3,  5,  3,  1,  5 ],
-		{-  36:       2,       5,        -}  [  1,  2, 10,  9,  5,  4 ],
-		{-  37: 0,    2,       5,        -}  [  3,  0,  8,  1,  2, 10,  4,  9,  5 ],
-		{-  38:    1, 2,       5,        -}  [  5,  2, 10,  5,  4,  2,  4,  0,  2 ],
-		{-  39: 0, 1, 2,       5,        -}  [  2, 10,  5,  3,  2,  5,  3,  5,  4,  3,  4,  8 ],
-		{-  40:          3,    5,        -}  [  9,  5,  4,  2,  3, 11 ],
-		{-  41: 0,       3,    5,        -}  [  0, 11,  2,  0,  8, 11,  4,  9,  5 ],
-		{-  42:    1,    3,    5,        -}  [  0,  5,  4,  0,  1,  5,  2,  3, 11 ],
-		{-  43: 0, 1,    3,    5,        -}  [  2,  1,  5,  2,  5,  8,  2,  8, 11,  4,  8,  5 ],
-		{-  44:       2, 3,    5,        -}  [ 10,  3, 11, 10,  1,  3,  9,  5,  4 ],
-		{-  45: 0,    2, 3,    5,        -}  [  4,  9,  5,  0,  8,  1,  8, 10,  1,  8, 11, 10 ],
-		{-  46:    1, 2, 3,    5,        -}  [  5,  4,  0,  5,  0, 11,  5, 11, 10, 11,  0,  3 ],
-		{-  47: 0, 1, 2, 3,    5,        -}  [  5,  4,  8,  5,  8, 10, 10,  8, 11 ],
-		{-  48:             4, 5,        -}  [  9,  7,  8,  5,  7,  9 ],
-		{-  49: 0,          4, 5,        -}  [  9,  3,  0,  9,  5,  3,  5,  7,  3 ],
-		{-  50:    1,       4, 5,        -}  [  0,  7,  8,  0,  1,  7,  1,  5,  7 ],
-		{-  51: 0, 1,       4, 5,        -}  [  1,  5,  3,  3,  5,  7 ],
-		{-  52:       2,    4, 5,        -}  [  9,  7,  8,  9,  5,  7, 10,  1,  2 ],
-		{-  53: 0,    2,    4, 5,        -}  [ 10,  1,  2,  9,  5,  0,  5,  3,  0,  5,  7,  3 ],
-		{-  54:    1, 2,    4, 5,        -}  [  8,  0,  2,  8,  2,  5,  8,  5,  7, 10,  5,  2 ],
-		{-  55: 0, 1, 2,    4, 5,        -}  [  2, 10,  5,  2,  5,  3,  3,  5,  7 ],
-		{-  56:          3, 4, 5,        -}  [  7,  9,  5,  7,  8,  9,  3, 11,  2 ],
-		{-  57: 0,       3, 4, 5,        -}  [  9,  5,  7,  9,  7,  2,  9,  2,  0,  2,  7, 11 ],
-		{-  58:    1,    3, 4, 5,        -}  [  2,  3, 11,  0,  1,  8,  1,  7,  8,  1,  5,  7 ],
-		{-  59: 0, 1,    3, 4, 5,        -}  [ 11,  2,  1, 11,  1,  7,  7,  1,  5 ],
-		{-  60:       2, 3, 4, 5,        -}  [  9,  5,  8,  8,  5,  7, 10,  1,  3, 10,  3, 11 ],
-		{-  61: 0,    2, 3, 4, 5,        -}  [  5,  7,  0,  5,  0,  9,  7, 11,  0,  1,  0, 10, 11, 10,  0 ],
-		{-  62:    1, 2, 3, 4, 5,        -}  [ 11, 10,  0, 11,  0,  3, 10,  5,  0,  8,  0,  7,  5,  7,  0 ],
-		{-  63: 0, 1, 2, 3, 4, 5,        -}  [ 11, 10,  5,  7, 11,  5 ],
-		{-  64:                   6,     -}  [ 10,  6,  5 ],
-		{-  65: 0,                6,     -}  [  0,  8,  3,  5, 10,  6 ],
-		{-  66:    1,             6,     -}  [  9,  0,  1,  5, 10,  6 ],
-		{-  67: 0, 1,             6,     -}  [  1,  8,  3,  1,  9,  8,  5, 10,  6 ],
-		{-  68:       2,          6,     -}  [  1,  6,  5,  2,  6,  1 ],
-		{-  69: 0,    2,          6,     -}  [  1,  6,  5,  1,  2,  6,  3,  0,  8 ],
-		{-  70:    1, 2,          6,     -}  [  9,  6,  5,  9,  0,  6,  0,  2,  6 ],
-		{-  71: 0, 1, 2,          6,     -}  [  5,  9,  8,  5,  8,  2,  5,  2,  6,  3,  2,  8 ],
-                {-  72:          3,       6,     -}  [  2,  3, 11, 10,  6,  5 ],
-		{-  73: 0,       3,       6,     -}  [ 11,  0,  8, 11,  2,  0, 10,  6,  5 ],
-		{-  74:    1,    3,       6,     -}  [  0,  1,  9,  2,  3, 11,  5, 10,  6 ],
-		{-  75: 0, 1,    3,       6,     -}  [  5, 10,  6,  1,  9,  2,  9, 11,  2,  9,  8, 11 ],
-		{-  76:       2, 3,       6,     -}  [  6,  3, 11,  6,  5,  3,  5,  1,  3 ],
-		{-  77: 0,    2, 3,       6,     -}  [  0,  8, 11,  0, 11,  5,  0,  5,  1,  5, 11,  6 ],
-		{-  78:    1, 2, 3,       6,     -}  [  3, 11,  6,  0,  3,  6,  0,  6,  5,  0,  5,  9 ],
-                {-  79: 0, 1, 2, 3,       6,     -}  [  6,  5,  9,  6,  9, 11, 11,  9,  8 ],
-                {-  80:             4,    6,     -}  [  5, 10,  6,  4,  7,  8 ],
-                {-  81: 0,          4,    6,     -}  [  4,  3,  0,  4,  7,  3,  6,  5, 10 ],
-                {-  82:    1,       4,    6,     -}  [  1,  9,  0,  5, 10,  6,  8,  4,  7 ],
-                {-  83: 0, 1,       4,    6,     -}  [ 10,  6,  5,  1,  9,  7,  1,  7,  3,  7,  9,  4 ],
-                {-  84:       2,    4,    6,     -}  [  6,  1,  2,  6,  5,  1,  4,  7,  8 ],
-                {-  85: 0,    2,    4,    6,     -}  [  1,  2,  5,  5,  2,  6,  3,  0,  4,  3,  4,  7 ],
-                {-  86:    1, 2,    4,    6,     -}  [  8,  4,  7,  9,  0,  5,  0,  6,  5,  0,  2,  6 ],
-                {-  87: 0, 1, 2,    4,    6,     -}  [  7,  3,  9,  7,  9,  4,  3,  2,  9,  5,  9,  6,  2,  6,  9 ],
-                {-  88:          3, 4,    6,     -}  [  3, 11,  2,  7,  8,  4, 10,  6,  5 ],
-                {-  89: 0,       3, 4,    6,     -}  [  5, 10,  6,  4,  7,  2,  4,  2,  0,  2,  7, 11 ],
-                {-  90:    1,    3, 4,    6,     -}  [  0,  1,  9,  4,  7,  8,  2,  3, 11,  5, 10,  6 ],
-                {-  91: 0, 1,    3, 4,    6,     -}  [  9,  2,  1,  9, 11,  2,  9,  4, 11,  7, 11,  4,  5, 10,  6 ],
-                {-  92:       2, 3, 4,    6,     -}  [  8,  4,  7,  3, 11,  5,  3,  5,  1,  5, 11,  6 ],
-                {-  93: 0,    2, 3, 4,    6,     -}  [  5,  1, 11,  5, 11,  6,  1,  0, 11,  7, 11,  4,  0,  4, 11 ],
-                {-  94:    1, 2, 3, 4,    6,     -}  [  0,  5,  9,  0,  6,  5,  0,  3,  6, 11,  6,  3,  8,  4,  7 ],
-                {-  95: 0, 1, 2, 3, 4,    6,     -}  [  6,  5,  9,  6,  9, 11,  4,  7,  9,  7, 11,  9 ],
-                {-  96:                5, 6,     -}  [ 10,  4,  9,  6,  4, 10 ],
-                {-  97: 0,             5, 6,     -}  [  4, 10,  6,  4,  9, 10,  0,  8,  3 ],
-                {-  98:    1,          5, 6,     -}  [ 10,  0,  1, 10,  6,  0,  6,  4,  0 ],
-                {-  99: 0, 1,          5, 6,     -}  [  8,  3,  1,  8,  1,  6,  8,  6,  4,  6,  1, 10 ],
-                {- 100:       2,       5, 6,     -}  [  1,  4,  9,  1,  2,  4,  2,  6,  4 ],
-                {- 101: 0,    2,       5, 6,     -}  [  3,  0,  8,  1,  2,  9,  2,  4,  9,  2,  6,  4 ],
-                {- 102:    1, 2,       5, 6,     -}  [  0,  2,  4,  4,  2,  6 ],
-                {- 103: 0, 1, 2,       5, 6,     -}  [  8,  3,  2,  8,  2,  4,  4,  2,  6 ],
-                {- 104:          3,    5, 6,     -}  [ 10,  4,  9, 10,  6,  4, 11,  2,  3 ],
-                {- 105: 0,       3,    5, 6,     -}  [  0,  8,  2,  2,  8, 11,  4,  9, 10,  4, 10,  6 ],
-                {- 106:    1,    3,    5, 6,     -}  [  3, 11,  2,  0,  1,  6,  0,  6,  4,  6,  1, 10 ],
-                {- 107: 0, 1,    3,    5, 6,     -}  [  6,  4,  1,  6,  1, 10,  4,  8,  1,  2,  1, 11,  8, 11,  1 ],
-                {- 108:       2, 3,    5, 6,     -}  [  9,  6,  4,  9,  3,  6,  9,  1,  3, 11,  6,  3 ],
-                {- 109: 0,    2, 3,    5, 6,     -}  [  8, 11,  1,  8,  1,  0, 11,  6,  1,  9,  1,  4,  6,  4,  1 ],
-                {- 110:    1, 2, 3,    5, 6,     -}  [  3, 11,  6,  3,  6,  0,  0,  6,  4 ],
-                {- 111: 0, 1, 2, 3,    5, 6,     -}  [  6,  4,  8, 11,  6,  8 ],
-                {- 112:             4, 5, 6,     -}  [  7, 10,  6,  7,  8, 10,  8,  9, 10 ],
-                {- 113: 0,          4, 5, 6,     -}  [  0,  7,  3,  0, 10,  7,  0,  9, 10,  6,  7, 10 ],
-                {- 114:    1,       4, 5, 6,     -}  [ 10,  6,  7,  1, 10,  7,  1,  7,  8,  1,  8,  0 ],
-                {- 115: 0, 1,       4, 5, 6,     -}  [ 10,  6,  7, 10,  7,  1,  1,  7,  3 ],
-                {- 116:       2,    4, 5, 6,     -}  [  1,  2,  6,  1,  6,  8,  1,  8,  9,  8,  6,  7 ],
-                {- 117: 0,    2,    4, 5, 6,     -}  [  2,  6,  9,  2,  9,  1,  6,  7,  9,  0,  9,  3,  7,  3,  9 ],
-                {- 118:    1, 2,    4, 5, 6,     -}  [  7,  8,  0,  7,  0,  6,  6,  0,  2 ],
-                {- 119: 0, 1, 2,    4, 5, 6,     -}  [  7,  3,  2,  6,  7,  2 ],
-                {- 120:          3, 4, 5, 6,     -}  [  2,  3, 11, 10,  6,  8, 10,  8,  9,  8,  6,  7 ],
-                {- 121: 0,       3, 4, 5, 6,     -}  [  2,  0,  7,  2,  7, 11,  0,  9,  7,  6,  7, 10,  9, 10,  7 ],
-                {- 122:    1,    3, 4, 5, 6,     -}  [  1,  8,  0,  1,  7,  8,  1, 10,  7,  6,  7, 10,  2,  3, 11 ],
-                {- 123: 0, 1,    3, 4, 5, 6,     -}  [ 11,  2,  1, 11,  1,  7, 10,  6,  1,  6,  7,  1 ],
-                {- 124:       2, 3, 4, 5, 6,     -}  [  8,  9,  6,  8,  6,  7,  9,  1,  6, 11,  6,  3,  1,  3,  6 ],
-                {- 125: 0,    2, 3, 4, 5, 6,     -}  [  0,  9,  1, 11,  6,  7 ],
-                {- 126:    1, 2, 3, 4, 5, 6,     -}  [  7,  8,  0,  7,  0,  6,  3, 11,  0, 11,  6,  0 ],
-                {- 127: 0, 1, 2, 3, 4, 5, 6,     -}  [  7, 11,  6 ],
-                {- 128:                      7,  -}  [  7,  6, 11 ],
-                {- 129: 0,                   7,  -}  [  3,  0,  8, 11,  7,  6 ],
-                {- 130:    1,                7,  -}  [  0,  1,  9, 11,  7,  6 ],
-                {- 131: 0, 1,                7,  -}  [  8,  1,  9,  8,  3,  1, 11,  7,  6 ],
-                {- 132:       2,             7,  -}  [ 10,  1,  2,  6, 11,  7 ],
-                {- 133: 0,    2,             7,  -}  [  1,  2, 10,  3,  0,  8,  6, 11,  7 ],
-                {- 134:    1, 2,             7,  -}  [  2,  9,  0,  2, 10,  9,  6, 11,  7 ],
-                {- 135: 0, 1, 2,             7,  -}  [  6, 11,  7,  2, 10,  3, 10,  8,  3, 10,  9,  8 ],
-                {- 136:          3,          7,  -}  [  7,  2,  3,  6,  2,  7 ],
-                {- 137: 0,       3,          7,  -}  [  7,  0,  8,  7,  6,  0,  6,  2,  0 ],
-                {- 138:    1,    3,          7,  -}  [  2,  7,  6,  2,  3,  7,  0,  1,  9 ],
-                {- 139: 0, 1,    3,          7,  -}  [  1,  6,  2,  1,  8,  6,  1,  9,  8,  8,  7,  6 ],
-                {- 140:       2, 3,          7,  -}  [ 10,  7,  6, 10,  1,  7,  1,  3,  7 ],
-                {- 141: 0,    2, 3,          7,  -}  [ 10,  7,  6,  1,  7, 10,  1,  8,  7,  1,  0,  8 ],
-                {- 142:    1, 2, 3,          7,  -}  [  0,  3,  7,  0,  7, 10,  0, 10,  9,  6, 10,  7 ],
-                {- 143: 0, 1, 2, 3,          7,  -}  [  7,  6, 10,  7, 10,  8,  8, 10,  9 ],
-                {- 144:             4,       7,  -}  [  6,  8,  4, 11,  8,  6 ],
-                {- 145: 0,          4,       7,  -}  [  3,  6, 11,  3,  0,  6,  0,  4,  6 ],
-                {- 146:    1,       4,       7,  -}  [  8,  6, 11,  8,  4,  6,  9,  0,  1 ],
-                {- 147: 0, 1,       4,       7,  -}  [  9,  4,  6,  9,  6,  3,  9,  3,  1, 11,  3,  6 ],
-                {- 148:       2,    4,       7,  -}  [  6,  8,  4,  6, 11,  8,  2, 10,  1 ],
-                {- 149: 0,    2,    4,       7,  -}  [  1,  2, 10,  3,  0, 11,  0,  6, 11,  0,  4,  6 ],
-                {- 150:    1, 2,    4,       7,  -}  [  4, 11,  8,  4,  6, 11,  0,  2,  9,  2, 10,  9 ],
-                {- 151: 0, 1, 2,    4,       7,  -}  [ 10,  9,  3, 10,  3,  2,  9,  4,  3, 11,  3,  6,  4,  6,  3 ],
-                {- 152:          3, 4,       7,  -}  [  8,  2,  3,  8,  4,  2,  4,  6,  2 ],
-                {- 153: 0,       3, 4,       7,  -}  [  0,  4,  2,  4,  6,  2 ],
-                {- 154:    1,    3, 4,       7,  -}  [  1,  9,  0,  2,  3,  4,  2,  4,  6,  4,  3,  8 ],
-                {- 155: 0, 1,    3, 4,       7,  -}  [  1,  9,  4,  1,  4,  2,  2,  4,  6 ],
-                {- 156:       2, 3, 4,       7,  -}  [  8,  1,  3,  8,  6,  1,  8,  4,  6,  6, 10,  1 ],
-                {- 157: 0,    2, 3, 4,       7,  -}  [ 10,  1,  0, 10,  0,  6,  6,  0,  4 ],
-                {- 158:    1, 2, 3, 4,       7,  -}  [  4,  6,  3,  4,  3,  8,  6, 10,  3,  0,  3,  9, 10,  9,  3 ],
-                {- 159: 0, 1, 2, 3, 4,       7,  -}  [ 10,  9,  4,  6, 10,  4 ],
-                {- 160:                5,    7,  -}  [  4,  9,  5,  7,  6, 11 ],
-                {- 161: 0,             5,    7,  -}  [  0,  8,  3,  4,  9,  5, 11,  7,  6 ],
-                {- 162:    1,          5,    7,  -}  [  5,  0,  1,  5,  4,  0,  7,  6, 11 ],
-                {- 163: 0, 1,          5,    7,  -}  [ 11,  7,  6,  8,  3,  4,  3,  5,  4,  3,  1,  5 ],
-                {- 164:       2,       5,    7,  -}  [  9,  5,  4, 10,  1,  2,  7,  6, 11 ],
-                {- 165: 0,    2,       5,    7,  -}  [  6, 11,  7,  1,  2, 10,  0,  8,  3,  4,  9,  5 ],
-                {- 166:    1, 2,       5,    7,  -}  [  7,  6, 11,  5,  4, 10,  4,  2, 10,  4,  0,  2 ],
-                {- 167: 0, 1, 2,       5,    7,  -}  [  3,  4,  8,  3,  5,  4,  3,  2,  5, 10,  5,  2, 11,  7,  6 ],
-                {- 168:          3,    5,    7,  -}  [  7,  2,  3,  7,  6,  2,  5,  4,  9 ],
-                {- 169: 0,       3,    5,    7,  -}  [  9,  5,  4,  0,  8,  6,  0,  6,  2,  6,  8,  7 ],
-                {- 170:    1,    3,    5,    7,  -}  [  3,  6,  2,  3,  7,  6,  1,  5,  0,  5,  4,  0 ],
-                {- 171: 0, 1,    3,    5,    7,  -}  [  6,  2,  8,  6,  8,  7,  2,  1,  8,  4,  8,  5,  1,  5,  8 ],
-                {- 172:       2, 3,    5,    7,  -}  [  9,  5,  4, 10,  1,  6,  1,  7,  6,  1,  3,  7 ],
-                {- 173: 0,    2, 3,    5,    7,  -}  [  1,  6, 10,  1,  7,  6,  1,  0,  7,  8,  7,  0,  9,  5,  4 ],
-                {- 174:    1, 2, 3,    5,    7,  -}  [  4,  0, 10,  4, 10,  5,  0,  3, 10,  6, 10,  7,  3,  7, 10 ],
-                {- 175: 0, 1, 2, 3,    5,    7,  -}  [  7,  6, 10,  7, 10,  8,  5,  4, 10,  4,  8, 10 ],
-                {- 176:             4, 5,    7,  -}  [  6,  9,  5,  6, 11,  9, 11,  8,  9 ],
-                {- 177: 0,          4, 5,    7,  -}  [  3,  6, 11,  0,  6,  3,  0,  5,  6,  0,  9,  5 ],
-                {- 178:    1,       4, 5,    7,  -}  [  0, 11,  8,  0,  5, 11,  0,  1,  5,  5,  6, 11 ],
-                {- 179: 0, 1,       4, 5,    7,  -}  [  6, 11,  3,  6,  3,  5,  5,  3,  1 ],
-                {- 180:       2,    4, 5,    7,  -}  [  1,  2, 10,  9,  5, 11,  9, 11,  8, 11,  5,  6 ],
-                {- 181: 0,    2,    4, 5,    7,  -}  [  0, 11,  3,  0,  6, 11,  0,  9,  6,  5,  6,  9,  1,  2, 10 ],
-                {- 182:    1, 2,    4, 5,    7,  -}  [ 11,  8,  5, 11,  5,  6,  8,  0,  5, 10,  5,  2,  0,  2,  5 ],
-                {- 183: 0, 1, 2,    4, 5,    7,  -}  [  6, 11,  3,  6,  3,  5,  2, 10,  3, 10,  5,  3 ],
-                {- 184:          3, 4, 5,    7,  -}  [  5,  8,  9,  5,  2,  8,  5,  6,  2,  3,  8,  2 ],
-                {- 185: 0,       3, 4, 5,    7,  -}  [  9,  5,  6,  9,  6,  0,  0,  6,  2 ],
-                {- 186:    1,    3, 4, 5,    7,  -}  [  1,  5,  8,  1,  8,  0,  5,  6,  8,  3,  8,  2,  6,  2,  8 ],
-                {- 187: 0, 1,    3, 4, 5,    7,  -}  [  1,  5,  6,  2,  1,  6 ],
-                {- 188:       2, 3, 4, 5,    7,  -}  [  1,  3,  6,  1,  6, 10,  3,  8,  6,  5,  6,  9,  8,  9,  6 ],
-                {- 189: 0,    2, 3, 4, 5,    7,  -}  [ 10,  1,  0, 10,  0,  6,  9,  5,  0,  5,  6,  0 ],
-                {- 190:    1, 2, 3, 4, 5,    7,  -}  [  0,  3,  8,  5,  6, 10 ],
-                {- 191: 0, 1, 2, 3, 4, 5,    7,  -}  [ 10,  5,  6 ],
-                {- 192:                   6, 7,  -}  [ 11,  5, 10,  7,  5, 11 ],
-                {- 193: 0,                6, 7,  -}  [ 11,  5, 10, 11,  7,  5,  8,  3,  0 ],
-                {- 194:    1,             6, 7,  -}  [  5, 11,  7,  5, 10, 11,  1,  9,  0 ],
-                {- 195: 0, 1,             6, 7,  -}  [ 10,  7,  5, 10, 11,  7,  9,  8,  1,  8,  3,  1 ],
-                {- 196:       2,          6, 7,  -}  [ 11,  1,  2, 11,  7,  1,  7,  5,  1 ],
-                {- 197: 0,    2,          6, 7,  -}  [  0,  8,  3,  1,  2,  7,  1,  7,  5,  7,  2, 11 ],
-                {- 198:    1, 2,          6, 7,  -}  [  9,  7,  5,  9,  2,  7,  9,  0,  2,  2, 11,  7 ],
-                {- 199: 0, 1, 2,          6, 7,  -}  [  7,  5,  2,  7,  2, 11,  5,  9,  2,  3,  2,  8,  9,  8,  2 ],
-                {- 200:          3,       6, 7,  -}  [  2,  5, 10,  2,  3,  5,  3,  7,  5 ],
-                {- 201: 0,       3,       6, 7,  -}  [  8,  2,  0,  8,  5,  2,  8,  7,  5, 10,  2,  5 ],
-                {- 202:    1,    3,       6, 7,  -}  [  9,  0,  1,  5, 10,  3,  5,  3,  7,  3, 10,  2 ],
-                {- 203: 0, 1,    3,       6, 7,  -}  [  9,  8,  2,  9,  2,  1,  8,  7,  2, 10,  2,  5,  7,  5,  2 ],
-                {- 204:       2, 3,       6, 7,  -}  [  1,  3,  5,  3,  7,  5 ],
-                {- 205: 0,    2, 3,       6, 7,  -}  [  0,  8,  7,  0,  7,  1,  1,  7,  5 ],
-                {- 206:    1, 2, 3,       6, 7,  -}  [  9,  0,  3,  9,  3,  5,  5,  3,  7 ],
-                {- 207: 0, 1, 2, 3,       6, 7,  -}  [  9,  8,  7,  5,  9,  7 ],
-                {- 208:             4,    6, 7,  -}  [  5,  8,  4,  5, 10,  8, 10, 11,  8 ],
-                {- 209: 0,          4,    6, 7,  -}  [  5,  0,  4,  5, 11,  0,  5, 10, 11, 11,  3,  0 ],
-                {- 210:    1,       4,    6, 7,  -}  [  0,  1,  9,  8,  4, 10,  8, 10, 11, 10,  4,  5 ],
-                {- 211: 0, 1,       4,    6, 7,  -}  [ 10, 11,  4, 10,  4,  5, 11,  3,  4,  9,  4,  1,  3,  1,  4 ],
-                {- 212:       2,    4,    6, 7,  -}  [  2,  5,  1,  2,  8,  5,  2, 11,  8,  4,  5,  8 ],
-                {- 213: 0,    2,    4,    6, 7,  -}  [  0,  4, 11,  0, 11,  3,  4,  5, 11,  2, 11,  1,  5,  1, 11 ],
-                {- 214:    1, 2,    4,    6, 7,  -}  [  0,  2,  5,  0,  5,  9,  2, 11,  5,  4,  5,  8, 11,  8,  5 ],
-                {- 215: 0, 1, 2,    4,    6, 7,  -}  [  9,  4,  5,  2, 11,  3 ],
-                {- 216:          3, 4,    6, 7,  -}  [  2,  5, 10,  3,  5,  2,  3,  4,  5,  3,  8,  4 ],
-                {- 217: 0,       3, 4,    6, 7,  -}  [  5, 10,  2,  5,  2,  4,  4,  2,  0 ],
-                {- 218:    1,    3, 4,    6, 7,  -}  [  3, 10,  2,  3,  5, 10,  3,  8,  5,  4,  5,  8,  0,  1,  9 ],
-                {- 219: 0, 1,    3, 4,    6, 7,  -}  [  5, 10,  2,  5,  2,  4,  1,  9,  2,  9,  4,  2 ],
-                {- 220:       2, 3, 4,    6, 7,  -}  [  8,  4,  5,  8,  5,  3,  3,  5,  1 ],
-                {- 221: 0,    2, 3, 4,    6, 7,  -}  [  0,  4,  5,  1,  0,  5 ],
-                {- 222:    1, 2, 3, 4,    6, 7,  -}  [  8,  4,  5,  8,  5,  3,  9,  0,  5,  0,  3,  5 ],
-                {- 223: 0, 1, 2, 3, 4,    6, 7,  -}  [  9,  4,  5 ],
-                {- 224:                5, 6, 7,  -}  [  4, 11,  7,  4,  9, 11,  9, 10, 11 ],
-                {- 225: 0,             5, 6, 7,  -}  [  0,  8,  3,  4,  9,  7,  9, 11,  7,  9, 10, 11 ],
-                {- 226:    1,          5, 6, 7,  -}  [  1, 10, 11,  1, 11,  4,  1,  4,  0,  7,  4, 11 ],
-                {- 227: 0, 1,          5, 6, 7,  -}  [  3,  1,  4,  3,  4,  8,  1, 10,  4,  7,  4, 11, 10, 11,  4 ],
-                {- 228:       2,       5, 6, 7,  -}  [  4, 11,  7,  9, 11,  4,  9,  2, 11,  9,  1,  2 ],
-                {- 229: 0,    2,       5, 6, 7,  -}  [  9,  7,  4,  9, 11,  7,  9,  1, 11,  2, 11,  1,  0,  8,  3 ],
-                {- 230:    1, 2,       5, 6, 7,  -}  [ 11,  7,  4, 11,  4,  2,  2,  4,  0 ],
-                {- 231: 0, 1, 2,       5, 6, 7,  -}  [ 11,  7,  4, 11,  4,  2,  8,  3,  4,  3,  2,  4 ],
-                {- 232:          3,    5, 6, 7,  -}  [  2,  9, 10,  2,  7,  9,  2,  3,  7,  7,  4,  9 ],
-                {- 233: 0,       3,    5, 6, 7,  -}  [  9, 10,  7,  9,  7,  4, 10,  2,  7,  8,  7,  0,  2,  0,  7 ],
-                {- 234:    1,    3,    5, 6, 7,  -}  [  3,  7, 10,  3, 10,  2,  7,  4, 10,  1, 10,  0,  4,  0, 10 ],
-                {- 235: 0, 1,    3,    5, 6, 7,  -}  [  1, 10,  2,  8,  7,  4 ],
-                {- 236:       2, 3,    5, 6, 7,  -}  [  4,  9,  1,  4,  1,  7,  7,  1,  3 ],
-                {- 237: 0,    2, 3,    5, 6, 7,  -}  [  4,  9,  1,  4,  1,  7,  0,  8,  1,  8,  7,  1 ],
-                {- 238:    1, 2, 3,    5, 6, 7,  -}  [  4,  0,  3,  7,  4,  3 ],
-                {- 239: 0, 1, 2, 3,    5, 6, 7,  -}  [  4,  8,  7 ],
-                {- 240:             4, 5, 6, 7,  -}  [  9, 10,  8, 10, 11,  8 ],
-                {- 241: 0,          4, 5, 6, 7,  -}  [  3,  0,  9,  3,  9, 11, 11,  9, 10 ],
-                {- 242:    1,       4, 5, 6, 7,  -}  [  0,  1, 10,  0, 10,  8,  8, 10, 11 ],
-                {- 243: 0, 1,       4, 5, 6, 7,  -}  [  3,  1, 10, 11,  3, 10 ],
-                {- 244:       2,    4, 5, 6, 7,  -}  [  1,  2, 11,  1, 11,  9,  9, 11,  8 ],
-                {- 245: 0,    2,    4, 5, 6, 7,  -}  [  3,  0,  9,  3,  9, 11,  1,  2,  9,  2, 11,  9 ],
-                {- 246:    1, 2,    4, 5, 6, 7,  -}  [  0,  2, 11,  8,  0, 11 ],
-                {- 247: 0, 1, 2,    4, 5, 6, 7,  -}  [  3,  2, 11 ],
-                {- 248:          3, 4, 5, 6, 7,  -}  [  2,  3,  8,  2,  8, 10, 10,  8,  9 ],
-                {- 249: 0,       3, 4, 5, 6, 7,  -}  [  9, 10,  2,  0,  9,  2 ],
-                {- 250:    1,    3, 4, 5, 6, 7,  -}  [  2,  3,  8,  2,  8, 10,  0,  1,  8,  1, 10,  8 ],
-                {- 251: 0, 1,    3, 4, 5, 6, 7,  -}  [  1, 10,  2 ],
-                {- 252:       2, 3, 4, 5, 6, 7,  -}  [  1,  3,  8,  9,  1,  8 ],
-                {- 253: 0,    2, 3, 4, 5, 6, 7,  -}  [  0,  9,  1 ],
-                {- 254:    1, 2, 3, 4, 5, 6, 7,  -}  [  0,  3,  8 ],
-                {- 255: 0, 1, 2, 3, 4, 5, 6, 7,  -}  []
-		]
-
+		-- Yes, there's some symetries that could reduce the amount of code...
+		-- But I don't think they're worth exploiting...
+		(True,  True, 
+		 True,  True)  -> []
+		(False, False,
+		 False, False) -> []
+		(True,  True, 
+		 False, False) -> [[midx1, midx2]]
+		(False, False,
+		 True,  True)  -> [[midx2, midx1]]
+		(False, True, 
+		 False, True)  -> [[midy2, midy1]]
+		(True,  False,
+		 True,  False) -> [[midy1, midy2]]
+		(True,  False,
+		 False, False) -> [[midx1, midy2]]
+		(False, True, 
+		 True,  True)  -> [[midy2, midx1]]
+		(True,  True, 
+		 False, True)  -> [[midx1, midy1]]
+		(False, False,
+		 True,  False) -> [[midy1, midx1]]
+		(True,  True, 
+		 True,  False) -> [[midy1, midx2]]
+		(False, False,
+		 False, True)  -> [[midx2, midy1]]
+		(True,  False,
+		 True,  True)  -> [[midx2, midy2]]
+		(False, True, 
+		 False, False) -> [[midy2, midx2]]
+		(True,  False,
+		 False, True)  -> if c <= 0
+			then [[midx1, midy1], [midx2, midy2]]
+			else [[midx1, midy2], [midx2, midy1]]
+		(False, True, 
+		 True,  False) -> if c <= 0
+			then [[midy2, midx1], [midy1, midx2]]
+			else [[midy1, midx1], [midy2, midx2]]
 
