@@ -11,6 +11,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 import GHC.Exts (groupWith)
 import Control.DeepSeq (NFData, rnf)
 import Debug.Trace
+trace2 a = traceShow a a
 
 (⋅)  = (S.⋅)
 (⨯)  = (S.⨯)
@@ -25,7 +26,7 @@ mid (x:xs) = init xs
 
 data TriSquare = Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2 | Tris [Triangle]
 
-instance Control.DeepSeq.NFData TriSquare where
+instance NFData TriSquare where
 	rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
 	rnf (Tris tris) = rnf tris
 
@@ -56,32 +57,70 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		f $** a = \(b,c) -> f (a,b,c)
 		f *$* b = \(a,c) -> f (a,b,c)
 		f **$ c = \(a,b) -> f (a,b,c)
+
+		infixr 0 $$*
+		infixr 0 *$$
+		infixr 0 $*$
+		(f $$* a) b = \c -> f (a,b,c)
+		(f *$$ b) c = \a -> f (a,b,c)
+		(f $*$ a) c = \b -> f (a,b,c)
+
 		map2 f = map (map f)
 		map2R f = map (reverse . map f)
 		mapR = map reverse
 
+		midsZ = [[[let obj' = (obj $$* (x1+dx*mx/nx)) (y1+dy*my/ny) in
+		          interpolate 0 
+		              (z1+dz*mz/nz, obj' (z1+dz*mz/nz)) 
+		              (z1+dz*(mz+1)/nz, obj' (z1+dz*(mz+1)/nz))
+		              obj' res
+		       | mx <- [0..nx + 1] ] | my <- [0..ny + 1] ] | mz <- [0..nz+1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-		segsZ =[[[
+		midsY =[[[let obj' = (obj $*$ (x1+dx*mx/nx) ) (z1+dz*mz/nz) in 
+		           interpolate 0 
+		              (y1+dy*my/ny, obj' (y1+dy*my/ny)) 
+		              (y1+dy*(my+1)/ny, obj' (y1+dy*(my+1)/ny))
+		              obj' res
+		       | mx <- [0..nx+1] ] | my <- [0..ny+1] ] | mz <- [0..nz+1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
+
+		midsX = [[[let obj' = (obj *$$ (y1+dy*my/ny) ) (z1+dz*mz/nz) in 
+		           interpolate 0 
+		              (x1+dx*mx/nx, obj' (x1+dx*mx/nx)) 
+		              (x1+dx*(mx+1)/nx, obj' (x1+dx*(mx+1)/nx))
+		              obj' res
+		       | mx <- [0..nx+1] ] | my <- [0..ny+1] ] | mz <- [0..nz+1]
+		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
+
+		segsZ =[[[let (mx',my',mz') = (floor mx, floor my, floor mz) in
 		       map2  (inj3 (z1+dz*mz/nz)) $ getSegs 
 		           (x1+dx*mx/nx,    y1+dy*my/ny)
                    (x1+dx*(mx+1)/nx,y1+dy*(my+1)/ny)
                    (obj **$ (z1+dz*mz/nz))
+		           (midsY !! mz' !! my' !! mx', midsY !! mz' !! my' !! (mx'+1),
+		            midsX !! mz' !! my' !! mx', midsX !! mz' !! (my'+1) !! mx')
+
 		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz  ]
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-		segsY = [[[
+		segsY = [[[let (mx',my',mz') = (floor mx, floor my, floor mz) in
 		       map2  (inj2 (y1+dy*my/ny)) $ getSegs 
 		           (x1+dx*mx/nx,    z1+dz*mz/nz)
                    (x1+dx*(mx+1)/nx,z1+dz*(mz+1)/nz)
                    (obj *$* (y1+dy*my/ny))
+		           (midsZ !! mz' !! my' !! mx', midsZ !! mz' !! my' !! (mx'+1),
+		            midsX !! mz' !! my' !! mx', midsX !! (mz'+1) !! my' !! mx')
 		       | mx <- [0..nx-1] ] | my <- [0..ny  ] ] | mz <- [0..nz-1]
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
-		segsX =[[[
+		segsX =[[[let (mx',my',mz') = (floor mx, floor my, floor mz) in
 		       map2  (inj1 (x1+dx*mx/nx)) $ getSegs 
 		           (y1+dy*my/ny,    z1+dz*mz/nz)
                    (y1+dy*(my+1)/ny,z1+dz*(mz+1)/nz)
                    (obj $** (x1+dx*mx/nx))
+		           (midsZ !! mz' !! my' !! mx', midsZ !! mz' !! (my'+1) !! mx',
+		            midsY !! mz' !! my' !! mx', midsY !! (mz'+1) !! my' !! mx')
 		       | mx <- [0..nx  ] ] | my <- [0..ny-1] ] | mz <- [0..nz-1]
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
  
@@ -99,6 +138,20 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
 	
 	in genTris $ concat sqTris
+
+interpolate _ (a, aval) (b, bval) _ _ | aval*bval > 0 = a -- error $ "interval " ++ show (a,b) ++ " doesn't necessarily cross 0 -- values " ++ show (aval, bval)
+interpolate _ (a, 0) _ _ _ = a
+interpolate _ _ (b, 0) _ _ = b
+interpolate n (a, aval) (b, bval) obj res | aval /= bval= 
+	let
+		mid = a + (b-a)*aval/(aval-bval)
+		midval = obj mid
+	in if abs midval < res/300 || mid > 2
+	then mid
+	else if midval * aval > 0
+	then interpolate (n+1) (mid, midval) (b, bval) obj res
+	else interpolate (n+1) (a,aval) (mid, midval) obj res
+interpolate _ (a, _) _ _ _ = a
 
 genTris sqTris = 
 	let
@@ -281,9 +334,9 @@ simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) ++ [last as]
 		half a = a
 simplify3 a = a
 
-getSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
+getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
 {-- INLINE getSegs #-}
-getSegs (x1, y1) (x2, y2) obj = 
+getSegs (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) = 
 	let 
 		(x,y) = (x1, y1)
 
@@ -298,25 +351,10 @@ getSegs (x1, y1) (x2, y2) obj =
 		dy = y2 - y1
 		res = sqrt (dx*dy)
 
-		interpolate _ (a, 0) _ _ = a
-		interpolate _ _ (b, 0) _ = b
-		interpolate n (a, aval) (b, bval) obj | aval /= bval= 
-			let
-				mid = a + (b-a)*aval/(aval-bval)
-				midval = obj mid
-			in if abs midval < res/300
-			then mid
-			else if midval * aval > 0
-			then interpolate (n+1) (mid, midval) (b, bval) obj
-			else interpolate (n+1) (a,aval) (mid, midval) obj
-		interpolate _ (a, _) _ _ = a
-
-		-- linearly interpolated midpoints on the relevant axis
-
-		midx1 = (x,             interpolate 0 (y1, x1y1) (y2,x1y2) (\a -> obj (x1,a) ) )
-		midx2 = (x + dx,        interpolate 0 (y1, x2y1) (y2,x2y2) (\a -> obj (x2,a) ) )
-		midy1 = (interpolate 0 (x1, x1y1) (x2,x2y1) (\a -> obj (a, y1) ) , y )
-		midy2 = (interpolate 0 (x1, x1y2) (x2,x2y2) (\a -> obj (a, y2) ), y + dy)
+		midx1 = (x,      midx1V )
+		midx2 = (x + dx, midx2V )
+		midy1 = (midy1V , y )
+		midy2 = (midy2V, y + dy)
 
 		notPointLine (p1:p2:[]) = p1 /= p2
 
