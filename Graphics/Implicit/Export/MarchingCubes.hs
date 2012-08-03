@@ -10,8 +10,7 @@ import qualified Graphics.Implicit.SaneOperators as S
 import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 import GHC.Exts (groupWith)
 import Control.DeepSeq (NFData, rnf)
-import Debug.Trace
-trace2 a = traceShow a a
+--import Data.Fixed (div')
 
 (⋅)  = (S.⋅)
 (⨯)  = (S.⨯)
@@ -70,7 +69,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		mapR = map reverse
 
 		midsZ = [[[let obj' = (obj $$* (x1+dx*mx/nx)) (y1+dy*my/ny) in
-		          interpolate 0 
+		          interpolate 
 		              (z1+dz*mz/nz, obj' (z1+dz*mz/nz)) 
 		              (z1+dz*(mz+1)/nz, obj' (z1+dz*(mz+1)/nz))
 		              obj' res
@@ -78,7 +77,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
 		midsY =[[[let obj' = (obj $*$ (x1+dx*mx/nx) ) (z1+dz*mz/nz) in 
-		           interpolate 0 
+		           interpolate 
 		              (y1+dy*my/ny, obj' (y1+dy*my/ny)) 
 		              (y1+dy*(my+1)/ny, obj' (y1+dy*(my+1)/ny))
 		              obj' res
@@ -86,7 +85,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		       ] `using` (parListChunk (max 1 $ div (floor nz) 32) rdeepseq)
 
 		midsX = [[[let obj' = (obj *$$ (y1+dy*my/ny) ) (z1+dz*mz/nz) in 
-		           interpolate 0 
+		           interpolate 
 		              (x1+dx*mx/nx, obj' (x1+dx*mx/nx)) 
 		              (x1+dx*(mx+1)/nx, obj' (x1+dx*(mx+1)/nx))
 		              obj' res
@@ -139,19 +138,54 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 	
 	in genTris $ concat sqTris
 
-interpolate _ (a, aval) (b, bval) _ _ | aval*bval > 0 = a -- error $ "interval " ++ show (a,b) ++ " doesn't necessarily cross 0 -- values " ++ show (aval, bval)
-interpolate _ (a, 0) _ _ _ = a
-interpolate _ _ (b, 0) _ _ = b
-interpolate n (a, aval) (b, bval) obj res | aval /= bval= 
+interpolate (a,aval) (b,bval) f res = 
+	let
+		a' = (a*95+5*b)/100
+		b' = (b*95+5*a)/100
+		a'val = f a'
+		b'val = f b'
+		deriva = abs $ 20*(aval - a'val)
+		derivb = abs $ 20*(bval - b'val)
+	in if deriva < 0.1 || derivb < 0.1
+	then interpolate_bin 0 
+		(if aval*a'val > 0 then (a',a'val) else (a,aval))
+		(if bval*b'val > 0 then (b',b'val) else (b,bval))
+		f
+	else  interpolate_lin 0 
+		(if aval*a'val > 0 then (a',a'val) else (a,aval))
+		(if bval*b'val > 0 then (b',b'val) else (b,bval))
+		f res
+
+interpolate_lin _ (a, aval) (b, bval) _ _ | aval*bval > 0 = a 
+interpolate_lin _ (a, 0) _ _ _ = a
+interpolate_lin _ _ (b, 0) _ _ = b
+interpolate_lin n (a, aval) (b, bval) obj res | aval /= bval= 
 	let
 		mid = a + (b-a)*aval/(aval-bval)
 		midval = obj mid
-	in if abs midval < res/300 || mid > 2
+	in if abs midval < res/500 || mid > 3
 	then mid
 	else if midval * aval > 0
-	then interpolate (n+1) (mid, midval) (b, bval) obj res
-	else interpolate (n+1) (a,aval) (mid, midval) obj res
-interpolate _ (a, _) _ _ _ = a
+	then interpolate_lin (n+1) (mid, midval) (b, bval) obj res
+	else interpolate_lin (n+1) (a,aval) (mid, midval) obj res
+interpolate_lin _ (a, _) _ _ _ = a
+
+interpolate_bin n (a,aval) (b,bval) f = if aval > bval
+	then interpolate_bin' n (a,aval) (b,bval) f
+	else interpolate_bin' n (b,bval) (a,aval) f
+
+interpolate_bin' 4 (a,aval) (b,bval) f = 
+	if abs aval < abs bval
+	then a
+	else b
+interpolate_bin' n (a,aval) (b,bval) f =
+	let
+		mid = (a+b)/2
+		midval = f mid
+	in if midval > 0
+	then interpolate_bin' (n+1) (mid,midval) (b,bval) f
+	else interpolate_bin' (n+1) (a,aval) (mid,midval) f
+
 
 genTris sqTris = 
 	let
@@ -264,8 +298,7 @@ getLoops2 segs workingLoop =
 		possibleConts = filter connects segs
 		nonConts = filter (not . connects) segs
 		(next, unused) = if null possibleConts
-			then trace ("unclosed loop in paths given\n" 
-			          ++ show segs ++ "\n" ++ show workingLoop) ([], nonConts)
+			then error "unclosed loop in paths given"
 			else (head possibleConts, tail possibleConts ++ nonConts)
 	in
 		if null next
@@ -274,7 +307,7 @@ getLoops2 segs workingLoop =
 		
 
 
-detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/25 = 
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 = 
 		detail 0 res obj [p1,p2]
 detail' _ _ a = a
 
@@ -283,12 +316,12 @@ detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
 	let
 		mid@(midX, midY) = (p1 S.+ p2) S./ (2 :: ℝ)
 		midval = obj mid 
-	in if abs midval < res / 30
+	in if abs midval < res / 40
 	then [(x1,y1), (x2,y2)]
 	else let
 		normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^- p1) 
 		derivN = -(obj (mid ^- (normal ^* (midval/2))) - midval) ^* (2/midval)
-	in if abs derivN > 0.3 && abs derivN < 2
+	in if abs derivN > 0.5 && abs derivN < 2
 	then let
 		mid' = mid ^- (normal ^* (midval / derivN))
 	in detail (n+1) res obj [(x1,y1), mid'] 
