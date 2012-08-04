@@ -137,7 +137,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		       ] `using` (parListChunk (floor nx* floor ny*(max 1 $ div (floor nz) 32)) rdeepseq)
 	
 	in genTris $ concat sqTris
-
+interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
 interpolate (a,aval) (b,bval) f res = 
 	let
 		a' = (a*95+5*b)/100
@@ -156,7 +156,6 @@ interpolate (a,aval) (b,bval) f res =
 		(if bval*b'val > 0 then (b',b'val) else (b,bval))
 		f res
 
-interpolate_lin _ (a, aval) (b, bval) _ _ | aval*bval > 0 = a 
 interpolate_lin _ (a, 0) _ _ _ = a
 interpolate_lin _ _ (b, 0) _ _ = b
 interpolate_lin n (a, aval) (b, bval) obj res | aval /= bval= 
@@ -278,8 +277,8 @@ tesselateLoop res obj pathSides = return $ Tris $
 		normal = preNormal ^/ preNormalNorm
 		deriv = (obj (mid S.+ normal S.* (res/100) ) - midval)/res*100
 		mid' = mid S.- normal S.* (midval/deriv)
-	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5
-	               && 5*abs (obj mid') < abs midval
+	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5 
+		      && abs (deriv*midval) < 1.1*res && 5*abs (obj mid') < abs midval
 		then [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
 		else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 
