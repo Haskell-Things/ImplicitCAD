@@ -57,7 +57,7 @@ jsTHREE triangles = text
 			[a,b,c]
 		vertcode = concat $ map v verts
 		facecode = concat $ do
-			n <- [0, 3 ..]
+			(n,_) <- zip [0, 3 ..] triangles
 			let
 				(posa, posb, posc) = (n, n+1, n+2)
 			return $ f posa posb posc
