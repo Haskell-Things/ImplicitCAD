@@ -34,7 +34,7 @@ jsTHREE triangles = text
 			++  "var s = this;\n"
 			++  "THREE.Geometry.call(this);\n"
 			++  "function vec(x,y,z){return new THREE.Vector3(x,y,z);}\n"
-			++  "function v(x,y,z){s.vertices.push(new THREE.Vertex3(vec(x,y,z)));}\n"
+			++  "function v(x,y,z){s.vertices.push(vec(x,y,z));}\n"
 			++  "function f(a,b,c){"
 			++    "s.faces.push(new THREE.Face3(a,b,c));"
 			++  "}\n"
