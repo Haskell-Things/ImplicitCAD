@@ -12,7 +12,7 @@ module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.Export.Definitions
-import Graphics.Implicit.Export.MarchingCubes
+import Graphics.Implicit.Export.Render (getMesh)
 
 import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
