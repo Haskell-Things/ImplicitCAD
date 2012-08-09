@@ -30,9 +30,7 @@ tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a S.+ c) == (b S.+ d) =
 		b1 = normalized $ a S.- b
 		b2 = normalized $ c S.- b
 		b3 = b1 ⨯ b2
-	in if norm b3 == 1
-	then [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
-	else return $ Tris $ [(a,b,c),(a,c,d)]
+	in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
 
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a S.+ c) S./ (2 :: ℝ)) < res/30 =
 	return $ Tris $ [(a,b,c),(a,c,d)]
