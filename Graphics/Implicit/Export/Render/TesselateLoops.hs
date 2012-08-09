@@ -7,6 +7,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 import Graphics.Implicit.SaneOperators ((⋅),norm,(⨯),normalized)
+import Debug.Trace
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 
@@ -38,7 +39,11 @@ tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a S.+ c) S./ (2 :: ℝ))
 
 tesselateLoop res obj pathSides = return $ Tris $
 	let
-		path = concat $ map init pathSides
+		path' = concat $ map init pathSides
+		(early_tris,path) = shrinkLoop 0 path' res obj
+	in if null path
+	then early_tris
+	else let
 		len = fromIntegral $ length path :: ℝ
 		mid@(midx,midy,midz) = (foldl1 (S.+) path) S./ len
 		midval = obj mid
@@ -50,6 +55,25 @@ tesselateLoop res obj pathSides = return $ Tris $
 		mid' = mid S.- normal S.* (midval/deriv)
 	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5 
 		      && abs (deriv*midval) < 1.1*res && 5*abs (obj mid') < abs midval
-		then [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
-		else [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
+		then early_tris ++ [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
+		else early_tris ++ [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 
+
+shrinkLoop :: Int -> [ℝ3] -> ℝ -> Obj3 -> ([Triangle], [ℝ3])
+
+shrinkLoop _ path@[a,b,c] res obj =
+	if   abs (obj ((a S.+ b S.+ c) S./ (3::ℝ) )) < res/50
+	then 
+		( [(a,b,c)], [])
+	else 
+		([], path)
+
+shrinkLoop n path@(a:b:c:xs) res obj | n < length path =
+	if abs (obj ((a S.+ c) S./ (2::ℝ) )) < res/50
+	then 
+		let (tris,remainder) = shrinkLoop 0 (a:c:xs) res obj
+		in ((a,b,c):tris, remainder)
+	else 
+		shrinkLoop (n+1) (b:c:xs ++ [a]) res obj
+
+shrinkLoop _ path _ _ = ([],path)
