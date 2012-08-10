@@ -1,6 +1,8 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE ViewPatterns #-}
+
 -- Let's make it convenient to run our extended openscad format code
 
 -- Let's be explicit about what we're getting from where :)
@@ -30,6 +32,20 @@ fileType filename = reverse $ beforeFirstPeriod $ reverse filename
 		beforeFirstPeriod ('.':xs) = []
 		beforeFirstPeriod (  x:xs) = x : beforeFirstPeriod xs
 
+getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+
+getRes (_, _, obj:_) = min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+	where
+		((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+		(x,y,z) = (x2-x1, y2-y1, z2-z1)
+
+getRes (_, obj:_, _) = min (min x y/2) ((x*y)**0.5 / 30)
+	where
+		((x1,y1),(x2,y2)) = getBox2 obj
+		(x,y) = (x2-x1, y2-y1)
+
+getRes _ = 1
+
 -- | Give an openscad object to run and the basename of 
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> IO ()
@@ -44,19 +60,7 @@ executeAndExport content targetname = case runOpenscad content of
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
-			res = case Map.lookup "$res" vars of
-				Nothing -> case s of
-					(_, _, obj:_) -> min (minimum [x,y,z]/5) ((x*y*z)**(1/3) / 25)
-						where
-							((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-							(x,y,z) = (x2-x1, y2-y1, z2-z1)
-					(_, obj:_, _) -> min (min x y /5) ((x*y)**0.5 / 25)
-						where
-							((x1,y1),(x2,y2)) = getBox2 obj
-							(x,y) = (x2-x1, y2-y1)
-					_ -> 1
-				Just (ONum n) -> n
-				Just (_) -> 1
+			res = getRes s
 		case s of 
 			(_, [], [])   -> putStrLn "Nothing to render"
 			(_, x:xs, []) -> do
@@ -76,18 +80,7 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 	Right openscadProgram -> do 
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
-			res = case Map.lookup "$res" vars of 
-				Nothing -> case s of
-					(_, _, obj:_) -> min (minimum [x,y,z]/5) ((x*y*z)**(1/3) / 25)
-						where
-							((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-							(x,y,z) = (x2-x1, y2-y1, z2-z1)
-					(_, obj:_, _) -> min (min x y /5) ((x*y)**0.5 / 25)
-						where
-							((x1,y1),(x2,y2)) = getBox2 obj
-							(x,y) = (x2-x1, y2-y1)
-				Just (ONum n) -> n
-				Just (_) -> 1
+			res = getRes s
 		case (formatname, s) of 
 			(_, (_, [], []))   -> putStrLn "Nothing to render"
 			("svg", (_, x:xs, _)) -> do
