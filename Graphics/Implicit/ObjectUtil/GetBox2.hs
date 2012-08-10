@@ -77,7 +77,7 @@ getBox2 (Scale2 s symbObj) =
 getBox2 (Rotate2 θ symbObj) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
-		rotate (x,y) = ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
+		rotate (x,y) = ( cos(θ)*x - sin(θ)*y, sin(θ)*x + cos(θ)*y)
 		(xa, ya) = rotate (x1, y1)
 		(xb, yb) = rotate (x1, y2)
 		(xc, yc) = rotate (x2, y1)
