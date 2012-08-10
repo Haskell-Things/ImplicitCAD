@@ -26,7 +26,7 @@ getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 getBox3 (Complement3 symbObj) = 
 	((-infty, -infty, -infty), (infty, infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
 
-getBox3 (UnionR3 r symbObjs) = ((left,bot,inward), (right,top,out))
+getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
 	where 
 		boxes = map getBox3 symbObjs
 		isEmpty = ( == ((0,0,0),(0,0,0)) )
