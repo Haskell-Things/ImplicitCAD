@@ -110,12 +110,17 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 
 		-- Calculate segments for each side
 
-		segsZ = {- [[[ 
-			map2  (inj3 z0) $ getSegs (x0,y0) (x1,y1) (obj **$ z0) (midA0, midA1, midB0, midB1)
+		segsZ = [[[ 
+			map2  (inj3 z0) $ getSegs (x0,y0) (x1,y1) (obj **$ z0)
+			    (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
+			    (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|x1<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
+			 |objX0Y0Z0<-objY0Z0|objX1Y0Z0<-tail objY0Z0|objX0Y1Z0<-objY1Z0|objX1Y1Z0<-tail objY1Z0
 			]|y0<-pYs|y1<-tail pYs|mX'' <-mX'  |mX'T <-tail mX'|mY'' <-mY'
-			]|z0<-pZs             |mX'  <-midsX|                mY'  <-midsY 
-			] -}
+			 |objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
+			]|z0<-pZs             |mX'  <-midsX|                mY'  <-midsY
+			 |objZ0 <- objV
+			] `using` (parListChunk (max 1 $ div nz 32) rdeepseq) -- -}
 			{-let
 				iteree = zip3D3 (lag3 points) (lag3s22 midsY) (lag3s12 midsX)
 				transform (((x0,y0,z0),(x1,y1,z1)), (midA0,midA1), (midB0,midB1)) =
@@ -124,19 +129,24 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 				result = for3 iteree transform
 			in
 				result --`using` (parListChunk (max 1 $ div lenz 32) rdeepseq)-}
-		  par3DList (nx-1) (ny-1) (nz) $ \x mx y my z mz ->
+		  {-par3DList (nx-1) (ny-1) (nz) $ \x mx y my z mz ->
 		       map2  (inj3 (z 0)) $ getSegs'
 		           (x 0, y 0)
                    (x 1, y 1)
                    (obj **$ z 0)
 		           (midsY ! (mx, my, mz), midsY ! (mx+1, my, mz),
 		            midsX ! (mx, my, mz), midsX ! (mx, my+1, mz)) -- -}
-		segsY = {-[[[ 
-			map2  (inj2 y0) $ getSegs (x0,z0) (x1,z1) (obj *$* y0) (midA0, midA1, midB0, midB1)
+		segsY = [[[ 
+			map2  (inj2 y0) $ getSegs (x0,z0) (x1,z1) (obj *$* y0) 
+			     (objX0Y0Z0,objX1Y0Z0,objX0Y0Z1,objX1Y0Z1)
+			     (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|x1<-tail pXs|midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-tail mA''
+			 |objX0Y0Z0<-objY0Z0|objX1Y0Z0<-tail objY0Z0|objX0Y0Z1<-objY0Z1|objX1Y0Z1<-tail objY0Z1
 			]|y0<-pYs|             mB'' <-mB'  |mBT' <-mBT       |mA'' <-mA'
+			 |objY0Z0 <- objZ0 | objY0Z1 <- objZ1
 			]|z0<-pZs|z1<-tail pZs|mB'  <-midsX|mBT  <-tail midsX|mA'  <-midsZ 
-			]-}
+			 |objZ0 <- objV | objZ1 <- tail objV
+			] `using` (parListChunk (max 1 $ div nz 32) rdeepseq) -- -}
 			{-let
 				iteree = zip3D3 (lag3 points) (lag3s22 midsZ) (lag3s02 midsX)
 				transform (((x0,y0,z0),(x1,y1,z1)), (midA0,midA1), (midB0,midB1)) =
@@ -145,7 +155,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 				result = for3 iteree transform
 			in
 				result -}
-			par3DList (nx-1) (ny) (nz-1) $ \x mx y my z mz ->
+			{-par3DList (nx-1) (ny) (nz-1) $ \x mx y my z mz ->
 		       map2  (inj2 (y 0)) $ getSegs' 
 		           (x 0, z 0)
                    (x 1, z 1)
@@ -155,12 +165,17 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 		-- -}
 
 		segsX = 
-			{-[[[ 
-			map2  (inj1 x0) $ getSegs (y0,z0) (y1,z1) (obj $** x0) (midA0, midA1, midB0, midB1)
+			[[[ 
+			map2  (inj1 x0) $ getSegs (y0,z0) (y1,z1) (obj $** x0) 
+			     (objX0Y0Z0,objX0Y1Z0,objX0Y0Z1,objX0Y1Z1)
+			     (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|             midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-mA'T
+			 |objX0Y0Z0<-objY0Z0|objX0Y1Z0<-    objY1Z0|objX0Y0Z1<-objY0Z1|objX0Y1Z1<-     objY1Z1
 			]|y0<-pYs|y1<-tail pYs|mB'' <-mB'  |mBT' <-mBT       |mA'' <-mA'  |mA'T <-tail mA'
+			 |objY0Z0  <-objZ0  |objY1Z0  <-tail objZ0  |objY0Z1  <-objZ1  |objY1Z1  <-tail objZ1  
 			]|z0<-pZs|z1<-tail pZs|mB'  <-midsY|mBT  <-tail midsY|mA'  <-midsZ 
-			]-}
+			 |objZ0 <- objV | objZ1 <- tail objV
+			]  `using` (parListChunk (max 1 $ div nz 32) rdeepseq) -- -}
 			{-let
 				iteree = zip3D3 (lag3 points) (lag3s12 midsZ) (lag3s02 midsY)
 				transform (((x0,y0,z0),(x1,y1,z1)), (midA0,midA1), (midB0,midB1)) =
@@ -170,7 +185,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 			in
 				result -}
 
-			par3DList (nx) (ny-1) (nz-1) $ \x mx y my z mz ->
+			{-par3DList (nx) (ny-1) (nz-1) $ \x mx y my z mz ->
 		       map2  (inj1 (x 0)) $ getSegs'
 		           (y 0, z 0)
                    (y 1, z 1)
