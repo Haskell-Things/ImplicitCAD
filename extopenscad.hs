@@ -8,7 +8,7 @@
 -- Let's be explicit about what we're getting from where :)
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser)
+import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
@@ -101,6 +101,9 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 			("obj", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeOBJ res targetname x
+			("js", (_, _, x:xs))  -> do
+				putStrLn $ "Rendering 3D object to " ++ targetname
+				writeTHREEJS res targetname x
 			(otherFormat, _) -> putStrLn $ "Unrecognized format: " ++ otherFormat
 
 		

@@ -35,3 +35,6 @@ obj normedtriangles = text
 			return $ "f " ++ vta ++ " " ++ vtb ++ " " ++ vtc ++ " " ++ "\n"
 		text = vertcode ++ normcode ++ trianglecode
 
+
+
+
