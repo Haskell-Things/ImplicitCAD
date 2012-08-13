@@ -23,7 +23,7 @@ import Graphics.Implicit.Export.Render.Interpolate (interpolate)
 --     getSegs internally uses refine from RefineSegs to subdivide the segs
 --     to better match the boundary.
 
-import Graphics.Implicit.Export.Render.GetSegs (getSegs)
+import Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs')
 -- import Graphics.Implicit.Export.Render.RefineSegs (refine)
 
 -- (3) We put the segments from all sides of the cube together
@@ -83,27 +83,30 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 
 		-- Evaluate obj to avoid waste in mids, segs, later.
 
-		-- objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
+		objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
 
 		-- (1) Calculate mid poinsts on X, Y, and Z axis in 3D space.
 
-		midsZ = par3DList (nx+1) (ny+1) (nz+1) $ \x mx y my z mz ->
-	          interpolate 
-	              (z 0, obj (x 0, y 0, z 0) ) 
-	              (z 1, obj (x 0, y 0, z 1) )
-	              (appAB obj (x 0) (y 0)) res
+		midsZ = [[[
+				 interpolate (z0, objX0Y0Z0) (z1, objX0Y0Z1) (appAB obj x0 y0) res
+				 | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
+				]| y0 <- pYs |                  objY0Z0 <- objZ0 | objY0Z1 <- objZ1
+				]| z0 <- pZs | z1 <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
+				] `using` (parListChunk (max 1 $ div nz 32) rdeepseq)
 
-		midsY = par3DList (nx+1) (ny+1) (nz+1) $ \x mx y my z mz ->
-		      interpolate 
-		          (y 0, obj (x 0, y 0, z 0) ) 
-		          (y 1, obj (x 0, y 1, z 0) )
-		          (appAC obj (x 0) (z 0)) res
+		midsY = [[[
+				 interpolate (y0, objX0Y0Z0) (y1, objX0Y1Z0) (appAC obj x0 z0) res
+				 | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
+				]| y0 <- pYs | y1 <- tail pYs | objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
+				]| z0 <- pZs |                  objZ0   <- objV 
+				] `using` (parListChunk (max 1 $ div nz 32) rdeepseq)
 
-		midsX = par3DList (nx+1) (ny+1) (nz+1) $ \x mx y my z mz ->
-		      interpolate 
-		          (x 0, obj (x 0, y 0, z 0) ) 
-		          (x 1, obj (x 1, y 0, z 0) )
-		          (appBC obj (y 0) (z 0)) res
+		midsX = [[[
+				 interpolate (x0, objX0Y0Z0) (x1, objX1Y0Z0) (appBC obj y0 z0) res
+				 | x0 <- pXs | x1 <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
+				]| y0 <- pYs |                  objY0Z0 <- objZ0 
+				]| z0 <- pZs |                  objZ0   <- objV 
+				] `using` (parListChunk (max 1 $ div nz 32) rdeepseq)
 
 		-- Calculate segments for each side
 
@@ -122,7 +125,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 			in
 				result --`using` (parListChunk (max 1 $ div lenz 32) rdeepseq)-}
 		  par3DList (nx-1) (ny-1) (nz) $ \x mx y my z mz ->
-		       map2  (inj3 (z 0)) $ getSegs 
+		       map2  (inj3 (z 0)) $ getSegs'
 		           (x 0, y 0)
                    (x 1, y 1)
                    (obj **$ z 0)
@@ -143,7 +146,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 			in
 				result -}
 			par3DList (nx-1) (ny) (nz-1) $ \x mx y my z mz ->
-		       map2  (inj2 (y 0)) $ getSegs 
+		       map2  (inj2 (y 0)) $ getSegs' 
 		           (x 0, z 0)
                    (x 1, z 1)
                    (obj *$* y 0)
@@ -168,7 +171,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 				result -}
 
 			par3DList (nx) (ny-1) (nz-1) $ \x mx y my z mz ->
-		       map2  (inj1 (x 0)) $ getSegs 
+		       map2  (inj1 (x 0)) $ getSegs'
 		           (y 0, z 0)
                    (y 1, z 1)
                    (obj $** x 0)
