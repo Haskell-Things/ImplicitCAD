@@ -110,6 +110,7 @@ comment =
 		manyTill anyChar (try $ string "*/")
 	)) >> return id) <?> "comment"
 
+throwAway :: GenParser Char st ComputationStateModifier
 throwAway = do
 	many space
 	oneOf "%*"
@@ -261,6 +262,7 @@ echoStatement = do
 
 		return state
 
+ifStatement :: GenParser Char st ComputationStateModifier
 ifStatement = (do
 	line <- fmap sourceLine getPosition
 	string "if"
@@ -289,6 +291,7 @@ ifStatement = (do
 				return state
 	) <?> "if statement"
 
+forStatement :: GenParser Char st ComputationStateModifier
 forStatement = (do
 	line <- fmap sourceLine getPosition
 	-- a for loop is of the form:
@@ -424,7 +427,7 @@ userModule = do
 				return state
 
 
-
+userModuleDeclaration :: GenParser Char st ComputationStateModifier
 userModuleDeclaration = do
 	string "module"
 	many space;
