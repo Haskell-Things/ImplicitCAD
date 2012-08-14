@@ -104,7 +104,7 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 		tmap1 f (a,b) = (f a, b)
 		tmap2 f (a,b) = (a, f b)
 
-		packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
+		--packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
 		packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) = 
 			if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
 			then 

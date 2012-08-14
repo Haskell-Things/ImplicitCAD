@@ -15,9 +15,40 @@ build-type:          Simple
 Category:            Graphics
 
 Library
-    Build-Depends:       base >= 3 && < 5, parsec, hashmap, parallel, containers, plugins
-    ghc-options:         -O2 -optc-O3 -funfolding-use-threshold=16 -fspec-constr-count=10
-    Extensions:          MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances
+
+    Build-Depends:
+        base >= 3 && < 5,
+        parsec,
+        hashmap,
+        parallel,
+        containers,
+        plugins,
+        deepseq
+
+    ghc-options:
+        -O2 -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16 
+        -fspec-constr-count=10
+
+    Extensions:
+        FlexibleContexts,
+        FlexibleInstances,
+        FunctionalDependencies,
+        GADTs,
+        IncoherentInstances,
+        KindSignatures,
+        MultiParamTypeClasses,
+        NoMonomorphismRestriction,
+        OverloadedStrings,
+        ParallelListComp,
+        RankNTypes,
+        ScopedTypeVariables,
+        TypeSynonymInstances,
+        UndecidableInstances,
+        ViewPatterns
+
     Exposed-Modules:   
         Graphics.Implicit
         Graphics.Implicit.Definitions
@@ -26,6 +57,7 @@ Library
         Graphics.Implicit.SaneOperators
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
+
     Other-Modules:
         Graphics.Implicit.Primitives
         Graphics.Implicit.ObjectUtil.GetBox2
@@ -43,7 +75,6 @@ Library
         Graphics.Implicit.Export.Definitions
         Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill
-        Graphics.Implicit.Export.MarchingCubes
         Graphics.Implicit.Export.SymbolicObj2
         Graphics.Implicit.Export.SymbolicObj3
         Graphics.Implicit.Export.PolylineFormats
@@ -53,11 +84,27 @@ Library
         Graphics.Implicit.Export.Util
         Graphics.Implicit.Export.Symbolic.Rebound2
         Graphics.Implicit.Export.Symbolic.Rebound3
+        Graphics.Implicit.Export.Render
+        Graphics.Implicit.Export.Render.Definitions
+        Graphics.Implicit.Export.Render.GetLoops
+        Graphics.Implicit.Export.Render.GetSegs
+        Graphics.Implicit.Export.Render.HandleSquares
+        Graphics.Implicit.Export.Render.Interpolate
+        Graphics.Implicit.Export.Render.RefineSegs
+        Graphics.Implicit.Export.Render.TesselateLoops
 
 Executable extopenscad
 
    Main-is: extopenscad.hs
+   ghc-options:
+        -O2 -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16 
+        -fspec-constr-count=10
+
 source-repository head
     type:            git
     location:        https://github.com/colah/ImplicitCAD.git
+
 

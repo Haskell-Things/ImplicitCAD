@@ -316,7 +316,8 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 			then Prim.translate (0,0,-heightn/2.0)
 			else id
 		
-		funcify (Left val) h = val S.* (h/heightn)
+		funcify :: S.Multiplicative ℝ a a => Either a (ℝ -> a) -> ℝ -> a
+		funcify (Left val) h = (h/heightn) S.* val
 		funcify (Right f ) h = f h
 		
 		twist' = fmap funcify twist
