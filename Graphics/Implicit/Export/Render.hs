@@ -48,6 +48,21 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 -- The actual code is just a bunch of ugly argument passing.
 -- Utility functions can be found at the end.
 
+-- For efficiency, we need to avoid looking things up in other lists
+-- (since they're 3D, it's an O(n³) operation...). So we need to make
+-- our algorithms "flow" along the data structure instead of accessing
+-- within it. To do this we use the ParallelListComp GHC extention.
+
+-- We also compute lots of things in advance and pass them in as arguments,
+-- to reduce redundant computations.
+
+-- All in all, this is kind of ugly. But it is necessary.
+
+-- Note: As far as the actual results of the rendering algorithm, nothing in
+--       this file really matters. All the actual decisions about how to build
+--       the mesh are abstracted into the imported files. They are likely what
+--       you are interested in.
+
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
 getMesh (x1, y1, z1) (x2, y2, z2) res obj = 
 	let

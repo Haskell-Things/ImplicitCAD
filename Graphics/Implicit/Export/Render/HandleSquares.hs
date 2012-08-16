@@ -7,52 +7,85 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 import GHC.Exts (groupWith)
+import Data.List (sortBy)
+
+-- We want small meshes. Essential to this, is getting rid of triangles.
+-- We secifically mark quads in tesselation (refer to Graphics.Implicit.
+-- Export.Render.Definitions, Graphics.Implicit.Export.Render.TesselateLoops)
+-- So that we can try and merge them together.
+
+-- Picture of the file:
+
+{-  Many Quads       One Quad          Two Triangles
+   ____________      ____________      ____________
+  |    |    |  | -> |            | -> |\_________  |
+  |____|____|__|    |____________|    |___________\|
+-}
 
 mergedSquareTris sqTris = 
 	let
+		-- We don't need to do any work on triangles. They'll just be part of
+		-- the list of triangles we give back. So, the triangles coming from
+		-- triangles...
 		triTriangles = concat $ map (\(Tris a) -> a) $ filter isTris sqTris	
+		-- We actually want to work on the quads, so we find those
 		squares = filter (not . isTris) sqTris
+		-- Collect ones that are on the same plane.
 		planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
+		-- For each plane:
+		-- Select for being the same range on X and then merge them on Y
+		-- Then vice versa.
 		joined = map 
 			( concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
 			. concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)) 
 			planeAligned
+		-- Merge them back together, and we have the desired reult!
 		finishedSquares = concat joined
 	in
+		-- merge them to triangles, and combine with the original triagneles.
 		triTriangles ++ concat (map squareToTri finishedSquares)
 
+
+-- And now for a bunch of helper functions that do the heavy lifting...
 
 isTris (Tris _) = True
 isTris _ = False
 
-joinXaligned (pres@(Sq b z xS (y1,y2)):sqs) = 
+
+joinXaligned quads@((Sq b z xS _):_) =
 	let
-		isNext (Sq _ _ _ (a,_)) = a == y2
-		isPrev (Sq _ _ _ (_,a)) = a == y1
-	in case filter isNext sqs of
-		[Sq _ _ _ (_, y3)] -> 
-			joinXaligned ((Sq b z xS (y1,y3)):(filter (not.isNext) sqs))
-		_ -> case filter isPrev sqs of
-			[Sq _ _ _ (y0, _)] -> 
-				joinXaligned ((Sq b z xS (y0,y2)):(filter (not.isPrev) sqs))
-			_ -> pres : joinXaligned sqs
+		orderedQuads = sortBy 
+			(\(Sq _ _ _ (ya,_)) (Sq _ _ _ (yb,_)) -> compare ya yb)
+			quads
+		mergeAdjacent (pres@(Sq _ _ _ (y1a,y2a)) : next@(Sq _ _ _ (y1b,y2b)) : others) =
+			if y2a == y1b
+			then mergeAdjacent ((Sq b z xS (y1a,y2b)): others)
+			else if y1a == y2b
+			then mergeAdjacent ((Sq b z xS (y1b,y2a)): others)
+			else pres : mergeAdjacent (next : others)
+		mergeAdjacent a = a
+	in
+		mergeAdjacent orderedQuads
 joinXaligned [] = []
 
-
-joinYaligned (pres@(Sq b z (x1,x2) yS):sqs) = 
+joinYaligned quads@((Sq b z _ yS):_) =
 	let
-		isNext (Sq _ _ (a,_) _) = a == x2
-		isPrev (Sq _ _ (_,a) _) = a == x1
-	in case filter isNext sqs of
-		[Sq _ _ (_, x3) _] -> 
-			joinYaligned ((Sq b z (x1,x3) yS):(filter (not.isNext) sqs))
-		_ -> case filter isPrev sqs of
-			[Sq _ _ (x0, _) _] -> 
-				joinYaligned ((Sq b z (x0,x2) yS):(filter (not.isPrev) sqs))
-			_ -> pres : joinYaligned sqs
+		orderedQuads = sortBy 
+			(\(Sq _ _ (xa,_) _) (Sq _ _ (xb,_) _) -> compare xa xb)
+			quads
+		mergeAdjacent (pres@(Sq _ _ (x1a,x2a) _) : next@(Sq _ _ (x1b,x2b) _) : others) =
+			if x2a == x1b
+			then mergeAdjacent ((Sq b z (x1a,x2b) yS): others)
+			else if x1a == x2b
+			then mergeAdjacent ((Sq b z (x1b,x2a) yS): others)
+			else pres : mergeAdjacent (next : others)
+		mergeAdjacent a = a
+	in
+		mergeAdjacent orderedQuads
 joinYaligned [] = []
 
 
+-- Reconstruct a triangle
 squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
 	let
 		zV = b3 S.* z
