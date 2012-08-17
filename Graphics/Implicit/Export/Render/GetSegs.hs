@@ -6,6 +6,8 @@ module Graphics.Implicit.Export.Render.GetSegs where
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 
+{-- # INLINE getSegs' #-}
+
 getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) = 
 	let
 		x1y1 = obj (x1, y1)
@@ -16,7 +18,8 @@ getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) =
 		getSegs (x1, y1) (x2, y2) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V)
 
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
-{-- INLINE getSegs #-}
+{-- # INLINE getSegs #-}
+
 getSegs (x1, y1) (x2, y2) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) = 
 	let 
 		(x,y) = (x1, y1)

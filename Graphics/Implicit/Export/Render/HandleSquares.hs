@@ -14,12 +14,42 @@ import Data.List (sortBy)
 -- Export.Render.Definitions, Graphics.Implicit.Export.Render.TesselateLoops)
 -- So that we can try and merge them together.
 
--- Picture of the file:
+{- Core idea of mergedSquareTris:
 
-{-  Many Quads       One Quad          Two Triangles
-   ____________      ____________      ____________
-  |    |    |  | -> |            | -> |\_________  |
-  |____|____|__|    |____________|    |___________\|
+  Many Quads on Plane 
+   ____________ 
+  |    |    |  |
+  |____|____|  |
+  |____|____|__|
+
+   | joinXaligned
+   v 
+   ____________ 
+  |         |  |
+  |_________|__|
+  |_________|__|
+
+   | joinYaligned
+   v 
+   ____________ 
+  |         |  |
+  |         |  |
+  |_________|__|
+
+   | joinXaligned (presently disabled)
+   v 
+   ____________ 
+  |            |
+  |            |
+  |____________|
+
+   | squareToTri
+   v 
+   ____________ 
+  |\           |
+  | ---------- |
+  |___________\|
+
 -}
 
 mergedSquareTris sqTris = 
@@ -36,7 +66,8 @@ mergedSquareTris sqTris =
 		-- Select for being the same range on X and then merge them on Y
 		-- Then vice versa.
 		joined = map 
-			( concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
+			( -- concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
+			  concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
 			. concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)) 
 			planeAligned
 		-- Merge them back together, and we have the desired reult!

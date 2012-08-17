@@ -15,6 +15,15 @@ tesselateLoop _ _ [] = []
 
 tesselateLoop _ _ [[a,b],[_,c],[_,_]] = return $ Tris [(a,b,c)]
 
+
+{-
+   #____#     #____#
+   |    |     |    |
+   #    #  -> #____#
+   |    |     |    |
+   #____#     #____#
+-}
+
 tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
 	concat $ map (tesselateLoop res obj) $ 
 		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
@@ -25,6 +34,12 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 		[[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
 			where pairs = zip (reverse as) bs
 
+{-
+   #__#
+   |  |  -> if parallegram then quad
+   #__#
+-}
+
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a S.+ c) == (b S.+ d) =
 	let
 		b1 = normalized $ a S.- b
@@ -32,8 +47,16 @@ tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a S.+ c) == (b S.+ d) =
 		b3 = b1 ⨯ b2
 	in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
 
+{-
+   #__#      #__#
+   |  |  ->  | /|
+   #__#      #/_#
+-}
+
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a S.+ c) S./ (2 :: ℝ)) < res/30 =
 	return $ Tris $ [(a,b,c),(a,c,d)]
+
+-- Fallback case: make fans
 
 tesselateLoop res obj pathSides = return $ Tris $
 	let
