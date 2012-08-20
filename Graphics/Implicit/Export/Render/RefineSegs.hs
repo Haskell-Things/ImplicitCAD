@@ -7,13 +7,24 @@ import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.SaneOperators as S
 import Graphics.Implicit.SaneOperators ((⋅), (⨯), norm, normalized)
 
+-- The purpose of refine is to add detail to a polyline aproximating
+-- the boundary of an implicit function and to remove redundant points.
+
 refine :: ℝ -> Obj2 -> [ℝ2] -> [ℝ2]
+
+-- We break this into two steps: detail and then simplify.
+
 refine res obj = simplify res . detail' res obj
+
+-- we wrap detail to make it ignore very small segments, and to pass in 
+-- an initial value for a pointer counter argument. This is detail'
 
 
 detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 = 
 		detail 0 res obj [p1,p2]
 detail' _ _ a = a
+
+-- detail adds new points to a polyline to add more detail.
 
 detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
 detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
