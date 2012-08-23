@@ -23,7 +23,8 @@ Library
         parallel,
         containers,
         plugins,
-        deepseq
+        deepseq,
+        text
 
     ghc-options:
         -O2 -optc-O3

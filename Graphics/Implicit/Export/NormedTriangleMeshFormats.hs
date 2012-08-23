@@ -5,7 +5,9 @@ module Graphics.Implicit.Export.NormedTriangleMeshFormats where
 
 import Graphics.Implicit.Definitions
 
-obj normedtriangles = text
+import Data.Text.Lazy (pack)
+
+obj normedtriangles = pack text
 	where
 		-- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
 		v :: ℝ3 -> String

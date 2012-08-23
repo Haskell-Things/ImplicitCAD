@@ -5,7 +5,9 @@ module Graphics.Implicit.Export.TriangleMeshFormats where
 
 import Graphics.Implicit.Definitions
 
-stl triangles = text
+import Data.Text.Lazy (Text,pack)
+
+stl triangles = pack text
 	where
 		stlHeader = "solid ImplictCADExport\n"
 		stlFooter = "endsolid ImplictCADExport\n"
@@ -25,8 +27,8 @@ stl triangles = text
 			++ stlFooter
 
 
-jsTHREE :: TriangleMesh -> String
-jsTHREE triangles = text
+jsTHREE :: TriangleMesh -> Text
+jsTHREE triangles = pack text
 	where
 		-- some dense JS. Let's make helper functions so that we don't repeat code each line
 		header = 
