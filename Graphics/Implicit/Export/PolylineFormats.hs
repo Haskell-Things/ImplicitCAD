@@ -31,15 +31,15 @@ svg = renderSvg . svg11 . svg'
       -- and we need to compute the requisite translation.
       svg' [] = mempty 
       -- When we have a known point, we can compute said transformation:
-      svg' polylines@((start:_):_) = let mm = foldl' (foldl' minmax) start polylines
-                                     in thinBlueGroup $ mapM_ (poly mm) polylines
+      svg' polylines@((start:_):_) = let (xmin, ymax) = foldl' (foldl' minmax) start polylines
+                                     in thinBlueGroup $ mapM_ (poly xmin ymax) polylines
       -- Otherwise, if we don't have a point to start out with, skip this polyline:
       svg' ([]:rest) = svg' rest
 
       minmax (xa,ya) (xb,yb) = (min xa xb, max ya yb)
       
-      poly (minx,maxy) line = polyline ! A.points pointList 
-          where pointList = toValue $ unwords [pack $ show (x-minx) ++ "," ++ show (maxy - y) | (x,y) <- line]
+      poly xmin ymax line = polyline ! A.points pointList 
+          where pointList = toValue $ unwords [pack $ show (x-xmin) ++ "," ++ show (ymax - y) | (x,y) <- line]
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- $ obj
 

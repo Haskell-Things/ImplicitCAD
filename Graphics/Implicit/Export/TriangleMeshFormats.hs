@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
@@ -7,24 +9,27 @@ import Graphics.Implicit.Definitions
 
 import Data.Text.Lazy (Text,pack)
 
-stl triangles = pack text
+import Data.Text.Lazy.Builder
+
+import Data.Monoid
+
+stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
 	where
 		stlHeader = "solid ImplictCADExport\n"
 		stlFooter = "endsolid ImplictCADExport\n"
-		vertex :: ℝ3 -> String
-		vertex (x,y,z) = "vertex " ++ show x ++ " " ++ show y ++ " " ++ show z
-		stlTriangle :: (ℝ3, ℝ3, ℝ3) -> String
-		stlTriangle (a,b,c) =
-			"facet normal 0 0 0\n"
-			++ "outer loop\n"
-			++ vertex a ++ "\n"
-			++ vertex b ++ "\n"
-			++ vertex c ++ "\n"
-			++ "endloop\n"
-			++ "endfacet\n"
-		text = stlHeader
-			++ (concat $ map stlTriangle triangles)
-			++ stlFooter
+		vertex :: ℝ3 -> Builder
+		vertex (x,y,z) = mconcat ["vertex " 
+                                         ,fromString $ show x , " "
+                                         ,fromString $ show y , " " 
+                                         ,fromString $ show z]
+		triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
+		triangle (a,b,c) =
+	            "facet normal 0 0 0\n"
+	            <> "outer loop\n"
+	            <> vertex a <> "\n"
+	            <> vertex b <> "\n"
+	            <> vertex c
+		    <> "\nendloop\nendfacet\n"
 
 
 jsTHREE :: TriangleMesh -> Text
