@@ -7,10 +7,7 @@ module Graphics.Implicit.Export.PolylineFormats where
 
 import Graphics.Implicit.Definitions
 
-import Text.Printf (printf)
-
-import Data.Text.Lazy (Text,unwords,pack)
-import Data.Text.Lazy.Builder
+import Graphics.Implicit.Export.TextBuilderUtils
 
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
 import Text.Blaze.Svg
@@ -18,10 +15,6 @@ import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
 import qualified Text.Blaze.Svg11.Attributes as A
 
 import Data.List (foldl')
-
-import Data.Monoid
-
-import Prelude hiding (unwords)
 
 svg :: [Polyline] -> Text
 svg = renderSvg . svg11 . svg'
@@ -39,7 +32,8 @@ svg = renderSvg . svg11 . svg'
       minmax (xa,ya) (xb,yb) = (min xa xb, max ya yb)
       
       poly xmin ymax line = polyline ! A.points pointList 
-          where pointList = toValue $ unwords [pack $ show (x-xmin) ++ "," ++ show (ymax - y) | (x,y) <- line]
+          where pointList = toValue $ toLazyText $ mconcat [buildFloat (x-xmin) <> "," <> buildFloat (ymax - y) <> " " | (x,y) <- line]
+
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- $ obj
 
@@ -58,10 +52,8 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
                     ,"G00 X0.0 Y0.0 (move to 0)\n"
                     ,"M2 (end)"]
       gcodeXY :: ℝ2 -> Builder
-      gcodeXY (x,y) = mconcat ["X", showF x, " Y", showF y]
+      gcodeXY (x,y) = mconcat ["X", buildTruncFloat x, " Y", buildTruncFloat y]
                       
-      showF = fromString . printf "%.4f"
-              
       interpretPolyline (start:others) = mconcat [
                                           "G00 ", gcodeXY start
                                          ,"\nM62 P0 (laser on)\n"
