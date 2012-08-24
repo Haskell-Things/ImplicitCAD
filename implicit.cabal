@@ -24,7 +24,8 @@ Library
         containers,
         plugins,
         deepseq,
-        text
+        text,
+        blaze-svg
 
     ghc-options:
         -O2 -optc-O3
@@ -48,7 +49,8 @@ Library
         ScopedTypeVariables,
         TypeSynonymInstances,
         UndecidableInstances,
-        ViewPatterns
+        ViewPatterns,
+        OverloadedStrings
 
     Exposed-Modules:   
         Graphics.Implicit

@@ -26,19 +26,19 @@ import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats
 -- Write an object in a given formet...
 
 writeObject :: (DiscreteAproxable obj aprox) => 
-        ℝ                        -- ^ Resolution
-        -> (aprox -> Text) -- ^ File Format (Function that formats)
-        -> FilePath              -- ^ File Name
-        -> obj                   -- ^ Object to render
-        -> IO ()                  -- ^ Writing Action!
+        ℝ                   -- ^ Resolution
+        -> (aprox -> Text)  -- ^ File Format (Function that formats)
+        -> FilePath         -- ^ File Name
+        -> obj              -- ^ Object to render
+        -> IO ()            -- ^ Writing Action!
 
 writeObject res format filename obj = writeFile filename $ formatObject res format obj
 
 formatObject :: (DiscreteAproxable obj aprox) =>
-        ℝ                        -- ^ Resolution
-        -> (aprox -> Text) -- ^ File Format (Function that formats)
-        -> obj                   -- ^ Object to render
-        -> Text            -- ^ Resulting lazy ByteString
+        ℝ                   -- ^ Resolution
+        -> (aprox -> Text)  -- ^ File Format (Function that formats)
+        -> obj              -- ^ Object to render
+        -> Text             -- ^ Resulting lazy ByteString
 
 formatObject res format = format . discreteAprox res
 
