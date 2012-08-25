@@ -25,8 +25,9 @@ Library
         plugins,
         deepseq,
         text,
-        blaze-svg
-
+        blaze-svg,
+        mtl
+        
     ghc-options:
         -O2 -optc-O3
         -threaded

@@ -50,8 +50,8 @@ writeTHREEJS res = writeObject res  TriangleMeshFormats.jsTHREE
 
 writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 
-writeSCAD3 res filename obj = writeFile filename $ pack $ SymbolicFormats.scad3 res obj
-writeSCAD2 res filename obj = writeFile filename $ pack $ SymbolicFormats.scad2 res obj
+writeSCAD3 res filename obj = writeFile filename $ SymbolicFormats.scad3 res obj
+writeSCAD2 res filename obj = writeFile filename $ SymbolicFormats.scad2 res obj
 
 
 {-

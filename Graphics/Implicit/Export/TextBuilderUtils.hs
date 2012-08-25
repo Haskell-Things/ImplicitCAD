@@ -1,4 +1,4 @@
--- This module exists to rexport a coherent set of functions to defined
+-- This module exists to re-export a coherent set of functions to define
 -- Data.Text.Lazy builders with.
 
 
@@ -6,10 +6,12 @@ module Graphics.Implicit.Export.TextBuilderUtils
     (
      -- Values from Data.Text.Lazy
      Text
-     ,pack
+    ,pack
+    ,replicate
     -- Values from Data.Text.Lazy.Builder, as well as some special builders
     ,Builder
     ,toLazyText
+    ,fromLazyText
     ,buildInt
     -- Serialize a float in full precision
     ,buildFloat
@@ -30,6 +32,8 @@ import Data.Text.Lazy.Builder.RealFloat
 import Data.Text.Lazy.Builder.Int
 
 import Graphics.Implicit.Definitions
+
+import Prelude hiding (replicate)
 
 buildFloat, buildTruncFloat :: ℝ -> Builder
 
