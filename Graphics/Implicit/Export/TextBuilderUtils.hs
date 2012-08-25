@@ -24,7 +24,9 @@ module Graphics.Implicit.Export.TextBuilderUtils
      
                                                  ) where
 import Data.Text.Lazy
-import Data.Monoid
+-- We manually redefine this operator to avoid a dependency on base >= 4.5
+-- This will become unnecessary later.
+import Data.Monoid hiding ((<>))
 
 import Data.Text.Lazy
 import Data.Text.Lazy.Builder
@@ -43,3 +45,9 @@ buildTruncFloat = formatRealFloat Fixed $ Just 4
 
 buildInt :: Int -> Builder
 buildInt = decimal
+
+-- This is directly copied from base 4.5.1.0
+infixr 6 <>
+(<>) :: Monoid m => m -> m -> m
+(<>) = mappend
+{-# INLINE (<>) #-}
