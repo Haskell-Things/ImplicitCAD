@@ -20,6 +20,8 @@ import Graphics.Implicit.ObjectUtil
 import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
 
+import qualified Graphics.Implicit.Export.Render as Render (getContour)
+
 
 import qualified Graphics.Implicit.SaneOperators as S
 
@@ -46,7 +48,7 @@ symbolicGetContour res (Circle r) = [[ ( r*cos(2*pi*m/n), r*sin(2*pi*m/n) ) | m 
 symbolicGetContour res (Translate2 v obj) = map (map (S.+ v) ) $ symbolicGetContour res obj
 symbolicGetContour res (Scale2 s obj) = map (map (S.⋯* s)) $ symbolicGetContour res obj
 symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-	(obj, (a,b)) -> getContour a b (res,res) obj
+	(obj, (a,b)) -> Render.getContour a b res obj
 
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [(ℝ2,ℝ2,ℝ2)]
