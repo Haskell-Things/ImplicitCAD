@@ -32,7 +32,7 @@ svg = renderSvg . svg11 . svg'
       minmax (xa,ya) (xb,yb) = (min xa xb, max ya yb)
       
       poly xmin ymax line = polyline ! A.points pointList 
-          where pointList = toValue $ toLazyText $ mconcat [buildFloat (x-xmin) <> "," <> buildFloat (ymax - y) <> " " | (x,y) <- line]
+          where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- $ obj

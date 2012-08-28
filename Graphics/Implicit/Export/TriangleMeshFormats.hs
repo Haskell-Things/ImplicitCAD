@@ -14,9 +14,9 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 		stlFooter = "endsolid ImplictCADExport\n"
 		vertex :: ℝ3 -> Builder
 		vertex (x,y,z) = mconcat ["vertex " 
-                                         ,buildFloat x , " "
-                                         ,buildFloat y , " " 
-                                         ,buildFloat z]
+                                         ,bf x , " "
+                                         ,bf y , " " 
+                                         ,bf z]
 		triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
 		triangle (a,b,c) =
 	            "facet normal 0 0 0\n"
@@ -45,7 +45,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                          ,"Shape.prototype.constructor = Shape;\n" ]
                 -- A vertex line; v (0.0, 0.0, 1.0) = "v(0.0,0.0,1.0);\n"
                 v :: ℝ3 -> Builder
-                v (x,y,z) = "v(" <> buildFloat x <> "," <> buildFloat y <> "," <> buildFloat z <> ");\n"
+                v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
                 f :: Int -> Int -> Int -> Builder
                 f posa posb posc = 

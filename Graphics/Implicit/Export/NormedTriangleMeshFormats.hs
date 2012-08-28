@@ -13,10 +13,10 @@ obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
 	where
 		-- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
 		v :: ℝ3 -> Builder
-		v (x,y,z) = "v "  <> buildFloat x <> " " <> buildFloat y <> " " <> buildFloat z <> "\n"
+		v (x,y,z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
 		-- A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
 		n :: ℝ3 -> Builder
-		n (x,y,z) = "vn " <> buildFloat x <> " " <> buildFloat y <> " " <> buildFloat z <> "\n"
+		n (x,y,z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
 		verts = do
 			-- extract the vertices for each triangle
 			-- recall that a normed triangle is of the form ((vert, norm), ...)
