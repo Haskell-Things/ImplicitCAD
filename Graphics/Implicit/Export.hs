@@ -9,6 +9,7 @@ import Graphics.Implicit.Definitions
 import Data.Text.Lazy (Text,pack)
 import Data.Text.Lazy.IO (writeFile)
 import Prelude hiding (writeFile)
+import qualified Data.ByteString.Lazy as LBS
 
 -- class DiscreteApproxable
 import Graphics.Implicit.Export.Definitions
@@ -45,6 +46,9 @@ formatObject res format = format . discreteAprox res
 writeSVG res = writeObject res PolylineFormats.svg
 
 writeSTL res = writeObject res  TriangleMeshFormats.stl
+
+writeBinSTL res file obj = LBS.writeFile file $ TriangleMeshFormats.binaryStl $ discreteAprox res obj
+
 writeOBJ res = writeObject res  NormedTriangleMeshFormats.obj
 writeTHREEJS res = writeObject res  TriangleMeshFormats.jsTHREE
 

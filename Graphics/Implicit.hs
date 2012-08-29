@@ -30,6 +30,7 @@ module Graphics.Implicit(
 	-- Export
 	writeSVG,
 	writeSTL,
+	writeBinSTL,
 	writeOBJ,
 	writeTHREEJS,
 	writeSCAD2,
