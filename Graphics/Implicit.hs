@@ -35,12 +35,26 @@ module Graphics.Implicit(
 	writeSCAD2,
 	writeSCAD3,
 	writeGCodeHacklabLaser,
-	runOpenscad
+	runOpenscad,
+	implicit,
+	SymbolicObj2,
+	SymbolicObj3
 ) where
 
 -- Let's be explicit about where things come from :)
 import Graphics.Implicit.Primitives
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
-import Graphics.Implicit.Export
+import qualified Graphics.Implicit.Export as Export
+import Graphics.Implicit.Definitions
 
+-- We want Export to be a bit less polymorphic
+-- (so that types will collapse nicely)
+
+writeSVG   = Export.writeSVG   :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeSTL   = Export.writeSTL   :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeOBJ   = Export.writeOBJ   :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeSCAD2 = Export.writeSCAD2 :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeSCAD3 = Export.writeSCAD3 :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeTHREEJS = Export.writeTHREEJS :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeGCodeHacklabLaser = Export.writeGCodeHacklabLaser :: ℝ -> FilePath -> SymbolicObj2 -> IO () 
 
