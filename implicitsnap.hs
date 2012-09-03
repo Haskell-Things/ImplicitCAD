@@ -41,15 +41,15 @@ site = route
 	] <|> writeBS "fall through"
 
 renderHandler :: Snap ()
-renderHandler = method POST $ withCompression $ do
+renderHandler = method GET $ withCompression $ do
 
 	request <- getRequest
-	case rqParam "source" request of
-		Nothing       -> writeBS "must provide source as POST variable"
-		Just []       -> writeBS "must provide source as POST variable"
-		Just (x:y:xs) -> writeBS "must provide source as a *single* POST variable"
-		Just [source] -> do
-			writeBS $ BS.Char.pack $ executeAndExport (BS.Char.unpack source)
+	case (rqParam "source" request, rqParam "callback" request)  of
+		(Just [source], Just [callback]) -> do
+			writeBS $ BS.Char.pack $ executeAndExport 
+				(BS.Char.unpack source)
+				(BS.Char.unpack callback)
+		(_, _)       -> writeBS "must provide source and callback as 1 GET variable each"
  
 
 
@@ -71,21 +71,26 @@ getRes _ = 1
 
 -- | Give an openscad object to run and the basename of 
 --   the target to write to... write an object!
-executeAndExport :: String -> String
-executeAndExport content = case runOpenscad content of
-	Left err -> 
-		let
-			line = sourceLine . errorPos $ err
-			msgs = errorMessages err
-		in "parsing error while parsing: " ++ content {-errorMessage line $ showErrorMessages 
-			"or" "unknown parse error" "expecting" "unexpected" "end of input"
-            (errorMessages err)-}
-	Right openscadProgram -> unsafePerformIO $ do 
-		s <- openscadProgram 
-		let
-			res = getRes s
-		return $ case s of 
-			(_, _, x:xs)  -> jsTHREE $ discreteAprox res x
-			_ -> "not a 3D object"
+executeAndExport :: String -> String -> String
+executeAndExport content callback = 
+	let
+		callbackF False msg = callback ++ "([null," ++ show msg ++ "]);"
+		callbackF True  msg = callback ++ "([new Shape()," ++ show msg ++ "]);"
+	in case runOpenscad content of
+		Left err -> 
+			let
+				line = sourceLine . errorPos $ err
+				showErrorMessages' = showErrorMessages 
+					"or" "unknown parse error" "expecting" "unexpected" "end of input"
+				msgs :: String
+				msgs = showErrorMessages' $ errorMessages err
+			in callbackF False $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
+		Right openscadProgram -> unsafePerformIO $ do 
+			s <- openscadProgram 
+			let
+				res = getRes s
+			return $ case s of 
+				(_, _, x:xs)  -> jsTHREE (discreteAprox res x) ++ callbackF True ""
+				_ ->  callbackF False "not a 3D object"
 
 
