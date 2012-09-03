@@ -42,7 +42,7 @@ site = route
 
 renderHandler :: Snap ()
 renderHandler = method GET $ withCompression $ do
-
+	modifyResponse $ setContentType "application/x-javascript"
 	request <- getRequest
 	case (rqParam "source" request, rqParam "callback" request)  of
 		(Just [source], Just [callback]) -> do
