@@ -37,6 +37,12 @@ module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
 interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
 
+-- The obvious:
+
+-- The obvious:
+interpolate (a, 0) _ _ _  = a
+interpolate _ (b, 0) _ _  = b
+
 -- It may seem, at first, that our task is trivial.
 -- Just use linear interpolation!
 -- Unfortunatly, there's a nasty failure case
@@ -58,7 +64,7 @@ interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
 -- at it (shrink domain to guess within fromm (a,b) to (a',b'))
 -- :)
 
-interpolate (a,aval) (b,bval) f res = 
+{-interpolate (a,aval) (b,bval) f res = 
 	let
 		-- a' and b' are just a and b shifted inwards slightly.
 		a' = (a*95+5*b)/100
@@ -88,55 +94,72 @@ interpolate (a,aval) (b,bval) f res =
 		-- The best case is that it crosses between a and a'
 		if aval*a'val < 0
 		then
-			interpolate_lin 0 (a,aval) (a',a'val) f res
+			interpolate_lin 0 (a,aval) (a',a'val) f
 		-- Or between b' and b
 		else if bval*b'val < 0
-		then interpolate_lin 0 (b',b'val) (b,bval) f res
+		then interpolate_lin 0 (b',b'val) (b,bval) f
 		-- But in the worst case, we get to shrink to (a',b') :)
-		else interpolate_lin 0 (a',a'val) (b',b'val) f res
+		else interpolate_lin 0 (a',a'val) (b',b'val) f
+-}
+
+interpolate (a,aval) (b,bval) f res =
+	-- Make sure aval > bval, then pass to interpolate_bin
+	if aval > bval
+	then interpolate_lin 0 (a,aval) (b,bval) f
+	else interpolate_lin 0 (b,bval) (a,aval) f
 
 -- Yay, linear interpolation!
--- The obvious:
-interpolate_lin _ (a, 0) _ _ _ = a
-interpolate_lin _ _ (b, 0) _ _ = b
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
 
-interpolate_lin n (a, aval) (b, bval) obj res | aval /= bval= 
+interpolate_lin n (a, aval) (b, bval) obj | aval /= bval= 
 	let
+		-- Interpolate and evaluate
 		mid = a + (b-a)*aval/(aval-bval)
 		midval = obj mid
-	in if abs midval < res/500 || n > 3
+	-- Are we done?
+	in if midval == 0
 	then mid
-	else if midval * aval > 0
-	then interpolate_lin (n+1) (mid, midval) (b, bval) obj res
-	else interpolate_lin (n+1) (a,aval) (mid, midval) obj res
+	-- 
+	else let
+		(a', a'val, b', b'val, improveRatio) = 
+			if midval > 0
+				then (mid, midval, b, bval, midval/aval)
+				else (a, aval, mid, midval, midval/bval)
+
+	-- some times linear interpolate doesn't work,
+	-- because one side is very close to zero and flat
+	-- we catch it because the interval won't shrink when
+	-- this is the case. To test this, we look at whether
+	-- the replaced point evaluates to substantially closer
+	-- to zero than the previous one.
+	in if imporoveRatio < 0.3 && n < 4
+	-- And we continue on.
+	then interpolate_lin (n+1) (a', a'val) (b', b'val) obj
+	-- But if not, we switch to binary interpolate, which is 
+	-- immune to this problem
+	else interpolate_bin (n+1) (a', a'val) (b', b'val) obj
 
 -- And a fallback:
-interpolate_lin _ (a, _) _ _ _ = a
+interpolate_lin _ (a, _) _ _ = a
 
 -- Now for binary searching!
--- We want to be able to assume aval > bval safely.
-
-interpolate_bin n (a,aval) (b,bval) f = if aval > bval
-	then interpolate_bin' n (a,aval) (b,bval) f
-	else interpolate_bin' n (b,bval) (a,aval) f
 
 -- The termination case:
 
-interpolate_bin' 4 (a,aval) (b,bval) f = 
+interpolate_bin 5 (a,aval) (b,bval) f = 
 	if abs aval < abs bval
 	then a
 	else b
 
 -- Otherwise, have fun with mid!
 
-interpolate_bin' n (a,aval) (b,bval) f =
+interpolate_bin n (a,aval) (b,bval) f =
 	let
 		mid = (a+b)/2
 		midval = f mid
 	in if midval > 0
-	then interpolate_bin' (n+1) (mid,midval) (b,bval) f
-	else interpolate_bin' (n+1) (a,aval) (mid,midval) f
+	then interpolate_bin (n+1) (mid,midval) (b,bval) f
+	else interpolate_bin (n+1) (a,aval) (mid,midval) f
 
