@@ -23,8 +23,11 @@ Library
         parallel,
         containers,
         plugins,
-        deepseq
-
+        deepseq,
+        text,
+        blaze-svg,
+        mtl
+        
     ghc-options:
         -O2 -optc-O3
         -threaded
@@ -47,7 +50,8 @@ Library
         ScopedTypeVariables,
         TypeSynonymInstances,
         UndecidableInstances,
-        ViewPatterns
+        ViewPatterns,
+        OverloadedStrings
 
     Exposed-Modules:   
         Graphics.Implicit
