@@ -6,7 +6,9 @@ module Graphics.Implicit.Export where
 import Graphics.Implicit.Definitions
 --import Graphics.Implicit.Operations (slice)
 
-import System.IO (writeFile)
+import Data.Text.Lazy (Text,pack)
+import Data.Text.Lazy.IO (writeFile)
+import Prelude hiding (writeFile)
 
 -- class DiscreteApproxable
 import Graphics.Implicit.Export.Definitions
@@ -24,18 +26,21 @@ import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats
 -- Write an object in a given formet...
 
 writeObject :: (DiscreteAproxable obj aprox) => 
-	ℝ                    -- ^ Resolution
-	-> (aprox -> String) -- ^ File Format (Function that formats)
-	-> FilePath          -- ^ File Name
-	-> obj               -- ^ Object to render
-	-> IO()              -- ^ Writing Action!
+        ℝ                   -- ^ Resolution
+        -> (aprox -> Text)  -- ^ File Format (Function that formats)
+        -> FilePath         -- ^ File Name
+        -> obj              -- ^ Object to render
+        -> IO ()            -- ^ Writing Action!
 
-writeObject res format filename obj = writeFile filename text 
-	where
-		aprox = discreteAprox res obj
-		text = format aprox
+writeObject res format filename obj = writeFile filename $ formatObject res format obj
 
--- Now functions to write it in specific formats
+formatObject :: (DiscreteAproxable obj aprox) =>
+        ℝ                   -- ^ Resolution
+        -> (aprox -> Text)  -- ^ File Format (Function that formats)
+        -> obj              -- ^ Object to render
+        -> Text             -- ^ Resulting lazy ByteString
+
+formatObject res format = format . discreteAprox res
 
 writeSVG res = writeObject res PolylineFormats.svg
 
@@ -45,8 +50,8 @@ writeTHREEJS res = writeObject res  TriangleMeshFormats.jsTHREE
 
 writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 
-writeSCAD3 res filename obj = writeFile filename (SymbolicFormats.scad3 res obj)
-writeSCAD2 res filename obj = writeFile filename (SymbolicFormats.scad2 res obj)
+writeSCAD3 res filename obj = writeFile filename $ SymbolicFormats.scad3 res obj
+writeSCAD2 res filename obj = writeFile filename $ SymbolicFormats.scad2 res obj
 
 
 {-
