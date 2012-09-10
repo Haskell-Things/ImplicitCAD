@@ -8,12 +8,11 @@ module Graphics.Implicit.Export.TriangleMeshFormats where
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
 
-
-
 import Blaze.ByteString.Builder hiding (Builder)
 import Blaze.ByteString.Builder.ByteString
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
+import Data.Storable.Endian
 
 import Prelude hiding (replicate)
 
@@ -35,13 +34,18 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 	            <> vertex c
 		    <> "\nendloop\nendfacet\n"
 
+
+-- Write a 32-bit little-endian float to a buffer.
+float32LE :: Float -> Write
+float32LE = writeStorable . LE
+
 binaryStl :: [Triangle] -> ByteString
 binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map triangle triangles)
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
           triangle (a,b,c) = normal <> point a <> point b <> point c <> fromWord16le 0
-          point (x,y,z) = fromWrite $ writeStorable x <> writeStorable y <> writeStorable z
-          normal = fromWrite $ writeStorable (0::Float) <> writeStorable (0::Float) <> writeStorable (0::Float) --}
+          point (x,y,z) = fromWrite $ float32LE x <> float32LE y <> float32LE z
+          normal = fromWrite $ float32LE 0 <> float32LE 0 <> float32LE 0
 
 jsTHREE :: TriangleMesh -> Text
 jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer

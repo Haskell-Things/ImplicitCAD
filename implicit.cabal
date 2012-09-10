@@ -28,7 +28,8 @@ Library
         blaze-svg,
         mtl,
         bytestring,
-        blaze-builder
+        blaze-builder,
+        storable-endian
         
     ghc-options:
         -O2 -optc-O3
