@@ -42,29 +42,45 @@ infixr 2 <||>
 		then f $ (\(Just a) -> a) coerceAttempt
 		else g input
 
+-- white space, including tabs and comments
+genSpace = many $ 
+		space 
+	<|>
+		char '\t' 
+	<|> (do
+		string "//"
+		many ( noneOf "\n")
+		string "\n"
+		return ' '
+	) <|> (do
+		string "/*"
+		manyTill anyChar (try $ string "*/")
+		return ' '
+	)
+
 moduleArgsUnit ::  
 	GenParser Char st ([VariableLookup -> OpenscadObj], [(String, VariableLookup -> OpenscadObj)])
 moduleArgsUnit = do
 	char '(';
-	many space;
+	genSpace
 	args <- sepBy ( 
 		(try $ do -- eg. a = 12
 			symb <- variableSymb;
-			many space;
+			genSpace
 			char '=';
-			many space;
+			genSpace
 			expr <- expression 0;
 			return $ Right (symb, expr);
 		) <|> (try $ do -- eg. a(x,y) = 12
 			symb <- variableSymb;
-			many space;
+			genSpace
 			char '('
 			many space
 			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
 			char ')'
 			many space
 			char '=';
-			many space;
+			genSpace
 			expr <- expression 0;
 			let
 				makeFunc baseExpr (argVar:xs) varlookup' = OFunc $ 
@@ -77,7 +93,7 @@ moduleArgsUnit = do
 			return $ Left expr;
 		})
 		) (many space >> char ',' >> many space);
-	many space;	
+	genSpace	
 	char ')';
 	let
 		isRight (Right a) = True
@@ -90,26 +106,26 @@ moduleArgsUnitDecl ::
 	GenParser Char st (VariableLookup -> ArgParser (VariableLookup -> VariableLookup))
 moduleArgsUnitDecl = do
 	char '(';
-	many space;
+	genSpace
 	args <- sepBy ( 
 		(try $ do
 			symb <- variableSymb;
-			many space;
+			genSpace
 			char '=';
-			many space;
+			genSpace
 			expr <- expression 0;
 			return $ \varlookup -> 
 				ArgParser symb (Just$ expr varlookup) "" (\val -> return $ insert symb val);
 		) <|> (try $ do
 			symb <- variableSymb;
-			many space;
+			genSpace
 			char '('
 			many space
 			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
 			char ')'
 			many space
 			char '=';
-			many space;
+			genSpace
 			expr <- expression 0;
 			let
 				makeFunc baseExpr (argVar:xs) varlookup' = OFunc $ 
@@ -124,7 +140,7 @@ moduleArgsUnitDecl = do
  				ArgParser vsymb Nothing "" (\val -> return $ insert vsymb val);
 		})
 		) (many space >> char ',' >> many space);
-	many space;	
+	genSpace	
 	char ')';
 	let
 		merge :: 

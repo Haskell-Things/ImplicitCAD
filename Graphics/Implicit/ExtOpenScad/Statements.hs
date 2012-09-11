@@ -28,21 +28,6 @@ import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 tryMany = (foldl1 (<|>)) . (map try)
 
--- white space, including tabs and comments
-genSpace = many $ 
-		space 
-	<|>
-		char '\t' 
-	<|> (do
-		string "//"
-		many ( noneOf "\n")
-		string "\n"
-		return ' '
-	) <|> (do
-		string "/*"
-		manyTill anyChar (try $ string "*/")
-		return ' '
-	)
 
 -- | A statement in our programming openscad-like programming language.
 computationStatement :: GenParser Char st ComputationStateModifier
