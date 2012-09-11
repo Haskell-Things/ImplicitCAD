@@ -44,11 +44,8 @@ infixr 2 <||>
 
 -- white space, including tabs and comments
 genSpace = many $ 
-	( try $
-		space 
-	) <|> ( try $
-		char '\t' 
-	 ) <|> (try $ do
+	oneOf " \t\n" 
+	<|> (try $ do
 		string "//"
 		many ( noneOf "\n")
 		string "\n"
