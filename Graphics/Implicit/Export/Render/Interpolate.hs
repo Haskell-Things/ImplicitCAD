@@ -3,6 +3,8 @@
 
 module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
+import Graphics.Implicit.Definitions
+
 -- Consider a function f(x):
 
 {-
@@ -35,6 +37,7 @@ module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 -- If it doesn't cross zero, we don't actually care what answer we give,
 -- just that it's cheap.
 
+interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
 interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
 
 -- The obvious:
@@ -134,7 +137,7 @@ interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
 	-- this is the case. To test this, we look at whether
 	-- the replaced point evaluates to substantially closer
 	-- to zero than the previous one.
-	in if imporoveRatio < 0.3 && n < 4
+	in if improveRatio < 0.3 && n < 4
 	-- And we continue on.
 	then interpolate_lin (n+1) (a', a'val) (b', b'val) obj
 	-- But if not, we switch to binary interpolate, which is 
