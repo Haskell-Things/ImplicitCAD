@@ -26,7 +26,10 @@ Library
         deepseq,
         text,
         blaze-svg,
-        mtl
+        mtl,
+        bytestring,
+        blaze-builder,
+        storable-endian
         
     ghc-options:
         -O2 -optc-O3

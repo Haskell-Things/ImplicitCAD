@@ -7,7 +7,6 @@ module Graphics.Implicit.Export.TextBuilderUtils
      -- Values from Data.Text.Lazy
      Text
     ,pack
-    ,replicate
     -- Values from Data.Text.Lazy.Builder, as well as some special builders
     ,Builder
     ,toLazyText
@@ -35,9 +34,6 @@ import Data.Text.Lazy.Builder.RealFloat
 import Data.Text.Lazy.Builder.Int
 
 import Graphics.Implicit.Definitions
-
-import Prelude hiding (replicate)
-
 
 -- The chunk size for toLazyText is very small (128 bytes), so we export
 -- a version with a much larger size (~16 K)
