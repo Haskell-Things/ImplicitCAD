@@ -28,11 +28,27 @@ import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 tryMany = (foldl1 (<|>)) . (map try)
 
+-- white space, including tabs and comments
+genSpace = many $ 
+		space 
+	<|>
+		char '\t' 
+	<|> (do
+		string "//"
+		many ( noneOf "\n")
+		string "\n"
+		return ' '
+	) <|> (do
+		string "/*"
+		manyTill anyChar (try $ string "*/")
+		return ' '
+	)
+
 -- | A statement in our programming openscad-like programming language.
 computationStatement :: GenParser Char st ComputationStateModifier
 computationStatement = 
 	(try $ do -- suite statemetns: no semicolon...
-		many space
+		genSpace
 		s <- tryMany [
 			ifStatement,
 			forStatement,
@@ -48,25 +64,24 @@ computationStatement =
 			unimplemented "import_stl"
 			-- rotateExtrudeStatement
 			]
-		many space
+		genSpace
 		return s
 	) <|> (try $ do -- Non suite statements. Semicolon needed...
-		many space
+		genSpace
 		s <- tryMany [
 			echoStatement,
 			assigmentStatement,
 			includeStatement,
 			useStatement
 			]
-		many space
+		genSpace
 		char ';'
-		many space
+		genSpace
 		return s
-	)<|> (try $ many space >> comment)
-	<|> (try $ do
-		many space
+	) <|> (try $ do
+		genSpace
 		s <- userModule
-		many space
+		genSpace
 		return s
 	)
 
@@ -91,30 +106,18 @@ computationStatement =
 suite :: GenParser Char st [ComputationStateModifier]
 suite = (liftM return computationStatement <|> do 
 	char '{'
-	many space
+	genSpace
 	stmts <- many (try computationStatement)
-	many space
+	genSpace
 	char '}'
 	return stmts
 	) <?> "statement suite"
 
-
--- | We think of comments as statements that do nothing. It's just convenient.
-comment = 
-	(((try $ do
-		string "//"
-		many ( noneOf "\n")
-		string "\n"
-	) <|> (do
-		string "/*"
-		manyTill anyChar (try $ string "*/")
-	)) >> return id) <?> "comment"
-
 throwAway :: GenParser Char st ComputationStateModifier
 throwAway = do
-	many space
+	genSpace
 	oneOf "%*"
-	many space
+	genSpace
 	computationStatement
 	return id
 
@@ -123,7 +126,7 @@ includeStatement :: GenParser Char st ComputationStateModifier
 includeStatement = (do
 	line <- fmap sourceLine getPosition
 	string "include"
-	many space
+	genSpace
 	string "<"
 	filename <- many (noneOf "<>")
 	string ">"
@@ -157,7 +160,7 @@ useStatement :: GenParser Char st ComputationStateModifier
 useStatement = (do
 	line <- fmap sourceLine getPosition
 	string "use"
-	many space
+	genSpace
 	string "<"
 	filename <- many (noneOf "<>")
 	string ">"
@@ -181,9 +184,9 @@ assigmentStatement =
 	(try $ do
 		line <- fmap sourceLine getPosition
 		pattern <- patternMatcher
-		many space
+		genSpace
 		char '='
-		many space
+		genSpace
 		valExpr <- expression 0
 		return $ \ ioWrappedState -> do
 			state@(varlookup, obj2s, obj3s) <- ioWrappedState
@@ -203,17 +206,17 @@ assigmentStatement =
 					return state
 	) <|> (try $ do 
 		line <- fmap sourceLine getPosition
-		varSymb <- (try $ string "function" >> many1 space >> variableSymb) 
+		varSymb <- (try $ string "function" >> space >> genSpace >> variableSymb) 
 		            <|> variableSymb
-		many space
+		genSpace
 		char '('
-		many space
-		argVars <- sepBy variableSymb (many space >> char ',' >> many space)
-		many space
+		genSpace
+		argVars <- sepBy variableSymb (genSpace >> char ',' >> genSpace)
+		genSpace
 		char ')'
-		many space
+		genSpace
 		char '='
-		many space
+		genSpace
 		valExpr <- expression 0
 		return $ \ ioWrappedState -> do
 			(varlookup, obj2s, obj3s) <- ioWrappedState
@@ -235,11 +238,11 @@ echoStatement :: GenParser Char st ComputationStateModifier
 echoStatement = do
 	line <- fmap sourceLine getPosition
 	string "echo"
-	many space
+	genSpace
 	char '('
-	many space
-	exprs <- expression 0 `sepBy` (many space >> char ',' >> many space)
-	many space
+	genSpace
+	exprs <- expression 0 `sepBy` (genSpace >> char ',' >> genSpace)
+	genSpace
 	char ')'
 	return $  \ ioWrappedState -> do
 		state@(varlookup, _, _) <- ioWrappedState
@@ -266,14 +269,14 @@ ifStatement :: GenParser Char st ComputationStateModifier
 ifStatement = (do
 	line <- fmap sourceLine getPosition
 	string "if"
-	many space
+	genSpace
 	char '('
 	bexpr <- expression 0
 	char ')'
-	many space
+	genSpace
 	statementsTrueCase <- suite
-	many space
-	statementsFalseCase <- try (string "else" >> many space >> suite ) <|> (return [])
+	genSpace
+	statementsFalseCase <- try (string "else" >> genSpace >> suite ) <|> (return [])
 	return $  \ ioWrappedState -> do
 		state@(varlookup, _, _) <- ioWrappedState
 		case bexpr varlookup of
@@ -299,15 +302,15 @@ forStatement = (do
 	-- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
 	-- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
 	string "for"
-	many space
+	genSpace
 	char '('
-	many space
+	genSpace
 	pattern <- patternMatcher
-	many space
+	genSpace
 	char '='
 	vexpr <- expression 0
 	char ')'
-	many space
+	genSpace
 	loopStatements <- suite
 	return $ \ ioWrappedState -> do
 		-- a for loop unpackages the state from an io monad
@@ -348,9 +351,9 @@ moduleWithSuite ::
 moduleWithSuite name argHandeler = (do
 	line <- fmap sourceLine getPosition
 	string name;
-	many space;
+	genSpace;
 	(unnamed, named) <- moduleArgsUnit
-	many space;
+	genSpace;
 	statements <- suite
 	return $ \ ioWrappedState -> do
 		state@(varlookup, obj2s, obj3s) <- ioWrappedState
@@ -379,10 +382,10 @@ unimplemented :: String -> GenParser Char st ComputationStateModifier
 unimplemented name = do
 	line <- fmap sourceLine getPosition
 	string name
-	many space;
+	genSpace;
 	moduleArgsUnit
-	many space;
-	(try suite <|> (many space >> char ';' >> return []))
+	genSpace;
+	(try suite <|> (genSpace >> char ';' >> return []))
 	return $ \ ioWrappedState -> do
 		state <- ioWrappedState
 		errorMessage line $ "OpenSCAD command " ++ name ++ " not yet implemented"
@@ -393,10 +396,10 @@ userModule :: GenParser Char st ComputationStateModifier
 userModule = do
 	line <- fmap sourceLine getPosition
 	name <- variableSymb;
-	many space;
+	genSpace;
 	(unnamed, named) <- moduleArgsUnit
-	many space;
-	statements <- ( try suite <|> (many space >> char ';' >> return []))
+	genSpace;
+	statements <- ( try suite <|> (genSpace >> char ';' >> return []))
 	return $ \ ioWrappedState -> do
 		state@(varlookup, obj2s, obj3s) <- ioWrappedState
 		case lookup name varlookup of
@@ -430,11 +433,11 @@ userModule = do
 userModuleDeclaration :: GenParser Char st ComputationStateModifier
 userModuleDeclaration = do
 	string "module"
-	many space;
+	genSpace;
 	newModuleName <- variableSymb;
-	many space;
+	genSpace;
 	args <- moduleArgsUnitDecl
-	many space;
+	genSpace;
 	codeStatements <- suite
 	return $ \ envIOWrappedState -> do
 		(envVarlookup, envObj2s, envObj3s) <- envIOWrappedState
