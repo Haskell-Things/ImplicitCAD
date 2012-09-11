@@ -8,7 +8,7 @@
 -- Let's be explicit about what we're getting from where :)
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS)
+import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
@@ -70,7 +70,7 @@ executeAndExport content targetname = case runOpenscad content of
 			(_, _, x:xs)  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
 				putStrLn $ show x
-				writeSTL res (targetname ++ ".stl") x
+				writeBinSTL res (targetname ++ ".stl") x
 
 -- | Give an openscad object to run and the basename of 
 --   the target to write to... write an object!
@@ -94,7 +94,7 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 				writeSCAD2 res targetname x
 			("stl", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
-				writeSTL res targetname x
+				writeBinSTL res targetname x
 			("scad", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeSCAD3 res targetname x
