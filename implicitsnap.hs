@@ -30,6 +30,7 @@ import Graphics.Implicit.Export.SymbolicObj3
 import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Data.ByteString.Char8 as BS.Char
+import qualified Data.Text.Lazy as TL
 
 main :: IO ()
 main = quickHttpServe site
@@ -53,27 +54,33 @@ renderHandler = method GET $ withCompression $ do
  
 
 
+getRes (varlookup, obj2s, obj3s) = 
+	let
+		defaultRes = case (obj2s, obj3s) of
+			(_, obj:_) -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+				where
+					((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+					(x,y,z) = (x2-x1, y2-y1, z2-z1)
+			(obj:_, _) -> min (min x y/2) ((x*y)**0.5 / 30)
+				where
+					((x1,y1),(x2,y2)) = getBox2 obj
+					(x,y) = (x2-x1, y2-y1)
+			_ -> 1
+	in case Map.lookup "$res" varlookup of
+		Just (ONum requestedRes) -> 
+			if defaultRes <= 4*requestedRes
+			then requestedRes
+			else -1
+		_ -> defaultRes
 
 
-getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
-
-getRes (_, _, obj:_) = min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
-	where
-		((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-		(x,y,z) = (x2-x1, y2-y1, z2-z1)
-
-getRes (_, obj:_, _) = min (min x y/2) ((x*y)**0.5 / 30)
-	where
-		((x1,y1),(x2,y2)) = getBox2 obj
-		(x,y) = (x2-x1, y2-y1)
-
-getRes _ = 1
 
 -- | Give an openscad object to run and the basename of 
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> String
 executeAndExport content callback = 
 	let
+		callbackF :: Bool -> String -> String
 		callbackF False msg = callback ++ "([null," ++ show msg ++ "]);"
 		callbackF True  msg = callback ++ "([new Shape()," ++ show msg ++ "]);"
 	in case runOpenscad content of
@@ -90,7 +97,13 @@ executeAndExport content callback =
 			let
 				res = getRes s
 			return $ case s of 
-				(_, _, x:xs)  -> jsTHREE (discreteAprox res x) ++ callbackF True ""
+				(_, _, x:xs)  -> 
+					if res > 0
+					then TL.unpack (jsTHREE (discreteAprox res x)) ++ callbackF True ""
+					else callbackF False $ 
+						"Unreasonable resolution requested: "
+						++ "the server imps revolt! " 
+						++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
 				_ ->  callbackF False "not a 3D object"
 
 
