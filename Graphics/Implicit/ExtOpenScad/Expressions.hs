@@ -18,10 +18,24 @@ errorAsAppropriate _   _   err@(OError _) = err
 errorAsAppropriate name a b = OError 
 	["Can't " ++ name ++ " objects of types " ++ objTypeStr a ++ " and " ++ objTypeStr b ++ "."]
 
+-- white space, including tabs, newlines and comments
+genSpace = many $ 
+	oneOf " \t\n" 
+	<|> (try $ do
+		string "//"
+		many ( noneOf "\n")
+		string "\n"
+		return ' '
+	) <|> (try $ do
+		string "/*"
+		manyTill anyChar (try $ string "*/")
+		return ' '
+	)
+
 pad parser = do
-	many space
+	genSpace
 	a <- parser
-	many space
+	genSpace
 	return a
 
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
@@ -105,21 +119,23 @@ expression 9 =
 			| otherwise = []
 		modifier = 
 			(try $ (do
-				many space
+				genSpace
 				string "("
+				genSpace
 				args <- sepBy 
 					(expression 0) 
-					(many space >> char ',' >> many space)
+					(try $ genSpace >> char ',' >> genSpace)
+				genSpace
 				string ")"
-				many space
+				genSpace
 				return $ \f varlookup -> applyArgs (f varlookup) (map ($varlookup) args) 
 			<?> "function application"
 			)) <|> (try $ (do
-				many space
+				genSpace
 				string "[";
 				i <- pad $ expression 0;
 				string "]";
-				many space
+				genSpace
 				return $ \l varlookup ->
 					case (l varlookup, i varlookup) of
 						(OList actual_list, ONum ind) -> actual_list !! (floor ind)
@@ -128,13 +144,13 @@ expression 9 =
 			<?> "list indexing"
 			)) <|> (try $ ( do
 				string "[";
-				many space
-				start <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
-				many space
+				genSpace
+				start <- (try $ expression 0) <|> (genSpace >> return (\_ -> OUndefined));
+				genSpace
 				char ':';
-				many space
-				end   <- (try $ expression 0) <|> (many space >> return (\_ -> OUndefined));
-				many space
+				genSpace
+				end   <- (try $ expression 0) <|> (genSpace >> return (\_ -> OUndefined));
+				genSpace
 				string "]";
 				return $ \l varlookup ->
 					case (l varlookup, start varlookup, end varlookup) of
@@ -159,17 +175,17 @@ expression 9 =
 		
 	in ( try( do 
 		obj <- expression 10;
-		many space
-		mods <- modifier `sepBy` (many space)
-		many space
+		genSpace
+		mods <- modifier `sepBy` (genSpace)
+		genSpace
 		return $ \varlookup -> foldl (\a b -> b a) obj mods $ varlookup
 		) <?> "list splicing" )
 	<|> try (expression 10)
 expression n@8 = try (( do 
 		a <- expression (n+1);
-		many space
+		genSpace
 		string "^";
-		many space
+		genSpace
 		b <- expression n;
 		return $ \varlookup -> case (a varlookup, b varlookup) of
 			(ONum na, ONum nb) -> ONum (na ** nb)
@@ -192,8 +208,8 @@ expression n@7 =
 		-- eg. "1*2*3/4/5*6*7/8"
 		--     [[vl→1],[vl→2],[vl→3,vl→4,vl→5],[vl→6],[vl→7,vl→8]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
-			(many space >> char '/' >> many space )) 
-			(many space >> char '*' >> many space)
+			(try $ genSpace >> char '/' >> genSpace )) 
+			(try $ genSpace >> char '*' >> genSpace)
 		--     [[1],[2],[3,4,5],[6],[7,8]]
 		--     [ 1,  2,  3/4/5,  6,  7/8 ]
 		--       1 * 2 * 3/4/5 * 6 * 7/8 
@@ -205,7 +221,7 @@ expression n@6 =
 		omod (ONum a) (ONum b) = ONum $ fromIntegral $ mod (floor a) (floor b)
 		omod a        b        = errorAsAppropriate "modulo" a b
 	in try (( do 
-		exprs <- sepBy1 (expression $ n+1) (many space >> string "%" >> many space)
+		exprs <- sepBy1 (expression $ n+1) (try $ genSpace >> string "%" >> genSpace)
 		return $ \varlookup -> foldl1 omod $ map ($varlookup) exprs;
 	) <?> "modulo") 
 	<|>try (expression $ n+1)
@@ -215,7 +231,7 @@ expression n@5 =
 		append (OString a) (OString b) = OString $ a++b
 		append a           b           = errorAsAppropriate "append" a b
 	in try (( do 
-		exprs <- sepBy1 (expression $ n+1) (many space >> string "++" >> many space)
+		exprs <- sepBy1 (expression $ n+1) (try $ genSpace >> string "++" >> genSpace)
 		return $ \varlookup -> foldl1 append $ map ($varlookup) exprs;
 	) <?> "append") 
 	<|>try (expression $ n+1)
@@ -234,8 +250,8 @@ expression n@4 =
 		-- eg. "1+2+3-4-5+6-7" 
 		--     [[1],[2],[3,4,5],[6,7]]
 		exprs <- sepBy1 (sepBy1 (pad $ expression $ n+1) 
-			(many space >> char '-' >> many space )) 
-			(many space >> char '+' >> many space)
+			(try $ genSpace >> char '-' >> genSpace )) 
+			(try $ genSpace >> char '+' >> genSpace)
 		return $ \varlookup -> foldl1 add $ map ( (foldl1 sub) . (map ($varlookup) ) ) exprs;
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)
@@ -246,12 +262,12 @@ expression n@3 =
 		negate a = OError ["Can't negate " ++ objTypeStr a ++ "(" ++ show a ++ ")"]
 	in try (do
 		char '-'
-		many space
+		genSpace
 		expr <- expression $ n+1
 		return $ negate . expr
 	) <|> try (do
 		char '+'
-		many space
+		genSpace
 		expr <- expression $ n+1
 		return $ expr
 	) <|> try (expression $ n+1)
@@ -281,5 +297,5 @@ expression n@1 =
 			(\vlookup -> True, firstExpr)
 			otherExpr
 	)<|> try (expression $ n+1)
-expression n@0 = try (do { many space; expr <- expression $ n+1; many space; return expr}) <|> try (expression $ n+1)
+expression n@0 = try (do { genSpace; expr <- expression $ n+1; genSpace; return expr}) <|> try (expression $ n+1)
 

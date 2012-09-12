@@ -42,20 +42,6 @@ infixr 2 <||>
 		then f $ (\(Just a) -> a) coerceAttempt
 		else g input
 
--- white space, including tabs and comments
-genSpace = many $ 
-	oneOf " \t\n" 
-	<|> (try $ do
-		string "//"
-		many ( noneOf "\n")
-		string "\n"
-		return ' '
-	) <|> (try $ do
-		string "/*"
-		manyTill anyChar (try $ string "*/")
-		return ' '
-	)
-
 moduleArgsUnit ::  
 	GenParser Char st ([VariableLookup -> OpenscadObj], [(String, VariableLookup -> OpenscadObj)])
 moduleArgsUnit = do
@@ -73,10 +59,10 @@ moduleArgsUnit = do
 			symb <- variableSymb;
 			genSpace
 			char '('
-			many space
-			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
+			genSpace
+			argVars <- sepBy variableSymb (try $ genSpace >> char ',' >> genSpace)
 			char ')'
-			many space
+			genSpace
 			char '=';
 			genSpace
 			expr <- expression 0;
@@ -90,7 +76,7 @@ moduleArgsUnit = do
 			expr <- expression 0;
 			return $ Left expr;
 		})
-		) (many space >> char ',' >> many space);
+		) (try $ genSpace >> char ',' >> genSpace);
 	genSpace	
 	char ')';
 	let
@@ -118,10 +104,10 @@ moduleArgsUnitDecl = do
 			symb <- variableSymb;
 			genSpace
 			char '('
-			many space
-			argVars <- sepBy variableSymb (many space >> char ',' >> many space)
+			genSpace
+			argVars <- sepBy variableSymb (try $ genSpace >> char ',' >> genSpace)
 			char ')'
-			many space
+			genSpace
 			char '=';
 			genSpace
 			expr <- expression 0;
@@ -137,7 +123,7 @@ moduleArgsUnitDecl = do
 			return $ \varlookup ->
  				ArgParser vsymb Nothing "" (\val -> return $ insert vsymb val);
 		})
-		) (many space >> char ',' >> many space);
+		) (try $ genSpace >> char ',' >> genSpace);
 	genSpace	
 	char ')';
 	let
@@ -153,9 +139,9 @@ moduleArgsUnitDecl = do
 
 
 pad parser = do
-	many space
+	genSpace
 	a <- parser
-	many space
+	genSpace
 	return a
 
 
@@ -176,9 +162,9 @@ patternMatcher =
 		return $ \obj -> Just $ Map.singleton symb obj
 	) <|> ( do
 		char '['
-		many space
-		components <- patternMatcher `sepBy` (many space >> char ',' >> many space)
-		many space
+		genSpace
+		components <- patternMatcher `sepBy` (try $ genSpace >> char ',' >> genSpace)
+		genSpace
 		char ']'
 		return $ \obj -> case obj of
 			OList l -> 

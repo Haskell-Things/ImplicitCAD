@@ -196,7 +196,7 @@ assigmentStatement =
 		genSpace
 		char '('
 		genSpace
-		argVars <- sepBy variableSymb (genSpace >> char ',' >> genSpace)
+		argVars <- sepBy variableSymb (try $ genSpace >> char ',' >> genSpace)
 		genSpace
 		char ')'
 		genSpace
@@ -226,7 +226,7 @@ echoStatement = do
 	genSpace
 	char '('
 	genSpace
-	exprs <- expression 0 `sepBy` (genSpace >> char ',' >> genSpace)
+	exprs <- expression 0 `sepBy` (try $ genSpace >> char ',' >> genSpace)
 	genSpace
 	char ')'
 	return $  \ ioWrappedState -> do
@@ -236,16 +236,15 @@ echoStatement = do
 			isError (OError _) = True
 			isError _ = False
 			show2 (OString str) = str
-			show2 a = show a
-		errorMessage line $ 
-			if any isError vals 
-			then 
+			show2 a = show a 
+		if any isError vals 
+			then errorMessage line $
 				"in module <module>echo</module>:"
 				++ ( concat $ concat $ 
 					map (map ("\n   "++)) $ 
 						map (\(OError errs) -> errs) $ filter isError vals
 				   )
-			else
+			else putStrLn $
 				unwords $ map show2 vals
 
 		return state
