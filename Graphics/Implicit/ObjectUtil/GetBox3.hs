@@ -6,6 +6,7 @@
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude hiding ((+),(-),(*),(/))
+import qualified Prelude as P
 import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
@@ -139,6 +140,28 @@ getBox3 (ExtrudeRM r twist scale translate symbObj (Right hf)) =
 		(tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
 	in
 		((-d+tminx, -d+tminy, 0),(d+tmaxx, d+tmaxy, h))
+
+
+getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) symbObj) = 
+	let
+		((x1,y1),(x2,y2)) = getBox2 symbObj
+		r = max x2 (x2 + xshift)
+	in
+		((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
+
+getBox3 (RotateExtrude rot _ (Right f) symbObj) = 
+	let
+		((x1,y1),(x2,y2)) = getBox2 symbObj
+		(xshifts, yshifts) = unzip [f θ | θ <- [0 , rot P./ 10 .. rot] ]
+		xmax = maximum xshifts
+		ymax = maximum yshifts
+		ymin = minimum yshifts
+		xmax' = if xmax > 0 then xmax P.* 1.1 else if xmax < - x1 then 0 else xmax
+		ymax' = ymax + 0.1 P.* (ymax - ymin)
+		ymin' = ymin - 0.1 P.* (ymax - ymin)
+		r = x2 + xmax'
+	in
+		((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 
 
 

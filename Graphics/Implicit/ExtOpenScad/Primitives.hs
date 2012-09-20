@@ -22,7 +22,7 @@ import Data.Maybe (fromMaybe, isNothing)
 import qualified Graphics.Implicit.SaneOperators as S
 
 primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
-primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell ]
+primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude ]
 
 moduleWithSuite name modArgMapper = (name, modArgMapper)
 moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
@@ -285,7 +285,7 @@ scale = moduleWithSuite "scale" $ \suite -> do
 		Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
 extrude = moduleWithSuite "linear_extrude" $ \suite -> do
-	example "extrude(10) square(5);"
+	example "linear_extrude(10) square(5);"
 
 	height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` (Left 1)
 		`doc` "height to extrude to..."
@@ -329,6 +329,21 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 			shiftAsNeeded $ Prim.extrudeR r obj constHeight
 		_ -> 
 			shiftAsNeeded $ Prim.extrudeRM r twist' scale' translate' obj height'
+
+rotateExtrude = moduleWithSuite "rotate_extrude" $ \suite -> do
+	--example "extrude(10) square(5);"
+
+	totalRot :: ℝ <- argument "a" `defaultTo` 360
+		`doc` "angle to sweep"
+	cap      :: Bool <- argument "cap" `defaultTo` False
+	r        :: ℝ    <- argument "r"   `defaultTo` 0
+	translate :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
+
+	let
+		capM = if cap then Just r else Nothing
+	
+	getAndModUpObj2s suite $ \obj -> Prim.rotateExtrude totalRot capM translate obj
+
 
 
 {-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do

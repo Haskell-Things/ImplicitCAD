@@ -1,3 +1,4 @@
+
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
@@ -6,12 +7,17 @@
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
 import Prelude hiding ((+),(-),(*),(/))
+import qualified Prelude as P
 import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import qualified Data.Maybe as Maybe
+import qualified Data.Either as Either
+import Debug.Trace
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
+
+trace2 a = traceShow a a
 
 getImplicit3 :: SymbolicObj3 -> Obj3
 
@@ -137,3 +143,37 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		obj2 = getImplicit2 symbObj2
 	in
 		\(x,y,z) -> obj1 (obj2 (x,y), z)
+
+
+
+getImplicit3 (RotateExtrude totalRotation round translate symbObj) = 
+	let
+		tau = 2 P.* pi :: ℝ
+		k   = tau P./ 360 :: ℝ
+		totalRotation' = totalRotation*k
+		obj = getImplicit2 symbObj
+		capped = Maybe.isJust round
+		round' = Maybe.fromMaybe 0 round
+		translate' :: ℝ -> ℝ2
+		translate' = Either.either 
+				(\(a,b) -> \θ -> (a*θ/totalRotation', b*θ/totalRotation')) 
+				(. (/k))
+				translate
+	in
+		\(x,y,z) -> minimum $ do
+			
+			let 
+				r = sqrt (x^2 + y^2)
+				θ = atan2 y x
+			n <- [0 .. (if capped then ceiling else floor) $ (totalRotation' - θ) / tau] 
+			let 
+				θvirt = tau * (fromIntegral n :: ℝ) + θ
+				(rshift, zshift) = translate' θvirt 
+				rz_pos = (r - rshift, z - zshift)
+			return $
+				if capped
+				then MathUtil.rmax round' 
+					(abs (θvirt - totalRotation' P./ 2) - totalRotation' P./ 2)
+					(obj rz_pos) 
+				else obj rz_pos
+

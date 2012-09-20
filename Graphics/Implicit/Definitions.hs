@@ -123,6 +123,11 @@ data SymbolicObj3 =
 		(Maybe (ℝ -> ℝ2)) -- ^ translate
 		SymbolicObj2      -- ^ object to extrude
 		(Either ℝ (ℝ2 -> ℝ)) -- ^ height to extrude to
+	| RotateExtrude
+		ℝ                   -- ^ Angle to sweep to
+		(Maybe ℝ)           -- ^ Loop or path (rounded corner)
+		(Either ℝ2 (ℝ -> ℝ2)) -- ^ translate function
+		SymbolicObj2      -- ^ object to extrude
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show
 

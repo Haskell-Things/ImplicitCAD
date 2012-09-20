@@ -45,7 +45,6 @@ computationStatement =
 			unimplemented "render",
 			unimplemented "surface",
 			unimplemented "projection",
-			unimplemented "rotate_extrude",
 			unimplemented "import_stl"
 			-- rotateExtrudeStatement
 			]
