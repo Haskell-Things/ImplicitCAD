@@ -89,6 +89,7 @@ Library
         Graphics.Implicit.Export.NormedTriangleMeshFormats
         Graphics.Implicit.Export.SymbolicFormats
         Graphics.Implicit.Export.Util
+        Graphics.Implicit.Export.TextBuilderUtils
         Graphics.Implicit.Export.Symbolic.Rebound2
         Graphics.Implicit.Export.Symbolic.Rebound3
         Graphics.Implicit.Export.Render
