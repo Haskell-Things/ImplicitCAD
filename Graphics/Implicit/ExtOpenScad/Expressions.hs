@@ -20,7 +20,7 @@ errorAsAppropriate name a b = OError
 
 -- white space, including tabs, newlines and comments
 genSpace = many $ 
-	oneOf " \t\n" 
+	oneOf " \t\n\r" 
 	<|> (try $ do
 		string "//"
 		many ( noneOf "\n")
