@@ -19,6 +19,7 @@ import Graphics.Implicit.ExtOpenScad.Util.Computation
 
 import qualified Graphics.Implicit.Primitives as Prim
 import Data.Maybe (fromMaybe, isNothing)
+import qualified Data.Either as Either
 import qualified Graphics.Implicit.SaneOperators as S
 
 primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
@@ -331,15 +332,17 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 			shiftAsNeeded $ Prim.extrudeRM r twist' scale' translate' obj height'
 
 rotateExtrude = moduleWithSuite "rotate_extrude" $ \suite -> do
-	--example "extrude(10) square(5);"
+	example "rotate_extrude() translate(20) circle(10);"
 
 	totalRot :: ℝ <- argument "a" `defaultTo` 360
 		`doc` "angle to sweep"
-	cap      :: Bool <- argument "cap" `defaultTo` False
 	r        :: ℝ    <- argument "r"   `defaultTo` 0
 	translate :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
 
 	let
+		n = fromIntegral $ round $ totalRot / 360
+		cap = (360*n /= totalRot) 
+		    || (Either.either ( == (0,0)) (\f -> f 0 == f totalRot) ) translate
 		capM = if cap then Just r else Nothing
 	
 	getAndModUpObj2s suite $ \obj -> Prim.rotateExtrude totalRot capM translate obj

@@ -73,7 +73,7 @@ literal =
 
 expression :: Int -> GenParser Char st (VariableLookup -> OpenscadObj)
 expression 10 = (try literal) <|> (try variable )
-	<|> ((do -- ( 1 + 5 )
+	<|> (try (do -- ( 1 + 5 )
 		string "(";
 		expr <- expression 0;
 		string ")";
@@ -83,6 +83,11 @@ expression 10 = (try literal) <|> (try variable )
 		string "[";
 		exprs <- sepBy (expression 0) (char ',' );
 		string "]";
+		return $ \varlookup -> OList (map ($varlookup) exprs )
+	)<|> try ( do -- ( 1,2,3 )
+		string "(";
+		exprs <- sepBy (expression 0) (char ',' );
+		string ")";
 		return $ \varlookup -> OList (map ($varlookup) exprs )
 	) <|> ( do -- eg.  [ a : 1 : a + 10 ]
 		string "[";
