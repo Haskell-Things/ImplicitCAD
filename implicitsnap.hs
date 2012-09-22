@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings, ViewPatterns #-}
 
+-- PACKAGES: snap, silently
+
 {- This is a Snap server providing a ImplicitCAD REST API.
    It does not install by default. Its dependencies are not in the cabal file.
    We're just sticking it in the repo for lack of a better place... -}
@@ -28,6 +30,7 @@ import Graphics.Implicit.Export.SymbolicObj2
 import Graphics.Implicit.Export.SymbolicObj3
 
 import System.IO.Unsafe (unsafePerformIO)
+import System.IO.Silently (capture)
 
 import qualified Data.ByteString.Char8 as BS.Char
 import qualified Data.Text.Lazy as TL
@@ -102,17 +105,20 @@ executeAndExport content callback =
 				msgs = showErrorMessages' $ errorMessages err
 			in callbackF False $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
 		Right openscadProgram -> unsafePerformIO $ do 
-			s <- openscadProgram 
+			(msgs,s) <- capture $ openscadProgram 
 			let
 				res = getRes s
 			return $ case s of 
 				(_, _, x:xs)  -> 
 					if res > 0
-					then TL.unpack (jsTHREE (discreteAprox res x)) ++ callbackF True ""
+					then TL.unpack (jsTHREE (discreteAprox res x)) ++ callbackF True msgs
 					else callbackF False $ 
 						"Unreasonable resolution requested: "
 						++ "the server imps revolt! " 
 						++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-				_ ->  callbackF False "not a 3D object"
+				(_, x:xs, _) ->  callbackF False $
+					msgs ++
+					"Sorry, we only support 3D objects at the moment. Use linear_extrude()."
+				_            ->  callbackF False $ msgs ++ "Nothing to render."
 
 
