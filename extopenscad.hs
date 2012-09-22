@@ -13,6 +13,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
 import Data.Map as Map
+import Data.Maybe as Maybe
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
 import Data.IORef (writeIORef)
@@ -34,15 +35,21 @@ fileType filename = reverse $ beforeFirstPeriod $ reverse filename
 
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
 
-getRes (_, _, obj:_) = min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
-	where
+getRes (varlookup, _, obj:_) = 
+	let 
 		((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 		(x,y,z) = (x2-x1, y2-y1, z2-z1)
+	in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+		ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
+		_                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
 
-getRes (_, obj:_, _) = min (min x y/2) ((x*y)**0.5 / 30)
-	where
+getRes (varlookup, obj:_, _) = 
+	let 
 		((x1,y1),(x2,y2)) = getBox2 obj
 		(x,y) = (x2-x1, y2-y1)
+	in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+		ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
+		_                    -> min (min x y/2) ((x*y     )**0.5 / 30)
 
 getRes _ = 1
 

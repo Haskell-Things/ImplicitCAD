@@ -56,22 +56,31 @@ renderHandler = method GET $ withCompression $ do
 
 getRes (varlookup, obj2s, obj3s) = 
 	let
-		defaultRes = case (obj2s, obj3s) of
-			(_, obj:_) -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+		qual = case Map.lookup "$quality" varlookup of
+			Just (ONum n) | n >= 1  ->  n
+			_                       ->  1
+		(defaultRes, qualRes) = case (obj2s, obj3s) of
+			(_, obj:_) -> ( min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
+			              , min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22))
 				where
 					((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 					(x,y,z) = (x2-x1, y2-y1, z2-z1)
-			(obj:_, _) -> min (min x y/2) ((x*y)**0.5 / 30)
+			(obj:_, _) -> ( min (min x y/2) ((x*y     )**0.5 / 30)
+			              , min (min x y/2) ((x*y/qual)**0.5 / 30) )
 				where
 					((x1,y1),(x2,y2)) = getBox2 obj
 					(x,y) = (x2-x1, y2-y1)
-			_ -> 1
+			_ -> (1, 1)
 	in case Map.lookup "$res" varlookup of
 		Just (ONum requestedRes) -> 
 			if defaultRes <= 4*requestedRes
 			then requestedRes
 			else -1
-		_ -> defaultRes
+		_ -> 
+			if qual <= 8
+			then qualRes
+			else -1
+
 
 
 
