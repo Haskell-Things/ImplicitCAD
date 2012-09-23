@@ -18,14 +18,14 @@ module Graphics.Implicit.Export.TextBuilderUtils
     ,buildTruncFloat
     -- Values from Data.Monoid
     ,(<>)
-    ,mconcat
-    ,mempty
+    ,Monoid.mconcat
+    ,Monoid.mempty
      
                                                  ) where
 import Data.Text.Lazy
 -- We manually redefine this operator to avoid a dependency on base >= 4.5
 -- This will become unnecessary later.
-import Data.Monoid hiding ((<>))
+import qualified Data.Monoid as Monoid
 
 import Data.Text.Lazy
 import Data.Text.Lazy.Internal (defaultChunkSize)
@@ -52,6 +52,6 @@ buildInt = decimal
 
 -- This is directly copied from base 4.5.1.0
 infixr 6 <>
-(<>) :: Monoid m => m -> m -> m
-(<>) = mappend
+(<>) :: Monoid.Monoid m => m -> m -> m
+(<>) = Monoid.mappend
 {-# INLINE (<>) #-}
