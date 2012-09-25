@@ -185,7 +185,7 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 			]| segZ'  <- segsZ | segZT  <- tail segsZ
 			 | segY' <- segsY
 			 | segX' <- segsX
-		       ] `using` (parListChunk (nx*ny*(max 1 $ div nz 32)) rdeepseq)
+			]
 	
 	in mergedSquareTris $ concat $ concat $ concat sqTris -- (5) merge squares, etc
 

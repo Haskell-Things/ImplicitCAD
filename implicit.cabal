@@ -84,6 +84,7 @@ Library
         Graphics.Implicit.Export.MarchingSquaresFill
         Graphics.Implicit.Export.SymbolicObj2
         Graphics.Implicit.Export.SymbolicObj3
+        Graphics.Implicit.Export.RayTrace
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.NormedTriangleMeshFormats

@@ -15,14 +15,17 @@ import qualified Data.ByteString.Lazy as LBS
 import Graphics.Implicit.Export.Definitions
 
 -- instances of DiscreteApproxable...
-import Graphics.Implicit.Export.SymbolicObj2
-import Graphics.Implicit.Export.SymbolicObj3
+import Graphics.Implicit.Export.SymbolicObj2 ()
+import Graphics.Implicit.Export.SymbolicObj3 ()
+import Graphics.Implicit.Export.RayTrace ()
 
 -- File formats
 import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats
+
+import qualified Codec.Picture as ImageFormatCodecs
 
 -- Write an object in a given formet...
 
@@ -34,6 +37,19 @@ writeObject :: (DiscreteAproxable obj aprox) =>
         -> IO ()            -- ^ Writing Action!
 
 writeObject res format filename obj = writeFile filename $ formatObject res format obj
+
+writeObject' :: (DiscreteAproxable obj aprox) => 
+        ℝ                   -- ^ Resolution
+        -> (FilePath -> aprox -> IO ())  -- ^ File Format writer
+        -> FilePath         -- ^ File Name
+        -> obj              -- ^ Object to render
+        -> IO ()            -- ^ Writing Action!
+
+writeObject' res formatWriter filename obj =
+	let
+		aprox = discreteAprox res obj
+	in 
+		formatWriter filename aprox
 
 formatObject :: (DiscreteAproxable obj aprox) =>
         ℝ                   -- ^ Resolution
@@ -57,6 +73,7 @@ writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 writeSCAD3 res filename obj = writeFile filename $ SymbolicFormats.scad3 res obj
 writeSCAD2 res filename obj = writeFile filename $ SymbolicFormats.scad2 res obj
 
+writePNG res = writeObject' res ImageFormatCodecs.savePngImage
 
 {-
 renderRaw :: ℝ3 -> ℝ3 -> ℝ -> String -> Obj3 -> IO()
