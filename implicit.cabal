@@ -29,7 +29,8 @@ Library
         mtl,
         bytestring,
         blaze-builder,
-        storable-endian
+        storable-endian,
+        JuicyPixels
         
     ghc-options:
         -O2 -optc-O3
