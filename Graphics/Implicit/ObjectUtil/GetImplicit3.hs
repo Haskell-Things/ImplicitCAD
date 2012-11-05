@@ -78,8 +78,9 @@ getImplicit3 (Translate3 v symbObj) =
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 	let
 		obj = getImplicit3 symbObj
+		k = (sx*sy*sz)**0.333333
 	in
-		\p -> (maximum [sx, sy, sz]) * obj (p ⋯/ s)
+		\p -> k * obj (p ⋯/ s)
 
 getImplicit3 (Rotate3 (yz, xz, xy) symbObj) = 
 	let
@@ -165,15 +166,22 @@ getImplicit3 (RotateExtrude totalRotation round translate symbObj) =
 			let 
 				r = sqrt (x^2 + y^2)
 				θ = atan2 y x
-			n <- [0 .. (if capped then ceiling else floor) $ (totalRotation' - θ) / tau] 
-			let 
-				θvirt = tau * (fromIntegral n :: ℝ) + θ
+				ns :: [Int]
+				ns =
+					if capped
+					then -- we will cap a different way, but want leeway to keep the function cont
+						[-1 .. (ceiling (totalRotation'	 / tau) :: Int) + (1 :: Int)]
+					else
+						[0 .. floor $ (totalRotation' - θ) /tau]
+			n <- ns
+			let
+				θvirt = n*tau + θ
 				(rshift, zshift) = translate' θvirt 
 				rz_pos = (r - rshift, z - zshift)
 			return $
 				if capped
 				then MathUtil.rmax round' 
-					(abs (θvirt - totalRotation' P./ 2) - totalRotation' P./ 2)
-					(obj rz_pos) 
+					(abs (θvirt - (totalRotation' P./ 2)) - (totalRotation' P./ 2))
+					(obj rz_pos)
 				else obj rz_pos
 
