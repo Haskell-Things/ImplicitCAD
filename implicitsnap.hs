@@ -13,10 +13,11 @@ import Snap.Core
 import Snap.Http.Server
 import Snap.Util.GZip (withCompression)
 
-import Graphics.Implicit (runOpenscad)
+import Graphics.Implicit (runOpenscad, extrudeR)
 import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
-import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE)
+import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
+import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
 import Data.Map as Map
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
@@ -48,12 +49,18 @@ renderHandler :: Snap ()
 renderHandler = method GET $ withCompression $ do
 	modifyResponse $ setContentType "application/x-javascript"
 	request <- getRequest
-	case (rqParam "source" request, rqParam "callback" request)  of
-		(Just [source], Just [callback]) -> do
+	case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
+		(Just [source], Just [callback], Nothing) -> do
 			writeBS $ BS.Char.pack $ executeAndExport 
 				(BS.Char.unpack source)
 				(BS.Char.unpack callback)
-		(_, _)       -> writeBS "must provide source and callback as 1 GET variable each"
+				Nothing
+		(Just [source], Just [callback], Just [format]) -> do
+			writeBS $ BS.Char.pack $ executeAndExport 
+				(BS.Char.unpack source)
+				(BS.Char.unpack callback)
+				(Just $ BS.Char.unpack format)
+		(_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
  
 
 
@@ -76,11 +83,11 @@ getRes (varlookup, obj2s, obj3s) =
 			_ -> (1, 1)
 	in case Map.lookup "$res" varlookup of
 		Just (ONum requestedRes) -> 
-			if defaultRes <= 4*requestedRes
+			if defaultRes <= 30*requestedRes
 			then requestedRes
 			else -1
 		_ -> 
-			if qual <= 8
+			if qual <= 30
 			then qualRes
 			else -1
 
@@ -89,12 +96,13 @@ getRes (varlookup, obj2s, obj3s) =
 
 -- | Give an openscad object to run and the basename of 
 --   the target to write to... write an object!
-executeAndExport :: String -> String -> String
-executeAndExport content callback = 
+executeAndExport :: String -> String -> Maybe String -> String
+executeAndExport content callback maybeFormat = 
 	let
 		callbackF :: Bool -> String -> String
 		callbackF False msg = callback ++ "([null," ++ show msg ++ "]);"
 		callbackF True  msg = callback ++ "([new Shape()," ++ show msg ++ "]);"
+		callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ "]);"
 	in case runOpenscad content of
 		Left err -> 
 			let
@@ -108,17 +116,33 @@ executeAndExport content callback =
 			(msgs,s) <- capture $ openscadProgram 
 			let
 				res = getRes s
-			return $ case s of 
-				(_, _, x:xs)  -> 
-					if res > 0
-					then TL.unpack (jsTHREE (discreteAprox res x)) ++ callbackF True msgs
-					else callbackF False $ 
-						"Unreasonable resolution requested: "
-						++ "the server imps revolt! " 
-						++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-				(_, x:xs, _) ->  callbackF False $
-					msgs ++
-					"Sorry, we only support 3D objects at the moment. Use linear_extrude()."
-				_            ->  callbackF False $ msgs ++ "Nothing to render."
+				objOrErr = case s of
+					(_, _, x:xs)  -> 
+						if res > 0 
+						then Right (Nothing, x)
+						else Left $
+							"Unreasonable resolution requested: "
+							++ "the server imps revolt! " 
+							++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+					(_, x:xs, _) -> 
+						if res > 0 
+						then Right (Just x, extrudeR 0 x res)
+						else Left $
+							"Unreasonable resolution requested: "
+							++ "the server imps revolt! " 
+							++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+					_            ->  Left $ msgs ++ "Nothing to render."
+
+			return $ case (objOrErr, maybeFormat) of 
+				(Left errmsg, _) -> callbackF False errmsg
+				(Right (_,obj), Nothing)  -> 
+					TL.unpack (jsTHREE (discreteAprox res obj)) ++ callbackF True msgs
+				(Right (_,obj), Just "STL") -> 
+					callbackS (TL.unpack (stl (discreteAprox res obj))) msgs
+				(Right (Just obj, _), Just "SVG") -> 
+					callbackS (TL.unpack (svg (discreteAprox res obj))) msgs
+				(Right (Just obj, _), Just "gcode/hacklab-laser") -> 
+					callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) msgs
+
 
 
