@@ -130,9 +130,6 @@ main = do
 				args' = if head args == "-xml-error" then tail args else args
 			writeIORef xmlErrorOn (head args == "-xml-error")
 			case length args' of
-				0 -> putStrLn $ 
-					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
-					++ "eg. extopenscad input.escad out.stl"
 				1 -> do
 					f <- openFile (args' !! 0) ReadMode
 					content <- hGetContents f 
@@ -144,4 +141,8 @@ main = do
 					executeAndExportSpecifiedTargetType 
 						content (args' !! 1) (fileType $ args' !! 1)
 					hClose f
+				_ -> putStrLn $ 
+					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
+					++ "eg. extopenscad input.escad out.stl"
+
 
