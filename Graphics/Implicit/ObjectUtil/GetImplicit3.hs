@@ -78,7 +78,7 @@ getImplicit3 (Translate3 v symbObj) =
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 	let
 		obj = getImplicit3 symbObj
-		k = (sx*sy*sz)**0.333333
+		k = (sx*sy*sz)**((1::ℝ)/(3::ℝ))
 	in
 		\p -> k * obj (p ⋯/ s)
 
