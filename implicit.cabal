@@ -19,7 +19,7 @@ Library
     Build-Depends:
         base >= 3 && < 5,
         parsec,
-        hashmap,
+        unordered-containers,
         parallel,
         containers,
         plugins,
