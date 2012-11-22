@@ -92,6 +92,10 @@ getRes (varlookup, obj2s, obj3s) =
 			else -1
 
 
+getWidth (varlookup,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
+	where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+getWidth (varlookup, obj:_,     _) = max (x2-x1) (y2-y1)
+	where ((x1,y1),(x2,y2)) = getBox2 obj
 
 
 -- | Give an openscad object to run and the basename of 
@@ -99,10 +103,12 @@ getRes (varlookup, obj2s, obj3s) =
 executeAndExport :: String -> String -> Maybe String -> String
 executeAndExport content callback maybeFormat = 
 	let
-		callbackF :: Bool -> String -> String
-		callbackF False msg = callback ++ "([null," ++ show msg ++ "]);"
-		callbackF True  msg = callback ++ "([new Shape()," ++ show msg ++ "]);"
-		callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ "]);"
+		callbackF :: Bool -> Bool -> Float -> String -> String
+		callbackF False is2D w msg = 
+			callback ++ "([null," ++ show msg ++ "," ++ show is2D ++ "," ++ show w  ++ "]);"
+		callbackF True  is2D w msg = 
+			callback ++ "([new Shape()," ++ show msg ++ "," ++ show is2D ++ "," ++ show w ++ "]);"
+		callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
 	in case runOpenscad content of
 		Left err -> 
 			let
@@ -111,32 +117,34 @@ executeAndExport content callback maybeFormat =
 					"or" "unknown parse error" "expecting" "unexpected" "end of input"
 				msgs :: String
 				msgs = showErrorMessages' $ errorMessages err
-			in callbackF False $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
+			in callbackF False False 1 $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
 		Right openscadProgram -> unsafePerformIO $ do 
 			(msgs,s) <- capture $ openscadProgram 
 			let
-				res = getRes s
+				res = getRes   s
+				w   = getWidth s
+				is2D = case s of
+					(_, _, x:xs)  -> False
+					(_, x:xs, _)  -> True
+					_             -> False
+				highResError = "Unreasonable resolution requested: "
+							++ "the server imps revolt! " 
+							++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
 				objOrErr = case s of
 					(_, _, x:xs)  -> 
 						if res > 0 
 						then Right (Nothing, x)
-						else Left $
-							"Unreasonable resolution requested: "
-							++ "the server imps revolt! " 
-							++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+						else Left highResError
 					(_, x:xs, _) -> 
 						if res > 0 
 						then Right (Just x, extrudeR 0 x res)
-						else Left $
-							"Unreasonable resolution requested: "
-							++ "the server imps revolt! " 
-							++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+						else Left highResError
 					_            ->  Left $ msgs ++ "Nothing to render."
 
 			return $ case (objOrErr, maybeFormat) of 
-				(Left errmsg, _) -> callbackF False errmsg
+				(Left errmsg, _) -> callbackF False False 1 errmsg
 				(Right (_,obj), Nothing)  -> 
-					TL.unpack (jsTHREE (discreteAprox res obj)) ++ callbackF True msgs
+					TL.unpack (jsTHREE (discreteAprox res obj)) ++ callbackF True is2D w msgs
 				(Right (_,obj), Just "STL") -> 
 					callbackS (TL.unpack (stl (discreteAprox res obj))) msgs
 				(Right (Just obj, _), Just "SVG") -> 
