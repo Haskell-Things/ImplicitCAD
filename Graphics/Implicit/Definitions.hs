@@ -107,6 +107,7 @@ data SymbolicObj3 =
 	-- Simple transforms
 	| Translate3 ℝ3 SymbolicObj3
 	| Scale3 ℝ3 SymbolicObj3
+	| Mirror3 ℝ3 SymbolicObj3
 	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
 	-- Boundary mods
 	| Outset3 ℝ SymbolicObj3
