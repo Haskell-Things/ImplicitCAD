@@ -5,12 +5,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
-import Prelude hiding ((+),(-),(*),(/))
-import qualified Prelude as P
-import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.List (nub)
+import Data.VectorSpace       
 
 getBox2 :: SymbolicObj2 -> Box2
 
@@ -24,7 +22,7 @@ getBox2 (PolygonR r points) = ((minimum xs, minimum ys), (maximum xs, maximum ys
 
 -- (Rounded) CSG
 getBox2 (Complement2 symbObj) = 
-	((-infty, -infty), (infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
+	((-infty, -infty), (infty, infty)) where infty = 1/0
 
 getBox2 (UnionR2 r symbObjs) =
 	let 
@@ -66,7 +64,7 @@ getBox2 (Translate2 v symbObj) =
 	in
 		if (a,b) == ((0,0),(0,0))
 		then ((0,0),(0,0))
-		else (a+v, b+v)
+		else (a^+^v, b^+^v)
 
 getBox2 (Scale2 s symbObj) =
 	let
@@ -95,13 +93,13 @@ getBox2 (Shell2 w symbObj) =
 		(a,b) = getBox2 symbObj
 		d = w/(2.0::ℝ)
 	in
-		(a - (d,d), b + (d,d))
+		(a ^-^ (d,d), b ^+^ (d,d))
 
 getBox2 (Outset2 d symbObj) =
 	let
 		(a,b) = getBox2 symbObj
 	in
-		(a - (d,d), b + (d,d))
+		(a ^-^ (d,d), b ^+^ (d,d))
 
 -- Misc
 getBox2 (EmbedBoxedObj2 (obj,box)) = box

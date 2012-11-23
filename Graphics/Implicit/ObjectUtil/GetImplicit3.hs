@@ -6,18 +6,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude hiding ((+),(-),(*),(/))
-import qualified Prelude as P
-import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
-import Debug.Trace
+import Data.VectorSpace       
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
-
-trace2 a = traceShow a a
 
 getImplicit3 :: SymbolicObj3 -> Obj3
 
@@ -73,12 +68,12 @@ getImplicit3 (Translate3 v symbObj) =
 	let
 		obj = getImplicit3 symbObj
 	in
-		\p -> obj (p-v)
+		\p -> obj (p ^-^ v)
 
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 	let
 		obj = getImplicit3 symbObj
-		k = (sx*sy*sz)**0.333333
+		k = (sx*sy*sz)**(1/3)
 	in
 		\p -> k * obj (p ⋯/ s)
 
@@ -134,7 +129,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
 	in
 		\(x,y,z) -> let h = height' (x,y) in
 			MathUtil.rmax r 
-				(obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a- translate' z) $ (x,y))
+				(obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a ^-^ translate' z) $ (x,y))
 				(abs (z - h/(2::ℝ)) - h/(2::ℝ))
 
 
@@ -149,8 +144,8 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 
 getImplicit3 (RotateExtrude totalRotation round translate symbObj) = 
 	let
-		tau = 2 P.* pi :: ℝ
-		k   = tau P./ 360 :: ℝ
+		tau = 2 * pi
+		k   = tau / 360
 		totalRotation' = totalRotation*k
 		obj = getImplicit2 symbObj
 		capped = Maybe.isJust round
@@ -175,13 +170,13 @@ getImplicit3 (RotateExtrude totalRotation round translate symbObj) =
 						[0 .. floor $ (totalRotation' - θ) /tau]
 			n <- ns
 			let
-				θvirt = n*tau + θ
+				θvirt = fromIntegral n * tau + θ
 				(rshift, zshift) = translate' θvirt 
 				rz_pos = (r - rshift, z - zshift)
 			return $
 				if capped
 				then MathUtil.rmax round' 
-					(abs (θvirt - (totalRotation' P./ 2)) - (totalRotation' P./ 2))
+					(abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
 					(obj rz_pos)
 				else obj rz_pos
 
