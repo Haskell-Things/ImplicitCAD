@@ -5,9 +5,9 @@ module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
-import qualified Graphics.Implicit.SaneOperators as S
 import GHC.Exts (groupWith)
 import Data.List (sortBy)
+import Data.VectorSpace       
 
 -- We want small meshes. Essential to this, is getting rid of triangles.
 -- We secifically mark quads in tesselation (refer to Graphics.Implicit.
@@ -119,13 +119,13 @@ joinYaligned [] = []
 -- Reconstruct a triangle
 squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
 	let
-		zV = b3 S.* z
-		(x1V, x2V) = (x1 S.* b1, x2 S.* b1)
-		(y1V, y2V) = (y1 S.* b2, y2 S.* b2)
-		a = zV S.+ x1V S.+ y1V
-		b = zV S.+ x2V S.+ y1V
-		c = zV S.+ x1V S.+ y2V
-		d = zV S.+ x2V S.+ y2V
+		zV = b3 ^* z
+		(x1V, x2V) = (x1 *^ b1, x2 *^ b1)
+		(y1V, y2V) = (y1 *^ b2, y2 *^ b2)
+		a = zV ^+^ x1V ^+^ y1V
+		b = zV ^+^ x2V ^+^ y1V
+		c = zV ^+^ x1V ^+^ y2V
+		d = zV ^+^ x2V ^+^ y2V
 	in
 		[(a,b,c),(c,b,d)]
 

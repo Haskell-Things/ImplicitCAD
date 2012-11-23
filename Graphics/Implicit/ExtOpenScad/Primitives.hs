@@ -20,7 +20,8 @@ import Graphics.Implicit.ExtOpenScad.Util.Computation
 import qualified Graphics.Implicit.Primitives as Prim
 import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Either as Either
-import qualified Graphics.Implicit.SaneOperators as S
+       
+import Data.VectorSpace
 
 primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude ]
@@ -317,8 +318,8 @@ extrude = moduleWithSuite "linear_extrude" $ \suite -> do
 			then Prim.translate (0,0,-heightn/2.0)
 			else id
 		
-		funcify :: S.Multiplicative ℝ a a => Either a (ℝ -> a) -> ℝ -> a
-		funcify (Left val) h = (h/heightn) S.* val
+		funcify :: (VectorSpace a, Fractional (Scalar a)) => Either a (ℝ -> a) -> ℝ -> a
+		funcify (Left val) h = realToFrac (h/heightn) *^ val
 		funcify (Right f ) h = f h
 		
 		twist' = fmap funcify twist

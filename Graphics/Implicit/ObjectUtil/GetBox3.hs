@@ -5,13 +5,11 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude hiding ((+),(-),(*),(/))
-import qualified Prelude as P
-import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.Maybe (fromMaybe)
 import qualified Data.Maybe as Maybe
+import Data.VectorSpace       
 
 import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
@@ -28,7 +26,7 @@ getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 
 -- (Rounded) CSG
 getBox3 (Complement3 symbObj) = 
-	((-infty, -infty, -infty), (infty, infty, infty)) where infty = (1::ℝ)/(0 ::ℝ)
+	((-infty, -infty, -infty), (infty, infty, infty)) where infty = 1/0
 
 getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
 	where 
@@ -72,7 +70,7 @@ getBox3 (Translate3 v symbObj) =
 	let
 		(a,b) = getBox3 symbObj
 	in
-		(a+v, b+v)
+		(a^+^v, b^+^v)
 
 getBox3 (Scale3 s symbObj) =
 	let
@@ -91,13 +89,13 @@ getBox3 (Shell3 w symbObj) =
 		(a,b) = getBox3 symbObj
 		d = w/(2.0::ℝ)
 	in
-		(a - (d,d,d), b + (d,d,d))
+		(a ^-^ (d,d,d), b ^+^ (d,d,d))
 
 getBox3 (Outset3 d symbObj) =
 	let
 		(a,b) = getBox3 symbObj
 	in
-		(a - (d,d,d), b + (d,d,d))
+		(a ^-^ (d,d,d), b ^+^ (d,d,d))
 
 -- Misc
 getBox3 (EmbedBoxedObj3 (obj,box)) = box
@@ -125,7 +123,7 @@ getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) =
 
 		h = case eitherh of
 			Left h -> h
-			Right hf -> hmax + (0.2::ℝ)*(hmax-hmin)
+			Right hf -> hmax + 0.2*(hmax-hmin)
 				where
 					hs = [hf (x,y) | x <- xrange, y <- yrange]
 					(hmin, hmax) = (minimum hs, maximum hs)
@@ -162,13 +160,13 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) symbObj) =
 getBox3 (RotateExtrude rot _ (Right f) symbObj) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
-		(xshifts, yshifts) = unzip [f θ | θ <- [0 , rot P./ 10 .. rot] ]
+		(xshifts, yshifts) = unzip [f θ | θ <- [0 , rot / 10 .. rot] ]
 		xmax = maximum xshifts
 		ymax = maximum yshifts
 		ymin = minimum yshifts
-		xmax' = if xmax > 0 then xmax P.* 1.1 else if xmax < - x1 then 0 else xmax
-		ymax' = ymax + 0.1 P.* (ymax - ymin)
-		ymin' = ymin - 0.1 P.* (ymax - ymin)
+		xmax' = if xmax > 0 then xmax * 1.1 else if xmax < - x1 then 0 else xmax
+		ymax' = ymax + 0.1 * (ymax - ymin)
+		ymin' = ymin - 0.1 * (ymax - ymin)
 		r = x2 + xmax'
 	in
 		((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
