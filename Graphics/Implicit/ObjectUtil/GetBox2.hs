@@ -3,7 +3,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
-module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2) where
+module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
 import Prelude hiding ((+),(-),(*),(/))
 import qualified Prelude as P
@@ -105,3 +105,28 @@ getBox2 (Outset2 d symbObj) =
 
 -- Misc
 getBox2 (EmbedBoxedObj2 (obj,box)) = box
+
+-- Some other things. A metric function:
+
+d :: ℝ2 -> ℝ2 -> ℝ
+d (a1, a2) (b1,b2) = sqrt ((b1-a1)^2 + (b2-a2)^2)
+
+-- Get the maximum distance (read upper bound) an object is from a point.
+-- Sort of a circular 
+
+getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
+
+getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
+
+getDist2 (x,y) (Translate2 (vx, vy) obj) = getDist2 (x - vx, y - vy) obj
+
+getDist2 (x,y) (Circle r) = d (x,y) (0,0) + r
+
+getDist2 (x,y) symbObj =
+	let
+		((x1,y1), (x2,y2)) = getBox2 symbObj
+	in
+		sqrt ((max (abs (x1 - x)) (abs (x2 - x)))^2 + (max (abs (y1 - y)) (abs (y2 - y)))^2)
+
+getDist2 (x,y) (PolygonR r points) = 
+	r + maximum [sqrt ((x'-x)^2 + (y'-y)^2) | (x',y') <- points]

@@ -36,7 +36,8 @@ module Graphics.Implicit(
 	writeSCAD2,
 	writeSCAD3,
 	writeGCodeHacklabLaser,
-	writePNG,
+	writePNG2,
+	writePNG3,
 	runOpenscad,
 	implicit,
 	SymbolicObj2,
@@ -60,5 +61,6 @@ writeSCAD2  = Export.writeSCAD2 :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
 writeSCAD3  = Export.writeSCAD3 :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
 writeTHREEJS = Export.writeTHREEJS :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
 writeGCodeHacklabLaser = Export.writeGCodeHacklabLaser :: ℝ -> FilePath -> SymbolicObj2 -> IO () 
-writePNG = Export.writePNG :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writePNG2 = Export.writePNG :: ℝ -> FilePath -> SymbolicObj2  -> IO ()
+writePNG3 = Export.writePNG :: ℝ -> FilePath -> SymbolicObj3  -> IO ()
 
