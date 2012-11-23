@@ -1,5 +1,5 @@
 
-{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances #-}
+{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
 module Graphics.Implicit.ExtOpenScad.Util.OVal where
 
 import Graphics.Implicit.Definitions

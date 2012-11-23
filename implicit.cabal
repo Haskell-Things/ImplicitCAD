@@ -24,6 +24,7 @@ Library
         containers,
         plugins,
         deepseq,
+        vector-space,
         text,
         blaze-svg,
         mtl,
@@ -63,7 +64,6 @@ Library
         Graphics.Implicit.Primitives
         Graphics.Implicit.Export
         Graphics.Implicit.MathUtil
-        Graphics.Implicit.SaneOperators
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
 

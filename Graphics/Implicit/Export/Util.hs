@@ -7,18 +7,17 @@
 
 module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolylineTo)-} where
 
-import Prelude hiding ((+),(-),(*),(/))
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.SaneOperators
+import Data.VectorSpace       
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj tri@(a,b,c) = 
 	(normify a', normify b', normify c') 
 		where 
 			normify = normVertex res obj
-			a' = (a + r*b + r*c)/(1.02 :: ℝ)
-			b' = (b + r*a + r*c)/(1.02 :: ℝ)
-			c' = (c + r*b + r*a)/(1.02 :: ℝ)
+			a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02
+			b' = (b ^+^ r*^a ^+^ r*^c) ^/ 1.02
+			c' = (c ^+^ r*^b ^+^ r*^a) ^/ 1.02
 			r = 0.01 :: ℝ
 
 normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
@@ -30,12 +29,12 @@ normVertex res obj p@(x,y,z) =
 		-- and is fixed at p
 		-- so actually: d v = ...
 		d :: ℝ3 -> ℝ
-		d v = ( obj (p + (res/(100::ℝ))*v) - obj (p - (res/(100::ℝ))*v) ) /(res/(50::ℝ))
+		d v = ( obj (p ^+^ (res/100)*^v) - obj (p ^-^ (res/100)*^v) ) / (res/50)
 		dx = d (1, 0, 0)
 		dy = d (0, 1, 0)
 		dz = d (0, 0, 1)
 		nonUnitNormal = (dx,dy,dz)
-		normal = nonUnitNormal / norm nonUnitNormal
+		normal = nonUnitNormal ^/ magnitude nonUnitNormal
 	in ((x,y,z), normal)
 
 {--- If we need to make a 2D mesh finer...
