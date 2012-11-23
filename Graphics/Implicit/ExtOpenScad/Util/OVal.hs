@@ -6,6 +6,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import qualified Control.Monad as Monad
 import Data.Maybe (isJust)
+import Data.AffineSpace.Point
 
 -- | We'd like to be able to turn OVals into a given Haskell type
 class OTypeMirror a where
@@ -57,6 +58,11 @@ instance forall a b c. (OTypeMirror a, OTypeMirror b, OTypeMirror c) => OTypeMir
 		Just (a,b,c)
 	fromOObj _ = Nothing
 	toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
+
+instance forall a. (OTypeMirror a) => OTypeMirror (Point a) where
+	fromOObj (fromOObj -> Just a) = Just $ P a
+	fromOObj _ = Nothing
+	toOObj (P a) = toOObj a
 
 instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
 	fromOObj (OFunc f) =  Just $ \input ->

@@ -6,7 +6,8 @@ module Graphics.Implicit.Export.Render.GetSegs where
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
-import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
 
 {- The goal of getSegs is to create polylines to separate 
    the interior and exterior vertices of a square intersectiong
@@ -53,23 +54,23 @@ import Data.VectorSpace
 
 -}
 
-getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
+getSegs :: 𝔼2 -> 𝔼2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
 {-- # INLINE getSegs #-}
 
 getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) = 
 	let 
-		(x,y) = p1
+		P (x,y) = p1
 
 		-- Let's evaluate obj at a few points...
 		c = obj (centroid [p1,p2])
 
-		(dx,dy) = p2 ^-^ p1
+		(dx,dy) = p2 .-. p1
 		res = sqrt (dx*dy)
 
-		midx1 = (x,      midx1V )
-		midx2 = (x + dx, midx2V )
-		midy1 = (midy1V , y )
-		midy2 = (midy2V, y + dy)
+		midx1 = P (x,      midx1V )
+		midx2 = P (x + dx, midx2V )
+		midy1 = P (midy1V , y )
+		midy2 = P (midy2V, y + dy)
 
 		notPointLine (p1:p2:[]) = p1 /= p2
 
@@ -149,12 +150,12 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
 
 {-- # INLINE getSegs' #-}
 
-getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) = 
+getSegs' (P (x1, y1)) (P (x2, y2)) obj (midx1V,midx2V,midy1V,midy2V) = 
 	let
-		x1y1 = obj (x1, y1)
-		x2y1 = obj (x2, y1)
-		x1y2 = obj (x1, y2)
-		x2y2 = obj (x2, y2)
+		x1y1 = obj $ P (x1, y1)
+		x2y1 = obj $ P (x2, y1)
+		x1y2 = obj $ P (x1, y2)
+		x2y2 = obj $ P (x2, y2)
 	in
-		getSegs (x1, y1) (x2, y2) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V)
+		getSegs (P (x1, y1)) (P (x2, y2)) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V)
 

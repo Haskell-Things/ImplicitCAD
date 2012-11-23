@@ -10,6 +10,7 @@ module Graphics.Implicit.Definitions where
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.VectorSpace       
+import Data.AffineSpace.Point
 import Control.Applicative       
 
 -- Let's make things a bit nicer. 
@@ -17,6 +18,9 @@ import Control.Applicative
 type ℝ = Float
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
+     
+type 𝔼2 = Point ℝ2
+type 𝔼3 = Point ℝ3
 
 type ℕ = Int
 
@@ -43,14 +47,14 @@ type M3 a = ((a,a,a),(a,a,a),(a,a,a))
 
 -- | A chain of line segments, as in SVG
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-type Polyline = [ℝ2]
+type Polyline = [𝔼2]
 
 -- | A triangle (a,b,c) = a trinagle with vertices a, b and c
-type Triangle = (ℝ3, ℝ3, ℝ3)
+type Triangle = (𝔼3, 𝔼3, 𝔼3)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
-type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
+type NormedTriangle = ((𝔼3, ℝ3), (𝔼3, ℝ3), (𝔼3, ℝ3))
 
 
 -- | A triangle mesh is a bunch of triangles :)
@@ -66,16 +70,16 @@ type NormedTriangleMesh = [NormedTriangle]
 -- For more details, refer to http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
 -- | A 2D object
-type Obj2 = (ℝ2 -> ℝ)
+type Obj2 = (𝔼2 -> ℝ)
 
 -- | A 3D object
-type Obj3 = (ℝ3 -> ℝ)
+type Obj3 = (𝔼3 -> ℝ)
 
 -- | A 2D box
-type Box2 = (ℝ2, ℝ2)
+type Box2 = (𝔼2, 𝔼2)
 
 -- | A 3D box
-type Box3 = (ℝ3, ℝ3)
+type Box3 = (𝔼3, 𝔼3)
 
 -- | Boxed 2D object
 type Boxed2 a = (a, Box2)
@@ -92,9 +96,9 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
 	-- Primitives
-	  RectR ℝ ℝ2 ℝ2
+	  RectR ℝ 𝔼2 𝔼2
 	| Circle ℝ
-	| PolygonR ℝ [ℝ2]
+	| PolygonR ℝ [𝔼2]
 	-- (Rounded) CSG
 	| Complement2 SymbolicObj2
 	| UnionR2 ℝ [SymbolicObj2]
@@ -115,7 +119,7 @@ data SymbolicObj2 =
 
 data SymbolicObj3 = 
 	-- Primitives
-	  Rect3R ℝ ℝ3 ℝ3
+	  Rect3R ℝ 𝔼3 𝔼3
 	| Sphere ℝ
 	| Cylinder ℝ ℝ ℝ -- h r1 r2
 	-- (Rounded) CSG

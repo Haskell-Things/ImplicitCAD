@@ -25,6 +25,7 @@ Library
         plugins,
         deepseq,
         vector-space,
+        vector-space-points,
         text,
         blaze-svg,
         mtl,

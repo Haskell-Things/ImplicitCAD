@@ -9,19 +9,23 @@ module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolyl
 
 import Graphics.Implicit.Definitions
 import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
+
+p ./ s = (1/s) *. p
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj tri@(a,b,c) = 
 	(normify a', normify b', normify c') 
 		where 
 			normify = normVertex res obj
-			a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02
-			b' = (b ^+^ r*^a ^+^ r*^c) ^/ 1.02
-			c' = (c ^+^ r*^b ^+^ r*^a) ^/ 1.02
+			a' = ((a .+^ r*^(b.-.a)) .+^ r*^(c.-.a)) ./ 1.02
+			b' = ((b .+^ r*^(a.-.b)) .+^ r*^(c.-.b)) ./ 1.02
+			c' = ((c .+^ r*^(b.-.c)) .+^ r*^(a.-.c)) ./ 1.02
 			r = 0.01 :: ℝ
 
-normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
-normVertex res obj p = 
+normVertex :: ℝ -> Obj3 -> 𝔼3 -> (𝔼3, ℝ3)
+normVertex res obj p =
 	let
 		-- D_vf(p) = ( f(p) - f(p+v) ) /|v|
 		-- but we'll actually scale v by res, so then |v| = res
@@ -29,15 +33,15 @@ normVertex res obj p =
 		-- and is fixed at p
 		-- so actually: d v = ...
 		d :: ℝ3 -> ℝ
-		d v = ( obj (p ^+^ (res/100)*^v) - obj (p ^-^ (res/100)*^v) ) / (res/50)
+		d v = ( obj (p .+^ (res/100)*^v) - obj (p .-^ (res/100)*^v) ) / (res/50)
 		dx = d (1, 0, 0)
 		dy = d (0, 1, 0)
 		dz = d (0, 0, 1)
 	in (p, normalized (dx,dy,dz))
 
-centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
+centroid :: (VectorSpace v, Fractional (Scalar v)) => [Point v] -> Point v
 centroid pts =
-    (norm *^) $ foldl (^+^) zeroV pts
+    (norm *.) $ P $ foldl (^+^) zeroV $ map unPoint pts
     where norm = recip $ realToFrac $ length pts
 {-# INLINE centroid #-}
 

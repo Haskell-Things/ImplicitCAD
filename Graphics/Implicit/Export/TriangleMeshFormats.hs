@@ -14,18 +14,21 @@ import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian
 
+import Data.AffineSpace.Point
+
 import Prelude hiding (replicate)
 
+stl :: [Triangle] -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
 	where
 		stlHeader = "solid ImplictCADExport\n"
 		stlFooter = "endsolid ImplictCADExport\n"
-		vertex :: ℝ3 -> Builder
-		vertex (x,y,z) = mconcat ["vertex " 
+		vertex :: 𝔼3 -> Builder
+		vertex (P (x,y,z)) = mconcat ["vertex " 
 											 ,bf x , " "
 											 ,bf y , " " 
 											 ,bf z]
-		triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
+		triangle :: (𝔼3, 𝔼3, 𝔼3) -> Builder
 		triangle (a,b,c) =
 	            "facet normal 0 0 0\n"
 	            <> "outer loop\n"
@@ -44,7 +47,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map t
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
           triangle (a,b,c) = normal <> point a <> point b <> point c <> fromWord16le 0
-          point (x,y,z) = fromWrite $ float32LE x <> float32LE y <> float32LE z
+          point (P (x,y,z)) = fromWrite $ float32LE x <> float32LE y <> float32LE z
           normal = fromWrite $ float32LE 0 <> float32LE 0 <> float32LE 0
 
 jsTHREE :: TriangleMesh -> Text
@@ -65,8 +68,8 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                          ,"Shape.prototype = new THREE.Geometry();\n"
                          ,"Shape.prototype.constructor = Shape;\n" ]
                 -- A vertex line; v (0.0, 0.0, 1.0) = "v(0.0,0.0,1.0);\n"
-                v :: ℝ3 -> Builder
-                v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
+                v :: 𝔼3 -> Builder
+                v (P (x,y,z)) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
                 f :: Int -> Int -> Int -> Builder
                 f posa posb posc = 

@@ -9,7 +9,8 @@ import Debug.Trace
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
-import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -64,10 +65,12 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 --       the mesh are abstracted into the imported files. They are likely what
 --       you are interested in.
 
-getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj = 
+getMesh :: 𝔼3 -> 𝔼3 -> ℝ -> Obj3 -> TriangleMesh
+getMesh p1 p2 res obj = 
 	let
-		(dx,dy,dz) = p2 ^-^ p1
+		(dx,dy,dz) = p2 .-. p1
+		P (x1,y1,z1) = p1
+		P (x2,y2,z2) = p2
 
 		-- How many steps will we take on each axis?
 		nx = ceiling $ dx / res
@@ -97,7 +100,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 
 		-- Evaluate obj to avoid waste in mids, segs, later.
 
-		objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
+		objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj $ P (x 0, y 0, z 0)
 
 		-- (1) Calculate mid poinsts on X, Y, and Z axis in 3D space.
 
@@ -125,7 +128,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 		-- Calculate segments for each side
 
 		segsZ = [[[ 
-			map2  (inj3 z0) $ getSegs (x0,y0) (x1,y1) (obj **$ z0)
+			map2  (inj3 z0) $ getSegs (P (x0,y0)) (P (x1,y1)) (obj **$ z0)
 			    (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
 			    (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|x1<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
@@ -137,7 +140,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 			] `using` (parListChunk (max 1 $ div nz 32) rdeepseq)
 
 		segsY = [[[ 
-			map2  (inj2 y0) $ getSegs (x0,z0) (x1,z1) (obj *$* y0) 
+			map2  (inj2 y0) $ getSegs (P (x0,z0)) (P (x1,z1)) (obj *$* y0) 
 			     (objX0Y0Z0,objX1Y0Z0,objX0Y0Z1,objX1Y0Z1)
 			     (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|x1<-tail pXs|midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-tail mA''
@@ -150,7 +153,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 
 		segsX = 
 			[[[ 
-			map2  (inj1 x0) $ getSegs (y0,z0) (y1,z1) (obj $** x0) 
+			map2  (inj1 x0) $ getSegs (P (y0,z0)) (P (y1,z1)) (obj $** x0) 
 			     (objX0Y0Z0,objX0Y1Z0,objX0Y0Z1,objX0Y1Z1)
 			     (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|             midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-mA'T
@@ -191,10 +194,10 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 
 
 
-getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
-getContour p1@(x1, y1) p2@(x2, y2) res obj = 
+getContour :: 𝔼2 -> 𝔼2 -> ℝ -> Obj2 -> [Polyline]
+getContour p1@(P (x1,y1)) p2@(P (x2,y2)) res obj = 
 	let
-		(dx,dy) = p2 ^-^ p1
+		(dx,dy) = p2 .-. p1
 
 		-- How many steps will we take on each axis?
 		nx = ceiling $ dx / res
@@ -220,7 +223,7 @@ getContour p1@(x1, y1) p2@(x2, y2) res obj =
 
 		-- Evaluate obj to avoid waste in mids, segs, later.
 
-		objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
+		objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj $ P (x 0, y 0)
 
 		-- (1) Calculate mid poinsts on X, Y, and Z axis in 3D space.
 
@@ -239,7 +242,7 @@ getContour p1@(x1, y1) p2@(x2, y2) res obj =
 		-- Calculate segments for each side
 
 		segs = [[ 
-			getSegs (x0,y0) (x1,y1) obj
+			getSegs (P (x0,y0)) (P (x1,y1)) obj
 			    (objX0Y0, objX1Y0, objX0Y1, objX1Y1)
 			    (midA0, midA1, midB0, midB1)
 			 |x0<-pXs|x1<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
@@ -255,24 +258,24 @@ getContour p1@(x1, y1) p2@(x2, y2) res obj =
 
 -- silly utility functions
 
-inj1 a (b,c) = (a,b,c)
-inj2 b (a,c) = (a,b,c)
-inj3 c (a,b) = (a,b,c)
+inj1 a (P (b,c)) = P (a,b,c)
+inj2 b (P (a,c)) = P (a,b,c)
+inj3 c (P (a,b)) = P (a,b,c)
 
 infixr 0 $**
 infixr 0 *$*
 infixr 0 **$
 infixr 0 $*
 infixr 0 *$
-f $* a = \b -> f (a,b)
-f *$ b = \a -> f (a,b)
-f $** a = \(b,c) -> f (a,b,c)
-f *$* b = \(a,c) -> f (a,b,c)
-f **$ c = \(a,b) -> f (a,b,c)
+f $* a = \b -> f $ P (a,b)
+f *$ b = \a -> f $ P (a,b)
+f $** a = \(P (b,c)) -> f $ P (a,b,c)
+f *$* b = \(P (a,c)) -> f $ P (a,b,c)
+f **$ c = \(P (a,b)) -> f $ P (a,b,c)
 
-appAB f a b = \c -> f (a,b,c)
-appBC f b c = \a -> f (a,b,c)
-appAC f a c = \b -> f (a,b,c)
+appAB f a b = \c -> f $ P (a,b,c)
+appBC f b c = \a -> f $ P (a,b,c)
+appAC f a c = \b -> f $ P (a,b,c)
 
 map2 f = map (map f)
 map2R f = map (reverse . map f)

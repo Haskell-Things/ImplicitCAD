@@ -6,24 +6,25 @@ module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineS
 import Data.List
 import Data.VectorSpace
 import Data.AffineSpace
+import Data.AffineSpace.Point
 import Graphics.Implicit.Definitions
 
 -- | The distance a point p is from a line segment (a,b)
-distFromLineSeg :: ℝ2 -> (ℝ2,ℝ2) -> ℝ
+distFromLineSeg :: 𝔼2 -> (𝔼2,𝔼2) -> ℝ
 distFromLineSeg p (a,b) = magnitude (closest .-. p)
 	where
-		ab = b ^-^ a
-		ap = p ^-^ a
+		ab = b .-. a
+		ap = p .-. a
 		d  = normalized ab ⋅ ap
 		closest
 			| d < 0 = a
 			| d > magnitude ab = b
-			| otherwise = a ^+^ d *^ normalized ab
+			| otherwise = a .+^ d *^ normalized ab
 
 		
 
-box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3,ℝ3) -> Bool
-box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)) =
+box3sWithin :: ℝ -> (𝔼3, 𝔼3) -> (𝔼3,𝔼3) -> Bool
+box3sWithin r (P (ax1, ay1, az1),P (ax2, ay2, az2)) (P (bx1, by1, bz1),P (bx2, by2, bz2)) =
 	let
 		near (a1, a2) (b1, b2) = not $ (a2 + r < b1) || (b2 + r < a1)
 	in
@@ -94,7 +95,7 @@ pack ::
 
 pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 	where
-		compareBoxesByY  ((_, ay1), (_, ay2))  ((_, by1), (_, by2)) = 
+		compareBoxesByY  (P (_, ay1), P (_, ay2))  (P (_, by1), P (_, by2)) = 
 				compare (abs $ by2-by1) (abs $ ay2 - ay1)
 
 		sortedObjs = sortBy 
@@ -105,16 +106,16 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 		tmap2 f (a,b) = (a, f b)
 
 		--packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
-		packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) = 
+		packSome (presObj@((P (x1,y1),P (x2,y2)),obj):otherBoxedObjs) box@(P (bx1, by1), P (bx2, by2)) = 
 			if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
 			then 
 				let
 					row = tmap1 (((bx1-x1,by1-y1), obj):) $
-						packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
+						packSome otherBoxedObjs (P (bx1+x2-x1+sep, by1), P (bx2, by1 + y2-y1))
 					rowAndUp = 
 						if abs (by2-by1) - abs (y2-y1) > sep
 						then tmap1 ((fst row) ++ ) $
-							packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
+							packSome (snd row) (P (bx1, by1 + y2-y1+sep), P (bx2, by2))
 						else row
 				in
 					rowAndUp
