@@ -342,7 +342,7 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \suite -> do
 	let
 		n = fromIntegral $ round $ totalRot / 360
 		cap = (360*n /= totalRot) 
-		    || (Either.either ( == (0,0)) (\f -> f 0 == f totalRot) ) translate
+		    || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translate
 		capM = if cap then Just r else Nothing
 	
 	getAndModUpObj2s suite $ \obj -> Prim.rotateExtrude totalRot capM translate obj
