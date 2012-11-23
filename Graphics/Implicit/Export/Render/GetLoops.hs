@@ -3,6 +3,8 @@
 
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
+import qualified Data.Sequence as SQ
+import Data.Foldable (toList)
 
 -- The goal of getLoops is, if you can imagine, extracting loops
 -- from a list of segments.
@@ -27,30 +29,34 @@ getLoops :: Eq a => [[a]] -> [[[a]]]
 -- but a *second argument* which is the loop presently being
 -- built.
 
--- so we begin with the "building loop" being empty.
+-- so we begin with the "building loop" being empty. We use 
+-- Data.Sequence for the building loop since we will often need
+-- to refer to its last element.
 
-getLoops a = getLoops' a []
+getLoops a = getLoops' a SQ.empty
 
 
-getLoops' :: Eq a => [[a]] -> [[a]] -> [[[a]]]
+getLoops' :: Eq a => [[a]] -> SQ.Seq (SQ.Seq a) -> [[[a]]]
 
 -- Obviously if there aren't any segments,
 -- and the "building loop" is empty, 
 -- we produce no loops.
 
-getLoops' [] [] = []
+getLoops' [] workingLoop | SQ.null workingLoop = []
 
 -- And if the building loop is emtpy,
 -- we stick the first segment we have onto it
 -- to give us something to build on.
 
-getLoops' (x:xs) [] = getLoops' xs [x]
+getLoops' (x:xs) workingLoop | SQ.null workingLoop =
+    getLoops' xs $ SQ.singleton (SQ.fromList x)
 
 -- A loop is finished if its start and end are the same.
 -- In this case, we return it and empty the building loop.
 
-getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) =
-	workingLoop : getLoops' segs []
+getLoops' segs workingLoop | headSQ (headSQ workingLoop) == lastSQ (lastSQ workingLoop) =
+	loop : getLoops' segs SQ.empty
+    where loop = map toList (toList workingLoop)
 
 -- Finally, we search for pieces that can continue the working loop,
 -- and stick one on if we find it.
@@ -58,7 +64,7 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 
 getLoops' segs workingLoop =
 	let
-		presEnd = last $ last workingLoop
+		presEnd = lastSQ $ lastSQ workingLoop
 		connects (x:xs) = x == presEnd
 		possibleConts = filter connects segs
 		nonConts = filter (not . connects) segs
@@ -67,6 +73,15 @@ getLoops' segs workingLoop =
 			else (head possibleConts, tail possibleConts ++ nonConts)
 	in
 		if null next
-		then workingLoop : getLoops' segs []
-		else getLoops' unused (workingLoop ++ [next])
+		then map toList (toList workingLoop) : getLoops' segs SQ.empty
+		else getLoops' unused (workingLoop SQ.|> SQ.fromList next)
 
+headSQ :: SQ.Seq a -> a
+headSQ s = case SQ.viewl s of
+               a SQ.:< _     -> a
+               otherwise  -> error "headSQ: empty sequence"
+
+lastSQ :: SQ.Seq a -> a
+lastSQ s = case SQ.viewr s of
+               _ SQ.:> a     -> a
+               otherwise  -> error "lastSQ: empty sequence"
