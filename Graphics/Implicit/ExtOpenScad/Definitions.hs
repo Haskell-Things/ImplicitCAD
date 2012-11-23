@@ -12,6 +12,7 @@ import Data.Typeable (TypeRep)
 import Data.Map (Map)
 import Data.Maybe (isJust)
 import Control.Monad as Monad
+import Data.AffineSpace.Point
 
 -- Lets make it easy to change the object types we're using :)
 
@@ -90,6 +91,10 @@ instance forall a b c. (OTypeMirror a, OTypeMirror b, OTypeMirror c) => OTypeMir
 		Just (a,b,c)
 	fromOObj _ = Nothing
 	toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
+
+instance forall a. (OTypeMirror a) => OTypeMirror (Point a) where
+	fromOObj a = P `fmap` fromOObj a
+	toOObj (P a) = toOObj a
 
 instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
 	fromOObj (OFunc f) =  Just $ \input ->

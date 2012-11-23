@@ -34,7 +34,7 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 	discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
 
-symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
+symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(𝔼3, 𝔼3, 𝔼3)]
 
 {--
 -- A translated objects mesh is its mesh translated.

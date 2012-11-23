@@ -22,6 +22,7 @@ import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Either as Either
        
 import Data.VectorSpace
+import Data.AffineSpace.Point
 
 primitives :: [(String, [ComputationStateModifier] ->  ArgParser ComputationStateModifier)]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude ]
@@ -73,9 +74,9 @@ cube = moduleWithoutSuite "cube" $ do
 
 	-- A helper function for making rect3's accounting for centerdness
 	let rect3 x y z = 
-		if center  
-		then Prim.rect3R r (-x/2, -y/2, -z/2) (x/2, y/2, z/2)
-		else Prim.rect3R r (0, 0, 0)  (x, y, z)
+		if center
+		then Prim.rect3R r (P (-x/2, -y/2, -z/2)) (P (x/2, y/2, z/2))
+		else Prim.rect3R r origin                 (P (x, y, z))
 
 	case size of
 		Right (x,y,z) -> addObj3 $ rect3 x y z
@@ -108,8 +109,8 @@ square = moduleWithoutSuite "square" $ do
 	-- A helper function for making rect2's accounting for centerdness
 	let rect x y = 
 		if center  
-		then Prim.rectR r (-x/2, -y/2) (x/2, y/2)
-		else Prim.rectR r (  0,    0 ) ( x,   y )
+		then Prim.rectR r (P (-x/2, -y/2)) (P (x/2, y/2))
+		else Prim.rectR r origin           (P ( x,   y ))
 
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
@@ -157,7 +158,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 		then let
 			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
 				let sides = fromIntegral fn 
-				in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
+				in [P (r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 			obj3 = Prim.extrudeR 0 obj2 h
 		in if center
 			then Prim.translate (0,0,-h/2) obj3
@@ -185,13 +186,13 @@ circle = moduleWithoutSuite "circle" $ do
 		then addObj2 $ Prim.circle r
 		else addObj2 $ Prim.polygonR 0 $
 			let sides = fromIntegral fn 
-			in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
+			in [P (r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
 polygon = moduleWithoutSuite "polygon" $ do
 	
 	example "polygon ([(0,0), (0,10), (10,0)]);"
 	
-	points :: [ℝ2] <-  argument "points" 
+	points :: [𝔼2] <-  argument "points" 
 	                    `doc` "vertices of the polygon"
 	paths :: [ℕ ]  <- argument "paths" 
 	                    `doc` "order to go through vertices; ignored for now"
@@ -201,7 +202,7 @@ polygon = moduleWithoutSuite "polygon" $ do
 	                    `defaultTo` 0
 	case paths of
 		[] -> addObj2 $ Prim.polygonR 0 points
-		_ -> noChange
+		_ ->  noChange
 
 
 

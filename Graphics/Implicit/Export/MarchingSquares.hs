@@ -7,6 +7,8 @@ import Graphics.Implicit.Definitions
 import Control.Parallel.Strategies (using, parList, rdeepseq)
 import Debug.Trace
 import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
 
 both :: (a -> b) -> (a,a) -> (b,b)
 both f (x,y) = (f x, f y)
@@ -15,18 +17,18 @@ both f (x,y) = (f x, f y)
 --  object. It's really the only function in this file you need
 --  to care about from an external perspective.
 
-getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour p1 p2 d obj =
+getContour :: 𝔼2 -> 𝔼2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour p1 p2 d obj = 
 	let
 		-- How many steps will we take on each axis?
-		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 .-. p1) ⋯/ d)
 		-- Divide it up and compute the polylines
-		gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
+		gridPos :: (Int,Int) -> (Int,Int) -> 𝔼2
 		gridPos (nx,ny) (mx,my) = let p = ( fromIntegral mx / fromIntegral nx
 									      , fromIntegral my / fromIntegral ny)
-								  in p1 ^+^ (p2 ^-^ p1) ⋯* p
+								  in p1 .+^ (p2 .-. p1) ⋯* p
 		linesOnGrid :: [[[Polyline]]]
-		linesOnGrid = [[getSquareLineSegs
+		linesOnGrid = [[getSquareLineSegs 
 				   (gridPos n (mx,my))
 				   (gridPos n (mx+1,my+1))
 				   obj
@@ -37,15 +39,15 @@ getContour p1 p2 d obj =
 	in
 		multilines
 
-getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour2 p1@(x1, y1) p2@(x2, y2) d obj = 
+getContour2 :: 𝔼2 -> 𝔼2 -> ℝ2 -> Obj2 -> [Polyline]
+getContour2 p1@(P (x1, y1)) p2@(P (x2, y2)) d obj = 
 	let
 		-- How many steps will we take on each axis?
-		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 .-. p1) ⋯/ d)
 		-- Grid mapping funcs
 		fromGrid (mx, my) = let p = (mx/nx, my/ny)
-							in (p1 ^+^ (p2 ^-^ p1) ⋯/ p)
-		toGrid (x,y) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1))
+							in (p1 .+^ (p2 .-. p1) ⋯/ p)
+		toGrid (P (x,y)) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1) ) :: (ℕ, ℕ)
 		-- Evaluate obj on a grid, in parallel.
 		valsOnGrid :: [[ℝ]]
 		valsOnGrid = [[ obj (fromGrid (mx, my)) | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
@@ -68,17 +70,17 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
 --  values at its vertices.
 --  It is based on the linearly-interpolated marching squares algorithm.
 
-getSquareLineSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
+getSquareLineSegs :: 𝔼2 -> 𝔼2 -> Obj2 -> [Polyline]
+getSquareLineSegs p1@(P (x1, y1)) p2@(P (x2, y2)) obj = 
 	let 
 		(x,y) = (x1, y1)
 
 		-- Let's evlauate obj at a few points...
-		x1y1 = obj (x1, y1)
-		x2y1 = obj (x2, y1)
-		x1y2 = obj (x1, y2)
-		x2y2 = obj (x2, y2)
-		c = obj ((x1+x2)/2, (y1+y2)/2)
+		x1y1 = obj $ P (x1, y1)
+		x2y1 = obj $ P (x2, y1)
+		x1y2 = obj $ P (x1, y2)
+		x2y2 = obj $ P (x2, y2)
+		c = obj $ P ((x1+x2)/2, (y1+y2)/2)
 
 		dx = x2 - x1
 		dy = y2 - y1
@@ -96,10 +98,10 @@ getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
 		--     -----------*----------
 		--              midy1
 
-		midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
-		midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
-		midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
-		midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
+		midx1 = P (x,                       y + dy*x1y1/(x1y1-x1y2))
+		midx2 = P (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
+		midy1 = P (x + dx*x1y1/(x1y1-x2y1), y )
+		midy2 = P (x + dx*x1y2/(x1y2-x2y2), y + dy)
 		notPointLine (p1:p2:[]) = p1 /= p2
 	in filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
 	                                 x1y1 <= 0, x2y1 <= 0) of
@@ -162,14 +164,14 @@ orderLines (present:remaining) =
 			(Nothing, _) -> present:(orderLines remaining)
 			(Just match, others) -> orderLines $ (present ++ tail match): others
 
-reducePolyline ((x1,y1):(x2,y2):(x3,y3):others) = 
-	if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):(x3,y3):others) else
+reducePolyline (P (x1,y1):P (x2,y2):P (x3,y3):others) = 
+	if (x1,y1) == (x2,y2) then reducePolyline (P (x2,y2):P (x3,y3):others) else
 	if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) < 0.0001 
 	   || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0)
-	then reducePolyline ((x1,y1):(x3,y3):others)
-	else (x1,y1) : reducePolyline ((x2,y2):(x3,y3):others)
-reducePolyline ((x1,y1):(x2,y2):others) = 
-	if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
+	then reducePolyline ((P (x1,y1)):(P (x3,y3)):others)
+	else P (x1,y1) : reducePolyline (P (x2,y2):P (x3,y3):others)
+reducePolyline (P (x1,y1):(P (x2,y2)):others) = 
+	if (x1,y1) == (x2,y2) then reducePolyline (P (x2,y2):others) else P (x1,y1):P (x2,y2):others
 reducePolyline l = l
 
 

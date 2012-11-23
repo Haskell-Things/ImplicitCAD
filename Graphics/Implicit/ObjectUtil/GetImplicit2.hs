@@ -8,26 +8,28 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.VectorSpace       
+import Data.AffineSpace
+import Data.AffineSpace.Point
 import Data.List (nub)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 
 -- Primitives
-getImplicit2 (RectR r (x1,y1) (x2,y2)) = \(x,y) -> MathUtil.rmaximum r
+getImplicit2 (RectR r (P (x1,y1)) (P (x2,y2))) = \(P (x,y)) -> MathUtil.rmaximum r
 	[abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
 		where (dx, dy) = (x2-x1, y2-y1)
 
 getImplicit2 (Circle r ) = 
-	\(x,y) -> sqrt (x**2 + y**2) - r
+	\(P (x,y)) -> sqrt (x**2 + y**2) - r
 
 getImplicit2 (PolygonR r points) = 
 	\p -> let
-		pair :: Int -> (ℝ2,ℝ2)
+		pair :: Int -> (𝔼2,𝔼2)
 		pair n = (points !! n, points !! (mod (n + 1) (length points) ) )
 		pairs =  [ pair n | n <- [0 .. (length points) - 1] ]
-		relativePairs =  map (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
+		relativePairs =  map (\(a,b) -> (a .-. p, b .-. p) ) pairs
 		crossing_points =
-			[x2 ^-^ y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <-relativePairs,
+			[x2 ^-^ y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <- relativePairs,
 			   ( (y2 <= 0) && (y1 >= 0) ) || ( (y2 >= 0) && (y1 <= 0) ) ]
 		seemsInRight = odd $ length $ filter (>0) $ nub crossing_points
 		seemsInLeft = odd $ length $ filter (<0) $ nub crossing_points
@@ -73,19 +75,19 @@ getImplicit2 (Translate2 v symbObj) =
 	let
 		obj = getImplicit2 symbObj
 	in
-		\p -> obj (p ^-^ v)
+		\p -> obj (p .-^ v)
 
-getImplicit2 (Scale2 s@(sx,sy) symbObj) =
+getImplicit2 (Scale2 (sx,sy) symbObj) =
 	let
 		obj = getImplicit2 symbObj
 	in
-		\p -> (max sx sy) * obj (p ⋯/ s)
+		\(P (x,y)) -> (max sx sy) * obj (P (sx*x, sy*y))
 
 getImplicit2 (Rotate2 θ symbObj) = 
 	let
 		obj = getImplicit2 symbObj
 	in
-		\(x,y) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
+		\(P (x,y)) -> obj $ P (cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
 
 -- Boundary mods
 getImplicit2 (Shell2 w symbObj) = 

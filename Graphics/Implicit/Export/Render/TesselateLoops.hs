@@ -7,9 +7,11 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
 import Graphics.Implicit.Export.Util (centroid)
 import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
 import Data.Cross       
 
-tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
+tesselateLoop :: ℝ -> Obj3 -> [[𝔼3]] -> [TriSquare]
 
 tesselateLoop _ _ [] = []
 
@@ -42,10 +44,10 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
 	let
-		b1 = normalized $ a ^-^ b
-		b2 = normalized $ c ^-^ b
+		b1 = normalized $ a .-. b
+		b2 = normalized $ c .-. b
 		b3 = b1 `cross3` b2
-	in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
+	in [Sq (b1,b2,b3) (unPoint a ⋅ b3) (unPoint a ⋅ b1, unPoint c ⋅ b1) (unPoint a ⋅ b2, unPoint c ⋅ b2) ]
 
 {-
    #__#      #__#
@@ -65,21 +67,20 @@ tesselateLoop res obj pathSides = return $ Tris $
 	in if null path
 	then early_tris
 	else let
-		mid@(midx,midy,midz) = centroid path
+		mid@(P (midx,midy,midz)) = centroid path
 		midval = obj mid
 		preNormal = foldl1 (^+^) $
-			[ a `cross3` b | (a,b) <- zip path (tail path ++ [head path]) ]
+			[ a `cross3` b | (P a,P b) <- zip path (tail path ++ [head path]) ]
 		preNormalNorm = magnitude preNormal
 		normal = preNormal ^/ preNormalNorm
-		deriv = (obj (mid ^+^ (normal ^* (res/100)) ) ^-^ midval)/res*100
-		mid' = mid ^-^ normal ^* (midval/deriv)
+		deriv = (obj (mid .+^ (normal ^* (res/100)) ) ^-^ midval) / res*100
+		mid' = mid .-^ normal ^* (midval/deriv)
 	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5 
 		      && abs (deriv*midval) < 1.1*res && 5*abs (obj mid') < abs midval
 		then early_tris ++ [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
 		else early_tris ++ [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 
-
-shrinkLoop :: Int -> [ℝ3] -> ℝ -> Obj3 -> ([Triangle], [ℝ3])
+shrinkLoop :: Int -> [𝔼3] -> ℝ -> Obj3 -> ([Triangle], [𝔼3])
 
 shrinkLoop _ path@[a,b,c] res obj =
 	if   abs (obj $ centroid [a,b,c]) < res/50
