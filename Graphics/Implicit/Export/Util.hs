@@ -35,6 +35,12 @@ normVertex res obj p =
 		dz = d (0, 0, 1)
 	in (p, normalized (dx,dy,dz))
 
+centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
+centroid pts =
+    (norm *^) $ foldl (^+^) zeroV pts
+    where norm = recip $ realToFrac $ length pts
+{-# INLINE centroid #-}
+
 {--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]
 divideMesh2To res mesh =
