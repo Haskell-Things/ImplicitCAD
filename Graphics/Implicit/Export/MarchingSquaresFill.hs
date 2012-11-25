@@ -5,6 +5,7 @@ module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Graphics.Implicit.Definitions
 import Control.Parallel (par, pseq)
+import Data.AffineSpace
 import Data.AffineSpace.Point
 
 -- | getContour gets a polyline describe the edge of your 2D
@@ -12,7 +13,7 @@ import Data.AffineSpace.Point
 --  to care about from an external perspective.
 
 getContourMesh :: 𝔼2 -> 𝔼2 -> ℝ2 -> Obj2 -> [(𝔼2,𝔼2,𝔼2)]
-getContourMesh (P (x1, y1)) (P (x2, y2)) (dx, dy) obj = 
+getContourMesh p1@(P (x1, y1)) p2@(P (x2, y2)) (dx, dy) obj = 
 	let
 		-- How many steps will we take on each axis?
 		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
@@ -20,8 +21,8 @@ getContourMesh (P (x1, y1)) (P (x2, y2)) (dx, dy) obj =
 		-- Divide it up and compute the polylines
 		trisOnGrid :: [[[(𝔼2,𝔼2,𝔼2)]]]
 		trisOnGrid = [[getSquareTriangles
-		           (P (x1 + (x2 - x1)*mx/nx,     y1 + (y2 - y1)*my/ny))
-		           (P (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny))
+		           (p1 .+^ (p2 .-. p1) ⋯* (mx/nx, my/ny))
+		           (p1 .+^ (p2 .-. p1) ⋯* ((mx+1)/nx, (my+1)/ny))
 		           obj
 		     | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
 		triangles = concat $ concat trisOnGrid
@@ -35,10 +36,8 @@ getContourMesh (P (x1, y1)) (P (x2, y2)) (dx, dy) obj =
 --  It is based on the linearly-interpolated marching squares algorithm.
 
 getSquareTriangles :: 𝔼2 -> 𝔼2 -> Obj2 -> [(𝔼2,𝔼2,𝔼2)]
-getSquareTriangles (P (x1, y1)) (P (x2, y2)) obj = 
+getSquareTriangles p1@(P (x1, y1)) p2@(P (x2, y2)) obj = 
 	let 
-		(x,y) = (x1, y1)
-
 		-- Let's evlauate obj at a few points...
 		x1y1 = obj $ P (x1, y1)
 		x2y1 = obj $ P (x2, y1)
@@ -46,8 +45,7 @@ getSquareTriangles (P (x1, y1)) (P (x2, y2)) obj =
 		x2y2 = obj $ P (x2, y2)
 		c = obj $ P ((x1+x2)/2, (y1+y2)/2)
 
-		dx = x2 - x1
-		dy = y2 - y1
+		(dx,dy) = p2 .-. p1
 
 		-- linearly interpolated midpoints on the relevant axis
 		--             midy2
@@ -62,10 +60,10 @@ getSquareTriangles (P (x1, y1)) (P (x2, y2)) obj =
 		--     -----------*----------
 		--              midy1
 
-		midx1 = P (x,                       y + dy*x1y1/(x1y1-x1y2))
-		midx2 = P (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
-		midy1 = P (x + dx*x1y1/(x1y1-x2y1), y )
-		midy2 = P (x + dx*x1y2/(x1y2-x2y2), y + dy)
+		midx1 = p1 .+^ (0,                    dy*x1y1/(x1y1-x1y2))
+		midx2 = p1 .+^ (dx,                   dy*x2y1/(x2y1-x2y2))
+		midy1 = p1 .+^ (dx*x1y1/(x1y1-x2y1),  0 )
+		midy2 = p1 .+^ (dx*x1y2/(x1y2-x2y2),  dy)
 
 		square a b c d = [(a,b,c), (a,c,d)]
 
@@ -97,7 +95,7 @@ getSquareTriangles (P (x1, y1)) (P (x2, y2)) obj =
 		 True,  False) -> [(midx1, P (x1,y1), midy1)]
 		(True,  True, 
 		 True,  False) -> 
-			[(midy1,midx2,P (x2,y2)), (P (x2,y2), P (x1,y2), midy1), (midy1, P (x1,y2), P (x1,y1))]
+			[(midy1, midx2, P (x2,y2)), (P (x2,y2), P (x1,y2), midy1), (midy1, P (x1,y2), P (x1,y1))]
 		(False, False,
 		 False, True)  -> [(midx2, midy1, P (x2,y1))]
 		(True,  False,
