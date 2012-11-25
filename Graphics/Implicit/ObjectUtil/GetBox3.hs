@@ -9,11 +9,18 @@ import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.Maybe (fromMaybe)
 import qualified Data.Maybe as Maybe
-import Data.VectorSpace       
+import Data.VectorSpace
 
 import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
 import Debug.Trace
+
+isEmpty :: Box3 -> Bool
+isEmpty = (== ((0,0,0), (0,0,0)))
+
+outsetBox :: ℝ -> Box3 -> Box3
+outsetBox r (a,b) =
+	(a ^-^ (r,r,r), b ^+^ (r,r,r))
 
 getBox3 :: SymbolicObj3 -> Box3
 
@@ -81,21 +88,14 @@ getBox3 (Scale3 s symbObj) =
 getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
 	where
 		((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-		d = (sqrt (2::ℝ) *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+		d = (sqrt 2 *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
 
 -- Boundary mods
-getBox3 (Shell3 w symbObj) = 
-	let
-		(a,b) = getBox3 symbObj
-		d = w/(2.0::ℝ)
-	in
-		(a ^-^ (d,d,d), b ^+^ (d,d,d))
+getBox3 (Shell3 w symbObj) =
+	outsetBox (w/2) $ getBox3 symbObj
 
 getBox3 (Outset3 d symbObj) =
-	let
-		(a,b) = getBox3 symbObj
-	in
-		(a ^-^ (d,d,d), b ^+^ (d,d,d))
+	outsetBox d $ getBox3 symbObj
 
 -- Misc
 getBox3 (EmbedBoxedObj3 (obj,box)) = box
@@ -115,10 +115,10 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 
 getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) = 
 	let
-		range = [0, 0.1 .. 1.0] :: [ℝ]
+		range = [0, 0.1 .. 1.0]
 
 		((x1,y1),(x2,y2)) = getBox2 symbObj
-		(dx,dy) = (x2 - x1, y2 - y1)		
+		(dx,dy) = (x2 - x1, y2 - y1)
 		(xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
 
 		h = case eitherh of
