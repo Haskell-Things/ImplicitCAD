@@ -18,7 +18,7 @@ getImplicit3 :: SymbolicObj3 -> Obj3
 
 -- Primitives
 getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
-	[abs (x-dx/(2::ℝ)-x1) - dx/(2::ℝ), abs (y-dy/(2::ℝ)-y1) - dy/(2::ℝ), abs (z-dz/(2::ℝ)-z1) - dz/(2::ℝ)]
+	[abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
 		where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
 
 getImplicit3 (Sphere r ) = 
@@ -104,7 +104,7 @@ getImplicit3 (Shell3 w symbObj) =
 	let
 		obj = getImplicit3 symbObj
 	in
-		\p -> abs (obj p) - w/(2::ℝ)
+		\p -> abs (obj p) - w/2
 
 getImplicit3 (Outset3 d symbObj) =
 	let
@@ -120,7 +120,7 @@ getImplicit3 (ExtrudeR r symbObj h) =
 	let
 		obj = getImplicit2 symbObj
 	in
-		\(x,y,z) -> MathUtil.rmax r (obj (x,y)) (abs (z - h/(2::ℝ)) - h/(2::ℝ))
+		\(x,y,z) -> MathUtil.rmax r (obj (x,y)) (abs (z - h/2) - h/2)
 
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) = 
 	let
@@ -140,7 +140,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
 		\(x,y,z) -> let h = height' (x,y) in
 			MathUtil.rmax r 
 				(obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a ^-^ translate' z) $ (x,y))
-				(abs (z - h/(2::ℝ)) - h/(2::ℝ))
+				(abs (z - h/2) - h/2)
 
 
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
