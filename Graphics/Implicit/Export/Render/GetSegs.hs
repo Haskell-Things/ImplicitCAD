@@ -5,7 +5,8 @@ module Graphics.Implicit.Export.Render.GetSegs where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
-
+import Graphics.Implicit.Export.Util (centroid)
+import Data.VectorSpace
 
 {- The goal of getSegs is to create polylines to separate 
    the interior and exterior vertices of a square intersectiong
@@ -55,15 +56,14 @@ import Graphics.Implicit.Export.Render.RefineSegs (refine)
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
 {-- # INLINE getSegs #-}
 
-getSegs (x1, y1) (x2, y2) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) = 
+getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) = 
 	let 
-		(x,y) = (x1, y1)
+		(x,y) = p1
 
-		-- Let's evlauate obj at a few points...
-		c = obj ((x1+x2)/2, (y1+y2)/2)
+		-- Let's evaluate obj at a few points...
+		c = obj (centroid [p1,p2])
 
-		dx = x2 - x1
-		dy = y2 - y1
+		(dx,dy) = p2 ^-^ p1
 		res = sqrt (dx*dy)
 
 		midx1 = (x,      midx1V )
