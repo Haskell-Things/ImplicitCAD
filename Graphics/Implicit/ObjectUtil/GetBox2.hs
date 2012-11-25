@@ -8,7 +8,30 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.List (nub)
-import Data.VectorSpace       
+import Data.VectorSpace
+
+isEmpty :: Box2 -> Bool
+isEmpty = (== ((0,0), (0,0)))
+
+pointsBox :: [ℝ2] -> Box2
+pointsBox points =
+	let
+		(xs, ys) = unzip points
+	in
+		((minimum xs, minimum ys), (maximum xs, maximum ys))
+
+unionBoxes :: [Box2] -> Box2
+unionBoxes boxes =
+	let
+		(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
+		(lefts, bots) = unzip leftbot
+		(rights, tops) = unzip topright
+	in
+		((minimum lefts, minimum bots), (maximum rights, maximum tops))
+
+outsetBox :: ℝ -> Box2 -> Box2
+outsetBox r (a,b) =
+		(a ^-^ (r,r), b ^+^ (r,r))
 
 getBox2 :: SymbolicObj2 -> Box2
 
@@ -25,18 +48,7 @@ getBox2 (Complement2 symbObj) =
 	((-infty, -infty), (infty, infty)) where infty = 1/0
 
 getBox2 (UnionR2 r symbObjs) =
-	let 
-		boxes = map getBox2 symbObjs
-		isEmpty = ( == ((0,0),(0,0)) )
-		(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-		(lefts, bots) = unzip leftbot
-		(rights, tops) = unzip topright
-		left = minimum lefts
-		bot = minimum bots
-		right = maximum rights
-		top = maximum tops
-	in
-		((left-r,bot-r),(right+r,top+r))
+	outsetBox r $ unionBoxes (map getBox2 symbObjs)
 
 getBox2 (DifferenceR2 r symbObjs) =
 	let 
@@ -45,24 +57,14 @@ getBox2 (DifferenceR2 r symbObjs) =
 		firstBox
 
 getBox2 (IntersectR2 r symbObjs) = 
-	let 
-		boxes = map getBox2 symbObjs
-		(leftbot, topright) = unzip boxes
-		(lefts, bots) = unzip leftbot
-		(rights, tops) = unzip topright
-		left = maximum lefts
-		bot = maximum bots
-		right = minimum rights
-		top = minimum tops
-	in
-		((left-r,bot-r),(right+r,top+r))
+	outsetBox r $ unionBoxes (map getBox2 symbObjs)
 
 -- Simple transforms
 getBox2 (Translate2 v symbObj) =
 	let
 		(a,b) = getBox2 symbObj
 	in
-		if (a,b) == ((0,0),(0,0))
+		if isEmpty (a,b)
 		then ((0,0),(0,0))
 		else (a^+^v, b^+^v)
 
@@ -74,40 +76,24 @@ getBox2 (Scale2 s symbObj) =
 
 getBox2 (Rotate2 θ symbObj) = 
 	let
-		((x1,y1),(x2,y2)) = getBox2 symbObj
-		rotate (x,y) = ( cos(θ)*x - sin(θ)*y, sin(θ)*x + cos(θ)*y)
-		(xa, ya) = rotate (x1, y1)
-		(xb, yb) = rotate (x1, y2)
-		(xc, yc) = rotate (x2, y1)
-		(xd, yd) = rotate (x2, y2)
-		minx = minimum [xa, xb, xc, xd]
-		miny = minimum [ya, yb, yc, yd]
-		maxx = maximum [xa, xb, xc, xd]
-		maxy = maximum [ya, yb, yc, yd]
+		((x1,y1), (x2,y2)) = getBox2 symbObj
+		rotate (x,y) = (cos(θ)*x - sin(θ)*y, sin(θ)*x + cos(θ)*y)
 	in
-		((minx, miny), (maxx, maxy))
+		pointsBox [ rotate (x1, y1)
+				  , rotate (x1, y2)
+				  , rotate (x2, y1)
+				  , rotate (x2, y2)
+				  ]
 
 -- Boundary mods
 getBox2 (Shell2 w symbObj) = 
-	let
-		(a,b) = getBox2 symbObj
-		d = w/(2.0::ℝ)
-	in
-		(a ^-^ (d,d), b ^+^ (d,d))
+	outsetBox (w/2) $ getBox2 symbObj
 
 getBox2 (Outset2 d symbObj) =
-	let
-		(a,b) = getBox2 symbObj
-	in
-		(a ^-^ (d,d), b ^+^ (d,d))
+	outsetBox d $ getBox2 symbObj
 
 -- Misc
 getBox2 (EmbedBoxedObj2 (obj,box)) = box
-
--- Some other things. A metric function:
-
-d :: ℝ2 -> ℝ2 -> ℝ
-d (a1, a2) (b1,b2) = sqrt ((b1-a1)^2 + (b2-a2)^2)
 
 -- Get the maximum distance (read upper bound) an object is from a point.
 -- Sort of a circular 
@@ -116,9 +102,9 @@ getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
 
 getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
 
-getDist2 (x,y) (Translate2 (vx, vy) obj) = getDist2 (x - vx, y - vy) obj
+getDist2 p (Translate2 v obj) = getDist2 (p ^+^ v) obj
 
-getDist2 (x,y) (Circle r) = d (x,y) (0,0) + r
+getDist2 p (Circle r) = magnitude p + r
 
 getDist2 (x,y) symbObj =
 	let
@@ -126,5 +112,5 @@ getDist2 (x,y) symbObj =
 	in
 		sqrt ((max (abs (x1 - x)) (abs (x2 - x)))^2 + (max (abs (y1 - y)) (abs (y2 - y)))^2)
 
-getDist2 (x,y) (PolygonR r points) = 
-	r + maximum [sqrt ((x'-x)^2 + (y'-y)^2) | (x',y') <- points]
+getDist2 p (PolygonR r points) = 
+	r + maximum [magnitude (p ^-^ p') | p' <- points]
