@@ -22,7 +22,7 @@ object2 = squarePipe (10,10,10) 1 100
 	where squarePipe (x,y,z) diameter precision =
 			  union
 			  $ map (\start-> translate start
-							$ rect3R 0 (0,0,0) (diameter,diameter,diameter)
+							$ rect3R 0 origin (P (diameter,diameter,diameter))
 					)
 			  $ zip3 (map (\n->(n/precision)*x) [0..precision])
 					 (map (\n->(n/precision)*y) [0..precision])
