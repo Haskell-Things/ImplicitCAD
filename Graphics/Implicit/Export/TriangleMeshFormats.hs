@@ -22,9 +22,9 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 		stlFooter = "endsolid ImplictCADExport\n"
 		vertex :: ℝ3 -> Builder
 		vertex (x,y,z) = mconcat ["vertex " 
-                                         ,bf x , " "
-                                         ,bf y , " " 
-                                         ,bf z]
+											 ,bf x , " "
+											 ,bf y , " " 
+											 ,bf z]
 		triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
 		triangle (a,b,c) =
 	            "facet normal 0 0 0\n"
