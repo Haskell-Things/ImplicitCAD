@@ -201,7 +201,7 @@ polygon = moduleWithoutSuite "polygon" $ do
 	                    `defaultTo` 0
 	case paths of
 		[] -> addObj2 $ Prim.polygonR 0 points
-		_ -> noChange;
+		_ -> noChange
 
 
 
