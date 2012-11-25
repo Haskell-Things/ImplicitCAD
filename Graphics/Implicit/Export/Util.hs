@@ -8,7 +8,7 @@
 module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolylineTo)-} where
 
 import Graphics.Implicit.Definitions
-import Data.VectorSpace       
+import Data.VectorSpace
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj tri@(a,b,c) = 
