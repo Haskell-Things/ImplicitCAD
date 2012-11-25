@@ -40,7 +40,7 @@ getLoops' :: Eq a => [[a]] -> [[a]] -> [[[a]]]
 
 getLoops' [] [] = []
 
--- And if the building loop is emtpy,
+-- And if the building loop is empty,
 -- we stick the first segment we have onto it
 -- to give us something to build on.
 
