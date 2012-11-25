@@ -45,8 +45,8 @@ getRes (varlookup, _, obj:_) =
 
 getRes (varlookup, obj:_, _) = 
 	let 
-		((x1,y1),(x2,y2)) = getBox2 obj
-		(x,y) = (x2-x1, y2-y1)
+		(p1,p2) = getBox2 obj
+		(x,y) = p2 ^-^ p1
 	in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
 		ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
 		_                    -> min (min x y/2) ((x*y     )**0.5 / 30)
