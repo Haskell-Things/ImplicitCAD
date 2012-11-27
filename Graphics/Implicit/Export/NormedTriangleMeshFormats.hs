@@ -7,13 +7,14 @@ module Graphics.Implicit.Export.NormedTriangleMeshFormats where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
+import Data.AffineSpace.Point
 
-
+obj :: [NormedTriangle] -> Text
 obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
 	where
 		-- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
-		v :: ℝ3 -> Builder
-		v (x,y,z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
+		v :: 𝔼3 -> Builder
+		v (P (x,y,z)) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
 		-- A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
 		n :: ℝ3 -> Builder
 		n (x,y,z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"

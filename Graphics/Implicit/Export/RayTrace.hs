@@ -3,24 +3,25 @@
 
 module Graphics.Implicit.Export.RayTrace where
 
-import Prelude hiding ((+),(-),(*),(/))
-import qualified Prelude as P
 import Graphics.Implicit.ObjectUtil
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Export.Definitions
 import Codec.Picture
 import Control.Monad
+import Data.VectorSpace
+import Data.AffineSpace
+import Data.AffineSpace.Point
+import Data.Cross
 
 import Debug.Trace
 
 -- Definitions
 
-data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
+data Camera = Camera 𝔼3 ℝ3 ℝ3 ℝ
 	deriving Show
-data Ray    = Ray ℝ3 ℝ3
+data Ray    = Ray 𝔼3 ℝ3
 	deriving Show
-data Light  = Light ℝ3 ℝ
+data Light  = Light 𝔼3 ℝ
 	deriving Show
 data Scene  = Scene Obj3 Color [Light] Color
 
@@ -30,16 +31,10 @@ dynamicImage = ImageRGBA8
 
 -- Math
 
-d a b = norm (b-a)
-
-instance Multiplicative ℝ Color Color where
-	s * (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) (d)
-		where 
-			bound = max 0 . min 254
-			mult a b = fromIntegral . round . bound $ a * (fromIntegral b :: ℝ)
-
-instance Multiplicative Color ℝ Color where
-	a * b = b * a
+s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
+    where 
+        bound = max 0 . min 254
+        mult a b = fromIntegral . round . bound $ a * fromIntegral b
 
 average :: [Color] -> Color
 average l = 
@@ -57,20 +52,20 @@ average l =
 cameraRay :: Camera -> ℝ2 -> Ray
 cameraRay (Camera p vx vy f) (x,y) =
 	let
-		v  = vx ⨯ vy
-		p' = p + f*v + x*vx + y*vy
-		n  = normalized (p' - p)
+		v  = vx `cross3` vy
+		p' = foldl (.+^) p [f *^ v, x *^ vx, y *^ vy]
+		n  = normalized (p' .-. p)
 	in
 		Ray p' n
 
-rayFromTo :: ℝ3 -> ℝ3 -> Ray
-rayFromTo p1 p2 = Ray p1 (normalized $ p2 - p1)
+rayFromTo :: 𝔼3 -> 𝔼3 -> Ray
+rayFromTo p1 p2 = Ray p1 (normalized $ p2 .-. p1)
 
-rayBounds :: Ray -> (ℝ3, ℝ3) -> ℝ2
+rayBounds :: Ray -> Box3 -> ℝ2
 rayBounds ray box =
 	let
-		Ray (cPx, cPy, cPz) cameraV@(cVx, cVy, cVz) = ray
-		((x1,y1,z1),(x2,y2,z2)) = box
+		Ray (P (cPx, cPy, cPz)) cameraV@(cVx, cVy, cVz) = ray
+		(P (x1,y1,z1), P (x2,y2,z2)) = box
 		xbounds = [(x1 - cPx)/cVx, (x2-cPx)/cVx]
 		ybounds = [(y1-cPy)/cVy, (y2-cPy)/cVy]
 		zbounds = [(z1-cPz)/cVz, (z2-cPz)/cVz]
@@ -82,19 +77,19 @@ rayBounds ray box =
 -- Intersection
 
 
-intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe ℝ3
+intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe 𝔼3
 intersection r@(Ray p v) ((a, aval),b) res obj =
 	let
 		step = 
-			if      aval/(4::ℝ) > res then res
-			else if aval/(2::ℝ) > res then res/(2 :: ℝ)
-			else                           res/(10 :: ℝ)
+			if      aval/4 > res then res
+			else if aval/2 > res then res/2
+			else                      res/10
 		a'  = a + step
-		a'val = obj (p + a'*v)
+		a'val = obj (p .+^ a'*^v)
 	in if a'val < 0
 	then 
-		let a'' = refine (a,a') (\s -> obj (p+s*v))
-		in Just (p + a''*v)
+		let a'' = refine (a,a') (\s -> obj (p .+^ s*^v))
+		in Just (p .+^ a''*^v)
 	else if a' < b
 	then intersection r ((a',a'val), b) res obj
 	else Nothing
@@ -126,12 +121,12 @@ intersects a b c d = case intersection a b c d of
 
 -- Trace
 
-traceRay :: Ray -> ℝ -> (ℝ3, ℝ3) -> Scene -> Color
+traceRay :: Ray -> ℝ -> Box3 -> Scene -> Color
 traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultColor) =
 	let
 		(a,b) = rayBounds ray box
-	in case intersection ray ((a, obj (cameraP + a*cameraV)), b) step obj of
-		Just p  -> objColor * (sum $ [0.2] ++ do
+	in case intersection ray ((a, obj (cameraP .+^ a *^ cameraV)), b) step obj of
+		Just p  -> flip colorMult objColor $ (sum $ [0.2] ++ do
 			Light lightPos lightIntensity <- lights
 			let
 				ray'@(Ray _ v) = rayFromTo p lightPos
@@ -141,20 +136,20 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
 				pval = obj p
 				step = 0.1 :: ℝ
 				dirDeriv :: ℝ3 -> ℝ
-				dirDeriv v = (obj (p + step*v) - pval)/step
+				dirDeriv v = (obj (p .+^ step*^v) ^-^ pval)/step
 				deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
 				normal = normalized $ deriv
 				unitV = normalized $ v'
-				proj a b = (a⋅b)*b
-				dist  = d p lightPos
-				illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * ((25 :: ℝ)/dist)
+				proj a b = (a⋅b)*^b
+				dist  = distance p lightPos
+				illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * (25 /dist)
 				rV = 
 					let
 						normalComponent = proj v' normal
 						parComponent    = v' - normalComponent
 					in
 						normalComponent - parComponent	
-			return $ illumination*((3::ℝ) + (0.3::ℝ)*(abs $ rV ⋅ cameraV)^2)
+			return $ illumination + 4.5*lightIntensity * (200/dist^2)*(abs $ rV ⋅ cameraV)
 			)
 		Nothing   -> defaultColor
 
@@ -163,35 +158,35 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
 		where
 			(w,h) = (150, 150) :: ℝ2
 			obj = getImplicit3 symbObj
-			box@((x1,y1,z1), (x2,y2,z2)) = getBox3 symbObj
+			box@(P (x1,y1,z1), P (x2,y2,z2)) = getBox3 symbObj
 			av :: ℝ -> ℝ -> ℝ
-			av a b = (a+b)/(2::ℝ)
+			av a b = (a+b)/2
 			avY = av y1 y2
 			avZ = av z1 z2
 			deviation = maximum [abs $ y1 - avY, abs $ y2 - avY, abs $ z1 - avZ, abs $ z2 - avZ]
-			camera = Camera (x1-deviation*(2.2::ℝ), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
-			lights = [Light (x1-deviation*(1.5::ℝ), y1 - (0.4::ℝ)*(y2-y1), avZ) ((0.03::ℝ)*deviation) ]
+			camera = Camera (P (x1-deviation*2.2, avY, avZ)) (0, -1, 0) (0,0, -1) 1.0
+			lights = [Light (P (x1-deviation*1.5, y1 - 0.4*(y2-y1), avZ)) (0.3*deviation)]
 			scene = Scene obj (PixelRGBA8 200 200 230 255) lights (PixelRGBA8 255 255 255 0)
 			pixelRenderer :: Int -> Int -> Color
 			pixelRenderer a b = renderScreen 
-				((fromIntegral a :: ℝ)/w - (0.5::ℝ)) ((fromIntegral b :: ℝ)/h - (0.5 ::ℝ))
+				(fromIntegral a/w - 0.5) (fromIntegral b/h - 0.5)
 			renderScreen :: ℝ -> ℝ -> Color
 			renderScreen a b =
 				let
 					ray = cameraRay camera (a,b)
 				in 
 					average $ [
-						traceRay 
-							(cameraRay camera ((a,b) + (( 0.25::ℝ)/w, ( 0.25::ℝ)/h)))
+						traceRay
+							(cameraRay camera ((a,b) ^+^ ( 0.25/w, 0.25/h)))
 							2 box scene,
 						traceRay 
-							(cameraRay camera ((a,b) + ((-0.25::ℝ)/w, ( 0.25::ℝ)/h)))
+							(cameraRay camera ((a,b) ^+^ (-0.25/w, 0.25/h)))
 							0.5 box scene,
 						traceRay 
-							(cameraRay camera ((a,b) + (( 0.25::ℝ)/w,-( 0.25::ℝ)/h)))
+							(cameraRay camera ((a,b) ^+^ (0.25/w, -0.25/h)))
 							0.5 box scene,
 						traceRay 
-							(cameraRay camera ((a,b) + ((-0.25::ℝ)/w,-( 0.25::ℝ)/h)))
+							(cameraRay camera ((a,b) ^+^ (-0.25/w,-0.25/h)))
 							0.5 box scene
 						]
 
@@ -201,19 +196,20 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
 		where
 			(w,h) = (150, 150) :: ℝ2
 			obj = getImplicit2 symbObj
-			box@((x1,y1), (x2,y2)) = getBox2 symbObj
-			(dx, dy) = (x2 - x1, y2 - y1)
+			(p1@(P (x1,y1)), p2@(P (x2,y2))) = getBox2 symbObj
+			(dx, dy) = p2 .-. p1
 			dxy = max dx dy
 			pixelRenderer :: Int -> Int -> Color
 			pixelRenderer a b = color
 				where
-					xy a b = (x1,y2) - (dxy-dx, dy-dxy)/(2::ℝ) + dxy*(a/w, -b/h)
+					xy a b = P ((x1,y2) .-^ (dxy-dx, dy-dxy)^/2) .+^ dxy*^(a/w, -b/h)
 					s = 0.25 :: ℝ
-					color = average [objColor $ xy a b, objColor $ xy a b,
-						objColor $ xy (a+s) (b+s),
-						objColor $ xy (a-s) (b-s),
-						objColor $ xy (a+s) (b+s),
-						objColor $ xy (a-s) (b-s)]
+					(a', b') = (realToFrac a, realToFrac b)
+					color = average [objColor $ xy a' b', objColor $ xy a' b',
+						objColor $ xy (a'+s) (b'+s),
+						objColor $ xy (a'-s) (b'-s),
+						objColor $ xy (a'+s) (b'+s),
+						objColor $ xy (a'-s) (b'-s)]
 			objColor p = if obj p < 0 then PixelRGBA8 150 150 160 255 else PixelRGBA8 255 255 255 0
 
 

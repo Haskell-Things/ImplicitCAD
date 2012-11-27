@@ -1,12 +1,13 @@
 module Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2) where
 
+import Data.VectorSpace
+import Data.AffineSpace
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.SaneOperators as S
 
 rebound2 :: BoxedObj2 -> BoxedObj2
 rebound2 (obj, (a,b)) = 
 	let
 		d :: ℝ2
-		d = (b S.- a) S./ (10.0 :: ℝ)
+		d = (b .-. a) ^/ 10
 	in 
-		(obj, ((a S.- d), (b S.+ d)))
+		(obj, ((a .-^ d), (b .+^ d)))

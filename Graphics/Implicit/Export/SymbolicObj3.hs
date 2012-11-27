@@ -20,8 +20,6 @@ import Graphics.Implicit.MathUtil
 
 import Graphics.Implicit.Export.SymbolicObj2
 
-import qualified Graphics.Implicit.SaneOperators as S
-
 import qualified Data.Maybe as Maybe
 
 import Graphics.Implicit.Export.Symbolic.Rebound2
@@ -36,7 +34,7 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 	discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
 
-symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
+symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(𝔼3, 𝔼3, 𝔼3)]
 
 {--
 -- A translated objects mesh is its mesh translated.

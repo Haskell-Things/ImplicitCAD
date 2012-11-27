@@ -40,7 +40,7 @@ getLoops' :: Eq a => [[a]] -> [[a]] -> [[[a]]]
 
 getLoops' [] [] = []
 
--- And if the building loop is emtpy,
+-- And if the building loop is empty,
 -- we stick the first segment we have onto it
 -- to give us something to build on.
 
@@ -63,7 +63,7 @@ getLoops' segs workingLoop =
 		possibleConts = filter connects segs
 		nonConts = filter (not . connects) segs
 		(next, unused) = if null possibleConts
-			then error "unclosed loop in paths given"
+			then error "Graphics.Implicit.Export.Render.GetLoops: unclosed loop in paths given"
 			else (head possibleConts, tail possibleConts ++ nonConts)
 	in
 		if null next

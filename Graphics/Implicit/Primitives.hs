@@ -9,6 +9,7 @@ import Graphics.Implicit.Definitions
 import Data.List (sortBy)
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
+import Data.AffineSpace.Point
 
 -- $ 3D Primitives
 
@@ -20,8 +21,8 @@ sphere r = Sphere r
 
 rect3R ::
 	ℝ                 -- ^ Rounding of corners
-	-> ℝ3             -- ^ Bottom.. corner
-	-> ℝ3             -- ^ Top right... corner
+	-> 𝔼3             -- ^ Bottom.. corner
+	-> 𝔼3             -- ^ Top right... corner
 	-> SymbolicObj3   -- ^ Resuting cube - (0,0,0) is bottom left...
 
 rect3R = Rect3R
@@ -46,15 +47,15 @@ circle   = Circle
 
 rectR ::
 	ℝ
-	-> ℝ2           -- ^ Bottom left corner
-	-> ℝ2           -- ^ Top right corner
+	-> 𝔼2           -- ^ Bottom left corner
+	-> 𝔼2           -- ^ Top right corner
 	-> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
 
 rectR = RectR
 
 polygonR ::
 	ℝ                -- ^ Rouding of the polygon
-	-> [ℝ2]          -- ^ Verticies of the polygon
+	-> [𝔼2]          -- ^ Vertices of the polygon
 	-> SymbolicObj2  -- ^ Resulting polygon
 
 polygonR = PolygonR
@@ -114,18 +115,18 @@ class Object obj vec | obj -> vec where
 
 	-- | Get the bounding box an object
 	getBox :: 
-		obj           -- ^ Object to get box of
-		-> (vec, vec) -- ^ Bounding box
+		obj                       -- ^ Object to get box of
+		-> (Point vec, Point vec) -- ^ Bounding box
 
 	-- | Get the implicit function for an object
 	getImplicit :: 
-		obj           -- ^ Object to get implicit function of
-		-> (vec -> ℝ) -- ^ Implicit function
+		obj                 -- ^ Object to get implicit function of
+		-> (Point vec -> ℝ) -- ^ Implicit function
 
 	implicit :: 
-		(vec -> ℝ)     -- ^ Implicit function
-		-> (vec, vec)  -- ^ Bounding box
-		-> obj         -- ^ Resulting object
+		(Point vec -> ℝ)           -- ^ Implicit function
+		-> (Point vec, Point vec)  -- ^ Bounding box
+		-> obj                     -- ^ Resulting object
 	
 
 instance Object SymbolicObj2 ℝ2 where
@@ -174,10 +175,10 @@ rotate3 = Rotate3
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs = 
 	let
-		boxDropZ ((a,b,c),(d,e,f)) = ((a,b),(d,e))
+		boxDropZ (P (a,b,c),P (d,e,f)) = (P (a,b),P (d,e))
 		withBoxes :: [(Box2, SymbolicObj3)]
 		withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
-	in case pack ((0,0),(dy,dy)) sep withBoxes of
+	in case pack (P (0,0),P (dy,dy)) sep withBoxes of
 			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
 			_ -> Nothing
 				
@@ -192,7 +193,7 @@ pack2 (dx, dy) sep objs =
 	let
 		withBoxes :: [(Box2, SymbolicObj2)]
 		withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
-	in case pack ((0,0),(dy,dy)) sep withBoxes of
+	in case pack (P (0,0),P (dy,dy)) sep withBoxes of
 			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
 			_ -> Nothing
 

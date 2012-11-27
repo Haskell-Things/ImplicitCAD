@@ -13,6 +13,7 @@ import Control.Monad (sequence)
 
 import Data.List (intersperse)
 
+import Data.AffineSpace.Point
 
 scad2 :: ℝ -> SymbolicObj2 -> Text 
 scad2 res obj = toLazyText $ runReader (buildS2 obj) res
@@ -47,9 +48,11 @@ buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 
 
 buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf x] [buildS3 obj]
 
-buildS3 (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = call "translate" [bf x1, bf y1, bf z1] [
-                                            call "cube" [bf $ x2 - x1, bf $ y2 - y1, bf $ z2 - z1] []
-                                           ]
+buildS3 (Rect3R 0 (P (x1,y1,z1)) (P (x2,y2,z2))) =
+	call "translate" [bf x1, bf y1, bf z1] [
+		call "cube" [bf $ x2 - x1, bf $ y2 - y1, bf $ z2 - z1] []
+	]
+
 buildS3 (Cylinder h r1 r2) = call "cylinder" [
                               "r1 = " <> bf r1
                              ,"r2 = " <> bf r2
@@ -85,13 +88,13 @@ buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] $ [buildS2 obj]
 
 buildS2 (Scale2 (x,y) obj)     = call "scale" [bf x, bf y] $ [buildS2 obj]
 
-buildS2 (RectR 0 (x1,y1) (x2,y2)) = call "translate" [bf x1, bf y1] [
-                                    call "cube" [bf $ x2 - x1, bf $ y2 - y1] []
-                                   ]
+buildS2 (RectR 0 (P (x1,y1)) (P (x2,y2))) = call "translate" [bf x1, bf y1] [
+												call "cube" [bf $ x2 - x1, bf $ y2 - y1] []
+											]
 
 buildS2 (Circle r) = call "circle" [bf r] []
 
-buildS2 (PolygonR 0 points) = call "polygon" [buildVector [x,y] | (x,y) <- points] []
+buildS2 (PolygonR 0 points) = call "polygon" [buildVector [x,y] | P (x,y) <- points] []
     where buildVector comps = "[" <> mconcat (intersperse "," $ map bf comps) <> "]"
 
 
