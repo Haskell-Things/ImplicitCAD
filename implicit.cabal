@@ -74,11 +74,7 @@ Library
         Graphics.Implicit.ObjectUtil.GetImplicit3
         Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Default
-        Graphics.Implicit.ExtOpenScad.Expressions
         Graphics.Implicit.ExtOpenScad.Primitives
-        Graphics.Implicit.ExtOpenScad.Statements
-        Graphics.Implicit.ExtOpenScad.Util
-        Graphics.Implicit.ExtOpenScad.Util.Computation
         Graphics.Implicit.ExtOpenScad.Util.ArgParser
         Graphics.Implicit.Export.Definitions
         Graphics.Implicit.Export.MarchingSquares
