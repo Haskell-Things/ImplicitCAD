@@ -11,8 +11,11 @@ import Graphics.Implicit.SaneOperators
 import Graphics.Implicit.Definitions
 import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.Maybe (fromMaybe)
+import qualified Data.Maybe as Maybe
 
-import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2)
+import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
+
+import Debug.Trace
 
 getBox3 :: SymbolicObj3 -> Box3
 
@@ -112,34 +115,41 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
 
 
-getBox3 (ExtrudeRM r twist scale translate symbObj (Left h)) = 
+getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) = 
 	let
-		((x1,y1),(x2,y2)) = getBox2 symbObj
-		dx = x2 - x1
-		dy = y2 - y1
-		svals =  map (fromMaybe (const 1) scale) $ [0,h/(2::ℝ),h]
-		sval = maximum $ map abs $ svals
-		d = sval * sqrt (dx^2 + dy^2)
-		(tvalsx, tvalsy) = unzip $ map (fromMaybe (const (0,0)) translate) $ [0,h/(2::ℝ),h]
-		(tminx, tminy) = (minimum tvalsx, minimum tvalsy)
-		(tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
-	in
-		((-d+tminx, -d+tminy, 0),(d+tmaxx, d+tmaxy, h)) 
+		range = [0, 0.1 .. 1.0] :: [ℝ]
 
-getBox3 (ExtrudeRM r twist scale translate symbObj (Right hf)) = 
-	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
-		dx = x2 - x1
-		dy = y2 - y1
-		h = maximum [hf (x1,y1), hf (x2,y1), hf (x2,y2), hf (x1,y2), hf ((x1+x2)/(2::ℝ), (y1+y2)/(2::ℝ))]
-		svals =  map (fromMaybe (const 1) scale) $ [0,h/(2::ℝ),h]
-		sval = maximum $ map abs $ svals
-		d = sval * sqrt (dx^2 + dy^2)
-		(tvalsx, tvalsy) = unzip $ map (fromMaybe (const (0,0)) translate) $ [0,h/(2::ℝ),h]
+		(dx,dy) = (x2 - x1, y2 - y1)		
+		(xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
+
+		h = case eitherh of
+			Left h -> h
+			Right hf -> hmax + (0.2::ℝ)*(hmax-hmin)
+				where
+					hs = [hf (x,y) | x <- xrange, y <- yrange]
+					(hmin, hmax) = (minimum hs, maximum hs)
+		
+		hrange = map (h*) $ range
+
+		sval = case scale of
+			Nothing -> 1
+			Just scale' -> maximum $ map (abs . scale') hrange
+		
+		(twistXmin, twistYmin, twistXmax, twistYmax) = case twist of
+			Nothing -> (smin x1, smin y1, smax x2, smax y2)
+				where
+					smin y = min y (sval * y)
+					smax y = max y (sval * y)
+			Just _  -> (-d, -d, d, d)
+				where d = sval * getDist2 (0,0) symbObj
+		
+		translate' = fromMaybe (const (0,0)) translate
+		(tvalsx, tvalsy) = unzip . map (translate' . (h*)) $ hrange
 		(tminx, tminy) = (minimum tvalsx, minimum tvalsy)
 		(tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
 	in
-		((-d+tminx, -d+tminy, 0),(d+tmaxx, d+tmaxy, h))
+		((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 
 
 getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) symbObj) = 

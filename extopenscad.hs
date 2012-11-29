@@ -8,7 +8,7 @@
 -- Let's be explicit about what we're getting from where :)
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS, writePNG)
+import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS, writePNG2, writePNG3)
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
@@ -99,12 +99,15 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 			("scad", (_, x:xs, _))  -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname
 				writeSCAD2 res targetname x
+			("png", (_, x:xs, _))  -> do
+				putStrLn $ "Rendering 2D object to " ++ targetname
+				writePNG2 res targetname x
 			("stl", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeBinSTL res targetname x
 			("png", (_, _, x:xs))  -> do
 				putStrLn $ "Raytracing 3D object to " ++ targetname
-				writePNG res targetname x
+				writePNG3 res targetname x
 			("scad", (_, _, x:xs))  -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				writeSCAD3 res targetname x
@@ -130,9 +133,6 @@ main = do
 				args' = if head args == "-xml-error" then tail args else args
 			writeIORef xmlErrorOn (head args == "-xml-error")
 			case length args' of
-				0 -> putStrLn $ 
-					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
-					++ "eg. extopenscad input.escad out.stl"
 				1 -> do
 					f <- openFile (args' !! 0) ReadMode
 					content <- hGetContents f 
@@ -144,4 +144,8 @@ main = do
 					executeAndExportSpecifiedTargetType 
 						content (args' !! 1) (fileType $ args' !! 1)
 					hClose f
+				_ -> putStrLn $ 
+					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
+					++ "eg. extopenscad input.escad out.stl"
+
 

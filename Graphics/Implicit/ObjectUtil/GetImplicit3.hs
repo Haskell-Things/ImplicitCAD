@@ -86,7 +86,7 @@ getImplicit3 (Rotate3 (yz, xz, xy) symbObj) =
 	let
 		obj = getImplicit3 symbObj
 		rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-		rotateYZ θ obj = \(x,y,z) -> obj ( x, cos(θ)*z - sin(θ)*y, cos(θ)*y + sin(θ)*z)
+		rotateYZ θ obj = \(x,y,z) -> obj ( x, sin(θ)*z - cos(θ)*y, sin(θ)*y + cos(θ)*z)
 		rotateXZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
 		rotateXZ θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*z, y, cos(θ)*z - sin(θ)*x)
 		rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
