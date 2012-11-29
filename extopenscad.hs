@@ -9,7 +9,7 @@
 import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS, writePNG2, writePNG3)
-import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
 import Data.Map as Map

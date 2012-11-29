@@ -3,22 +3,36 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Graphics.Implicit.ExtOpenScad (runOpenscad, OpenscadObj (..) ) where
+module Graphics.Implicit.ExtOpenScad (runOpenscad, OVal (..) ) where
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (..) )
+import Graphics.Implicit.Definitions
+import Text.ParserCombinators.Parsec  hiding (State)
+import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Parser.Statement
+import Graphics.Implicit.ExtOpenScad.Eval.Statement
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
-import Graphics.Implicit.ExtOpenScad.Statements (computationStatement)
-import Graphics.Implicit.ExtOpenScad.Util.Computation (runComputations)
+import Graphics.Implicit.ExtOpenScad.Util.OVal
 
-import Text.ParserCombinators.Parsec (parse, many1, many, space, eof)
-import Control.Monad (liftM)
+import qualified Data.Maybe as Maybe
+import qualified Data.List as List
+import qualified Data.Map as Map
+import           Data.Map (Map)
+import qualified Control.Monad as Monad
+import qualified Control.Monad.State as State
+import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
 
 -- Small wrapper to handle parse errors, etc
-runOpenscad str = case parse (do {s <- many1 computationStatement; many space; eof; return s}) ""  str of
-	Right res -> Right $ runComputationsDefault res
-	Left  err ->  Left err
+runOpenscad s =
+	let
+		initial =  defaultObjects
+		rearrange (_, (varlookup, ovals)) = (varlookup, obj2s, obj3s) where
+			(obj2s, obj3s, others) = divideObjs ovals
+	in case parse (many1 computation) "" s of
+		Left e -> Left e
+		Right sts -> Right
+			$ fmap rearrange
+			$ (\sts -> State.runStateT sts (initial, [] ))
+			$ Monad.mapM_ runStatementI sts
 
-runComputationsDefault = runComputations $
-	return (defaultObjects, [], [])
 
 
