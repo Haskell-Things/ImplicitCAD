@@ -21,9 +21,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
 import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
 
-import Debug.Trace
-trace2 x = traceShow x x
-
 -- Small wrapper to handle parse errors, etc
 runOpenscad s =
 	let
@@ -35,6 +32,7 @@ runOpenscad s =
 		Right sts -> Right
 			$ fmap rearrange
 			$ (\sts -> State.runStateT sts (initial, [] ))
-			$ Monad.mapM_ runStatementI (trace2 sts)
+			$ Monad.mapM_ runStatementI sts
+
 
 

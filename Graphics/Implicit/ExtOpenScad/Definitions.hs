@@ -4,6 +4,7 @@ import Graphics.Implicit.Definitions
 import Data.Map (Map)
 import qualified Control.Monad as Monad
 import           Control.Monad.State (State,StateT)
+import qualified Data.List as List
 
 type Symbol = String
 

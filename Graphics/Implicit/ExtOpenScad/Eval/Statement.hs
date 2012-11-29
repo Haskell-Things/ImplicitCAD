@@ -91,7 +91,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
 runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
 		maybeMod  <- lookupVar name
 		varlookup <- getVarLookup
-		childVals <- liftIO $ runSuiteCapture varlookup suite
+		childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup suite
 		argsVal   <- Monad.forM argsExpr $ \(posName, expr) -> do
 			val <- evalExpr expr
 			return (posName, val)

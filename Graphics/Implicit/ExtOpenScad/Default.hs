@@ -72,7 +72,7 @@ defaultModules =
 
 defaultPolymorphicFunctions = 
 	[ 
-		("+", prod),
+		("+", sum),
 		("*", prod),
 		("/", div),
 		("-", toOObj sub), 
