@@ -76,9 +76,16 @@ defaultPolymorphicFunctions =
 		("*", prod),
 		("/", div),
 		("-", toOObj sub), 
+		("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)), 
 		("negate", toOObj negate),
 		("index", toOObj index),
-		("splice", toOObj osplice)
+		("splice", toOObj osplice),
+		("<", toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
+		(">", toOObj  ((>) :: ℝ -> ℝ -> Bool) ),
+		(">=", toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
+		("<=", toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
+		("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
+		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) )
 	] where
 
 		-- Some key functions are written as OVals in optimizations attempts
@@ -128,10 +135,11 @@ defaultPolymorphicFunctions =
 		negate (OList l) = OList $ map negate l
 		negate a = OError ["Can't negate " ++ oTypeStr a ++ "(" ++ show a ++ ")"]
 
-		numCompareToExprCompare f a b varlookup =
-			case (fromOObj (a varlookup) :: Maybe ℝ, fromOObj (b varlookup) :: Maybe ℝ) of
+		{-numCompareToExprCompare :: (ℝ -> ℝ -> Bool) -> Oval -> OVal -> Bool
+		numCompareToExprCompare f a b =
+			case (fromOObj a :: Maybe ℝ, fromOObj b :: Maybe ℝ) of
 				(Just a, Just b) -> f a b
-				_ -> False
+				_ -> False-}
 
 		index (OList l) (ONum ind) = 
 			let n = floor ind 

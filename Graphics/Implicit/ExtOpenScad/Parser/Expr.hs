@@ -186,7 +186,7 @@ expression n@1 =
 		otherComparisonsExpr <- many $ do
 			comparison <-
 				    (try $ string "==" >> return (Var "==") )
-				<|> (try $ string "!=" >> return (Var "/=") )
+				<|> (try $ string "!=" >> return (Var "!=") )
 				<|> (try $ string ">=" >> return (Var ">=") )
 				<|> (try $ string "<=" >> return (Var "<=") )
 				<|> (try $ string ">"  >> return (Var ">")  )

@@ -49,6 +49,13 @@ data OVal = OUndefined
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
+instance Eq OVal where
+	(OBool a) == (OBool b) = a == b
+	(ONum  a) == (ONum  b) = a == b
+	(OList a) == (OList b) = all id $ zipWith (==) a b
+	(OString a) == (OString b) = a == b
+	_ == _ = False
+
 instance Show OVal where
 	show OUndefined = "Undefined"
 	show (OBool b) = show b
