@@ -14,7 +14,7 @@ import Snap.Http.Server
 import Snap.Util.GZip (withCompression)
 
 import Graphics.Implicit (runOpenscad, extrudeR)
-import Graphics.Implicit.ExtOpenScad.Definitions (OpenscadObj (ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)

@@ -1,48 +1,13 @@
--- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
+module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
--- | We're going to give ourselves all sorts of goodies to parse OpenSCAD style module arguments here!!!
---   To see the awesomeness of this applied, look at Primitives
---   
---   Our tool of choice is ArgParser. 
---   It handles argument input, but also examples and unit tests for modules
-
-module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
-
-	-- $ Note: The actual definition of ArgParser is in Defintions, 
-	--   to avoid the pain of circular dependencies.
-
-	-- * ArgParser building functions
-	-- ** argument & combinators
-	argument,
-	doc,
-	defaultTo,
-	-- ** example
-	example,
-	-- ** test & combinators
-	test,
-	eulerCharacteristic,
-
-	-- * Tools for handeling ArgParsers	
-	argMap,
-	getArgParserDocs,
-	Doc (..), DocPart (..)
-
-	)where
-
+import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
-
-import qualified Data.Map as Map
-import qualified Data.Maybe as Maybe
+import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Control.Exception as Ex
-
---  * Instance Declarations
-
--- | ArgParser is a monad.
---   In some ways, an applicative functor would be nicer -- extracting docs 
---   would be less crazy --,  but we want do notation for prettiness.
+import qualified Data.Map   as Map
+import qualified Data.Maybe as Maybe
 
 instance Monad ArgParser where
 
@@ -103,16 +68,16 @@ eulerCharacteristic (ArgParserTest str tests child) χ =
 -- | Apply arguments to an ArgParser
 
 argMap :: 
-	   [OpenscadObj]            -- ^ Unnamed Arguments
-	-> [(String, OpenscadObj)]  -- ^ Named Arguments
+	[(Maybe String,  OVal)]      -- ^ arguments
 	-> ArgParser a              -- ^ ArgParser to apply them to
 	-> (Maybe a, [String])      -- ^ (result, error messages)
 
-argMap a b = argMap2 a (Map.fromList b)
+argMap args = argMap2 unnamedArgs (Map.fromList namedArgs) where
+	unnamedArgs = map snd $ filter (Maybe.isNothing . fst) args
+	namedArgs   = map (\(a,b) -> (Maybe.fromJust a, b)) $ filter (Maybe.isJust . fst) args
 
 
-
-argMap2 :: [OpenscadObj] -> Map.Map String OpenscadObj -> ArgParser a -> (Maybe a, [String])
+argMap2 :: [OVal] -> Map.Map String OVal -> ArgParser a -> (Maybe a, [String])
 
 argMap2 unnamedArgs namedArgs (ArgParser name fallback _ f) = 
 	case Map.lookup name namedArgs of
