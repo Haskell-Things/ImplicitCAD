@@ -9,6 +9,7 @@ import Debug.Trace
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
+import Data.VectorSpace
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -31,7 +32,7 @@ import Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs')
 
 import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 
--- (4) We tesselate the loops, using a mixtur of triangles and squares
+-- (4) We tesselate the loops, using a mixture of triangles and squares
 
 import Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop)
 
@@ -64,11 +65,9 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 --       you are interested in.
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh (x1, y1, z1) (x2, y2, z2) res obj = 
+getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj = 
 	let
-		dx = x2-x1
-		dy = y2-y1
-		dz = z2-z1
+		(dx,dy,dz) = p2 ^-^ p1
 
 		-- How many steps will we take on each axis?
 		nx = ceiling $ dx / res
@@ -193,10 +192,9 @@ getMesh (x1, y1, z1) (x2, y2, z2) res obj =
 
 
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
-getContour (x1, y1) (x2, y2) res obj = 
+getContour p1@(x1, y1) p2@(x2, y2) res obj = 
 	let
-		dx = x2-x1
-		dy = y2-y1
+		(dx,dy) = p2 ^-^ p1
 
 		-- How many steps will we take on each axis?
 		nx = ceiling $ dx / res

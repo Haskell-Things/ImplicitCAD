@@ -5,6 +5,7 @@ module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
+import Graphics.Implicit.Export.Util (centroid)
 import Data.VectorSpace
 import Data.Cross       
 
@@ -39,7 +40,7 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
    #__#
 -}
 
-tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a + c) == (b + d) =
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
 	let
 		b1 = normalized $ a ^-^ b
 		b2 = normalized $ c ^-^ b
@@ -52,7 +53,7 @@ tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | (a + c) == (b + d) =
    #__#      #/_#
 -}
 
-tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj ((a ^+^ c) / 2) < res/30 =
+tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj (centroid [a,c]) < res/30 =
 	return $ Tris $ [(a,b,c),(a,c,d)]
 
 -- Fallback case: make fans
@@ -64,8 +65,7 @@ tesselateLoop res obj pathSides = return $ Tris $
 	in if null path
 	then early_tris
 	else let
-		len = fromIntegral $ length path :: ℝ
-		mid@(midx,midy,midz) = (foldl1 (^+^) path) ^/ len
+		mid@(midx,midy,midz) = centroid path
 		midval = obj mid
 		preNormal = foldl1 (^+^) $
 			[ a `cross3` b | (a,b) <- zip path (tail path ++ [head path]) ]
@@ -82,14 +82,14 @@ tesselateLoop res obj pathSides = return $ Tris $
 shrinkLoop :: Int -> [ℝ3] -> ℝ -> Obj3 -> ([Triangle], [ℝ3])
 
 shrinkLoop _ path@[a,b,c] res obj =
-	if   abs (obj ((a + b + c) / 3 )) < res/50
+	if   abs (obj $ centroid [a,b,c]) < res/50
 	then 
 		( [(a,b,c)], [])
 	else 
 		([], path)
 
 shrinkLoop n path@(a:b:c:xs) res obj | n < length path =
-	if abs (obj ((a + c) / 2 )) < res/50
+	if abs (obj (centroid [a,c])) < res/50
 	then 
 		let (tris,remainder) = shrinkLoop 0 (a:c:xs) res obj
 		in ((a,b,c):tris, remainder)

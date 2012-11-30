@@ -5,6 +5,7 @@ module Graphics.Implicit.Export.Render.RefineSegs where
 
 import Data.VectorSpace
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.Export.Util (centroid)
 
 -- The purpose of refine is to add detail to a polyline aproximating
 -- the boundary of an implicit function and to remove redundant points.
@@ -26,35 +27,34 @@ detail' _ _ a = a
 -- detail adds new points to a polyline to add more detail.
 
 detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
-detail n res obj [p1@(x1,y1), p2@(x2,y2)] | n < 2 =
+detail n res obj [p1, p2] | n < 2 =
 	let
-		mid@(midX, midY) = (p1 ^+^ p2) ^/ 2
+		mid = centroid [p1,p2]
 		midval = obj mid 
 	in if abs midval < res / 40
-	then [(x1,y1), (x2,y2)]
+	then [p1, p2]
 	else let
 		normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^-^ p1) 
 		derivN = -(obj (mid ^-^ (normal ^* (midval/2))) - midval) * (2/midval)
 	in if abs derivN > 0.5 && abs derivN < 2
 	then let
 		mid' = mid ^-^ (normal ^* (midval / derivN))
-	in detail (n+1) res obj [(x1,y1), mid'] 
-	   ++ tail (detail (n+1) res obj [mid', (x2,y2)] )
+	in detail (n+1) res obj [p1, mid'] 
+	   ++ tail (detail (n+1) res obj [mid', p2] )
 	else let
-		derivX = (obj (midX + res/100, midY) - midval)*100/res
-		derivY = (obj (midX, midY + res/100) - midval)*100/res
-		derivNormSq = derivX^2+derivY^2
+		derivX = (obj (mid ^+^ (res/100, 0)) - midval)*100/res
+		derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
+		derivNormSq = derivX^2 + derivY^2
 	in if abs derivNormSq > 0.09 && abs derivNormSq < 4
 	then let
 		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
-		mid'@(midX', midY') = 
-			(midX + dX, midY + dY)
+		mid' = mid ^+^ (dX, dY)
 		midval' = obj mid'
 		posRatio = midval/(midval - midval')
-		mid''@(midX'', midY'') = (midX + dX*posRatio, midY + dY*posRatio)
+		mid'' = mid ^+^ (dX*posRatio, dY*posRatio)
 	in 
-		detail (n+1) res obj [(x1,y1), mid''] ++ tail (detail (n+1) res obj [mid'', (x2,y2)] )
-	else [(x1,y1), (x2,y2)]
+		detail (n+1) res obj [p1, mid''] ++ tail (detail (n+1) res obj [mid'', p2] )
+	else [p1, p2]
 
 
 detail _ _ _ x = x

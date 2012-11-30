@@ -8,7 +8,7 @@
 module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolylineTo)-} where
 
 import Graphics.Implicit.Definitions
-import Data.VectorSpace       
+import Data.VectorSpace
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj tri@(a,b,c) = 
@@ -21,7 +21,7 @@ normTriangle res obj tri@(a,b,c) =
 			r = 0.01 :: ℝ
 
 normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
-normVertex res obj p@(x,y,z) = 
+normVertex res obj p = 
 	let
 		-- D_vf(p) = ( f(p) - f(p+v) ) /|v|
 		-- but we'll actually scale v by res, so then |v| = res
@@ -33,9 +33,13 @@ normVertex res obj p@(x,y,z) =
 		dx = d (1, 0, 0)
 		dy = d (0, 1, 0)
 		dz = d (0, 0, 1)
-		nonUnitNormal = (dx,dy,dz)
-		normal = nonUnitNormal ^/ magnitude nonUnitNormal
-	in ((x,y,z), normal)
+	in (p, normalized (dx,dy,dz))
+
+centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
+centroid pts =
+    (norm *^) $ foldl (^+^) zeroV pts
+    where norm = recip $ realToFrac $ length pts
+{-# INLINE centroid #-}
 
 {--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]
