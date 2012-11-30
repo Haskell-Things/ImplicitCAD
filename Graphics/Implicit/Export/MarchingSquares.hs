@@ -6,24 +6,31 @@ module Graphics.Implicit.Export.MarchingSquares (getContour) where
 import Graphics.Implicit.Definitions
 import Control.Parallel.Strategies (using, parList, rdeepseq)
 import Debug.Trace
+import Data.VectorSpace
+
+both :: (a -> b) -> (a,a) -> (b,b)
+both f (x,y) = (f x, f y)
 
 -- | getContour gets a polyline describe the edge of your 2D
 --  object. It's really the only function in this file you need
 --  to care about from an external perspective.
 
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour (x1, y1) (x2, y2) (dx, dy) obj = 
+getContour p1 p2 d obj =
 	let
 		-- How many steps will we take on each axis?
-		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
-		ny = fromIntegral $ ceiling $ (y2 - y1) / dy
+		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
 		-- Divide it up and compute the polylines
+		gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
+		gridPos (nx,ny) (mx,my) = let p = ( fromIntegral mx / fromIntegral nx
+									      , fromIntegral my / fromIntegral ny)
+								  in p1 ^+^ (p2 ^-^ p1) ⋯* p
 		linesOnGrid :: [[[Polyline]]]
-		linesOnGrid = [[getSquareLineSegs 
-		           (x1 + (x2 - x1)*mx/nx,     y1 + (y2 - y1)*my/ny)
-		           (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny)
-		           obj
-		     | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+		linesOnGrid = [[getSquareLineSegs
+				   (gridPos n (mx,my))
+				   (gridPos n (mx+1,my+1))
+				   obj
+			 | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
 		-- Cleanup, cleanup, everybody cleanup!
 		-- (We connect multilines, delete redundant vertices on them, etc)
 		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
@@ -31,15 +38,15 @@ getContour (x1, y1) (x2, y2) (dx, dy) obj =
 		multilines
 
 getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour2 (x1, y1) (x2, y2) (dx, dy) obj = 
+getContour2 p1@(x1, y1) p2@(x2, y2) d obj = 
 	let
 		-- How many steps will we take on each axis?
-		nx = fromIntegral $ ceiling $ (x2 - x1) / dx
-		ny = fromIntegral $ ceiling $ (y2 - y1) / dy
+		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
 		-- Grid mapping funcs
-		fromGrid (mx, my) = (x1 + (x2 - x1)*mx/nx, y1 + (y2 - y1)*my/ny)
-		toGrid (x,y) =(\a-> traceShow a a) (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1) ) :: (ℕ, ℕ)
-		-- Evalueate obj on a grid, in parallel.
+		fromGrid (mx, my) = let p = (mx/nx, my/ny)
+							in (p1 ^+^ (p2 ^-^ p1) ⋯/ p)
+		toGrid (x,y) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1))
+		-- Evaluate obj on a grid, in parallel.
 		valsOnGrid :: [[ℝ]]
 		valsOnGrid = [[ obj (fromGrid (mx, my)) | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
 		              `using` parList rdeepseq
@@ -56,13 +63,13 @@ getContour2 (x1, y1) (x2, y2) (dx, dy) obj =
 		multilines
 		
 
--- | This function gives line segmensts to divde negative interior
+-- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on its 
 --  values at its vertices.
 --  It is based on the linearly-interpolated marching squares algorithm.
 
 getSquareLineSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getSquareLineSegs (x1, y1) (x2, y2) obj = 
+getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
 	let 
 		(x,y) = (x1, y1)
 

@@ -197,8 +197,8 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
 		where
 			(w,h) = (150, 150) :: ℝ2
 			obj = getImplicit2 symbObj
-			box@((x1,y1), (x2,y2)) = getBox2 symbObj
-			(dx, dy) = (x2 - x1, y2 - y1)
+			(p1@(x1,y1), p2@(x2,y2)) = getBox2 symbObj
+			(dx, dy) = p2 ^-^ p1
 			dxy = max dx dy
 			pixelRenderer :: Int -> Int -> Color
 			pixelRenderer a b = color
