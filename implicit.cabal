@@ -72,10 +72,17 @@ Library
         Graphics.Implicit.ObjectUtil.GetBox3
         Graphics.Implicit.ObjectUtil.GetImplicit2
         Graphics.Implicit.ObjectUtil.GetImplicit3
-        Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Default
+        Graphics.Implicit.ExtOpenScad.Parser.Util
+        Graphics.Implicit.ExtOpenScad.Parser.Statement
+        Graphics.Implicit.ExtOpenScad.Parser.Expr
+        Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Primitives
+        Graphics.Implicit.ExtOpenScad.Eval.Statement
+        Graphics.Implicit.ExtOpenScad.Eval.Expr
+        Graphics.Implicit.ExtOpenScad.Util.StateC
         Graphics.Implicit.ExtOpenScad.Util.ArgParser
+        Graphics.Implicit.ExtOpenScad.Util.OVal
         Graphics.Implicit.Export.Definitions
         Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill
