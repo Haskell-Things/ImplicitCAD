@@ -103,11 +103,13 @@ getWidth (varlookup, obj:_,     _) = max (x2-x1) (y2-y1)
 executeAndExport :: String -> String -> Maybe String -> String
 executeAndExport content callback maybeFormat = 
 	let
+		showB True  = "true"
+		showB False = "false"
 		callbackF :: Bool -> Bool -> Float -> String -> String
 		callbackF False is2D w msg = 
-			callback ++ "([null," ++ show msg ++ "," ++ show is2D ++ "," ++ show w  ++ "]);"
+			callback ++ "([null," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w  ++ "]);"
 		callbackF True  is2D w msg = 
-			callback ++ "([new Shape()," ++ show msg ++ "," ++ show is2D ++ "," ++ show w ++ "]);"
+			callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
 		callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
 	in case runOpenscad content of
 		Left err -> 
