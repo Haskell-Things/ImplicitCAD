@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
@@ -7,6 +9,8 @@ module Graphics.Implicit.Definitions where
 -- we want global IO refs.
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
+import Data.VectorSpace       
+import Control.Applicative       
 
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...
@@ -15,6 +19,21 @@ type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
 type ℕ = Int
+
+-- TODO: Find a better place for this
+(⋅) :: InnerSpace a => a -> a -> Scalar a
+(⋅) = (<.>)
+
+-- TODO: Find a better way to do this?
+class ComponentWiseMultable a where
+    (⋯*) :: a -> a -> a
+    (⋯/) :: a -> a -> a
+instance ComponentWiseMultable ℝ2 where
+    (x,y) ⋯* (x',y') = (x*x', y*y')
+    (x,y) ⋯/ (x',y') = (x/x', y/y')
+instance ComponentWiseMultable ℝ3 where
+    (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
+    (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
 
 -- nxn matrices
 -- eg. M2 ℝ = M₂(ℝ)

@@ -4,21 +4,21 @@
 module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 import Data.List
+import Data.VectorSpace
+import Data.AffineSpace
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.SaneOperators as S
 
 -- | The distance a point p is from a line segment (a,b)
-distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
-distFromLineSeg p@(p1,p2) (a@(a1,a2), b@(b1,b2)) = S.norm (closest S.- p)
+distFromLineSeg :: ℝ2 -> (ℝ2,ℝ2) -> ℝ
+distFromLineSeg p (a,b) = magnitude (closest .-. p)
 	where
-		ab = b S.- a
-		nab = (1 / S.norm ab) S.* ab
-		ap = p S.- a
-		d  = nab S.⋅ ap
+		ab = b ^-^ a
+		ap = p ^-^ a
+		d  = normalized ab ⋅ ap
 		closest
 			| d < 0 = a
-			| d > S.norm ab = b
-			| otherwise = a S.+ d S.* nab
+			| d > magnitude ab = b
+			| otherwise = a ^+^ d *^ normalized ab
 
 		
 

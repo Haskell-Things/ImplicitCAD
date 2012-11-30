@@ -20,8 +20,6 @@ import Graphics.Implicit.MathUtil
 
 import Graphics.Implicit.Export.SymbolicObj2
 
-import qualified Graphics.Implicit.SaneOperators as S
-
 import qualified Data.Maybe as Maybe
 
 import Graphics.Implicit.Export.Symbolic.Rebound2
