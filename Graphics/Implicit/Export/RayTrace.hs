@@ -207,13 +207,15 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
 			pixelRenderer :: Int -> Int -> Color
 			pixelRenderer a b = color
 				where
+					xy :: ℝ -> ℝ -> ℝ2
 					xy a b = (x1,y2) - (dxy-dx, dy-dxy)/(2::ℝ) + dxy*(a/w, -b/h)
 					s = 0.25 :: ℝ
-					color = average [objColor $ xy a b, objColor $ xy a b,
-						objColor $ xy (a+s) (b+s),
-						objColor $ xy (a-s) (b-s),
-						objColor $ xy (a+s) (b+s),
-						objColor $ xy (a-s) (b-s)]
+					(a', b') = (realToFrac a, realToFrac b) :: (ℝ,ℝ)
+					color = average [objColor $ xy a' b', objColor $ xy a' b',
+						objColor $ xy (a'+s) (b'+s),
+						objColor $ xy (a'-s) (b'-s),
+						objColor $ xy (a'+s) (b'+s),
+						objColor $ xy (a'-s) (b'-s)]
 			objColor p = if obj p < 0 then PixelRGBA8 150 150 160 255 else PixelRGBA8 255 255 255 0
 
 
