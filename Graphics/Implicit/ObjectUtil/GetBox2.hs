@@ -68,6 +68,15 @@ getBox2 (Translate2 v symbObj) =
 		then ((0,0),(0,0))
 		else (a^+^v, b^+^v)
 
+getBox2 (Mirror2 a symbObj) =
+	let
+		(a,b) = getBox2 symbObj
+		mirror p =
+		  let c = 2 * (p ⋅ a) / (a ⋅ a)
+		  in c *^ a ^-^ p
+	in
+		(mirror a, mirror b)
+
 getBox2 (Scale2 s symbObj) =
 	let
 		(a,b) = getBox2 symbObj

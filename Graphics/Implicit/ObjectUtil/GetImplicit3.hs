@@ -77,6 +77,15 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 	in
 		\p -> k * obj (p ⋯/ s)
 
+getImplicit3 (Mirror3 a symbObj) =
+	let
+		obj = getImplicit3 symbObj
+	in
+		\p ->
+			let
+				c = 2 * (p ⋅ a) / (a ⋅ a)
+			in obj $ p ^-^ c *^ a
+
 getImplicit3 (Rotate3 (yz, xz, xy) symbObj) = 
 	let
 		obj = getImplicit3 symbObj
