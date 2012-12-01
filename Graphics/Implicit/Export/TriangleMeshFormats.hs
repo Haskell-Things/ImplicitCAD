@@ -15,24 +15,29 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian
 
 import Prelude hiding (replicate)
+import Data.VectorSpace
+import Data.Cross hiding (normal)
+
+normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
+normal (a,b,c) =
+    normalized $ (b + negateV a) `cross3` (c + negateV a)
 
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
-	where
-		stlHeader = "solid ImplictCADExport\n"
-		stlFooter = "endsolid ImplictCADExport\n"
-		vertex :: ℝ3 -> Builder
-		vertex (x,y,z) = mconcat ["vertex " 
-											 ,bf x , " "
-											 ,bf y , " " 
-											 ,bf z]
-		triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
-		triangle (a,b,c) =
-	            "facet normal 0 0 0\n"
-	            <> "outer loop\n"
-	            <> vertex a <> "\n"
-	            <> vertex b <> "\n"
-	            <> vertex c
-		    <> "\nendloop\nendfacet\n"
+    where
+        stlHeader = "solid ImplictCADExport\n"
+        stlFooter = "endsolid ImplictCADExport\n"
+        vector :: ℝ3 -> Builder
+        vector (x,y,z) = bf x <> " " <> bf y <> " " <> bf z
+        vertex :: ℝ3 -> Builder
+        vertex v = "vertex " <> vector v
+        triangle :: (ℝ3, ℝ3, ℝ3) -> Builder
+        triangle (a,b,c) =
+                "facet normal " <> vector (normal (a,b,c)) <> "\n"
+                <> "outer loop\n"
+                <> vertex a <> "\n"
+                <> vertex b <> "\n"
+                <> vertex c
+                <> "\nendloop\nendfacet\n"
 
 
 -- Write a 32-bit little-endian float to a buffer.
@@ -43,9 +48,10 @@ binaryStl :: [Triangle] -> ByteString
 binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map triangle triangles)
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
-          triangle (a,b,c) = normal <> point a <> point b <> point c <> fromWord16le 0
+          triangle (a,b,c) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
           point (x,y,z) = fromWrite $ float32LE x <> float32LE y <> float32LE z
-          normal = fromWrite $ float32LE 0 <> float32LE 0 <> float32LE 0
+          normalV ps = let (x,y,z) = normal ps
+                       in fromWrite $ float32LE x <> float32LE y <> float32LE z
 
 jsTHREE :: TriangleMesh -> Text
 jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
