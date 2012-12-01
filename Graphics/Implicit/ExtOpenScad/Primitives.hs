@@ -23,7 +23,7 @@ import qualified Data.Either as Either
 import Data.VectorSpace
 
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
-primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude ]
+primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, mirror, scale, rotate, extrude, pack, shell, rotateExtrude ]
 
 -- **Exmaple of implementing a module**
 -- sphere is a module without a suite named sphere,
@@ -262,6 +262,20 @@ rotate = moduleWithSuite "rotate" $ \children -> do
 			objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad xz, 0)) children
 		) <||> ( \_  -> [] )
 
+mirror = moduleWithSuite "mirror" $ \children -> do
+	v :: Either ℝ2 ℝ3 <- argument "v"
+		`doc` "vector defining plane to mirror across"
+
+	example "mirror ([2,3]) square([4,5]);"
+	example "mirror ([5,6,7]) cube([1,2,3]);"
+
+	let 
+		mirrorObjs plane2 plane3 = 
+			objMap (Prim.mirror plane2) (Prim.mirror plane3) children
+	
+	return $ return $ case v of
+		Left (x,y)    -> mirrorObjs (x,y) (x,y,0.0)
+		Right (x,y,z) -> mirrorObjs (x,y) (x,y,z)
 
 scale = moduleWithSuite "scale" $ \children -> do
 
