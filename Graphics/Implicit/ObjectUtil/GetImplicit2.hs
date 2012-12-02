@@ -75,6 +75,15 @@ getImplicit2 (Translate2 v symbObj) =
 	in
 		\p -> obj (p ^-^ v)
 
+getImplicit2 (Mirror2 a symbObj) =
+	let
+		obj = getImplicit2 symbObj
+	in
+		\p ->
+			let
+				c = 2 * (p ⋅ a) / (a ⋅ a)
+			in obj $ c *^ a ^-^ p
+
 getImplicit2 (Scale2 s@(sx,sy) symbObj) =
 	let
 		obj = getImplicit2 symbObj

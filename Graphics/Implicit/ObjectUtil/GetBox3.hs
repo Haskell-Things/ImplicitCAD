@@ -79,6 +79,15 @@ getBox3 (Translate3 v symbObj) =
 	in
 		(a^+^v, b^+^v)
 
+getBox3 (Mirror3 a symbObj) =
+	let
+		(a,b) = getBox3 symbObj
+		mirror p =
+		  let c = 2 * (p ⋅ a) / (a ⋅ a)
+		  in p ^-^ c *^ a
+	in
+		(mirror a, mirror b)
+
 getBox3 (Scale3 s symbObj) =
 	let
 		(a,b) = getBox3 symbObj

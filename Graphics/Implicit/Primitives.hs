@@ -71,6 +71,12 @@ class Object obj vec | obj -> vec where
 		-> obj   -- ^ Object to translate
 		-> obj   -- ^ Resulting object
 
+	-- | Mirror an object
+	mirror :: 
+		vec     -- ^ Vector defining plane to mirror across
+		-> obj  -- ^ Object to mirror
+		-> obj  -- ^ Resulting mirrored object	
+
 	-- | Scale an object
 	scale :: 
 		vec     -- ^ Amount to scale by
@@ -130,6 +136,7 @@ class Object obj vec | obj -> vec where
 
 instance Object SymbolicObj2 ℝ2 where
 	translate   = Translate2
+	mirror      = Mirror2
 	scale       = Scale2
 	complement  = Complement2
 	unionR      = UnionR2
@@ -143,6 +150,7 @@ instance Object SymbolicObj2 ℝ2 where
 
 instance Object SymbolicObj3 ℝ3 where
 	translate   = Translate3
+	mirror      = Mirror3
 	scale       = Scale3
 	complement  = Complement3
 	unionR      = UnionR3
