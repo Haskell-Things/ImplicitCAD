@@ -57,7 +57,17 @@ getBox2 (DifferenceR2 r symbObjs) =
 		firstBox
 
 getBox2 (IntersectR2 r symbObjs) = 
-	outsetBox r $ unionBoxes (map getBox2 symbObjs)
+	let 
+		boxes = map getBox2 symbObjs
+		(leftbot, topright) = unzip boxes
+		(lefts, bots) = unzip leftbot
+		(rights, tops) = unzip topright
+		left = maximum lefts
+		bot = maximum bots
+		right = minimum rights
+		top = minimum tops
+	in
+		((left-r,bot-r),(right+r,top+r))
 
 -- Simple transforms
 getBox2 (Translate2 v symbObj) =
