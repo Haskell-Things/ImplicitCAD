@@ -105,6 +105,7 @@ Library
         Graphics.Implicit.Export.Render.Interpolate
         Graphics.Implicit.Export.Render.RefineSegs
         Graphics.Implicit.Export.Render.TesselateLoops
+        Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
 

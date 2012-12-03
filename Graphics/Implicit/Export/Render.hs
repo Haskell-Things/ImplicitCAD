@@ -64,6 +64,10 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 --       the mesh are abstracted into the imported files. They are likely what
 --       you are interested in.
 
+-- For the 2D case, we need one last thing, cleanLoopsFromSegs:
+
+import Graphics.Implicit.Export.Render.HandlePolylines ( cleanLoopsFromSegs )
+
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
 getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj = 
 	let
@@ -248,7 +252,7 @@ getContour p1@(x1, y1) p2@(x2, y2) res obj =
 			 |objY0 <- objV  | objY1 <- tail objV
 			] `using` (parListChunk (max 1 $ div ny 32) rdeepseq)
 
-	in concat $ concat $ segs -- (5) merge squares, etc
+	in cleanLoopsFromSegs $ concat $ concat $ segs -- (5) merge squares, etc
 
 
 
