@@ -7,7 +7,7 @@
 -- The code is fairly straightforward; an explanation of how 
 -- the first one works is provided.
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, OverlappingInstances  #-}
 
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
@@ -23,7 +23,7 @@ import qualified Data.Either as Either
 import Data.VectorSpace
 
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
-primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude ]
+primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
 -- **Exmaple of implementing a module**
 -- sphere is a module without a suite named sphere,
@@ -277,8 +277,8 @@ scale = moduleWithSuite "scale" $ \children -> do
 			objMap (Prim.scale strech2) (Prim.scale strech3) children
 	
 	return $ return $ case v of
-		Left   x              -> scaleObjs (x,0) (x,0,0)
-		Right (Left (x,y))    -> scaleObjs (x,y) (x,y,0.0)
+		Left   x              -> scaleObjs (x,1) (x,1,1)
+		Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
 		Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
 extrude = moduleWithSuite "linear_extrude" $ \children -> do
@@ -386,6 +386,39 @@ pack = moduleWithSuite "pack" $ \children -> do
 				Nothing       -> do 
 					putStrLn "Can't pack given objects in given box with present algorithm"
 					return children
+
+unit = moduleWithSuite "unit" $ \children -> do
+
+	example "unit(\"inch\") {..}"
+
+	-- arguments
+	unit :: String <- argument "unit"
+		`doc` "the unit you wish to work in"
+
+	let 
+		mmRatio "inch" = Just 25.4
+		mmRatio "in"   = mmRatio "inch"
+		mmRatio "foot" = Just 304.8
+		mmRatio "ft"   = mmRatio "foot"
+		mmRatio "yard" = Just 914.4
+		mmRatio "yd"   = mmRatio "yard"
+		mmRatio "mm"   = Just 1
+		mmRatio "cm"   = Just 10
+		mmRatio "dm"   = Just 100
+		mmRatio "m"    = Just 1000
+		mmRatio "km"   = Just 1000000
+		mmRatio "µm"   = Just 0.001
+		mmRatio "um"   = mmRatio "µm"
+		mmRatio "nm"   = Just 0.0000001
+		mmRatio _      = Nothing
+
+	-- The actual work...
+	return $ case mmRatio unit of
+		Nothing -> do
+			putStrLn $ "unrecognized unit " ++ unit
+			return children
+		Just r  -> 
+			return $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
 
 
 ---------------
