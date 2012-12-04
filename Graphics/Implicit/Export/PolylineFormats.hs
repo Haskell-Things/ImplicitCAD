@@ -12,27 +12,31 @@ import Graphics.Implicit.Export.TextBuilderUtils
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
 import Text.Blaze.Svg
 import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
+import Text.Blaze.Internal (stringValue)
 import qualified Text.Blaze.Svg11.Attributes as A
 
 import Data.List (foldl')
 import qualified Data.List as List
 
 svg :: [Polyline] -> Text
-svg = renderSvg . svg11 . svg'
-    where       
-      svg11 content = docTypeSvg ! A.version "1.1" $ content
+svg plines = renderSvg . svg11 . svg' $ plines
+    where  
+      (xmin, xmax, ymin, ymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
+           where (xs,ys) = unzip (concat plines)
+      
+      svg11 content = docTypeSvg ! A.version "1.1" 
+                                 ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
+                                 ! A.height (stringValue $ show (ymax-ymin) ++ "mm")
+                                 $ content
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.
       svg' [] = mempty 
       -- When we have a known point, we can compute said transformation:
-      svg' polylines@((start:_):_) = let (xmin, ymax) = foldl' (foldl' minmax) start polylines
-                                     in thinBlueGroup $ mapM_ (poly xmin ymax) polylines
+      svg' polylines = thinBlueGroup $ mapM_ poly polylines
       -- Otherwise, if we don't have a point to start out with, skip this polyline:
       svg' ([]:rest) = svg' rest
 
-      minmax (xa,ya) (xb,yb) = (min xa xb, max ya yb)
-      
-      poly xmin ymax line = polyline ! A.points pointList 
+      poly line = polyline ! A.points pointList 
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
