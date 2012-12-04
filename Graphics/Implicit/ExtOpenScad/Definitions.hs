@@ -65,6 +65,8 @@ instance Show OVal where
 	show (OFunc f) = "<function>"
 	show (OModule _) = "module"
 	show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
+	show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
+	show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
 type VarLookup = Map String OVal
 type FStack = [OVal]
