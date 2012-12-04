@@ -12,7 +12,7 @@ import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCA
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
-import Data.Map as Map
+import Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
@@ -89,37 +89,34 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
 			res = getRes s
-		case (formatname, s) of 
-			(_, (_, [], []))   -> putStrLn "Nothing to render"
-			("svg", (_, x:xs, _)) -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname
-				writeSVG res targetname x
-			("ngc", (_, x:xs, _)) -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname
-				writeGCodeHacklabLaser res targetname x
-			("scad", (_, x:xs, _))  -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname
-				writeSCAD2 res targetname x
-			("png", (_, x:xs, _))  -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname
-				writePNG2 res targetname x
-			("stl", (_, _, x:xs))  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname
-				writeBinSTL res targetname x
-			("png", (_, _, x:xs))  -> do
-				putStrLn $ "Raytracing 3D object to " ++ targetname
-				writePNG3 res targetname x
-			("scad", (_, _, x:xs))  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname
-				writeSCAD3 res targetname x
-			("obj", (_, _, x:xs))  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname
-				writeOBJ res targetname x
-			("js", (_, _, x:xs))  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname
-				writeTHREEJS res targetname x
-			(otherFormat, _) -> putStrLn $ "Unrecognized format: " ++ otherFormat
-
+		if not (null obj2s)
+		then do
+			let obj = head obj2s
+			putStrLn $ "Rendering 2D object to " ++ targetname
+			putStrLn $ "With resolution " ++ show res
+			putStrLn $ "In box " ++ show (getBox2 obj)
+			putStrLn $ show obj
+			case formatname of
+				"svg" -> writeSVG   res targetname obj
+				"scad"-> writeSCAD2 res targetname obj
+				"png" -> writePNG2  res targetname obj
+				"ngc" -> writeGCodeHacklabLaser res targetname obj
+				_     -> putStrLn $ "Unrecognized 2D format: " ++ formatname
+		else if not (null obj3s)
+		then do
+			let obj = head obj3s
+			putStrLn $ "Rendering 3D object to " ++ targetname
+			putStrLn $ "With resolution " ++ show res
+			putStrLn $ "In box " ++ show (getBox3 obj)
+			putStrLn $ show obj
+			case formatname of
+				"stl" -> writeBinSTL res targetname obj
+				"scad"-> writeSCAD3  res targetname obj
+				"obj" -> writeOBJ    res targetname obj
+				"png" -> writePNG3   res targetname obj
+				_     -> putStrLn $ "Unrecognized 3D format: " ++ formatname
+		else
+			putStrLn "Nothing to render."
 		
 
 main :: IO()
