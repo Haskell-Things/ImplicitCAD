@@ -85,7 +85,8 @@ defaultPolymorphicFunctions =
 		(">=", toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
 		("<=", toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
 		("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
-		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) )
+		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ), 
+		("list_gen", toOObj list_gen)
 	] where
 
 		-- Some key functions are written as OVals in optimizations attempts
@@ -181,4 +182,17 @@ defaultPolymorphicFunctions =
 		errorAsAppropriate _   _   err@(OError _) = err
 		errorAsAppropriate name a b = OError 
 			["Can't " ++ name ++ " objects of types " ++ oTypeStr a ++ " and " ++ oTypeStr b ++ "."]
+
+		list_gen :: [ℝ] -> Maybe [ℝ]
+		list_gen [a,b] = Just [fromIntegral (ceiling a).. fromIntegral (floor b)]
+		list_gen [a, b, c] =
+			let
+				nr = (c-a)/b
+				n  = fromIntegral (floor nr)
+			in if nr - n > 0
+			then Just 
+				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor (c - b*(nr -n)))]
+			else Just 
+				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
+		list_gen _ = Nothing
 
