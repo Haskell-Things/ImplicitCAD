@@ -19,6 +19,8 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Graphics.Implicit.Primitives as Prim
 import Data.Maybe (fromMaybe, isNothing)
 import qualified Data.Either as Either
+import           Data.Either (either)
+import qualified Control.Monad as Monad
        
 import Data.VectorSpace
 
@@ -51,11 +53,30 @@ cube = moduleWithoutSuite "cube" $ do
 	example "cube(4);"
 
 	-- arguments
-	size   :: Either ℝ ℝ3  <- argument "size"
-	                    `doc` "cube size"
-	center :: Bool <- argument "center" 
-	                    `doc` "should center?"  
-	                    `defaultTo` False
+	((x1,x2), (y1,y2), (z1,z2)) <-
+		do
+			x :: Either ℝ ℝ2 <- argument "x"
+				`doc` "x or x-interval"
+			y :: Either ℝ ℝ2 <- argument "y"
+				`doc` "y or y-interval"
+			z :: Either ℝ ℝ2 <- argument "z"
+				`doc` "z or z-interval"
+			center :: Bool <- argument "center" 
+				`doc` "should center? (non-intervals)"  
+				`defaultTo` False
+			let toInterval' = toInterval center
+			return (either (toInterval center) id x,
+			        either (toInterval center) id y,
+			        either (toInterval center) id z)
+		<|> do
+			size   :: Either ℝ ℝ3  <- argument "size"
+				`doc`  "square size"
+			center :: Bool <- argument "center" 
+				`doc` "should center?"  
+				`defaultTo` False
+			let (x,y, z) = either (\w -> (w,w,w)) id size
+			return (toInterval center x, toInterval center y, toInterval center z)
+
 	r      :: ℝ    <- argument "r"
 	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
@@ -66,30 +87,40 @@ cube = moduleWithoutSuite "cube" $ do
 	test "cube(size=[2,3,4]);"
 		`eulerCharacteristic` 2
 
-	-- A helper function for making rect3's accounting for centerdness
-	let rect3 x y z = 
-		if center  
-		then Prim.rect3R r (-x/2, -y/2, -z/2) (x/2, y/2, z/2)
-		else Prim.rect3R r (0, 0, 0)  (x, y, z)
+	addObj3 $ Prim.rect3R r (x1, y1, z1) (x2, y2, z2)
 
-	case size of
-		Right (x,y,z) -> addObj3 $ rect3 x y z
-		Left   w      -> addObj3 $ rect3 w w w
 
 
 
 square = moduleWithoutSuite "square" $ do
 
 	-- examples 
+	example "square(x=[-2,2], y=[-1,5]);"
 	example "square(size = [3,4], center = true, r = 0.5);"
 	example "square(4);"
 
 	-- arguments
-	size   :: Either ℝ ℝ2  <- argument "size"
-	                    `doc`  "square size"
-	center :: Bool <- argument "center" 
-	                    `doc` "should center?"  
-	                    `defaultTo` False
+	((x1,x2), (y1,y2)) <-
+		do
+			x :: Either ℝ ℝ2 <- argument "x"
+				`doc` "x or x-interval"
+			y :: Either ℝ ℝ2 <- argument "y"
+				`doc` "y or y-interval"
+			center :: Bool <- argument "center" 
+				`doc` "should center? (non-intervals)"  
+				`defaultTo` False
+			let toInterval' = toInterval center
+			return (either (toInterval center) id x,
+			        either (toInterval center) id y)
+		<|> do
+			size   :: Either ℝ ℝ2  <- argument "size"
+				`doc`  "square size"
+			center :: Bool <- argument "center" 
+				`doc` "should center?"  
+				`defaultTo` False
+			let (x,y) = either (\w -> (w,w)) id size
+			return (toInterval center x, toInterval center y)
+
 	r      :: ℝ    <- argument "r"
 	                    `doc` "radius of rounding" 
 	                    `defaultTo` 0
@@ -100,17 +131,7 @@ square = moduleWithoutSuite "square" $ do
 	test "square(size=[2,3]);"
 		`eulerCharacteristic` 0
 
-	-- A helper function for making rect2's accounting for centerdness
-	let rect x y = 
-		if center  
-		then Prim.rectR r (-x/2, -y/2) (x/2, y/2)
-		else Prim.rectR r (  0,    0 ) ( x,   y )
-
-	-- caseOType matches depending on whether size can be coerced into
-	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
-	addObj2 $ case size of
-		Left   w    -> rect w w
-		Right (x,y) -> rect x y
+	addObj2 $ Prim.rectR r (x1, y1) (x2, y2)
 
 
 
@@ -124,8 +145,8 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 	r      :: ℝ    <- argument "r"
 				`defaultTo` 1
 				`doc` "radius of cylinder"
-	h      :: ℝ    <- argument "h"
-				`defaultTo` 1
+	h      :: Either ℝ ℝ2    <- argument "h"
+				`defaultTo` (Left 1)
 				`doc` "height of cylinder"
 	r1     :: ℝ    <- argument "r1"
 				`defaultTo` 1
@@ -146,6 +167,11 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 	test "cylinder(r=5, h=10, $fn = 6);"
 		`eulerCharacteristic` 0
 
+	let
+		(h1, h2) = either (toInterval center) id h
+		dh = h2 - h1
+		shift = if h1 == 0 then id else Prim.translate (0,0,h1)
+
 	-- The result is a computation state modifier that adds a 3D object, 
 	-- based on the args.
 	addObj3 $ if r1 == 1 && r2 == 1
@@ -153,13 +179,9 @@ cylinder = moduleWithoutSuite "cylinder" $ do
 			obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
 				let sides = fromIntegral fn 
 				in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
-			obj3 = Prim.extrudeR 0 obj2 h
-		in if center
-			then Prim.translate (0,0,-h/2) obj3
-			else obj3
-		else if center
-			then  Prim.translate (0,0,-h/2) $ Prim.cylinder2 r1 r2 h
-			else Prim.cylinder2  r1 r2 h
+			obj3 = Prim.extrudeR 0 obj2 dh
+		in shift $ obj3
+		else shift $ Prim.cylinder2 r1 r2 dh
 
 circle = moduleWithoutSuite "circle" $ do
 	
@@ -199,8 +221,6 @@ polygon = moduleWithoutSuite "polygon" $ do
 		_ -> return $ return []
 
 
-
-
 union = moduleWithSuite "union" $ \children -> do
 	r :: ℝ <- argument "r"
 		`defaultTo` 0.0
@@ -230,17 +250,26 @@ translate = moduleWithSuite "translate" $ \children -> do
 	example "translate ([2,3]) circle (4);"
 	example "translate ([5,6,7]) sphere(5);"
 
-	v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
-		`doc` "vector to translate by"
+	(x,y,z) <- 
+		do
+			x :: ℝ <- argument "x"
+				`doc` "x amount to translate";
+			y :: ℝ <- argument "y"
+				`doc` "y amount to translate";
+			z :: ℝ <- argument "z"
+				`doc` "z amount to translate"
+				`defaultTo` 0;
+			return (x,y,z);
+		<|> do
+			v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
+				`doc` "vector to translate by"
+			return $ case v of
+				Left          x       -> (x,0,0)
+				Right (Left  (x,y)  ) -> (x,y,0)
+				Right (Right (x,y,z)) -> (x,y,z)
 	
-	let 
-		translateObjs shift2 shift3 = 
-			objMap (Prim.translate shift2) (Prim.translate shift3) children
-	
-	return $ return $ case v of
-		Left   x              -> translateObjs (x,0) (x,0,0)
-		Right (Left (x,y))    -> translateObjs (x,y) (x,y,0.0)
-		Right (Right (x,y,z)) -> translateObjs (x,y) (x,y,z)
+	return $ return $ 
+		objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
 deg2rad x = x / 180.0 * pi
 
@@ -423,6 +452,8 @@ unit = moduleWithSuite "unit" $ \children -> do
 
 ---------------
 
+(<|>) :: ArgParser a -> ArgParser a -> ArgParser a
+(<|>) = Monad.mplus
 
 moduleWithSuite name modArgMapper = (name, modArgMapper)
 moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
@@ -450,3 +481,7 @@ obj2UpMap obj2upmod (x:xs) = case x of
 	a          -> a                      : obj2UpMap obj2upmod xs
 obj2UpMap _ [] = []
 
+toInterval center h = 
+	if center
+	then (-h/2, h/2)
+	else (0, h)
