@@ -8,23 +8,32 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Control.Exception as Ex
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
+import Control.Monad
 
 instance Monad ArgParser where
 
 	-- return is easy: if we want an ArgParser that just gives us a, that is 
 	-- ArgParserTerminator a
-	return a = ArgParserTerminator a
+	return a = APTerminator a
 
 	-- Now things get more interesting. We need to describe how (>>=) works.
 	-- Let's get the hard ones out of the way first.
 	-- ArgParser actually 
-	(ArgParser str fallback doc f) >>= g = ArgParser str fallback doc (\a -> (f a) >>= g)
-	(ArgParserFailIf b errmsg child) >>= g = ArgParserFailIf b errmsg (child >>= g)
+	(AP str fallback doc f) >>= g = AP str fallback doc (\a -> (f a) >>= g)
+	(APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
 	-- These next to is easy, they just pass the work along to their child
-	(ArgParserExample str child) >>= g = ArgParserExample str (child >>= g)
-	(ArgParserTest str tests child) >>= g = ArgParserTest str tests (child >>= g)
+	(APExample str child) >>= g = APExample str (child >>= g)
+	(APTest str tests child) >>= g = APTest str tests (child >>= g)
 	-- And an ArgParserTerminator happily gives away the value it contains
-	(ArgParserTerminator a) >>= g = g a
+	(APTerminator a) >>= g = g a
+	(APBranch bs) >>= g = APBranch $ map (>>= g) bs
+
+instance MonadPlus ArgParser where
+	mzero = APFailIf True "" undefined
+	mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
+	mplus (APBranch as) b             = APBranch ( as  ++ [b] )
+	mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
+	mplus a             b             = APBranch [ a   ,   b  ]
 
 -- * ArgParser building functions
 
@@ -32,7 +41,7 @@ instance Monad ArgParser where
 
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument name = 
-	ArgParser name Nothing "" $ \oObjVal -> do
+	AP name Nothing "" $ \oObjVal -> do
 		let
 			val = fromOObj oObjVal :: Maybe desiredType
 			errmsg = case oObjVal of
@@ -40,28 +49,27 @@ argument name =
 				             ++ ": " ++ concat errs
 				_   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ name
 		-- Using /= Nothing would require Eq desiredType
-		ArgParserFailIf (Maybe.isNothing val) errmsg $ ArgParserTerminator $ (\(Just a) -> a) val
+		APFailIf (Maybe.isNothing val) errmsg $ APTerminator $ (\(Just a) -> a) val
 
-doc (ArgParser name defMaybeVal oldDoc next) doc =
-	ArgParser name defMaybeVal doc next
+doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
 
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
-defaultTo (ArgParser name oldDefMaybeVal doc next) newDefVal = 
-	ArgParser name (Just $ toOObj newDefVal) doc next
+defaultTo (AP name oldDefMaybeVal doc next) newDefVal = 
+	AP name (Just $ toOObj newDefVal) doc next
 
 -- ** example
 
 example :: String -> ArgParser ()
-example str = ArgParserExample str (return ())
+example str = APExample str (return ())
 
 -- * test and combinators
 
 test :: String -> ArgParser ()
-test str = ArgParserTest str [] (return ())
+test str = APTest str [] (return ())
 
 eulerCharacteristic :: ArgParser a -> Int -> ArgParser a
-eulerCharacteristic (ArgParserTest str tests child) χ =
-	ArgParserTest str ((EulerCharacteristic χ) : tests) child
+eulerCharacteristic (APTest str tests child) χ =
+	APTest str ((EulerCharacteristic χ) : tests) child
 
 -- * Tools for handeling ArgParsers
 
@@ -79,7 +87,15 @@ argMap args = argMap2 unnamedArgs (Map.fromList namedArgs) where
 
 argMap2 :: [OVal] -> Map.Map String OVal -> ArgParser a -> (Maybe a, [String])
 
-argMap2 unnamedArgs namedArgs (ArgParser name fallback _ f) = 
+argMap2 uArgs nArgs (APBranch branches) =
+	foldl1 merge solutions where
+		solutions = map (argMap2 uArgs nArgs) branches
+		merge a@(Just _, []) _ = a
+		merge _ b@(Just _, []) = b
+		merge a@(Just _, _) _ = a
+		merge (Nothing, _)  a = a
+
+argMap2 unnamedArgs namedArgs (AP name fallback _ f) = 
 	case Map.lookup name namedArgs of
 		Just a -> argMap2 
 			unnamedArgs 
@@ -91,23 +107,24 @@ argMap2 unnamedArgs namedArgs (ArgParser name fallback _ f) =
 				Just b  -> argMap2 [] namedArgs (f b)
 				Nothing -> (Nothing, ["No value and no default for argument " ++ name])
 
-argMap2 a b (ArgParserTerminator val) = 
+argMap2 a b (APTerminator val) = 
 	(Just val,
-		if length a + Map.size b > 0
+		if not (null a && Map.null b)
 		then ["unused arguments"]
 		else []
 	)
 
-argMap2 a b (ArgParserFailIf test err child) = 
+argMap2 a b (APFailIf test err child) = 
 	if test 
 	then (Nothing, [err])
 	else argMap2 a b child
 
-argMap2 a b (ArgParserExample str child) = argMap2 a b child
+argMap2 a b (APExample str child) = argMap2 a b child
 
-argMap2 a b (ArgParserTest str tests child) = argMap2 a b child
+argMap2 a b (APTest str tests child) = argMap2 a b child
 
 
+{-
 -- | We need a format to extract documentation into
 data Doc = Doc String [DocPart]
              deriving (Show)
@@ -148,4 +165,4 @@ getArgParserDocs (ArgParserFailIf _ _ child ) = getArgParserDocs child
 -- To look at this one would almost certainly be death (exception)
 getArgParserDocs (ArgParserTerminator _ ) = return []
 
-
+-}

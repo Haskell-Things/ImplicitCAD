@@ -79,17 +79,19 @@ collector s  l  = Var s :$ [ListE l]
 data ArgParser a 
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
-                 = ArgParser String (Maybe OVal) String (OVal -> ArgParser a) 
+                 = AP String (Maybe OVal) String (OVal -> ArgParser a) 
                  -- | For returns:
                  --   ArgParserTerminator (return value)
-                 | ArgParserTerminator a 
+                 | APTerminator a 
                  -- | For failure:
                  --   ArgParserFailIf (test) (error message) (child for if true)
-                 | ArgParserFailIf Bool String (ArgParser a)
+                 | APFailIf Bool String (ArgParser a)
                  --  An example, then next
-                 | ArgParserExample String (ArgParser a)
+                 | APExample String (ArgParser a)
                  --  A string to run as a test, then invariants for the results, then next
-                 | ArgParserTest String [TestInvariant] (ArgParser a)
+                 | APTest String [TestInvariant] (ArgParser a)
+                 -- A branch where there are a number of possibilities for the parser underneath
+                 | APBranch [ArgParser a]
 	deriving (Show)
 
 data TestInvariant = EulerCharacteristic Int 
