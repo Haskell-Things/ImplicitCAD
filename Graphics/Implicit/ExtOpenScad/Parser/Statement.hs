@@ -7,6 +7,12 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Util
 import Graphics.Implicit.ExtOpenScad.Parser.Expr
 
+parseProgram name s = parse program name s where
+	program = do
+		sts <- many1 computation
+		eof
+		return sts
+
 -- | A  in our programming openscad-like programming language.
 computation :: GenParser Char st StatementI
 computation = 

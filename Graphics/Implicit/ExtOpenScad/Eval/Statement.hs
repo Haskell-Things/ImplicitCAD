@@ -8,6 +8,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.StateC
 import Graphics.Implicit.ExtOpenScad.Eval.Expr
+import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 
 import qualified Data.Maybe as Maybe
@@ -17,6 +18,7 @@ import           Data.Map (Map)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
 import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import qualified System.FilePath as FilePath
 
 
 runStatementI :: StatementI -> StateC ()
@@ -62,7 +64,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
 	argTemplate' <- Monad.forM argTemplate $ \(name, defexpr) -> do
 		defval <- mapMaybeM evalExpr defexpr 
 		return (name, defval)
-	varlookup <- getVarLookup
+	(varlookup, _, path, _, _) <- get
 	runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \vals -> do 
 		newNameVals <- Monad.forM argTemplate' $ \(name, maybeDef) -> do
 			val <- case maybeDef of
@@ -85,13 +87,13 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
 				_ -> OUndefined
 			newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 			varlookup' = Map.union (Map.fromList newNameVals) varlookup
-			suiteVals  = runSuiteCapture varlookup' suite
+			suiteVals  = runSuiteCapture varlookup' path suite
 		return suiteVals
 
 runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
 		maybeMod  <- lookupVar name
-		varlookup <- getVarLookup
-		childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup suite
+		(varlookup, _, path, _, _) <- get
+		childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path suite
 		argsVal   <- Monad.forM argsExpr $ \(posName, expr) -> do
 			val <- evalExpr expr
 			return (posName, val)
@@ -111,18 +113,30 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
 				return []
 		pushVals newVals
 
+runStatementI (StatementI lineN (Include name injectVals)) = do
+	name' <- getRelPath name
+	content <- liftIO $ readFile name'
+	case parseProgram name content of
+		Left e -> liftIO $ putStrLn $ "Error parsing " ++ name ++ ":" ++ show e
+		Right sts -> withPathShiftedBy (FilePath.takeDirectory name) $ do
+			vals <- getVals
+			putVals []
+			runSuite sts
+			vals' <- getVals
+			if injectVals then putVals (vals' ++ vals) else putVals vals
+
 
 
 runSuite :: [StatementI] -> StateC ()
 runSuite stmts = Monad.mapM_ runStatementI stmts
 
-runSuiteCapture :: VarLookup -> [StatementI] -> IO [OVal]
-runSuiteCapture varlookup suite =
-	fmap fst $ State.runStateT suiteExec (varlookup, [])
-		where suiteExec = do 
-				runSuite suite
-				(_, vals) <- get
-				return vals
+runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
+runSuiteCapture varlookup path suite = do
+	(res, state) <- State.runStateT 
+		(runSuite suite >> getVals)
+		(varlookup, [], path, (), () )
+	return res
+
 
 
 

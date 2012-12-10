@@ -18,6 +18,8 @@ Library
 
     Build-Depends:
         base >= 3 && < 5,
+        filepath,
+        directory,
         parsec,
         unordered-containers,
         parallel,

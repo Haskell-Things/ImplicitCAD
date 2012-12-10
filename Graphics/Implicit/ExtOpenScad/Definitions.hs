@@ -34,8 +34,7 @@ data Statement st = Include String Bool
                | DoNothing
 	deriving Show
 
-type CompState = (VarLookup, [OVal])
-type StateC = StateT CompState IO
+
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined 

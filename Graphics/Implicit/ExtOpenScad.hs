@@ -6,7 +6,6 @@
 module Graphics.Implicit.ExtOpenScad (runOpenscad, OVal (..) ) where
 
 import Graphics.Implicit.Definitions
-import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Statement
 import Graphics.Implicit.ExtOpenScad.Eval.Statement
@@ -20,18 +19,22 @@ import           Data.Map (Map)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
 import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import qualified System.Directory as Dir
 
 -- Small wrapper to handle parse errors, etc
 runOpenscad s =
 	let
 		initial =  defaultObjects
-		rearrange (_, (varlookup, ovals)) = (varlookup, obj2s, obj3s) where
+		rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
 			(obj2s, obj3s, others) = divideObjs ovals
-	in case parse (many1 computation) "" s of
+	in case parseProgram "" s of
 		Left e -> Left e
 		Right sts -> Right
 			$ fmap rearrange
-			$ (\sts -> State.runStateT sts (initial, [] ))
+			$ (\sts -> do
+				path <- Dir.getCurrentDirectory
+				State.runStateT sts (initial, [], path, (), () )
+			)
 			$ Monad.mapM_ runStatementI sts
 
 
