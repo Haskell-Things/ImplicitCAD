@@ -89,34 +89,33 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 		s@(vars, obj2s, obj3s) <- openscadProgram 
 		let
 			res = getRes s
-		if not (null obj2s)
-		then do
-			let obj = head obj2s
-			putStrLn $ "Rendering 2D object to " ++ targetname
-			putStrLn $ "With resolution " ++ show res
-			putStrLn $ "In box " ++ show (getBox2 obj)
-			putStrLn $ show obj
-			case formatname of
-				"svg" -> writeSVG   res targetname obj
-				"scad"-> writeSCAD2 res targetname obj
-				"png" -> writePNG2  res targetname obj
-				"ngc" -> writeGCodeHacklabLaser res targetname obj
-				_     -> putStrLn $ "Unrecognized 2D format: " ++ formatname
-		else if not (null obj3s)
-		then do
-			let obj = head obj3s
-			putStrLn $ "Rendering 3D object to " ++ targetname
-			putStrLn $ "With resolution " ++ show res
-			putStrLn $ "In box " ++ show (getBox3 obj)
-			putStrLn $ show obj
-			case formatname of
-				"stl" -> writeBinSTL res targetname obj
-				"scad"-> writeSCAD3  res targetname obj
-				"obj" -> writeOBJ    res targetname obj
-				"png" -> writePNG3   res targetname obj
-				_     -> putStrLn $ "Unrecognized 3D format: " ++ formatname
-		else
-			putStrLn "Nothing to render."
+		case (obj2s, obj3s) of
+			([], _) -> do
+				let obj = head obj2s
+				putStrLn $ "Rendering 2D object to " ++ targetname
+				putStrLn $ "With resolution " ++ show res
+				putStrLn $ "In box " ++ show (getBox2 obj)
+				putStrLn $ show obj
+				case formatname of
+					"svg" -> writeSVG   res targetname obj
+					"scad"-> writeSCAD2 res targetname obj
+					"png" -> writePNG2  res targetname obj
+					"ngc" -> writeGCodeHacklabLaser res targetname obj
+					_     -> putStrLn $ "Unrecognized 2D format: " ++ formatname
+			(_, []) -> do
+				let obj = head obj3s
+				putStrLn $ "Rendering 3D object to " ++ targetname
+				putStrLn $ "With resolution " ++ show res
+				putStrLn $ "In box " ++ show (getBox3 obj)
+				putStrLn $ show obj
+				case formatname of
+					"stl" -> writeBinSTL res targetname obj
+					"scad"-> writeSCAD3  res targetname obj
+					"obj" -> writeOBJ    res targetname obj
+					"png" -> writePNG3   res targetname obj
+					_     -> putStrLn $ "Unrecognized 3D format: " ++ formatname
+			_ ->
+				putStrLn "Nothing to render."
 		
 
 main :: IO()

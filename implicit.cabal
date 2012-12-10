@@ -26,10 +26,11 @@ Library
         deepseq,
         vector-space,
         text,
-        blaze-svg,
         mtl,
         bytestring,
         blaze-builder,
+        blaze-markup,
+        blaze-svg,
         storable-endian,
         JuicyPixels
         
