@@ -1,5 +1,7 @@
 import Criterion.Main
 import Graphics.Implicit
+import Graphics.Implicit.Export.SymbolicObj2
+import Graphics.Implicit.Export.SymbolicObj3
 import Graphics.Implicit.Primitives
 
 obj2d_1 :: SymbolicObj2
@@ -39,6 +41,7 @@ obj2Benchmarks name obj =
 	bgroup name
 	[ bench "SVG write" $ writeSVG 1 "benchmark.svg" obj
 	, bench "PNG write" $ writePNG2 1 "benchmark.png" obj
+	, bench "Get contour" $ nf (symbolicGetContour 1) obj
 	]
 
 obj3Benchmarks :: String -> SymbolicObj3 -> Benchmark
@@ -46,6 +49,7 @@ obj3Benchmarks name obj =
 	bgroup name
 	[ --bench "PNG write" $ writePNG3 1 "benchmark.png" obj
 	  bench "STL write" $ writeSTL 1 "benchmark.stl" obj
+	, bench "Get mesh" $ nf (symbolicGetMesh 1) obj
 	]
 
 benchmarks =
