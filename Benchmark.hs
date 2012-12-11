@@ -27,6 +27,13 @@ object2 = squarePipe (10,10,10) 1 100
 					 (map (\n->(n/precision)*y) [0..precision])
 					 (map (\n->(n/precision)*z) [0..precision])
 
+object3 :: SymbolicObj3
+object3 =
+    difference
+        [ rect3R 1 (-1,-1,-1) (1,1,1)
+        , rect3R 1 (0,0,0) (2,2,2)
+        ]
+
 obj2Benchmarks :: String -> SymbolicObj2 -> Benchmark
 obj2Benchmarks name obj =
 	bgroup name
@@ -44,6 +51,7 @@ obj3Benchmarks name obj =
 benchmarks =
 	[ obj3Benchmarks "Object 1" object1
 	, obj3Benchmarks "Object 2" object2
+	, obj3Benchmarks "Object 3" object3
 	]
 
 main = defaultMain benchmarks
