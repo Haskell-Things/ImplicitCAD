@@ -284,8 +284,8 @@ rotate = moduleWithSuite "rotate" $ \children -> do
 	-- Final entry must be fall through.
 	return $ return $ caseOType a $
 		       ( \xy  ->
-			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad xy, 0, 0) ) children
-		) <||> ( \(yz,xy,xz) ->
+			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (0, 0, deg2rad xy) ) children
+		) <||> ( \(yz,xz,xy) ->
 			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) ) children
 		) <||> ( \(yz,xz) ->
 			objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad xz, 0)) children
