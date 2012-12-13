@@ -90,8 +90,7 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 		let
 			res = getRes s
 		case (obj2s, obj3s) of
-			([], _) -> do
-				let obj = head obj2s
+			(obj : objs, _) -> do
 				putStrLn $ "Rendering 2D object to " ++ targetname
 				putStrLn $ "With resolution " ++ show res
 				putStrLn $ "In box " ++ show (getBox2 obj)
@@ -102,8 +101,7 @@ executeAndExportSpecifiedTargetType content targetname formatname = case runOpen
 					"png" -> writePNG2  res targetname obj
 					"ngc" -> writeGCodeHacklabLaser res targetname obj
 					_     -> putStrLn $ "Unrecognized 2D format: " ++ formatname
-			(_, []) -> do
-				let obj = head obj3s
+			(_, obj : objs) -> do
 				putStrLn $ "Rendering 3D object to " ++ targetname
 				putStrLn $ "With resolution " ++ show res
 				putStrLn $ "In box " ++ show (getBox3 obj)
