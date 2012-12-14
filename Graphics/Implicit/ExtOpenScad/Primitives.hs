@@ -277,18 +277,20 @@ deg2rad x = x / 180.0 * pi
 rotate = moduleWithSuite "rotate" $ \children -> do
 	a <- argument "a"
 		`doc` "value to rotate by; angle or list of angles"
+        v <- argument "v" `defaultTo` (0, 0, 1)
+                `doc` "Vector to rotate around if a is a single angle"
 
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
 	-- Entries must be joined with the operator <||>
 	-- Final entry must be fall through.
 	return $ return $ caseOType a $
-		       ( \xy  ->
-			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (0, 0, deg2rad xy) ) children
-		) <||> ( \(yz,xz,xy) ->
-			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad xz, deg2rad xy) ) children
-		) <||> ( \(yz,xz) ->
-			objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad xz, 0)) children
+		       ( \θ  ->
+                          objMap (Prim.rotate $ deg2rad θ) (Prim.rotate3V (deg2rad θ) v) children
+		) <||> ( \(yz,zx,xy) ->
+			objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad zx, deg2rad xy) ) children
+		) <||> ( \(yz,zx) ->
+			objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
 		) <||> ( \_  -> [] )
 
 

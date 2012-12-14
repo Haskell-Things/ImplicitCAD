@@ -127,6 +127,7 @@ data SymbolicObj3 =
 	| Translate3 ℝ3 SymbolicObj3
 	| Scale3 ℝ3 SymbolicObj3
 	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
+	| Rotate3V ℝ ℝ3 SymbolicObj3
 	-- Boundary mods
 	| Outset3 ℝ SymbolicObj3
 	| Shell3 ℝ SymbolicObj3

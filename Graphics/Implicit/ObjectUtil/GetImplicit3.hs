@@ -11,6 +11,8 @@ import qualified Graphics.Implicit.MathUtil as MathUtil
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
 import Data.VectorSpace       
+import Data.AffineSpace
+import Data.Cross (cross3)
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 
@@ -77,17 +79,27 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
 	in
 		\p -> k * obj (p ⋯/ s)
 
-getImplicit3 (Rotate3 (yz, xz, xy) symbObj) = 
+getImplicit3 (Rotate3 (yz, zx, xy) symbObj) = 
 	let
 		obj = getImplicit3 symbObj
 		rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-		rotateYZ θ obj = \(x,y,z) -> obj ( x, sin(θ)*z - cos(θ)*y, sin(θ)*y + cos(θ)*z)
-		rotateXZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-		rotateXZ θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*z, y, cos(θ)*z - sin(θ)*x)
+		rotateYZ θ obj = \(x,y,z) -> obj ( x, cos(θ)*y + sin(θ)*z, cos(θ)*z - sin(θ)*y)
+		rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
+		rotateZX θ obj = \(x,y,z) -> obj ( cos(θ)*x - sin(θ)*z, y, cos(θ)*z + sin(θ)*x)
 		rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
 		rotateXY θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
 	in
-		rotateYZ yz $ rotateXZ xz $ rotateXY xy $ obj
+		rotateYZ yz $ rotateZX zx $ rotateXY xy $ obj
+
+getImplicit3 (Rotate3V θ axis symbObj) =
+        let
+                axis' = normalized axis
+                obj = getImplicit3 symbObj
+        in
+                \v -> obj $ 
+                      v ^* cos(θ) 
+                      ^-^ (axis' `cross3` v) ^* sin(θ) 
+                      ^+^ (axis' ^* (axis' <.> (v ^* (1 - cos(θ)))))
 
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) = 

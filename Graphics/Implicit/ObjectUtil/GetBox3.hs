@@ -88,7 +88,9 @@ getBox3 (Scale3 s symbObj) =
 getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
 	where
 		((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-		d = (sqrt 2 *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+		d = (sqrt 3 *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+
+getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
 
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =
