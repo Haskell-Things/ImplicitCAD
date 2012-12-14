@@ -170,6 +170,8 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
 rotate3 = Rotate3
 
+rotate3V = Rotate3V
+
 
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs = 

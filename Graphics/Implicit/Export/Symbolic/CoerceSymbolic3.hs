@@ -27,6 +27,7 @@ coerceSymbolic3 (Translate3 v obj) = translate v $ coerceSymbolic3 obj
 coerceSymbolic3 (Scale3 s obj) = scale s $ coerceSymbolic3 obj
 coerceSymbolic3 (Outset3 d obj) = outset d $ coerceSymbolic3 obj
 coerceSymbolic3 (Rotate3 rot obj) = rotate3 rot $ coerceSymbolic3 obj
+coerceSymbolic3 (Rotate3V rot axis obj) = rotate3v rot axis $ coerceSymbolic3 obj
 coerceSymbolic3 (ExtrudeR r obj h) = extrudeR r (coerceSymbolic2 obj) h
 coerceSymbolic3 (ExtrudeRMod r mod obj h) = extrudeRMod r mod (coerceSymbolic2 obj) h
 coerceSymbolic3 (ExtrudeOnEdgeOf obj1 obj2) = extrudeOnEdgeOf (coerceSymbolic2 obj1) (coerceSymbolic2 obj2)
