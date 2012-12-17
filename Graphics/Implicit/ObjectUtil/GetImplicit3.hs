@@ -92,14 +92,14 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
 		rotateYZ yz $ rotateZX zx $ rotateXY xy $ obj
 
 getImplicit3 (Rotate3V θ axis symbObj) =
-        let
-                axis' = normalized axis
-                obj = getImplicit3 symbObj
-        in
-                \v -> obj $ 
-                      v ^* cos(θ) 
-                      ^-^ (axis' `cross3` v) ^* sin(θ) 
-                      ^+^ (axis' ^* (axis' <.> (v ^* (1 - cos(θ)))))
+	let
+		axis' = normalized axis
+		obj = getImplicit3 symbObj
+	in
+		\v -> obj $ 
+			v ^* cos(θ) 
+			^-^ (axis' `cross3` v) ^* sin(θ) 
+			^+^ (axis' ^* (axis' <.> (v ^* (1 - cos(θ)))))
 
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) = 
