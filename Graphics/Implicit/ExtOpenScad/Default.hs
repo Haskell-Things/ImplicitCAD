@@ -87,6 +87,9 @@ defaultPolymorphicFunctions =
 		("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
 		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ),
 		("?", toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
+		("&&", toOObj (&&) ),
+		("||", toOObj (||) ),
+		("!", toOObj not ),
 		("list_gen", toOObj list_gen)
 	] where
 
