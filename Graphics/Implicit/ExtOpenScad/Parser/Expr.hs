@@ -35,7 +35,7 @@ literal =
 -- by the Int argument
 
 expression :: Int -> GenParser Char st Expr
-expression 10 = (try literal) <|> (try variable )
+expression n@12 = (try literal) <|> (try variable )
 	<|> (try (do -- ( 1 + 5 )
 		string "("
 		expr <- expression 0
@@ -58,7 +58,7 @@ expression 10 = (try literal) <|> (try variable )
 		string "]"
 		return $ collector "list_gen" exprs
 	)<?> "vector/list" )
-expression 9 = 
+expression n@11 = 
 	let
 		posMatch a =
 			(try $ do
@@ -104,14 +104,28 @@ expression 9 =
 			<?> "list splicing"))
 		
 	in ( try( do 
-		obj <- expression 10
+		obj <- expression $ n+1
 		genSpace
 		mods <- modifier `sepBy` (genSpace)
 		genSpace
 		return $ foldl (\a b -> b a) obj mods
 		) <?> "list splicing" )
-	<|> try (expression 10)
-expression n@8 = try (( do 
+	<|> try (expression $ n+1 )
+expression n@10 = 
+	let
+		negate x = Var "negate" :$ [x]
+	in try (do
+		char '-'
+		genSpace
+		expr <- expression $ n+1
+		return $ negate expr
+	) <|> try (do
+		char '+'
+		genSpace
+		expr <- expression $ n+1
+		return expr
+	) <|> try (expression $ n+1)
+expression n@9 = try (( do 
 		a <- expression (n+1)
 		genSpace
 		string "^"
@@ -120,7 +134,7 @@ expression n@8 = try (( do
 		return $ Var "^" :$ [a,b]
 	) <?> "exponentiation")
 	<|> try (expression $ n+1)
-expression n@7 = 
+expression n@8 = 
 	let 
 		div  a b = Var "/" :$ [a, b]
 	in try (( do 
@@ -137,7 +151,7 @@ expression n@7 =
 		return $ collector "*" $ map (foldl1 div) exprs
 	) <?> "multiplication/division")
 	<|>try (expression $ n+1)
-expression n@6 =
+expression n@7 =
 	let 
 		mod  a b = Var "%" :$ [a, b]
 	in try (( do 
@@ -145,14 +159,14 @@ expression n@6 =
 		return $ foldl1 mod exprs
 	) <?> "modulo") 
 	<|>try (expression $ n+1)
-expression n@5 =
+expression n@6 =
 	try (( do 
 		exprs <- sepBy1 (expression $ n+1) (try $ genSpace >> string "++" >> genSpace)
 		return $ collector "++" exprs
 	) <?> "append") 
 	<|>try (expression $ n+1)
 
-expression n@4 =
+expression n@5 =
 	let 
 		sub a b = Var "-" :$ [a, b]
 	in try (( do 
@@ -165,21 +179,7 @@ expression n@4 =
 		return $ collector "+" $ map (foldl1 sub) exprs
 	) <?> "addition/subtraction")
 	<|>try (expression $ n+1)
-expression n@3 = 
-	let
-		negate x = Var "negate" :$ [x]
-	in try (do
-		char '-'
-		genSpace
-		expr <- expression $ n+1
-		return $ negate expr
-	) <|> try (do
-		char '+'
-		genSpace
-		expr <- expression $ n+1
-		return expr
-	) <|> try (expression $ n+1)
-expression n@2 = 
+expression n@4 = 
 	try ( do
 		firstExpr <- expression $ n+1
 		otherComparisonsExpr <- many $ do
@@ -200,6 +200,32 @@ expression n@2 =
 			[x] -> x :$ exprs
 			_   -> collector "all" [(comparisons!!n) :$ [exprs!!n, exprs!!(n+1)] | n <- [0.. length comparisons - 1] ]
 	)<|> try (expression $ n+1)
+expression n@3 =
+	try (( do
+		string "!"
+		genSpace
+		a <- expression $ n+1
+		return $ Var "!" :$ [a]
+		)<?> "logical-not")
+	<|> try (expression $ n+1)
+expression n@2 = 
+	try (( do 
+		a <- expression (n+1)
+		genSpace
+		string "&&"
+		genSpace
+		b <- expression n
+		return $ Var "&&" :$ [a,b]
+	)<?> "logical-and")
+	<|> try (( do
+		a <- expression $ n+1
+		genSpace
+		string "||"
+		genSpace
+		b <- expression n
+		return $ Var "||" :$ [a,b]
+		)<?> "logical-or")
+	<|> try (expression $ n+1)
 expression n@1 = 
 	try (( do 
 		a <- expression (n+1)
