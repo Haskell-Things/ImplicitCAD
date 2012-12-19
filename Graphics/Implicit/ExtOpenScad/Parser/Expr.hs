@@ -179,8 +179,7 @@ expression n@3 =
 		expr <- expression $ n+1
 		return expr
 	) <|> try (expression $ n+1)
-expression n@2 = try (expression $ n+1)
-expression n@1 = 
+expression n@2 = 
 	try ( do
 		firstExpr <- expression $ n+1
 		otherComparisonsExpr <- many $ do
@@ -201,5 +200,19 @@ expression n@1 =
 			[x] -> x :$ exprs
 			_   -> collector "all" [(comparisons!!n) :$ [exprs!!n, exprs!!(n+1)] | n <- [0.. length comparisons - 1] ]
 	)<|> try (expression $ n+1)
+expression n@1 = 
+	try (( do 
+		a <- expression (n+1)
+		genSpace
+		string "?"
+		genSpace
+		b <- expression n
+		genSpace
+		string ":"
+		genSpace
+		c <- expression n
+		return $ Var "?" :$ [a,b,c]
+	) <?> "ternary")
+	<|> try (expression $ n+1)
 expression n@0 = try (do { genSpace; expr <- expression $ n+1; genSpace; return expr}) <|> try (expression $ n+1)
 

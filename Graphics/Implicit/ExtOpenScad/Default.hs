@@ -85,7 +85,8 @@ defaultPolymorphicFunctions =
 		(">=", toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
 		("<=", toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
 		("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
-		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ), 
+		("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ),
+		("?", toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
 		("list_gen", toOObj list_gen)
 	] where
 
@@ -195,4 +196,8 @@ defaultPolymorphicFunctions =
 			else Just 
 				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
 		list_gen _ = Nothing
+
+		ternary True a b = a
+		ternary False a b = b
+
 
