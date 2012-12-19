@@ -1,146 +1,169 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns, PatternGuards #-}
 
 -- Let's make it convenient to run our extended openscad format code
 
 -- Let's be explicit about what we're getting from where :)
-import System.Environment (getArgs)
 import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
 import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS, writePNG2, writePNG3)
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
-import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage)
-import Data.Map as Map hiding (null)
+import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, SymbolicObj2, SymbolicObj3)
+import qualified Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
+import Data.Monoid ((<>))
+import Data.Tuple (swap)
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
 import Data.IORef (writeIORef)
-import Data.VectorSpace
+import Data.AffineSpace
+import Options.Applicative
+import System.FilePath
 
--- | strip a .scad or .escad file to its basename.
-strip :: String -> String
-strip filename = case reverse filename of
-	'd':'a':'c':'s':'.':xs     -> reverse xs
-	'd':'a':'c':'s':'e':'.':xs -> reverse xs
-	_                          -> filename
+data ExtOpenScadOpts = ExtOpenScadOpts
+	{ outputFile :: Maybe FilePath
+	, outputFormat :: Maybe OutputFormat
+	, resolution :: Maybe Float
+	, xmlError :: Bool
+	, inputFile :: FilePath
+	}
 
--- | Get the file type ending of a file
---  eg. "foo.stl" -> "stl"
-fileType filename = reverse $ beforeFirstPeriod $ reverse filename
+data OutputFormat
+	= SVG
+	| SCAD
+	| PNG
+	| GCode
+	| STL
+	| OBJ
+	deriving (Show, Eq, Ord)
+
+formatExtensions :: [(String, OutputFormat)]
+formatExtensions =
+	[ ("svg", SVG)
+	, ("scad", SCAD)
+	, ("png", PNG)
+	, ("ngc", GCode)
+	, ("stl", STL)
+	, ("obj", OBJ)
+	]
+
+readOutputFormat :: String -> Maybe OutputFormat
+readOutputFormat ext = lookup ext formatExtensions
+
+guessOutputFormat :: FilePath -> OutputFormat
+guessOutputFormat fileName =
+	maybe (error $ "Unrecognized output format: "<>ext) id
+	$ readOutputFormat $ tail ext
 	where
-		beforeFirstPeriod []       = [] 
-		beforeFirstPeriod ('.':xs) = []
-		beforeFirstPeriod (  x:xs) = x : beforeFirstPeriod xs
+		(_,ext) = splitExtension fileName
+
+extOpenScadOpts :: Parser ExtOpenScadOpts
+extOpenScadOpts =
+	ExtOpenScadOpts
+	<$> nullOption
+		(  short 'o'
+		<> long "output"
+		<> value Nothing
+		<> metavar "FILE"
+		<> reader (Just . str)
+		<> help "Output file name"
+		)
+	<*> nullOption
+		(  short 'f'
+		<> long "format"
+		<> value Nothing
+		<> metavar "FILE"
+		<> help "Output format"
+		<> reader (Just . readOutputFormat)
+		)
+	<*> option
+		(  short 'r'
+		<> long "resolution"
+		<> value Nothing
+		<> metavar "RES"
+		<> help "Approximation quality"
+		)
+	<*> switch
+		( long "xml-error"
+		& help "Report XML errors"
+		)
+	<*> argument str ( metavar "FILE" )
 
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
 
-getRes (varlookup, _, obj:_) = 
-	let 
+getRes (varlookup, _, obj:_) =
+	let
 		((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 		(x,y,z) = (x2-x1, y2-y1, z2-z1)
 	in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
 		ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
-		_                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
+		_					  -> min (minimum [x,y,z]/2) ((x*y*z	 )**(1/3) / 22)
 
-getRes (varlookup, obj:_, _) = 
-	let 
+getRes (varlookup, obj:_, _) =
+	let
 		(p1,p2) = getBox2 obj
-		(x,y) = p2 ^-^ p1
+		(x,y) = p2 .-. p1
 	in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
 		ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
-		_                    -> min (min x y/2) ((x*y     )**0.5 / 30)
+		_					 -> min (min x y/2) ((x*y	  )**0.5 / 30)
 
 getRes _ = 1
 
--- | Give an openscad object to run and the basename of 
---   the target to write to... write an object!
-executeAndExport :: String -> String -> IO ()
-executeAndExport content targetname = case runOpenscad content of
-	Left err -> 
-		let
-			line = sourceLine . errorPos $ err
-			msgs = errorMessages err
-		in errorMessage line $ showErrorMessages 
-			"or" "unknown parse error" "expecting" "unexpected" "end of input"
-            (errorMessages err)
-	Right openscadProgram -> do 
-		s@(vars, obj2s, obj3s) <- openscadProgram 
-		let
-			res = getRes s
-		case s of 
-			(_, [], [])   -> putStrLn "Nothing to render"
-			(_, x:xs, []) -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname ++ ".svg"
-				putStrLn $ show x
-				writeSVG res (targetname ++ ".svg") x
-			(_, _, x:xs)  -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname++ ".stl"
-				putStrLn $ show x
-				writeBinSTL res (targetname ++ ".stl") x
+export3 :: OutputFormat -> Float -> FilePath -> SymbolicObj3 -> IO ()
+export3 fmt res output obj =
+	case fmt of
+		STL	  -> writeBinSTL res output obj
+		SCAD  -> writeSCAD3 res output obj
+		OBJ	  -> writeOBJ res output obj
+		PNG	  -> writePNG3 res output obj
+		_	   -> putStrLn $ "Unrecognized 3D format: "<>show fmt
 
--- | Give an openscad object to run and the basename of 
---   the target to write to... write an object!
-executeAndExportSpecifiedTargetType :: String -> String -> String -> IO ()
-executeAndExportSpecifiedTargetType content targetname formatname = case runOpenscad content of
-	Left err -> putStrLn $ show $ err
-	Right openscadProgram -> do 
-		s@(vars, obj2s, obj3s) <- openscadProgram 
-		let
-			res = getRes s
-		case (obj2s, obj3s) of
-			(obj : objs, _) -> do
-				putStrLn $ "Rendering 2D object to " ++ targetname
-				putStrLn $ "With resolution " ++ show res
-				putStrLn $ "In box " ++ show (getBox2 obj)
-				putStrLn $ show obj
-				case formatname of
-					"svg" -> writeSVG   res targetname obj
-					"scad"-> writeSCAD2 res targetname obj
-					"png" -> writePNG2  res targetname obj
-					"ngc" -> writeGCodeHacklabLaser res targetname obj
-					_     -> putStrLn $ "Unrecognized 2D format: " ++ formatname
-			(_, obj : objs) -> do
-				putStrLn $ "Rendering 3D object to " ++ targetname
-				putStrLn $ "With resolution " ++ show res
-				putStrLn $ "In box " ++ show (getBox3 obj)
-				putStrLn $ show obj
-				case formatname of
-					"stl" -> writeBinSTL res targetname obj
-					"scad"-> writeSCAD3  res targetname obj
-					"obj" -> writeOBJ    res targetname obj
-					"png" -> writePNG3   res targetname obj
-					_     -> putStrLn $ "Unrecognized 3D format: " ++ formatname
-			_ ->
-				putStrLn "Nothing to render."
-		
+export2 :: OutputFormat -> Float -> FilePath -> SymbolicObj2 -> IO ()
+export2 fmt res output obj =
+	case fmt of
+		SVG	  -> writeSVG res output obj
+		SCAD  -> writeSCAD2 res output obj
+		PNG	  -> writePNG2 res output obj
+		GCode -> writeGCodeHacklabLaser res output obj
+		_	  -> putStrLn $ "Unrecognized 2D format: "<>show fmt
 
 main :: IO()
 main = do
-	args <- getArgs
-	if Prelude.null args || args == ["--help"] || args == ["-help"]
-		then putStrLn $ 
-			"syntax: extopenscad inputfile.escad [outputfile.format]\n"
-			++ "eg. extopenscad input.escad out.stl"
-		else do
-			let
-				args' = if head args == "-xml-error" then tail args else args
-			writeIORef xmlErrorOn (head args == "-xml-error")
-			case length args' of
-				1 -> do
-					f <- openFile (args' !! 0) ReadMode
-					content <- hGetContents f 
-					executeAndExport content (strip $ args' !! 0)
-					hClose f
-				2 -> do
-					f <- openFile (args' !! 0) ReadMode
-					content <- hGetContents f 
-					executeAndExportSpecifiedTargetType 
-						content (args' !! 1) (fileType $ args' !! 1)
-					hClose f
-				_ -> putStrLn $ 
-					"syntax: extopenscad inputfile.escad [outputfile.format]\n"
-					++ "eg. extopenscad input.escad out.stl"
+	args <- execParser
+		$ info (helper <*> extOpenScadOpts)
+		  ( fullDesc
+		  <> progDesc "Extended OpenSCAD"
+		  <> header "extopenscad - Extended OpenSCAD"
+		  )
+	writeIORef xmlErrorOn (xmlError args)
 
-
+	content <- readFile (inputFile args)
+	let format = 
+		case () of
+			_ | Just fmt <- outputFormat args -> fmt
+			_ | Just file <- outputFile args  -> guessOutputFormat file
+	case runOpenscad content of
+		Left err -> putStrLn $ show $ err
+		Right openscadProgram -> do
+			s@(vars, obj2s, obj3s) <- openscadProgram
+			let res = maybe (getRes s) id (resolution args)
+			let output =
+				let Just defExtension = lookup format (map swap formatExtensions)
+				in maybe (fst (splitExtension $ inputFile args)<>"."<>defExtension) id
+				$ outputFile args
+			case (obj2s, obj3s) of
+				 ([], [obj]) -> do
+					putStrLn $ "Rendering 3D object to " ++ output
+					putStrLn $ "With resolution " ++ show res
+					putStrLn $ "In box " ++ show (getBox3 obj)
+					putStrLn $ show obj
+					export3 format res output obj
+				 ([obj], []) -> do
+					putStrLn $ "Rendering 2D object to " ++ output
+					putStrLn $ "With resolution " ++ show res
+					putStrLn $ "In box " ++ show (getBox2 obj)
+					putStrLn $ show obj
+					export2 format res output obj
+				 _ -> putStrLn "No objects to render"

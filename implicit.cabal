@@ -20,6 +20,7 @@ Library
         base >= 3 && < 5,
         filepath,
         directory,
+        optparse-applicative,
         parsec,
         unordered-containers,
         parallel,
