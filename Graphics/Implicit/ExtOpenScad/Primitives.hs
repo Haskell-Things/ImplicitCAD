@@ -277,8 +277,8 @@ deg2rad x = x / 180.0 * pi
 rotate = moduleWithSuite "rotate" $ \children -> do
 	a <- argument "a"
 		`doc` "value to rotate by; angle or list of angles"
-        v <- argument "v" `defaultTo` (0, 0, 1)
-                `doc` "Vector to rotate around if a is a single angle"
+	v <- argument "v" `defaultTo` (0, 0, 1)
+		`doc` "Vector to rotate around if a is a single angle"
 
 	-- caseOType matches depending on whether size can be coerced into
 	-- the right object. See Graphics.Implicit.ExtOpenScad.Util
