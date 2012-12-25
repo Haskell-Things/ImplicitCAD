@@ -13,7 +13,7 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, SymbolicObj2, SymbolicObj3)
 import qualified Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
-import Data.Monoid ((<>))
+import Data.Monoid (Monoid, mappend)
 import Data.Tuple (swap)
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
@@ -21,6 +21,11 @@ import Data.IORef (writeIORef)
 import Data.AffineSpace
 import Options.Applicative
 import System.FilePath
+
+-- Backwards compatibility with old versions of Data.Monoid:
+infixr 6 <>
+(<>) :: Monoid a => a -> a -> a
+(<>) = mappend
 
 data ExtOpenScadOpts = ExtOpenScadOpts
 	{ outputFile :: Maybe FilePath
@@ -67,7 +72,7 @@ extOpenScadOpts =
 		<> long "output"
 		<> value Nothing
 		<> metavar "FILE"
-		<> reader (Just . str)
+		<> reader (pure . str)
 		<> help "Output file name"
 		)
 	<*> nullOption
@@ -76,7 +81,7 @@ extOpenScadOpts =
 		<> value Nothing
 		<> metavar "FILE"
 		<> help "Output format"
-		<> reader (Just . readOutputFormat)
+		<> reader (pure . readOutputFormat)
 		)
 	<*> option
 		(  short 'r'
