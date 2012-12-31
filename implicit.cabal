@@ -24,7 +24,6 @@ Library
         unordered-containers,
         parallel,
         containers,
-        plugins,
         deepseq,
         vector-space,
         text,
