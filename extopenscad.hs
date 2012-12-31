@@ -13,6 +13,7 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, SymbolicObj2, SymbolicObj3)
 import qualified Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
+import Data.Char
 import Data.Monoid (Monoid, mappend)
 import Data.Tuple (swap)
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
@@ -55,7 +56,7 @@ formatExtensions =
 	]
 
 readOutputFormat :: String -> Maybe OutputFormat
-readOutputFormat ext = lookup ext formatExtensions
+readOutputFormat ext = lookup (map toLower ext) formatExtensions
 
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
@@ -79,7 +80,7 @@ extOpenScadOpts =
 		(  short 'f'
 		<> long "format"
 		<> value Nothing
-		<> metavar "FILE"
+		<> metavar "FORMAT"
 		<> help "Output format"
 		<> reader (pure . readOutputFormat)
 		)
@@ -116,23 +117,25 @@ getRes (varlookup, obj:_, _) =
 
 getRes _ = 1
 
-export3 :: OutputFormat -> Float -> FilePath -> SymbolicObj3 -> IO ()
-export3 fmt res output obj =
-	case fmt of
-		STL	  -> writeBinSTL res output obj
-		SCAD  -> writeSCAD3 res output obj
-		OBJ	  -> writeOBJ res output obj
-		PNG	  -> writePNG3 res output obj
-		_	   -> putStrLn $ "Unrecognized 3D format: "<>show fmt
+export3 :: Maybe OutputFormat -> Float -> FilePath -> SymbolicObj3 -> IO ()
+export3 posFmt res output obj =
+	case posFmt of
+		Just STL  -> writeBinSTL res output obj
+		Just SCAD -> writeSCAD3 res output obj
+		Just OBJ  -> writeOBJ res output obj
+		Just PNG  -> writePNG3 res output obj
+		Nothing   -> writeBinSTL res output obj
+		Just fmt  -> putStrLn $ "Unrecognized 3D format: "<>show fmt
 
-export2 :: OutputFormat -> Float -> FilePath -> SymbolicObj2 -> IO ()
-export2 fmt res output obj =
-	case fmt of
-		SVG	  -> writeSVG res output obj
-		SCAD  -> writeSCAD2 res output obj
-		PNG	  -> writePNG2 res output obj
-		GCode -> writeGCodeHacklabLaser res output obj
-		_	  -> putStrLn $ "Unrecognized 2D format: "<>show fmt
+export2 :: Maybe OutputFormat -> Float -> FilePath -> SymbolicObj2 -> IO ()
+export2 posFmt res output obj =
+	case posFmt of
+		Just SVG   -> writeSVG res output obj
+		Just SCAD  -> writeSCAD2 res output obj
+		Just PNG   -> writePNG2 res output obj
+		Just GCode -> writeGCodeHacklabLaser res output obj
+		Nothing    -> writeSVG res output obj
+		Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
 
 main :: IO()
 main = do
@@ -147,28 +150,40 @@ main = do
 	content <- readFile (inputFile args)
 	let format = 
 		case () of
-			_ | Just fmt <- outputFormat args -> fmt
-			_ | Just file <- outputFile args  -> guessOutputFormat file
+			_ | Just fmt <- outputFormat args -> Just $ fmt
+			_ | Just file <- outputFile args  -> Just $ guessOutputFormat file
+			_                                 -> Nothing
 	case runOpenscad content of
 		Left err -> putStrLn $ show $ err
 		Right openscadProgram -> do
 			s@(vars, obj2s, obj3s) <- openscadProgram
 			let res = maybe (getRes s) id (resolution args)
-			let output =
-				let Just defExtension = lookup format (map swap formatExtensions)
+			let basename = fst (splitExtension $ inputFile args)
+			let posDefExt = case format of
+				Just f  -> lookup f (map swap formatExtensions)
+				Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+				{-let Just defExtension = lookup format (map swap formatExtensions)
 				in maybe (fst (splitExtension $ inputFile args)<>"."<>defExtension) id
-				$ outputFile args
+				$ outputFile args-}
 			case (obj2s, obj3s) of
-				 ([], [obj]) -> do
+				([], [obj]) -> do
+					let output = fromMaybe 
+						(basename ++ "." ++ fromMaybe "stl" posDefExt)
+						(outputFile args)
 					putStrLn $ "Rendering 3D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox3 obj)
 					putStrLn $ show obj
 					export3 format res output obj
-				 ([obj], []) -> do
+				([obj], []) -> do
+					let output = fromMaybe 
+						(basename ++ "." ++ fromMaybe "stl" posDefExt)
+						(outputFile args)
 					putStrLn $ "Rendering 2D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox2 obj)
 					putStrLn $ show obj
 					export2 format res output obj
-				 _ -> putStrLn "No objects to render"
+				([], []) -> putStrLn "No objects to render"
+				_        -> putStrLn "Multiple objects, what do you want to render?"
+
