@@ -14,7 +14,6 @@ import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, SymbolicObj2, Sy
 import qualified Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
 import Data.Char
-import Data.Monoid (Monoid, mappend)
 import Data.Tuple (swap)
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
@@ -22,11 +21,6 @@ import Data.IORef (writeIORef)
 import Data.AffineSpace
 import Options.Applicative
 import System.FilePath
-
--- Backwards compatibility with old versions of Data.Monoid:
-infixr 6 <>
-(<>) :: Monoid a => a -> a -> a
-(<>) = mappend
 
 data ExtOpenScadOpts = ExtOpenScadOpts
 	{ outputFile :: Maybe FilePath
@@ -93,7 +87,7 @@ extOpenScadOpts =
 		)
 	<*> switch
 		( long "xml-error"
-		& help "Report XML errors"
+		<> help "Report XML errors"
 		)
 	<*> argument str ( metavar "FILE" )
 
