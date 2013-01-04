@@ -20,7 +20,7 @@ import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error
 import Data.IORef (writeIORef)
 import Data.AffineSpace
-import Options.Applicative
+import Options.Applicative hiding ((<>))
 import System.FilePath
 
 -- Backwards compatibility with old versions of Data.Monoid:
