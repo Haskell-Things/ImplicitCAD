@@ -39,14 +39,14 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
    |  |  -> if parallegram then quad
    #__#
 -}
-
+{- We're going to disable quads for now.
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
 	let
 		b1 = normalized $ a ^-^ b
 		b2 = normalized $ c ^-^ b
 		b3 = b1 `cross3` b2
 	in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
-
+-}
 {-
    #__#      #__#
    |  |  ->  | /|
