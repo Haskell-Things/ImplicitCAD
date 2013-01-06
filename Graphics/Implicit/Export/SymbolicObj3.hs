@@ -26,6 +26,7 @@ import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
 --import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
 import Graphics.Implicit.Export.Util (normTriangle)
+import Data.VectorSpace 
 
 
 instance DiscreteAproxable SymbolicObj3 TriangleMesh where
@@ -36,10 +37,9 @@ instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
-{--
 -- A translated objects mesh is its mesh translated.
 symbolicGetMesh res (Translate3 v obj) = 
-	map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
+	map (\(a,b,c) -> (a ^+^ v, b ^+^ v, c ^+^ v) ) (symbolicGetMesh res obj)
 
 -- A scaled objects mesh is its mesh scaled
 symbolicGetMesh res (Scale3 s obj) =
@@ -47,7 +47,7 @@ symbolicGetMesh res (Scale3 s obj) =
 		mesh :: [(ℝ3, ℝ3, ℝ3)]
 		mesh = symbolicGetMesh res obj
 		scaleTriangle :: (ℝ3, ℝ3, ℝ3) -> (ℝ3, ℝ3, ℝ3)
-		scaleTriangle (a,b,c) = (s S.⋯* a, s S.⋯* b, s S.⋯* c)
+		scaleTriangle (a,b,c) = (s ⋯* a, s ⋯* b, s ⋯* c)
 	in map scaleTriangle  mesh
 
 -- A couple triangles make a cube...
@@ -133,7 +133,7 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
 		side_tris ++ bottom_tris ++ top_tris 
 
 
-symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) = 
+symbolicGetMesh res  (ExtrudeRM r@0 twist scale translate obj2 h@(Left _)) = 
 	let
 		-- Get a Obj2 (magnitude descriptor object)
 		obj2mag :: Obj2 -- = ℝ2 -> ℝ
@@ -206,7 +206,6 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
 
 	in
 		map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
--}
 
 symbolicGetMesh res inputObj@(UnionR3 r objs) = 
 	let
