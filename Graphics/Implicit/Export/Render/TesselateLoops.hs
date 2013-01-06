@@ -74,7 +74,7 @@ tesselateLoop res obj pathSides = return $ Tris $
 		deriv = (obj (mid ^+^ (normal ^* (res/100)) ) ^-^ midval)/res*100
 		mid' = mid ^-^ normal ^* (midval/deriv)
 	in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5 
-		      && abs (deriv*midval) < 1.1*res && 5*abs (obj mid') < abs midval
+		      && abs (midval/deriv) < 2*res && 3*abs (obj mid') < abs midval
 		then early_tris ++ [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]
 		else early_tris ++ [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 

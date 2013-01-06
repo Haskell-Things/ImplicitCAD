@@ -34,6 +34,9 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 		("asin",  asin),
 		("acos",  acos),
 		("atan",  atan),
+		("sinh",  sinh),
+		("cosh",  cosh),
+		("tanh",  tanh),
 		("abs",   abs),
 		("sign",  signum),
 		("floor", fromIntegral . floor ),
@@ -73,7 +76,9 @@ defaultModules =
 defaultPolymorphicFunctions = 
 	[ 
 		("+", sum),
+		("sum", sum),
 		("*", prod),
+		("prod", prod),
 		("/", div),
 		("-", toOObj sub), 
 		("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)), 
@@ -90,7 +95,10 @@ defaultPolymorphicFunctions =
 		("&&", toOObj (&&) ),
 		("||", toOObj (||) ),
 		("!", toOObj not ),
-		("list_gen", toOObj list_gen)
+		("list_gen", toOObj list_gen),
+		("++", concat),
+		("len", toOObj olength),
+		("str", toOObj (show :: OVal -> String))
 	] where
 
 		-- Some key functions are written as OVals in optimizations attempts
@@ -122,6 +130,11 @@ defaultPolymorphicFunctions =
 		append (OList   a) (OList   b) = OList   $ a++b
 		append (OString a) (OString b) = OString $ a++b
 		append a           b           = errorAsAppropriate "append" a b
+
+		concat = OFunc $ \x -> case x of
+			(OList (x:xs)) -> foldl append x xs
+			(OList [])     -> OList []
+			_              -> OError ["concat takes a list"]
 
 		sum = OFunc $ \x -> case x of
 			(OList (x:xs)) -> foldl add x xs
@@ -202,5 +215,9 @@ defaultPolymorphicFunctions =
 
 		ternary True a b = a
 		ternary False a b = b
+
+		olegnth (OString s) = ONum $ fromIntegral $ length s
+		olength (OList s)   = ONum $ fromIntegral $ length s
+		olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
 
 

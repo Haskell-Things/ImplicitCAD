@@ -41,7 +41,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
-      thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- $ obj
+      thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- obj
 
 hacklabLaserGCode :: [Polyline] -> Text
 hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpretPolyline orderedPoylines) <> gcodeFooter
