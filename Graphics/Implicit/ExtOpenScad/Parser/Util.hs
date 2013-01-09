@@ -25,6 +25,28 @@ pad parser = do
 	genSpace
 	return a
 
+infixr 1 *<|>
+a *<|> b = try a <|> b
+
+infixr 2 ?:
+l ?: p = p <?> l
+
+stringGS (' ':xs) = do
+	x'  <- genSpace
+	xs' <- stringGS xs
+	return (x' ++ xs')
+stringGS (x:xs) = do
+	x'  <- char x
+	xs' <- stringGS xs
+	return (x' : xs')
+stringGS "" = return ""
+
+padString s = do
+	genSpace
+	s' <- string s
+	genSpace
+	return s'
+
 tryMany = (foldl1 (<|>)) . (map try)
 
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"

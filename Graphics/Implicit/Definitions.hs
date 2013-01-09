@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances, OverlappingInstances #-}
 
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
@@ -137,17 +137,17 @@ data SymbolicObj3 =
 	| ExtrudeR ℝ SymbolicObj2 ℝ
 	| ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
 	| ExtrudeRM 
-		ℝ                 -- ^ rounding radius
-		(Maybe (ℝ -> ℝ))  -- ^ twist
-		(Maybe (ℝ -> ℝ))  -- ^ scale
-		(Maybe (ℝ -> ℝ2)) -- ^ translate
-		SymbolicObj2      -- ^ object to extrude
-		(Either ℝ (ℝ2 -> ℝ)) -- ^ height to extrude to
+		ℝ                 -- rounding radius
+		(Maybe (ℝ -> ℝ))  -- twist
+		(Maybe (ℝ -> ℝ))  -- scale
+		(Maybe (ℝ -> ℝ2)) -- ranslate
+		SymbolicObj2      -- object to extrude
+		(Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
 	| RotateExtrude
-		ℝ                   -- ^ Angle to sweep to
-		(Maybe ℝ)           -- ^ Loop or path (rounded corner)
-		(Either ℝ2 (ℝ -> ℝ2)) -- ^ translate function
-		SymbolicObj2      -- ^ object to extrude
+		ℝ                   -- Angle to sweep to
+		(Maybe ℝ)           -- Loop or path (rounded corner)
+		(Either ℝ2 (ℝ -> ℝ2)) -- translate function
+		SymbolicObj2      -- object to extrude
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show
 
