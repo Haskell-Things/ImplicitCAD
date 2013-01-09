@@ -240,7 +240,7 @@ Try ImplicitCAD!
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
      * Development version:
-         * Install the dependencies: `cabal update && cabal install hashmap parallel parsec plugins JuicyPixels blaze-builder blaze-markup blaze-svg storable-endian unordered-containers vector-space`
+         * Install the dependencies: `cabal update && cabal install hashmap parallel parsec JuicyPixels blaze-builder blaze-markup blaze-svg storable-endian unordered-containers vector-space text optparse-applicative`
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * cabal install it: `cabal configure && cabal install`
