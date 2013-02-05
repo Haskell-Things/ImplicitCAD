@@ -193,7 +193,7 @@ moduleArgsUnit = do
 			-- eg. a(x,y) = 12
 			symb <- variableSymb
 			stringGS " ( "
-			argVars <- sepBy variableSymb (stringGS " , ")
+			argVars <- sepBy variableSymb (try $ stringGS " , ")
 			stringGS " ) = "
 			expr <- expr0
 			return $ (Just symb, LamE (map Name argVars) expr)
@@ -201,14 +201,14 @@ moduleArgsUnit = do
 			-- eg. 12
 			expr <- expr0
 			return (Nothing, expr)
-		) (stringGS " , ")
+		) (try $ stringGS " , ")
 	stringGS " ) "
 	return args
 
 moduleArgsUnitDecl ::  GenParser Char st [(String, Maybe Expr)]
 moduleArgsUnitDecl = do
 	stringGS " ( "
-	argTemplate <- sepBy ( 
+	argTemplate <- sepBy (
 		do
 			symb <- variableSymb;
 			stringGS " = "
@@ -217,14 +217,14 @@ moduleArgsUnitDecl = do
 		*<|> do
 			symb <- variableSymb;
 			stringGS " ( "
-			argVars <- sepBy variableSymb (stringGS " , ")
+			argVars <- sepBy variableSymb (try $ stringGS " , ")
 			stringGS " ) = "
 			expr <- expr0
 			return (symb, Just expr)
 		*<|> do
 			symb <- variableSymb
 			return (symb, Nothing)
-		) (stringGS " , ")
+		) (try $ stringGS " , ")
 	stringGS " ) "
 	return argTemplate
 

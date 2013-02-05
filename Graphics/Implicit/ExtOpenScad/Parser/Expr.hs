@@ -125,22 +125,22 @@ exprN n@8 =
 		-- eg. "1*2*3/4/5*6*7/8"
 		--     [[1],[2],[3,4,5],[6],[7,8]]
 		exprs <- sepBy1 
-			(sepBy1 (exprN $ n+1) (padString "/" )) 
-			(padString "*" )
+			(sepBy1 (exprN $ n+1) (try $ padString "/" )) 
+			(try $ padString "*" )
 		let div  a b = Var "/" :$ [a, b]
 		return $ collector "*" $ map (foldl1 div) exprs
 	*<|> exprN (n+1)
 
 exprN n@7 =
 	"modulo" ?: do 
-		exprs <- sepBy1 (exprN $ n+1) (padString "%")
+		exprs <- sepBy1 (exprN $ n+1) (try $ padString "%")
 		let mod  a b = Var "%" :$ [a, b]
 		return $ foldl1 mod exprs 
 	*<|> exprN (n+1)
 
 exprN n@6 =
 	"append" ?: do 
-		exprs <- sepBy1 (exprN $ n+1) (padString "++")
+		exprs <- sepBy1 (exprN $ n+1) (try $ padString "++")
 		return $ collector "++" exprs
 	*<|> exprN (n+1)
 
@@ -150,8 +150,8 @@ exprN n@5 =
 		-- eg. "1+2+3-4-5+6-7" 
 		--     [[1],[2],[3,4,5],[6,7]]
 		exprs <- sepBy1 
-			(sepBy1 (exprN $ n+1) (padString "-" )) 
-			(padString "+" )
+			(sepBy1 (exprN $ n+1) (try $ padString "-" )) 
+			(try $ padString "+" )
 		let sub a b = Var "-" :$ [a, b]
 		return $ collector "+" $ map (foldl1 sub) exprs
 	*<|> exprN (n+1)
