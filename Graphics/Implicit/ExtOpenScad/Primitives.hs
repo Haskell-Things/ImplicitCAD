@@ -367,14 +367,17 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
 		`doc` "angle to sweep"
 	r        :: ℝ    <- argument "r"   `defaultTo` 0
 	translate :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
+	rotate    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
 	let
+		is360m n = 360 * (fromIntegral $ round $ n / 360) /= n
 		n = fromIntegral $ round $ totalRot / 360
-		cap = (360*n /= totalRot) 
+		cap = is360m totalRot 
 		    || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translate
+		    || (Either.either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotate
 		capM = if cap then Just r else Nothing
 	
-	return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translate) children
+	return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translate rotate) children
 
 
 

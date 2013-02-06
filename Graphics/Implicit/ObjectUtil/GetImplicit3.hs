@@ -154,7 +154,7 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 
 
 
-getImplicit3 (RotateExtrude totalRotation round translate symbObj) = 
+getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) = 
 	let
 		tau = 2 * pi
 		k   = tau / 360
@@ -167,6 +167,12 @@ getImplicit3 (RotateExtrude totalRotation round translate symbObj) =
 				(\(a,b) -> \θ -> (a*θ/totalRotation', b*θ/totalRotation')) 
 				(. (/k))
 				translate
+		rotate' :: ℝ -> ℝ
+		rotate' = Either.either 
+				(\t -> \θ -> t*θ/totalRotation' ) 
+				(. (/k))
+				rotate
+		twists = rotate /= Left 0
 	in
 		\(x,y,z) -> minimum $ do
 			
@@ -184,7 +190,14 @@ getImplicit3 (RotateExtrude totalRotation round translate symbObj) =
 			let
 				θvirt = fromIntegral n * tau + θ
 				(rshift, zshift) = translate' θvirt 
-				rz_pos = (r - rshift, z - zshift)
+				twist = rotate' θvirt
+				rz_pos = if twists 
+						then let 
+							(c,s) = (cos(twist*k), sin(twist*k))
+							(r',z') = (r-rshift, z-zshift)
+						in
+							(c*r' - s*z', c*z' + s*r')
+						else (r - rshift, z - zshift)
 			return $
 				if capped
 				then MathUtil.rmax round' 

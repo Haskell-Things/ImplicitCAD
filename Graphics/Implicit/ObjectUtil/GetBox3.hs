@@ -152,14 +152,15 @@ getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) =
 		((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 
 
-getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) symbObj) = 
+getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) rotate symbObj) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
+		g = maximum $ map abs [x1, x2, y1, y2]
 		r = max x2 (x2 + xshift)
 	in
 		((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
 
-getBox3 (RotateExtrude rot _ (Right f) symbObj) = 
+getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
 		(xshifts, yshifts) = unzip [f θ | θ <- [0 , rot / 10 .. rot] ]
@@ -169,7 +170,11 @@ getBox3 (RotateExtrude rot _ (Right f) symbObj) =
 		xmax' = if xmax > 0 then xmax * 1.1 else if xmax < - x1 then 0 else xmax
 		ymax' = ymax + 0.1 * (ymax - ymin)
 		ymin' = ymin - 0.1 * (ymax - ymin)
-		r = x2 + xmax'
+		(r, z1, z2) = if either (==0) (const False) rotate
+			then let
+				s = maximum $ map abs [x2, y1, y2]
+			in (s + xmax', s + ymin', y2 + ymax')
+			else (x2 + xmax', y1 + ymin', y2 + ymax')
 	in
 		((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 

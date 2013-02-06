@@ -147,6 +147,7 @@ data SymbolicObj3 =
 		ℝ                   -- Angle to sweep to
 		(Maybe ℝ)           -- Loop or path (rounded corner)
 		(Either ℝ2 (ℝ -> ℝ2)) -- translate function
+		(Either ℝ  (ℝ -> ℝ )) -- translate function
 		SymbolicObj2      -- object to extrude
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show
