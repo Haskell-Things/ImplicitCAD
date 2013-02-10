@@ -34,7 +34,8 @@ Library
         blaze-markup,
         blaze-svg,
         storable-endian,
-        JuicyPixels
+        JuicyPixels,
+        NumInstances
         
     ghc-options:
         -O2 -optc-O3

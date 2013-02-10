@@ -10,7 +10,8 @@ module Graphics.Implicit.Definitions where
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.VectorSpace       
-import Control.Applicative       
+import Control.Applicative
+import Data.NumInstances
 
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...
@@ -157,11 +158,6 @@ type Rectilinear2 = [Box2]
 
 -- | Rectilinear 2D set
 type Rectilinear3 = [Box3]
-
--- | Make ALL the functions Showable!
---   This is very handy when testing functions in interactive mode...
-instance Show (a -> b) where
-	show f = "<function>"
 
 -- | Now for something that makes me a bad person...
 --   I promise I'll use it for good, not evil!
