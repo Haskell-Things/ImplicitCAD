@@ -23,7 +23,7 @@ import Data.AffineSpace
 import Control.Applicative
 -- The following is needed to ensure backwards/forwards compatibility
 -- make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, info, helper, help, str, argument, switch, value, long, short, option, metavar, nullOption, reader, execParser, (&), Parser)
+import Options.Applicative (fullDesc, progDesc, header, info, helper, help, str, argument, switch, value, long, short, option, metavar, nullOption, reader, execParser, Parser)
 import System.FilePath
 
 -- Backwards compatibility with old versions of Data.Monoid:
@@ -95,8 +95,8 @@ extOpenScadOpts =
 		<> help "Approximation quality"
 		)
 	<*> switch
-		( long "xml-error"
-		& help "Report XML errors"
+		(  long "xml-error"
+		<> help "Report XML errors"
 		)
 	<*> argument str ( metavar "FILE" )
 
