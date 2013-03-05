@@ -36,9 +36,10 @@ literal = ("literal" ?:) $
 -- We represent the priority or 'fixity' of different types of expressions
 -- by the Int argument
 
+expr0 :: GenParser Char st Expr
 expr0 = exprN 0
 
-exprN :: Int -> GenParser Char st Expr
+exprN :: Integer -> GenParser Char st Expr
 
 exprN n@12 = 
 	     literal
