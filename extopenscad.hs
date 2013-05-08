@@ -176,7 +176,6 @@ main = do
 					putStrLn $ "Rendering 3D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox3 obj)
-					putStrLn $ show obj
 					export3 format res output obj
 				([obj], []) -> do
 					let output = fromMaybe 
@@ -185,7 +184,6 @@ main = do
 					putStrLn $ "Rendering 2D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox2 obj)
-					putStrLn $ show obj
 					export2 format res output obj
 				([], []) -> putStrLn "No objects to render"
 				_        -> putStrLn "Multiple objects, what do you want to render?"
