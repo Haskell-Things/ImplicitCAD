@@ -23,7 +23,7 @@ import Data.AffineSpace
 import Control.Applicative
 -- The following is needed to ensure backwards/forwards compatibility
 -- make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, info, helper, help, str, argument, switch, value, long, short, option, metavar, nullOption, reader, execParser, Parser)
+import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch, value, long, short, option, metavar, nullOption, reader, execParser, Parser)
 import System.FilePath
 
 -- Backwards compatibility with old versions of Data.Monoid:
@@ -92,6 +92,7 @@ extOpenScadOpts =
 		<> long "resolution"
 		<> value Nothing
 		<> metavar "RES"
+		<> reader (pure . auto)
 		<> help "Approximation quality"
 		)
 	<*> switch
@@ -176,7 +177,6 @@ main = do
 					putStrLn $ "Rendering 3D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox3 obj)
-					putStrLn $ show obj
 					export3 format res output obj
 				([obj], []) -> do
 					let output = fromMaybe 
@@ -185,7 +185,6 @@ main = do
 					putStrLn $ "Rendering 2D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox2 obj)
-					putStrLn $ show obj
 					export2 format res output obj
 				([], []) -> putStrLn "No objects to render"
 				_        -> putStrLn "Multiple objects, what do you want to render?"
