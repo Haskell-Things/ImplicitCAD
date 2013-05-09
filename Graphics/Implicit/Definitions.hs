@@ -141,14 +141,14 @@ data SymbolicObj3 =
 		ℝ                 -- rounding radius
 		(Maybe (ℝ -> ℝ))  -- twist
 		(Maybe (ℝ -> ℝ))  -- scale
-		(Maybe (ℝ -> ℝ2)) -- ranslate
+		(Maybe (ℝ -> ℝ2)) -- translate
 		SymbolicObj2      -- object to extrude
 		(Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
 	| RotateExtrude
 		ℝ                   -- Angle to sweep to
 		(Maybe ℝ)           -- Loop or path (rounded corner)
 		(Either ℝ2 (ℝ -> ℝ2)) -- translate function
-		(Either ℝ  (ℝ -> ℝ )) -- translate function
+		(Either ℝ  (ℝ -> ℝ )) -- rotate function
 		SymbolicObj2      -- object to extrude
 	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
 	deriving Show
