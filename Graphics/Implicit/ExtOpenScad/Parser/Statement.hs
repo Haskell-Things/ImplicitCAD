@@ -91,12 +91,12 @@ throwAway = do
 include :: GenParser Char st StatementI
 include = (do
 	line <- lineNumber
-	use <-  (string "include" >> return False)
-	    <|> (string "use"     >> return True )
+	injectVals <-  (string "include" >> return True )
+	           <|> (string "use"     >> return False)
 	stringGS " < "
 	filename <- many (noneOf "<> ")
 	stringGS " > "
-	return $ StatementI line $ Include filename use
+	return $ StatementI line $ Include filename injectVals
 	) <?> "include "
 
 -- | An assignment  (parser)
