@@ -186,3 +186,7 @@ errorMessage line msg = do
 			then putStrLn $ "<error>" ++ msg' ++ "</error>"
 			else putStrLn $ dropXML False False $ msg'
 		return ()
+
+-- HACK: This needs to be fixed correctly someday
+instance Show (a -> b) where
+		show _ = "<function>"
