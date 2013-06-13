@@ -91,7 +91,6 @@ data ArgParser a
                  | APTest String [TestInvariant] (ArgParser a)
                  -- A branch where there are a number of possibilities for the parser underneath
                  | APBranch [ArgParser a]
-	deriving (Show)
 
 data TestInvariant = EulerCharacteristic Int 
 	deriving (Show)
