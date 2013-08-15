@@ -172,7 +172,9 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
 				(\t -> \θ -> t*θ/totalRotation' ) 
 				(. (/k))
 				rotate
-		twists = rotate /= Left 0
+		twists = case rotate of
+                   Left 0  -> True
+                   _       -> False
 	in
 		\(x,y,z) -> minimum $ do
 			
