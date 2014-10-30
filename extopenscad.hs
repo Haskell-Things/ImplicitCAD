@@ -151,13 +151,17 @@ main = do
 		  )
 	writeIORef xmlErrorOn (xmlError args)
 
+	putStrLn $ "Loading File."
 	content <- readFile (inputFile args)
+
 	let format = 
 		case () of
 			_ | Just fmt <- outputFormat args -> Just $ fmt
 			_ | Just file <- outputFile args  -> Just $ guessOutputFormat file
 			_                                 -> Nothing
-	case runOpenscad content of
+	putStrLn $ "Processing File."
+
+        case runOpenscad content of
 		Left err -> putStrLn $ show $ err
 		Right openscadProgram -> do
 			s@(vars, obj2s, obj3s) <- openscadProgram
@@ -177,6 +181,7 @@ main = do
 					putStrLn $ "Rendering 3D object to " ++ output
 					putStrLn $ "With resolution " ++ show res
 					putStrLn $ "In box " ++ show (getBox3 obj)
+					putStrLn $ show obj
 					export3 format res output obj
 				([obj], []) -> do
 					let output = fromMaybe 
