@@ -118,7 +118,7 @@ getDist2 (x,y) symbObj =
 	let
 		((x1,y1), (x2,y2)) = getBox2 symbObj
 	in
-		sqrt ((max (abs (x1 - x)) (abs (x2 - x)))^2 + (max (abs (y1 - y)) (abs (y2 - y)))^2)
+		sqrt ((max (abs (x1 - x)) (abs (x2 - x)))**2 + (max (abs (y1 - y)) (abs (y2 - y)))**2)
 
 getDist2 p (PolygonR r points) = 
 	r + maximum [magnitude (p ^-^ p') | p' <- points]
