@@ -9,6 +9,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
 
 
+obj :: [NormedTriangle] -> Text
 obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
     where
         -- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"

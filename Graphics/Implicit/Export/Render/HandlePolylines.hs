@@ -4,10 +4,6 @@
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs) where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
-import GHC.Exts (groupWith)
-import Data.List (sortBy)
-import Data.VectorSpace 
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =
@@ -39,7 +35,7 @@ reducePolyline ((x1,y1):(x2,y2):others) =
     if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
 reducePolyline l = l
 
-polylineNotNull (a:l) = not (null l)
+polylineNotNull (_:l) = not (null l)
 polylineNotNull [] = False
 
 

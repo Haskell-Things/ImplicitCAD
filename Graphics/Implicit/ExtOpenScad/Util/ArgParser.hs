@@ -2,10 +2,8 @@
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
-import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
-import qualified Control.Exception as Ex
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
 import Control.Applicative
@@ -66,7 +64,7 @@ argument name =
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
 
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
-defaultTo (AP name oldDefMaybeVal doc next) newDefVal = 
+defaultTo (AP name _ doc next) newDefVal = 
     AP name (Just $ toOObj newDefVal) doc next
 
 -- ** example
@@ -131,9 +129,9 @@ argMap2 a b (APFailIf test err child) =
     then (Nothing, [err])
     else argMap2 a b child
 
-argMap2 a b (APExample str child) = argMap2 a b child
+argMap2 a b (APExample _ child) = argMap2 a b child
 
-argMap2 a b (APTest str tests child) = argMap2 a b child
+argMap2 a b (APTest _ _ child) = argMap2 a b child
 
 
 {-

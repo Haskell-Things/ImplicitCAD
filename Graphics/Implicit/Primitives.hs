@@ -192,15 +192,15 @@ rotate3V = Rotate3V
 
 
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
-pack3 (_dx, dy) sep objs = 
-    let
-        boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
-        withBoxes :: [(Box2, SymbolicObj3)]
-        withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
-    in case pack ((0,0),(dy,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
-            _ -> Nothing
-                
+pack3 (dx, dy) sep objs = 
+	let
+		boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
+		withBoxes :: [(Box2, SymbolicObj3)]
+		withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
+	in case pack ((0,0),(dx,dy)) sep withBoxes of
+			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
+			_ -> Nothing
+				
 
 -- 2D operations
 
@@ -209,11 +209,11 @@ rotate = Rotate2
 
 
 pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
-pack2 (_dx, dy) sep objs = 
-    let
-        withBoxes :: [(Box2, SymbolicObj2)]
-        withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
-    in case pack ((0,0),(dy,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
-            _ -> Nothing
+pack2 (dx, dy) sep objs = 
+	let
+		withBoxes :: [(Box2, SymbolicObj2)]
+		withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
+	in case pack ((0,0),(dx,dy)) sep withBoxes of
+			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
+			_ -> Nothing
 

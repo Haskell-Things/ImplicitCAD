@@ -10,12 +10,11 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
 
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
-import Text.Blaze.Svg
 import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
 import Text.Blaze.Internal (stringValue)
 import qualified Text.Blaze.Svg11.Attributes as A
 
-import Data.List (foldl')
+import Data.List (intersperse)
 import qualified Data.List as List
 
 svg :: [Polyline] -> Text
