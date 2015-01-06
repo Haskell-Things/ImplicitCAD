@@ -105,10 +105,10 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		((ax1,ay1),(ax2,ay2)) = getBox2 symbObj1
 		((bx1,by1),(bx2,by2)) = getBox2 symbObj2
 	in
-		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
+		((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
 
 
-getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) = 
+getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
 	let
 		range = [0, 0.1 .. 1.0]
 
