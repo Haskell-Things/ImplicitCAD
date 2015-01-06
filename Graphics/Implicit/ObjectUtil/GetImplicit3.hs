@@ -11,7 +11,6 @@ import qualified Graphics.Implicit.MathUtil as MathUtil
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
 import Data.VectorSpace       
-import Data.AffineSpace
 import Data.Cross (cross3)
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
@@ -115,7 +114,7 @@ getImplicit3 (Outset3 d symbObj) =
 		\p -> obj p - d
 
 -- Misc
-getImplicit3 (EmbedBoxedObj3 (obj,box)) = obj
+getImplicit3 (EmbedBoxedObj3 (obj,_)) = obj
 
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) = 
