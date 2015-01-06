@@ -9,7 +9,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 import Graphics.Implicit.ExtOpenScad.Primitives
-import Data.Map (Map, fromList)
+import Data.Map (fromList)
 
 defaultObjects :: VarLookup -- = Map String OVal
 defaultObjects = fromList $ 
@@ -23,9 +23,11 @@ defaultObjects = fromList $
 -- Missing standard ones:
 -- rand, lookup, 
 
+defaultConstants :: [([Char], OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
 	[("pi", pi)]
 
+defaultFunctions :: [([Char], OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 	[
 		("sin",   sin),
@@ -49,6 +51,7 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 		("sqrt",  sqrt)
 	]
 
+defaultFunctions2 :: [([Char], OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 	[
 		("max", max),
@@ -57,6 +60,7 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 		("pow", (**))
 	]
 
+defaultFunctionsSpecial :: [([Char], OVal)]
 defaultFunctionsSpecial = 
 	[
 		("map", toOObj $ flip $ 
@@ -65,7 +69,7 @@ defaultFunctionsSpecial =
 		
 	]
 
-
+defaultModules :: [(String, OVal)]
 defaultModules =
 	map (\(a,b) -> (a, OModule b)) primitives
 
@@ -73,6 +77,7 @@ defaultModules =
 
 -- more complicated ones:
 
+defaultPolymorphicFunctions :: [([Char], OVal)]
 defaultPolymorphicFunctions = 
 	[ 
 		("+", sum),
@@ -82,6 +87,7 @@ defaultPolymorphicFunctions =
 		("/", div),
 		("-", toOObj sub), 
 		("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)), 
+                ("%", toOObj omod),
 		("negate", toOObj negate),
 		("index", toOObj index),
 		("splice", toOObj osplice),
@@ -213,10 +219,10 @@ defaultPolymorphicFunctions =
 				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
 		list_gen _ = Nothing
 
-		ternary True a b = a
-		ternary False a b = b
+		ternary True a _ = a
+		ternary False _ b = b
 
-		olegnth (OString s) = ONum $ fromIntegral $ length s
+		olength (OString s) = ONum $ fromIntegral $ length s
 		olength (OList s)   = ONum $ fromIntegral $ length s
 		olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
 

@@ -20,7 +20,8 @@ refine res obj = simplify res . detail' res obj
 -- an initial value for a pointer counter argument. This is detail'
 
 
-detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 = 
+detail' :: ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) > (res*res)/200 = 
 		detail 0 res obj [p1,p2]
 detail' _ _ a = a
 
@@ -44,7 +45,7 @@ detail n res obj [p1, p2] | n < 2 =
 	else let
 		derivX = (obj (mid ^+^ (res/100, 0)) - midval)*100/res
 		derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
-		derivNormSq = derivX^2 + derivY^2
+		derivNormSq = (derivX*derivX) + (derivY*derivY)
 	in if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/sqrt derivNormSq) < 3*res
 	then let
 		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
@@ -59,7 +60,8 @@ detail n res obj [p1, p2] | n < 2 =
 
 detail _ _ _ x = x
 
-simplify res = {-simplify3 . simplify2 res . -} simplify1
+simplify :: Float -> [ℝ2] -> [ℝ2]
+simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: [ℝ2] -> [ℝ2]
 simplify1 (a:b:c:xs) =

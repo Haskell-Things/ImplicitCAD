@@ -5,10 +5,7 @@
 
 module Graphics.Implicit.Export.Render where
 
-import Debug.Trace
-
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
 import Data.VectorSpace
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
@@ -24,7 +21,7 @@ import Graphics.Implicit.Export.Render.Interpolate (interpolate)
 --     getSegs internally uses refine from RefineSegs to subdivide the segs
 --     to better match the boundary.
 
-import Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs')
+import Graphics.Implicit.Export.Render.GetSegs (getSegs)
 -- import Graphics.Implicit.Export.Render.RefineSegs (refine)
 
 -- (3) We put the segments from all sides of the cube together
@@ -69,7 +66,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 import Graphics.Implicit.Export.Render.HandlePolylines ( cleanLoopsFromSegs )
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj = 
+getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj = 
 	let
 		(dx,dy,dz) = p2 ^-^ p1
 
@@ -82,7 +79,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 		ry = dy/fromIntegral ny
 		rz = dz/fromIntegral nz
 
-		l ! (a,b,c) = l !! c !! b !! a
+--		l ! (a,b,c) = l !! c !! b !! a
 
 		pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
 		pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
@@ -103,7 +100,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 
 		objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
 
-		-- (1) Calculate mid poinsts on X, Y, and Z axis in 3D space.
+		-- (1) Calculate mid points on X, Y, and Z axis in 3D space.
 
 		midsZ = [[[
 				 interpolate (z0, objX0Y0Z0) (z1, objX0Y0Z1) (appAB obj x0 y0) res
@@ -196,7 +193,7 @@ getMesh p1@(x1,y1,z1) p2@(x2,y2,z2) res obj =
 
 
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
-getContour p1@(x1, y1) p2@(x2, y2) res obj = 
+getContour p1@(x1, y1) p2@(_, _) res obj = 
 	let
 		(dx,dy) = p2 ^-^ p1
 
@@ -207,7 +204,7 @@ getContour p1@(x1, y1) p2@(x2, y2) res obj =
 		rx = dx/fromIntegral nx
 		ry = dy/fromIntegral ny
 
-		l ! (a,b) = l !! b !! a
+--		l ! (a,b) = l !! b !! a
 
 		pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
 		pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]

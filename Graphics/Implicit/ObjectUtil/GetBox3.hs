@@ -6,14 +6,10 @@
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.MathUtil as MathUtil
 import Data.Maybe (fromMaybe)
-import qualified Data.Maybe as Maybe
 import Data.VectorSpace
 
 import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
-
-import Debug.Trace
 
 isEmpty :: Box3 -> Bool
 isEmpty = (== ((0,0,0), (0,0,0)))
@@ -25,20 +21,19 @@ outsetBox r (a,b) =
 getBox3 :: SymbolicObj3 -> Box3
 
 -- Primitives
-getBox3 (Rect3R r a b) = (a,b)
+getBox3 (Rect3R _ a b) = (a,b)
 
 getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
 
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 
 -- (Rounded) CSG
-getBox3 (Complement3 symbObj) = 
+getBox3 (Complement3 _) = 
 	((-infty, -infty, -infty), (infty, infty, infty)) where infty = 1/0
 
 getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
 	where 
 		boxes = map getBox3 symbObjs
-		isEmpty = ( == ((0,0,0),(0,0,0)) )
 		(leftbot, topright) = unzip $ filter (not.isEmpty) boxes
 		(lefts, bots, ins) = unzip3 leftbot
 		(rights, tops, outs) = unzip3 topright
@@ -49,7 +44,7 @@ getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
 		top = maximum tops
 		out = maximum outs
 
-getBox3 (IntersectR3 r symbObjs) = 
+getBox3 (IntersectR3 _ symbObjs) = 
 	let 
 		boxes = map getBox3 symbObjs
 		(leftbot, topright) = unzip boxes
@@ -68,7 +63,7 @@ getBox3 (IntersectR3 r symbObjs) =
 		then ((left,bot,inward),(right,top,out))
 		else ((0,0,0),(0,0,0))
 
-getBox3 (DifferenceR3 r symbObjs) = firstBox
+getBox3 (DifferenceR3 _ symbObjs) = firstBox
 	where
 		firstBox:_ = map getBox3 symbObjs
 
@@ -100,10 +95,10 @@ getBox3 (Outset3 d symbObj) =
 	outsetBox d $ getBox3 symbObj
 
 -- Misc
-getBox3 (EmbedBoxedObj3 (obj,box)) = box
+getBox3 (EmbedBoxedObj3 (_,box)) = box
 
 -- 2D Based
-getBox3 (ExtrudeR r symbObj h) = ((x1,y1,0),(x2,y2,h))
+getBox3 (ExtrudeR _ symbObj h) = ((x1,y1,0),(x2,y2,h))
 	where
 		((x1,y1),(x2,y2)) = getBox2 symbObj
 
@@ -112,10 +107,10 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 		((ax1,ay1),(ax2,ay2)) = getBox2 symbObj1
 		((bx1,by1),(bx2,by2)) = getBox2 symbObj2
 	in
-		((bx1+ax1, by1+ax1, ay2), (bx2+ax2, by2+ax2, ay2))
+		((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
 
 
-getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) = 
+getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) = 
 	let
 		range = [0, 0.1 .. 1.0]
 
@@ -151,11 +146,11 @@ getBox3 (ExtrudeRM r twist scale translate symbObj eitherh) =
 	in
 		((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 
-
-getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) rotate symbObj) = 
+-- FIXME: what is going on in this function?
+getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) = 
 	let
 		((x1,y1),(x2,y2)) = getBox2 symbObj
-		g = maximum $ map abs [x1, x2, y1, y2]
+--		g = maximum $ map abs [x1, x2, y1, y2]
 		r = max x2 (x2 + xshift)
 	in
 		((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
@@ -170,7 +165,7 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
 		xmax' = if xmax > 0 then xmax * 1.1 else if xmax < - x1 then 0 else xmax
 		ymax' = ymax + 0.1 * (ymax - ymin)
 		ymin' = ymin - 0.1 * (ymax - ymin)
-		(r, z1, z2) = if either (==0) (const False) rotate
+		(r, _, _) = if either (==0) (const False) rotate
 			then let
 				s = maximum $ map abs [x2, y1, y2]
 			in (s + xmax', s + ymin', y2 + ymax')

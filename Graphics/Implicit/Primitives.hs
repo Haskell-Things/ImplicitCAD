@@ -6,7 +6,6 @@
 module Graphics.Implicit.Primitives where
 
 import Graphics.Implicit.Definitions
-import Data.List (sortBy)
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 
@@ -166,6 +165,7 @@ extrudeRM = ExtrudeRM
 
 rotateExtrude = RotateExtrude
 
+extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
 rotate3 = Rotate3
@@ -176,10 +176,10 @@ rotate3V = Rotate3V
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs = 
 	let
-		boxDropZ ((a,b,c),(d,e,f)) = ((a,b),(d,e))
+		boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
 		withBoxes :: [(Box2, SymbolicObj3)]
 		withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
-	in case pack ((0,0),(dy,dy)) sep withBoxes of
+	in case pack ((0,0),(dx,dy)) sep withBoxes of
 			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
 			_ -> Nothing
 				
@@ -194,7 +194,7 @@ pack2 (dx, dy) sep objs =
 	let
 		withBoxes :: [(Box2, SymbolicObj2)]
 		withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
-	in case pack ((0,0),(dy,dy)) sep withBoxes of
+	in case pack ((0,0),(dx,dy)) sep withBoxes of
 			(a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
 			_ -> Nothing
 

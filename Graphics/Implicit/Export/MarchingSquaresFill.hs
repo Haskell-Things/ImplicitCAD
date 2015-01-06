@@ -4,7 +4,8 @@
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel (par, pseq)
+-- FIXME: commented out, use later.
+-- import Control.Parallel (par, pseq)
 
 -- | getContour gets a polyline describe the edge of your 2D
 --  object. It's really the only function in this file you need
@@ -66,7 +67,7 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
 		midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
 		midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 
-		square a b c d = [(a,b,c), (a,c,d)]
+		square aa bb cc dd = [(aa,bb,cc), (aa,cc,dd)]
 
 	in case (x1y2 <= 0, x2y2 <= 0,
 	         x1y1 <= 0, x2y1 <= 0) of

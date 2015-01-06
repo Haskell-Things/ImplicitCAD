@@ -56,10 +56,13 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 -- and stick one on if we find it.
 -- Otherwise... something is really screwed up.
 
+-- FIXME: connects should be used with a singleton.
+
 getLoops' segs workingLoop =
 	let
 		presEnd = last $ last workingLoop
-		connects (x:xs) = x == presEnd
+		connects (x:_) = x == presEnd
+                connects [] = False
 		possibleConts = filter connects segs
 		nonConts = filter (not . connects) segs
 		(next, unused) = if null possibleConts

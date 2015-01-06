@@ -2,7 +2,6 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr where
 
 import Graphics.Implicit.Definitions
 import Text.ParserCombinators.Parsec  hiding (State)
-import Text.ParserCombinators.Parsec.Expr
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Util
 
@@ -18,7 +17,7 @@ literal = ("literal" ?:) $
 	*<|> "number" ?: (
 		do
 			a <- many1 digit
-			char '.'
+			_ <- char '.'
 			b <- many digit
 			return $ LitE $ ONum (read (a ++ "." ++ b) :: ℝ)
 		*<|>  do
@@ -26,11 +25,11 @@ literal = ("literal" ?:) $
 			return $ LitE $ ONum (read a :: ℝ)
 		)
 	*<|> "string" ?: do
-		string "\""
+		_ <- string "\""
 		strlit <-  many $ (string "\\\"" >> return '\"') 
 		             *<|> (string "\\n" >> return '\n')
 		             *<|> ( noneOf "\"\n")
-		string "\""
+		_ <- string "\""
 		return $ LitE $ OString strlit
 
 -- We represent the priority or 'fixity' of different types of expressions
@@ -41,57 +40,57 @@ expr0 = exprN 0
 
 exprN :: Integer -> GenParser Char st Expr
 
-exprN n@12 = 
+exprN 12 = 
 	     literal
 	*<|> variable
 	*<|> "bracketed expression" ?: do
 		-- eg. ( 1 + 5 )
-		string "("
+		_ <- string "("
 		expr <- expr0
-		string ")"
+		_ <- string ")"
 		return expr
 	*<|> "vector/list" ?: (
 		do
 			-- eg. [ 3, a, a+1, b, a*b ]
-			string "["
+			_ <- string "["
 			exprs <- sepBy expr0 (char ',' )
-			string "]"
+			_ <- string "]"
 			return $ ListE exprs
 		*<|> do 
 			-- eg. ( 1,2,3 )
-			string "("
+			_ <- string "("
 			exprs <- sepBy expr0 (char ',' )
-			string ")"
+			_ <- string ")"
 			return $ ListE exprs
 		)
 	*<|> "vector/list generator" ?: do
 		-- eg.  [ a : 1 : a + 10 ]
-		string "["
+		_ <- string "["
 		exprs <- sepBy expr0 (char ':' )
-		string "]"
+		_ <- string "]"
 		return $ collector "list_gen" exprs
 
-exprN n@11 = 
+exprN n@11 =
 	do
 		obj <- exprN $ n+1
-		genSpace
+		_ <- genSpace
 		mods <- many1 (
 			"function application" ?: do
-				padString "("
+				_ <- padString "("
 				args <- sepBy expr0 (padString ",")
-				padString ")"
+				_ <- padString ")"
 				return $ \f -> f :$ args
 			*<|> "list indexing" ?: do
-				padString "["
+				_ <- padString "["
 				i <- expr0
-				padString "]"
+				_ <- padString "]"
 				return $ \l -> Var "index" :$ [l, i]
 			*<|> "list splicing" ?: do
-				padString "["
+				_ <- padString "["
 				start <- optionMaybe expr0
-				padString ":"
+				_ <- padString ":"
 				end   <- optionMaybe expr0
-				padString "]"
+				_ <- padString "]"
 				return $ case (start, end) of
 					(Nothing, Nothing) -> id
 					(Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
@@ -103,11 +102,11 @@ exprN n@11 =
 
 exprN n@10 = 
 	"negation" ?: do
-		padString "-"
+		_ <- padString "-"
 		expr <- exprN $ n+1
 		return $ Var "negate" :$ [expr]
 	*<|> do
-		padString "+"
+		_ <- padString "+"
 		expr <- exprN $ n+1
 		return expr
 	*<|> exprN (n+1)
@@ -115,7 +114,7 @@ exprN n@10 =
 exprN n@9 = 
 	"exponentiation" ?: do 
 		a <- exprN $ n+1
-		padString "^"
+		_ <- padString "^"
 		b <- exprN n
 		return $ Var "^" :$ [a,b]
 	*<|> exprN (n+1)
@@ -181,7 +180,7 @@ exprN n@4 =
 
 exprN n@3 =
 	"logical-not" ?: do
-		padString "!"
+		_ <- padString "!"
 		a <- exprN $ n+1
 		return $ Var "!" :$ [a]
 	*<|> exprN (n+1)
@@ -198,18 +197,18 @@ exprN n@2 =
 exprN n@1 = 
 	"ternary" ?: do 
 		a <- exprN $ n+1
-		padString "?"
+		_ <- padString "?"
 		b <- exprN n
-		padString ":"
+		_ <- padString ":"
 		c <- exprN n
 		return $ Var "?" :$ [a,b,c]
 	*<|> exprN (n+1)
 
 exprN n@0 = 
 	do 
-		genSpace
+		_ <- genSpace
 		expr <- exprN $ n+1
-		genSpace
+		_ <- genSpace
 		return expr
 	*<|> exprN (n+1)
 

@@ -20,7 +20,7 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) = \(x,y) -> MathUtil.rmaximum r
 getImplicit2 (Circle r ) = 
 	\(x,y) -> sqrt (x**2 + y**2) - r
 
-getImplicit2 (PolygonR r points) = 
+getImplicit2 (PolygonR _ points) = 
 	\p -> let
 		pair :: Int -> (ℝ2,ℝ2)
 		pair n = (points !! n, points !! (mod (n + 1) (length points) ) )
@@ -101,5 +101,5 @@ getImplicit2 (Outset2 d symbObj) =
 		\p -> obj p - d
 
 -- Misc
-getImplicit2 (EmbedBoxedObj2 (obj,box)) = obj
+getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
 

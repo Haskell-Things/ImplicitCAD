@@ -77,7 +77,7 @@ rminimum ::
 	ℝ      -- ^ radius
 	-> [ℝ] -- ^ numbers to take round minimum
 	-> ℝ   -- ^ resulting number
-rminimum r (a:[]) = a
+rminimum _ (a:[]) = a
 rminimum r (a:b:[]) = rmin r a b
 rminimum r l = 
 	let

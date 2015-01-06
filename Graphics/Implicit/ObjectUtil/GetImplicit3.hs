@@ -11,7 +11,6 @@ import qualified Graphics.Implicit.MathUtil as MathUtil
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
 import Data.VectorSpace       
-import Data.AffineSpace
 import Data.Cross (cross3)
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
@@ -28,7 +27,7 @@ getImplicit3 (Sphere r ) =
 
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
 	let
-		d = sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)
+		d = sqrt((x*x)+(y*y)) - ((r2-r1)/h*z+r1)
 		θ = atan2 (r2-r1) h
 	in
 		max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
@@ -115,7 +114,7 @@ getImplicit3 (Outset3 d symbObj) =
 		\p -> obj p - d
 
 -- Misc
-getImplicit3 (EmbedBoxedObj3 (obj,box)) = obj
+getImplicit3 (EmbedBoxedObj3 (obj,_)) = obj
 
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) = 
@@ -179,7 +178,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
 		\(x,y,z) -> minimum $ do
 			
 			let 
-				r = sqrt (x^2 + y^2)
+				r = sqrt ((x*x) + (y*y))
 				θ = atan2 y x
 				ns :: [Int]
 				ns =

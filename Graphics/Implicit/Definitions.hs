@@ -10,8 +10,6 @@ module Graphics.Implicit.Definitions where
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.VectorSpace       
-import Control.Applicative
-import Data.NumInstances
 
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...
@@ -187,6 +185,7 @@ errorMessage line msg = do
 			else putStrLn $ dropXML False False $ msg'
 		return ()
 
+-- FIXME: document WHY this is wrong.
 -- HACK: This needs to be fixed correctly someday
 instance Show (a -> b) where
 		show _ = "<function>"

@@ -6,7 +6,7 @@ module Graphics.Implicit.Export where
 import Graphics.Implicit.Definitions
 --import Graphics.Implicit.Operations (slice)
 
-import Data.Text.Lazy (Text,pack)
+import Data.Text.Lazy (Text)
 import Data.Text.Lazy.IO (writeFile)
 import Prelude hiding (writeFile)
 import qualified Data.ByteString.Lazy as LBS

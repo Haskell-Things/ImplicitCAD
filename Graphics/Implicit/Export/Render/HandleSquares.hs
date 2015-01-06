@@ -52,6 +52,7 @@ import Data.VectorSpace
 
 -}
 
+mergedSquareTris :: [TriSquare] -> [Triangle]
 mergedSquareTris sqTris = 
 	let
 		-- We don't need to do any work on triangles. They'll just be part of
@@ -79,10 +80,12 @@ mergedSquareTris sqTris =
 
 -- And now for a bunch of helper functions that do the heavy lifting...
 
+isTris :: TriSquare -> Bool
 isTris (Tris _) = True
 isTris _ = False
 
 
+joinXaligned :: [TriSquare] -> [TriSquare]
 joinXaligned quads@((Sq b z xS _):_) =
 	let
 		orderedQuads = sortBy 
@@ -99,6 +102,7 @@ joinXaligned quads@((Sq b z xS _):_) =
 		mergeAdjacent orderedQuads
 joinXaligned [] = []
 
+joinYaligned :: [TriSquare] -> [TriSquare]
 joinYaligned quads@((Sq b z _ yS):_) =
 	let
 		orderedQuads = sortBy 
@@ -117,6 +121,7 @@ joinYaligned [] = []
 
 
 -- Reconstruct a triangle
+squareToTri :: TriSquare -> [Triangle]
 squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
 	let
 		zV = b3 ^* z

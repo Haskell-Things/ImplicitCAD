@@ -2,9 +2,6 @@ module Graphics.Implicit.ExtOpenScad.Definitions where
 
 import Graphics.Implicit.Definitions
 import Data.Map (Map)
-import qualified Control.Monad as Monad
-import           Control.Monad.State (State,StateT)
-import qualified Data.List as List
 
 type Symbol = String
 
@@ -61,7 +58,7 @@ instance Show OVal where
 	show (ONum n) = show n
 	show (OList l) = show l
 	show (OString s) = show s
-	show (OFunc f) = "<function>"
+	show (OFunc _) = "<function>"
 	show (OModule _) = "module"
 	show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
 	show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
@@ -70,7 +67,8 @@ instance Show OVal where
 type VarLookup = Map String OVal
 type FStack = [OVal]
 
-collector s [x] = x
+collector :: Symbol -> [Expr] -> Expr
+collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
 
 -----------------------------------------------------------------

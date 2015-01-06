@@ -4,8 +4,8 @@
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel.Strategies (using, parList, rdeepseq)
-import Debug.Trace
+-- FIXME: commented out for now, parallelism is not properly implemented.
+-- import Control.Parallel.Strategies (using, parList, rdeepseq)
 import Data.VectorSpace
 
 both :: (a -> b) -> (a,a) -> (b,b)
@@ -19,12 +19,11 @@ getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour p1 p2 d obj =
 	let
 		-- How many steps will we take on each axis?
-		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+		n@(nx,ny) = (ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
 		-- Divide it up and compute the polylines
 		gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
-		gridPos (nx,ny) (mx,my) = let p = ( fromIntegral mx / fromIntegral nx
-									      , fromIntegral my / fromIntegral ny)
-								  in p1 ^+^ (p2 ^-^ p1) ⋯* p
+		gridPos (nx,ny) (mx,my) = let p = ( fromIntegral mx / fromIntegral nx, fromIntegral my / fromIntegral ny)
+					  in (p1 ^+^ (p2 ^-^ p1) ⋯* p)
 		linesOnGrid :: [[[Polyline]]]
 		linesOnGrid = [[getSquareLineSegs
 				   (gridPos n (mx,my))
@@ -37,13 +36,16 @@ getContour p1 p2 d obj =
 	in
 		multilines
 
+-- Commented out. not used?
+{-
 getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour2 p1@(x1, y1) p2@(x2, y2) d obj = 
 	let
 		-- How many steps will we take on each axis?
 		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
 		-- Grid mapping funcs
-		fromGrid (mx, my) = let p = (mx/nx, my/ny)
+		fromGrid :: (Float,Float) -> ℝ2
+		fromGrid (mx, my) = let p = (mx/ nx, my/ ny)
 							in (p1 ^+^ (p2 ^-^ p1) ⋯/ p)
 		toGrid (x,y) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1))
 		-- Evaluate obj on a grid, in parallel.
@@ -61,7 +63,7 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
 		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
 	in
 		multilines
-		
+-}		
 
 -- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on its 
@@ -69,7 +71,7 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
 --  It is based on the linearly-interpolated marching squares algorithm.
 
 getSquareLineSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
+getSquareLineSegs (x1, y1) (x2, y2) obj =
 	let 
 		(x,y) = (x1, y1)
 
@@ -101,6 +103,9 @@ getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
 		midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
 		midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 		notPointLine (p1:p2:[]) = p1 /= p2
+                notPointLine [] = False;
+                notPointLine [_] = False;
+--                notPointLine [_ : (_ : (_ : _))] = False;
 	in filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
 	                                 x1y1 <= 0, x2y1 <= 0) of
 		-- Yes, there's some symetries that could reduce the amount of code...
@@ -182,9 +187,11 @@ orderLinesDC segs =
 			((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
 	in
 		if (length segs < 5 || length (head segs) < 5 ) then concat $ concat segs else
-		case (\(x,y) -> (halve x, halve y)) $ unzip $ map (halve) segs of
-			((a,b),(c,d)) ->orderLines $ 
-				orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
+                splitOrder segs
+-- FIXME: unsure about this change.
+--		case (\(x,y) -> (halve x, halve y)) $ unzip $ map (halve) segs of
+--			((a,b),(c,d)) ->orderLines $ 
+--				orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
 
 {-
 orderLinesP :: [[[Polyline]]] -> [Polyline]
@@ -211,6 +218,6 @@ orderLinesP segs =
 -}
 
 
-polylineNotNull (a:l) = not (null l)
+polylineNotNull (_:l) = not (null l)
 polylineNotNull [] = False
 

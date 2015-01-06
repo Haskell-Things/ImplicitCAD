@@ -16,7 +16,7 @@ import Graphics.Implicit.Definitions
 -}
 
 -- The purpose of interpolate is to find the value of x where f(x) crosses zero.
--- This should be accomplished cheaply and accuratly.
+-- This should be accomplished cheaply and accurately.
 
 -- We are given the constraint that x will be between a and b.
 
@@ -38,7 +38,7 @@ import Graphics.Implicit.Definitions
 -- just that it's cheap.
 
 interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
-interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
+interpolate (a,aval) (_,bval) _ _ | aval*bval > 0 = a
 
 -- The obvious:
 
@@ -105,7 +105,7 @@ interpolate _ (b, 0) _ _  = b
 		else interpolate_lin 0 (a',a'val) (b',b'val) f
 -}
 
-interpolate (a,aval) (b,bval) f res =
+interpolate (a,aval) (b,bval) f _ =
 	-- Make sure aval > bval, then pass to interpolate_bin
 	if aval > bval
 	then interpolate_lin 0 (a,aval) (b,bval) f
@@ -151,7 +151,7 @@ interpolate_lin _ (a, _) _ _ = a
 
 -- The termination case:
 
-interpolate_bin 5 (a,aval) (b,bval) f = 
+interpolate_bin 5 (a,aval) (b,bval) _ = 
 	if abs aval < abs bval
 	then a
 	else b
