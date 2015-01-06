@@ -10,8 +10,6 @@ module Graphics.Implicit.Definitions where
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
 import Data.VectorSpace       
-import Control.Applicative
-import Data.NumInstances
 
 -- Let's make things a bit nicer. 
 -- Following math notation ℝ, ℝ², ℝ³...
