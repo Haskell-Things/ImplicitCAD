@@ -4,8 +4,8 @@
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel.Strategies (using, parList, rdeepseq)
-import Debug.Trace
+-- FIXME: commented out for now, parallelism is not properly implemented.
+-- import Control.Parallel.Strategies (using, parList, rdeepseq)
 import Data.VectorSpace
 
 both :: (a -> b) -> (a,a) -> (b,b)
