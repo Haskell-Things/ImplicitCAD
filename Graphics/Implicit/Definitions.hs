@@ -185,6 +185,7 @@ errorMessage line msg = do
 			else putStrLn $ dropXML False False $ msg'
 		return ()
 
+-- FIXME: document WHY this is wrong.
 -- HACK: This needs to be fixed correctly someday
 instance Show (a -> b) where
 		show _ = "<function>"
