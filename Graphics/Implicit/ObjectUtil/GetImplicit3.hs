@@ -27,7 +27,7 @@ getImplicit3 (Sphere r ) =
 
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
 	let
-		d = sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)
+		d = sqrt(x**2+y**2) - ((r2-r1)/h*z+r1)
 		θ = atan2 (r2-r1) h
 	in
 		max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
@@ -178,7 +178,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
 		\(x,y,z) -> minimum $ do
 			
 			let 
-				r = sqrt (x^2 + y^2)
+				r = sqrt (x**2 + y**2)
 				θ = atan2 y x
 				ns :: [Int]
 				ns =
