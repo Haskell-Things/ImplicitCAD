@@ -37,6 +37,8 @@ getContour p1 p2 d obj =
 	in
 		multilines
 
+-- FIXME: Commented out, not used?
+{-
 getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour2 p1@(x1, y1) p2@(x2, y2) d obj = 
 	let
@@ -61,7 +63,7 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
 		multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
 	in
 		multilines
-		
+-}
 
 -- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on its 
