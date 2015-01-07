@@ -16,7 +16,7 @@ import Graphics.Implicit.Definitions
 -}
 
 -- The purpose of interpolate is to find the value of x where f(x) crosses zero.
--- This should be accomplished cheaply and accuratly.
+-- This should be accomplished cheaply and accurately.
 
 -- We are given the constraint that x will be between a and b.
 
