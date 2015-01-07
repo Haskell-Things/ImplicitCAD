@@ -4,7 +4,8 @@
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Graphics.Implicit.Definitions
-import Control.Parallel (par, pseq)
+-- FIXME: commented out, use later.
+-- import Control.Parallel (par, pseq)
 
 -- | getContour gets a polyline describe the edge of your 2D
 --  object. It's really the only function in this file you need
