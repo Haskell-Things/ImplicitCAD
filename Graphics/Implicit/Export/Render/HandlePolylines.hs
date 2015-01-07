@@ -35,7 +35,7 @@ reducePolyline ((x1,y1):(x2,y2):others) =
 	if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
 reducePolyline l = l
 
-polylineNotNull (a:l) = not (null l)
+polylineNotNull (_:l) = not (null l)
 polylineNotNull [] = False
 
 
