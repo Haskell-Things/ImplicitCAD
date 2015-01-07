@@ -4,10 +4,6 @@
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs) where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
-import GHC.Exts (groupWith)
-import Data.List (sortBy)
-import Data.VectorSpace 
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =
