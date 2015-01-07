@@ -105,7 +105,7 @@ interpolate _ (b, 0) _ _  = b
 		else interpolate_lin 0 (a',a'val) (b',b'val) f
 -}
 
-interpolate (a,aval) (b,bval) f res =
+interpolate (a,aval) (b,bval) f _ =
 	-- Make sure aval > bval, then pass to interpolate_bin
 	if aval > bval
 	then interpolate_lin 0 (a,aval) (b,bval) f
