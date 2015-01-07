@@ -5,10 +5,7 @@
 
 module Graphics.Implicit.Export.Render where
 
-import Debug.Trace
-
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
 import Data.VectorSpace
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
@@ -24,7 +21,7 @@ import Graphics.Implicit.Export.Render.Interpolate (interpolate)
 --     getSegs internally uses refine from RefineSegs to subdivide the segs
 --     to better match the boundary.
 
-import Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs')
+import Graphics.Implicit.Export.Render.GetSegs (getSegs)
 -- import Graphics.Implicit.Export.Render.RefineSegs (refine)
 
 -- (3) We put the segments from all sides of the cube together
