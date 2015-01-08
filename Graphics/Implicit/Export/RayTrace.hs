@@ -23,7 +23,11 @@ data Light  = Light ℝ3 ℝ
 data Scene  = Scene Obj3 Color [Light] Color
 
 type Color  = PixelRGBA8
+
+color :: Pixel8 -> Pixel8 -> Pixel8 -> Pixel8 -> PixelRGBA8
 color r g b a = PixelRGBA8 r g b a
+
+dynamicImage :: Image PixelRGBA8 -> DynamicImage
 dynamicImage = ImageRGBA8
 
 -- Math
