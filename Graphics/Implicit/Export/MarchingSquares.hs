@@ -71,7 +71,7 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
 --  It is based on the linearly-interpolated marching squares algorithm.
 
 getSquareLineSegs :: ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getSquareLineSegs p1@(x1, y1) p2@(x2, y2) obj =
+getSquareLineSegs (x1, y1) (x2, y2) obj =
 	let 
 		(x,y) = (x1, y1)
 
@@ -213,6 +213,6 @@ orderLinesP segs =
 -}
 
 
-polylineNotNull (a:l) = not (null l)
+polylineNotNull (_:l) = not (null l)
 polylineNotNull [] = False
 
