@@ -184,10 +184,7 @@ orderLinesDC segs =
 			((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
 	in
 		if (length segs < 5 || length (head segs) < 5 ) then concat $ concat segs else
-		case (\(x,y) -> (halve x, halve y)) $ unzip $ map (halve) segs of
-			((a,b),(c,d)) ->orderLines $ 
-				orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
-
+                splitOrder segs
 {-
 orderLinesP :: [[[Polyline]]] -> [Polyline]
 orderLinesP segs =
