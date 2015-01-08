@@ -12,8 +12,6 @@ import Data.VectorSpace
 import Data.AffineSpace       
 import Data.Cross
 
-import Debug.Trace
-
 -- Definitions
 
 data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
