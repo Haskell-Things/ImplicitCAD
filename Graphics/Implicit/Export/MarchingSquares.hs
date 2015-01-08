@@ -19,7 +19,7 @@ getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour p1 p2 d obj =
 	let
 		-- How many steps will we take on each axis?
-		n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+		n@(nx,ny) = (ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
 		-- Divide it up and compute the polylines
 		gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
 		gridPos (nx,ny) (mx,my) = let p = ( fromIntegral mx / fromIntegral nx
