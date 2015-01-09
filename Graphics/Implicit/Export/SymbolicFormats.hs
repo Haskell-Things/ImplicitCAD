@@ -9,7 +9,6 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
 
 import Control.Monad.Reader
-import Control.Monad (sequence)
 
 import Data.List (intersperse)
 
