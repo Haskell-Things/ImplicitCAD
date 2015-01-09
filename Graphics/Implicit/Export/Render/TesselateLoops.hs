@@ -40,7 +40,7 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
    #__#
 -}
 
-tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
+tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
 	let
 		b1 = normalized $ a ^-^ b
 		b2 = normalized $ c ^-^ b
@@ -65,7 +65,7 @@ tesselateLoop res obj pathSides = return $ Tris $
 	in if null path
 	then early_tris
 	else let
-		mid@(midx,midy,midz) = centroid path
+		mid@(_,_,_) = centroid path
 		midval = obj mid
 		preNormal = foldl1 (^+^) $
 			[ a `cross3` b | (a,b) <- zip path (tail path ++ [head path]) ]
