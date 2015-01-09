@@ -12,13 +12,10 @@ module Graphics.Implicit.Export.SymbolicObj2 where
 import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.Export.Definitions
-import Graphics.Implicit.Export.MarchingSquares
 import Graphics.Implicit.Export.MarchingSquaresFill
-import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
 
 import Graphics.Implicit.Export.Symbolic.Rebound2
-import Graphics.Implicit.Export.Symbolic.Rebound3
 
 import qualified Graphics.Implicit.Export.Render as Render (getContour)
        
