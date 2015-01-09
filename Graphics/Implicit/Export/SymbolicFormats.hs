@@ -44,7 +44,7 @@ buildS3 (IntersectR3 0 objs)  = call " intersection" [] $ map buildS3 objs
 
 buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 obj]
 
-buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf x] [buildS3 obj]
+buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 
 buildS3 (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = call "translate" [bf x1, bf y1, bf z1] [
                                             call "cube" [bf $ x2 - x1, bf $ y2 - y1, bf $ z2 - z1] []
