@@ -44,7 +44,7 @@ detail n res obj [p1, p2] | n < 2 =
 	else let
 		derivX = (obj (mid ^+^ (res/100, 0)) - midval)*100/res
 		derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
-		derivNormSq = derivX^2 + derivY^2
+		derivNormSq = derivX**2 + derivY**2
 	in if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/sqrt derivNormSq) < 3*res
 	then let
 		(dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
