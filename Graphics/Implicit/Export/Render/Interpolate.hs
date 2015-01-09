@@ -38,7 +38,7 @@ import Graphics.Implicit.Definitions
 -- just that it's cheap.
 
 interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
-interpolate (a,aval) (b,bval) _ _ | aval*bval > 0 = a
+interpolate (a,aval) (_,bval) _ _ | aval*bval > 0 = a
 
 -- The obvious:
 
@@ -151,7 +151,7 @@ interpolate_lin _ (a, _) _ _ = a
 
 -- The termination case:
 
-interpolate_bin 5 (a,aval) (b,bval) f = 
+interpolate_bin 5 (a,aval) (b,bval) _ =
 	if abs aval < abs bval
 	then a
 	else b
