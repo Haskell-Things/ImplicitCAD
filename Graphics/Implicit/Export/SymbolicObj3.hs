@@ -226,7 +226,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
 -- (rebound is for being safe about the bounding box --
 --  it slightly streches it to make sure nothing will 
 --  have problems because it is right at the edge )
-symbolicGetMesh res  obj = 
+symbolicGetMesh res obj =
 	case rebound3 (getImplicit3 obj, getBox3 obj) of
 		(obj, (a,b)) -> getMesh a b res obj 
 
