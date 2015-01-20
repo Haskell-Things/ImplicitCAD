@@ -14,17 +14,10 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.Render (getMesh)
 
-import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
 import Graphics.Implicit.MathUtil
 
-import Graphics.Implicit.Export.SymbolicObj2
-
-import qualified Data.Maybe as Maybe
-
-import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
---import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
 import Graphics.Implicit.Export.Util (normTriangle)
 
 
