@@ -9,7 +9,6 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils
 
 import Blaze.ByteString.Builder hiding (Builder)
-import Blaze.ByteString.Builder.ByteString
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian
@@ -22,6 +21,7 @@ normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
     normalized $ (b + negateV a) `cross3` (c + negateV a)
 
+stl :: [Triangle] -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
     where
         stlHeader = "solid ImplictCADExport\n"
