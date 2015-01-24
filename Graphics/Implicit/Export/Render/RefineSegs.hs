@@ -20,7 +20,7 @@ refine res obj = simplify res . detail' res obj
 -- an initial value for a pointer counter argument. This is detail'
 
 
-detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 = 
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 =
 		detail 0 res obj [p1,p2]
 detail' _ _ a = a
 
