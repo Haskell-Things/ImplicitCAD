@@ -87,6 +87,7 @@ defaultPolymorphicFunctions =
 		("prod", prod),
 		("/", div),
 		("-", toOObj sub), 
+                ("%", toOObj omod),
 		("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)), 
 		("negate", toOObj negate),
 		("index", toOObj index),
