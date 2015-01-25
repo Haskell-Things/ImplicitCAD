@@ -112,7 +112,7 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
 				return []
 		pushVals newVals
 
-runStatementI (StatementI lineN (Include name injectVals)) = do
+runStatementI (StatementI _ (Include name injectVals)) = do
 	name' <- getRelPath name
 	content <- liftIO $ readFile name'
 	case parseProgram name content of
@@ -131,7 +131,7 @@ runSuite stmts = Monad.mapM_ runStatementI stmts
 
 runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
-	(res, state) <- State.runStateT 
+	(res, _) <- State.runStateT
 		(runSuite suite >> getVals)
 		(varlookup, [], path, (), () )
 	return res
