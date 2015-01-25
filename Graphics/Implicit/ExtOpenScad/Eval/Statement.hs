@@ -11,13 +11,10 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 
-import qualified Data.Maybe as Maybe
-import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Map (Map)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
-import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import           Control.Monad.State (get, liftIO)
 import qualified System.FilePath as FilePath
 
 
