@@ -69,6 +69,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
 				Nothing  -> argument name
 			return (name, val)
 		let
+{-
 			children = ONum $ fromIntegral $ length vals
 			child = OModule $ \vals -> do
 				n :: ℕ <- argument "n";
@@ -83,6 +84,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
 					_ -> OUndefined
 				_ -> OUndefined
 			newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
+-}
 			varlookup' = Map.union (Map.fromList newNameVals) varlookup
 			suiteVals  = runSuiteCapture varlookup' path suite
 		return suiteVals
