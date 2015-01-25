@@ -23,9 +23,11 @@ defaultObjects = fromList $
 -- Missing standard ones:
 -- rand, lookup, 
 
+defaultConstants :: [([Char], OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
 	[("pi", pi)]
 
+defaultFunctions :: [([Char], OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 	[
 		("sin",   sin),
@@ -49,6 +51,7 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 		("sqrt",  sqrt)
 	]
 
+defaultFunctions2 :: [([Char], OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 	[
 		("max", max),
@@ -57,6 +60,7 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 		("pow", (**))
 	]
 
+defaultFunctionsSpecial :: [([Char], OVal)]
 defaultFunctionsSpecial = 
 	[
 		("map", toOObj $ flip $ 
@@ -66,6 +70,7 @@ defaultFunctionsSpecial =
 	]
 
 
+defaultModules :: [(String, OVal)]
 defaultModules =
 	map (\(a,b) -> (a, OModule b)) primitives
 
@@ -73,6 +78,7 @@ defaultModules =
 
 -- more complicated ones:
 
+defaultPolymorphicFunctions :: [([Char], OVal)]
 defaultPolymorphicFunctions = 
 	[ 
 		("+", sum),
