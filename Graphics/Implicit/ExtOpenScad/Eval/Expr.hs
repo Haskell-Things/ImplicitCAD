@@ -82,7 +82,7 @@ evalExpr' (LamE pats fexpr) = do
 
 --------------
 
-
+{-
 simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
 	let
 		split b l = (filter b l, filter (not.b) l)
@@ -94,3 +94,4 @@ simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
 		"*" -> (LitE $ ONum $ product numArgs'):nonNumArgs
 		_ -> args'
 simplifyExpr x = x
+-}
