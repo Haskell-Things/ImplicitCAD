@@ -24,7 +24,7 @@ runOpenscad s =
 	let
 		initial =  defaultObjects
 		rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
-			(obj2s, obj3s, others) = divideObjs ovals
+			(obj2s, obj3s, _ ) = divideObjs ovals
 	in case parseProgram "" s of
 		Left e -> Left e
 		Right sts -> Right
