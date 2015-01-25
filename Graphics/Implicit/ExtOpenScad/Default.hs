@@ -9,7 +9,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 import Graphics.Implicit.ExtOpenScad.Primitives
-import Data.Map (Map, fromList)
+import Data.Map (fromList)
 
 defaultObjects :: VarLookup -- = Map String OVal
 defaultObjects = fromList $ 
