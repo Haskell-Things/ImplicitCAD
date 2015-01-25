@@ -2,7 +2,6 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr where
 
 import Graphics.Implicit.Definitions
 import Text.ParserCombinators.Parsec  hiding (State)
-import Text.ParserCombinators.Parsec.Expr
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Util
 
