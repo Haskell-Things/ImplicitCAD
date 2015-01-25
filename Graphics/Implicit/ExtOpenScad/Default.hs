@@ -220,10 +220,10 @@ defaultPolymorphicFunctions =
 				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
 		list_gen _ = Nothing
 
-		ternary True a b = a
-		ternary False a b = b
+		ternary True a _ = a
+		ternary False _ b = b
 
-		olegnth (OString s) = ONum $ fromIntegral $ length s
+		olength (OString s) = ONum $ fromIntegral $ length s
 		olength (OList s)   = ONum $ fromIntegral $ length s
 		olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
 
