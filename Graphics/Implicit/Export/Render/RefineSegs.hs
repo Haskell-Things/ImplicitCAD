@@ -10,17 +10,18 @@ import Graphics.Implicit.Export.Util (centroid)
 -- The purpose of refine is to add detail to a polyline aproximating
 -- the boundary of an implicit function and to remove redundant points.
 
-refine :: ℝ -> Obj2 -> [ℝ2] -> [ℝ2]
 
 -- We break this into two steps: detail and then simplify.
 
+refine :: ℝ -> Obj2 -> [ℝ2] -> [ℝ2]
 refine res obj = simplify res . detail' res obj
 
 -- we wrap detail to make it ignore very small segments, and to pass in 
 -- an initial value for a pointer counter argument. This is detail'
 
 
-detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)^2 + (y2-y1)^2 > res^2/200 =
+detail' :: ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
+detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)**2 + (y2-y1)**2 > res**2/200 =
 		detail 0 res obj [p1,p2]
 detail' _ _ a = a
 
@@ -56,10 +57,10 @@ detail n res obj [p1, p2] | n < 2 =
 		detail (n+1) res obj [p1, mid''] ++ tail (detail (n+1) res obj [mid'', p2] )
 	else [p1, p2]
 
-
 detail _ _ _ x = x
 
-simplify res = {-simplify3 . simplify2 res . -} simplify1
+simplify :: Float -> [ℝ2] -> [ℝ2]
+simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: [ℝ2] -> [ℝ2]
 simplify1 (a:b:c:xs) =
