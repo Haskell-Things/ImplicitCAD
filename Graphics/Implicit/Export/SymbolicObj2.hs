@@ -51,7 +51,7 @@ symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [(ℝ2,ℝ2,ℝ2)]
 symbolicGetContourMesh res (Translate2 v obj) = map (\(a,b,c) -> (a + v, b + v, c + v) )  $
 	symbolicGetContourMesh res obj
-symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(c,d,e) -> (e ⋯* s, d ⋯* s, e ⋯* s) )  $
+symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(c,d,e) -> (c ⋯* s, d ⋯* s, e ⋯* s) )  $
 	symbolicGetContourMesh (res/sc) obj where sc = max a b
 symbolicGetContourMesh _ (RectR 0 (x1,y1) (x2,y2)) = [((x1,y1), (x2,y1), (x2,y2)), ((x2,y2), (x1,y2), (x1,y1)) ]
 symbolicGetContourMesh res (Circle r) = 
