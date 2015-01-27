@@ -7,20 +7,20 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 genSpace = many $ 
 	oneOf " \t\n\r" 
 	<|> (try $ do
-		string "//"
-		many ( noneOf "\n")
-		string "\n"
+		_ <- string "//"
+		_ <- many ( noneOf "\n")
+		_ <- string "\n"
 		return ' '
 	) <|> (try $ do
-		string "/*"
-		manyTill anyChar (try $ string "*/")
+		_ <- string "/*"
+		_ <- manyTill anyChar (try $ string "*/")
 		return ' '
 	)
 
 pad parser = do
-	genSpace
+	_ <- genSpace
 	a <- parser
-	genSpace
+        _ <- genSpace
 	return a
 
 infixr 1 *<|>
@@ -40,9 +40,9 @@ stringGS (x:xs) = do
 stringGS "" = return ""
 
 padString s = do
-	genSpace
+	_ <- genSpace
 	s' <- string s
-	genSpace
+	_ <- genSpace
 	return s'
 
 tryMany = (foldl1 (<|>)) . (map try)
@@ -53,7 +53,7 @@ variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable
 patternMatcher :: GenParser Char st Pattern
 patternMatcher =
 	(do 
-		char '_'
+		_ <- char '_'
 		return Wild
 	) <|> {-( do
 		a <- literal
@@ -65,13 +65,10 @@ patternMatcher =
 		symb <- variableSymb
 		return $ Name symb
 	) <|> ( do
-		char '['
-		genSpace
+		_ <- char '['
+		_ <- genSpace
 		components <- patternMatcher `sepBy` (try $ genSpace >> char ',' >> genSpace)
-		genSpace
-		char ']'
+		_ <- genSpace
+		_ <- char ']'
 		return $ ListP components
 	)
-
-
-
