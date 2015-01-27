@@ -15,8 +15,8 @@ parseProgram name s = parse program name s where
 -- | A  in our programming openscad-like programming language.
 computation :: GenParser Char st StatementI
 computation = 
-	do -- suite statemetns: no semicolon...
-		genSpace
+	do -- suite statements: no semicolon...
+		_ <- genSpace
 		s <- tryMany [
 			ifStatementI,
 			forStatementI,
@@ -31,22 +31,22 @@ computation =
 			unimplemented "import_stl"-}
 			-- rotateExtrude
 			]
-		genSpace
+		_ <- genSpace
 		return s
 	*<|> do -- Non suite s. Semicolon needed...
-		genSpace
+		_ <- genSpace
 		s <- tryMany [
 			echo,
 			assignment,
 			include--,
 			--use
 			]
-		stringGS " ; "
+		_ <- stringGS " ; "
 		return s
 	*<|> do
-		genSpace
+		_ <- genSpace
 		s <- userModule
-		genSpace
+		_ <- genSpace
 		return s
 
 {-
@@ -68,11 +68,11 @@ computation =
 -}
 suite :: GenParser Char st [StatementI]
 suite = (fmap return computation <|> do 
-	char '{'
-	genSpace
+	_ <- char '{'
+	_ <- genSpace
 	stmts <- many (try computation)
-	genSpace
-	char '}'
+	_ <- genSpace
+	_ <- char '}'
 	return stmts
 	) <?> " suite"
 
@@ -80,10 +80,10 @@ suite = (fmap return computation <|> do
 throwAway :: GenParser Char st StatementI
 throwAway = do
 	line <- lineNumber
-	genSpace
-	oneOf "%*"
-	genSpace
-	computation
+	_ <- genSpace
+	_ <- oneOf "%*"
+	_ <- genSpace
+	_ <- computation
 	return $ StatementI line DoNothing
 
 -- An included ! Basically, inject another openscad file here...
@@ -92,9 +92,9 @@ include = (do
 	line <- lineNumber
 	injectVals <-  (string "include" >> return True )
 	           <|> (string "use"     >> return False)
-	stringGS " < "
+	_ <- stringGS " < "
 	filename <- many (noneOf "<> ")
-	stringGS " > "
+	_ <- stringGS " > "
 	return $ StatementI line $ Include filename injectVals
 	) <?> "include "
 
@@ -104,16 +104,16 @@ assignment = ("assignment " ?:) $
 	do
 		line <- lineNumber
 		pattern <- patternMatcher
-		stringGS " = "
+		_ <- stringGS " = "
 		valExpr <- expr0
 		return $ StatementI line$ pattern := valExpr
 	*<|> do
 		line <- lineNumber
 		varSymb <- (string "function" >> space >> genSpace >> variableSymb) 
 		           *<|> variableSymb
-		stringGS " ( "
+		_ <- stringGS " ( "
 		argVars <- sepBy patternMatcher (stringGS " , ")
-		stringGS " ) = "
+		_ <- stringGS " ) = "
 		valExpr <- expr0
 		return $ StatementI line $ Name varSymb := LamE argVars valExpr
 
@@ -121,20 +121,20 @@ assignment = ("assignment " ?:) $
 echo :: GenParser Char st StatementI
 echo = do
 	line <- lineNumber
-	stringGS " echo ( "
+	_ <- stringGS " echo ( "
 	exprs <- expr0 `sepBy` (stringGS " , ")
-	stringGS " ) "
+	_ <- stringGS " ) "
 	return $ StatementI line $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = 
 	"if " ?: do
 		line <- lineNumber
-		stringGS "if ( "
+		_ <- stringGS "if ( "
 		bexpr <- expr0
-		stringGS " ) "
+		_ <- stringGS " ) "
 		sTrueCase <- suite
-		genSpace
+		_ <- genSpace
 		sFalseCase <- (stringGS "else " >> suite ) *<|> (return [])
 		return $ StatementI line $ If bexpr sTrueCase sFalseCase
 
@@ -146,11 +146,11 @@ forStatementI =
 		--      for ( vsymb = vexpr   ) loops
 		-- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
 		-- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-		stringGS " for ( "
+		_ <- stringGS " for ( "
 		pattern <- patternMatcher
-		stringGS " = "
+		_ <- stringGS " = "
 		vexpr <- expr0
-		stringGS " ) "
+		_ <- stringGS " ) "
 		loopContent <- suite
 		return $ StatementI line $ For pattern vexpr loopContent
 
@@ -159,20 +159,20 @@ userModule :: GenParser Char st StatementI
 userModule = do
 	line <- lineNumber
 	name <- variableSymb
-	genSpace
+	_ <- genSpace
 	args <- moduleArgsUnit
-	genSpace
+	_ <- genSpace
 	s <- suite *<|> (stringGS " ; " >> return [])
 	return $ StatementI line $ ModuleCall name args s
 
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
 	line <- lineNumber
-	stringGS "module "
+	_ <- stringGS "module "
 	newModuleName <- variableSymb
-	genSpace
+	_ <- genSpace
 	args <- moduleArgsUnitDecl
-	genSpace
+	_ <- genSpace
 	s <- suite
 	return $ StatementI line $ NewModule newModuleName args s
 
@@ -180,20 +180,20 @@ userModuleDeclaration = do
 
 moduleArgsUnit :: GenParser Char st [(Maybe String, Expr)]
 moduleArgsUnit = do
-	stringGS " ( "
+	_ <- stringGS " ( "
 	args <- sepBy ( 
 		do
 			-- eg. a = 12
 			symb <- variableSymb
-			stringGS " = "
+			_ <- stringGS " = "
 			expr <- expr0
 			return $ (Just symb, expr)
 		*<|> do
 			-- eg. a(x,y) = 12
 			symb <- variableSymb
-			stringGS " ( "
+			_ <- stringGS " ( "
 			argVars <- sepBy variableSymb (try $ stringGS " , ")
-			stringGS " ) = "
+			_ <- stringGS " ) = "
 			expr <- expr0
 			return $ (Just symb, LamE (map Name argVars) expr)
 		*<|> do
@@ -201,30 +201,30 @@ moduleArgsUnit = do
 			expr <- expr0
 			return (Nothing, expr)
 		) (try $ stringGS " , ")
-	stringGS " ) "
+	_ <- stringGS " ) "
 	return args
 
 moduleArgsUnitDecl ::  GenParser Char st [(String, Maybe Expr)]
 moduleArgsUnitDecl = do
-	stringGS " ( "
+	_ <- stringGS " ( "
 	argTemplate <- sepBy (
 		do
 			symb <- variableSymb;
-			stringGS " = "
+			_ <- stringGS " = "
 			expr <- expr0
 			return (symb, Just expr)
 		*<|> do
 			symb <- variableSymb;
-			stringGS " ( "
+			_ <- stringGS " ( "
 			argVars <- sepBy variableSymb (try $ stringGS " , ")
-			stringGS " ) = "
+			_ <- stringGS " ) = "
 			expr <- expr0
 			return (symb, Just expr)
 		*<|> do
 			symb <- variableSymb
 			return (symb, Nothing)
 		) (try $ stringGS " , ")
-	stringGS " ) "
+	_ <- stringGS " ) "
 	return argTemplate
 
 lineNumber = fmap sourceLine getPosition
