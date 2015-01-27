@@ -40,7 +40,7 @@ expr0 = exprN 0
 
 exprN :: Integer -> GenParser Char st Expr
 
-exprN n@12 = 
+exprN 12 =
 	     literal
 	*<|> variable
 	*<|> "bracketed expression" ?: do
@@ -70,7 +70,7 @@ exprN n@12 =
 		_ <- string "]"
 		return $ collector "list_gen" exprs
 
-exprN n@11 = 
+exprN n@11 =
 	do
 		obj <- exprN $ n+1
 		_ <- genSpace
