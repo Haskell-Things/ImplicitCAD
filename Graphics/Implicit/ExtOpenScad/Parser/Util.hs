@@ -1,8 +1,6 @@
 module Graphics.Implicit.ExtOpenScad.Parser.Util where
 
-import Graphics.Implicit.Definitions
 import Text.ParserCombinators.Parsec  hiding (State)
-import Text.ParserCombinators.Parsec.Expr
 import Graphics.Implicit.ExtOpenScad.Definitions
 
 -- white space, including tabs, newlines and comments
