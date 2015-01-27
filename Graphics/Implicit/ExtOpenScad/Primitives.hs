@@ -17,7 +17,7 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 
 import qualified Graphics.Implicit.Primitives as Prim
-import Data.Maybe (fromMaybe, isNothing)
+import Data.Maybe (isNothing)
 import qualified Data.Either as Either
 import           Data.Either (either)
 import qualified Control.Monad as Monad
