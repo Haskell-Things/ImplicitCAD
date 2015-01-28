@@ -52,7 +52,7 @@ argument name =
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
 
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
-defaultTo (AP name oldDefMaybeVal doc next) newDefVal = 
+defaultTo (AP name _ doc next) newDefVal =
 	AP name (Just $ toOObj newDefVal) doc next
 
 -- ** example
