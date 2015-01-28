@@ -2,10 +2,8 @@
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
-import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
-import qualified Control.Exception as Ex
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
 import Control.Monad
