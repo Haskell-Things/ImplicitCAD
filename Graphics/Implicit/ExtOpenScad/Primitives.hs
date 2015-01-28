@@ -335,8 +335,6 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
 		`doc` "round the top?"
 	
 	let
-		degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
-
 		heightn = case height of
 				Left  h -> h
 				Right f -> f 0 0
