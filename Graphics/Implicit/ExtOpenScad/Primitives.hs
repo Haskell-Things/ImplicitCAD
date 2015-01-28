@@ -328,7 +328,7 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
 	twist  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "twist"  `defaultTo` Nothing
 		`doc` "twist as we extrude, either a total amount to twist or a function..."
 	scale  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "scale"  `defaultTo` Nothing
-		`doc` "scale according to this funciton as we extrud..."
+		`doc` "scale according to this funciton as we extrude..."
 	translate :: Maybe (Either ℝ2 (ℝ -> ℝ2)) <- argument "translate"  `defaultTo` Nothing
 		`doc` "translate according to this funciton as we extrude..."
 	r      :: ℝ   <- argument "r"      `defaultTo` 0
