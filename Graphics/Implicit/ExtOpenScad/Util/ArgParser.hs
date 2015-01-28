@@ -117,9 +117,9 @@ argMap2 a b (APFailIf test err child) =
 	then (Nothing, [err])
 	else argMap2 a b child
 
-argMap2 a b (APExample str child) = argMap2 a b child
+argMap2 a b (APExample _ child) = argMap2 a b child
 
-argMap2 a b (APTest str tests child) = argMap2 a b child
+argMap2 a b (APTest _ _ child) = argMap2 a b child
 
 
 {-
