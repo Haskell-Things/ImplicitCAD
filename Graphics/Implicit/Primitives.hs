@@ -165,6 +165,7 @@ extrudeRM = ExtrudeRM
 
 rotateExtrude = RotateExtrude
 
+extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
 rotate3 = Rotate3
