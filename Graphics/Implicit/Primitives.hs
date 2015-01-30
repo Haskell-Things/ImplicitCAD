@@ -6,7 +6,6 @@
 module Graphics.Implicit.Primitives where
 
 import Graphics.Implicit.Definitions
-import Data.List (sortBy)
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 
