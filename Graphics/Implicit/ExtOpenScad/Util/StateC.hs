@@ -60,4 +60,4 @@ errorC lineN err = liftIO $ putStrLn $ "At " ++ show lineN ++ ": " ++ err
 mapMaybeM f (Just a) = do
 	b <- f a
 	return (Just b)
-mapMaybeM f Nothing = return Nothing
+mapMaybeM _ Nothing = return Nothing
