@@ -176,7 +176,7 @@ rotate3V = Rotate3V
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs = 
 	let
-		boxDropZ ((a,b,c),(d,e,f)) = ((a,b),(d,e))
+		boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
 		withBoxes :: [(Box2, SymbolicObj3)]
 		withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
 	in case pack ((0,0),(dx,dy)) sep withBoxes of
