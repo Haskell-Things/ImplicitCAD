@@ -145,9 +145,11 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
 		((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 
 
+-- Note: Assumes x2 is always greater than x1.
+-- FIXME: Insert the above assumption as an assertion in the language structure?
 getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
 	let
-		((x1,y1),(x2,y2)) = getBox2 symbObj
+		((_,y1),(x2,y2)) = getBox2 symbObj
 		r = max x2 (x2 + xshift)
 	in
 		((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
