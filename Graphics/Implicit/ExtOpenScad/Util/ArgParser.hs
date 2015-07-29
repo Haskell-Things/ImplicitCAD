@@ -9,9 +9,9 @@ import qualified Control.Exception as Ex
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
 import Control.Monad
+import Control.Applicative
 
 instance Monad ArgParser where
-
 	-- return is easy: if we want an ArgParser that just gives us a, that is 
 	-- ArgParserTerminator a
 	return a = APTerminator a
@@ -28,12 +28,23 @@ instance Monad ArgParser where
 	(APTerminator a) >>= g = g a
 	(APBranch bs) >>= g = APBranch $ map (>>= g) bs
 
+instance Functor ArgParser where
+    fmap = liftM
+
+instance Applicative ArgParser where
+    pure = return
+    (<*>) = ap
+
 instance MonadPlus ArgParser where
 	mzero = APFailIf True "" undefined
 	mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
 	mplus (APBranch as) b             = APBranch ( as  ++ [b] )
 	mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
 	mplus a             b             = APBranch [ a   ,   b  ]
+
+instance Alternative ArgParser where
+    (<|>) = mplus
+    empty = mzero
 
 -- * ArgParser building functions
 

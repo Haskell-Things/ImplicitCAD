@@ -28,7 +28,7 @@ import Data.Text.Lazy
 import qualified Data.Monoid as Monoid
 
 import Data.Text.Lazy
-import Data.Text.Lazy.Internal (defaultChunkSize)
+import Data.Text.Internal.Lazy (defaultChunkSize)
 import Data.Text.Lazy.Builder hiding (toLazyText)
 import Data.Text.Lazy.Builder.RealFloat
 import Data.Text.Lazy.Builder.Int
