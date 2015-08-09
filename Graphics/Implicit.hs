@@ -7,41 +7,41 @@
    functionality we want to be accessible to the end user. -}
 
 module Graphics.Implicit(
-	-- Operations
-	translate,
-	scale,
-	complement,
-	union,  intersect,  difference,
-	unionR, intersectR, differenceR,
-	shell,
-	--slice,
-	extrudeR,
-	extrudeOnEdgeOf,
-	-- Primitives
-	sphere,
-	rect3R,
-	circle,
-	cylinder,
-	cylinder2,
-	rectR,
-	--regularPolygon,
-	--zsurface,
-	polygon,
-	-- Export
-	writeSVG,
-	writeSTL,
-	writeBinSTL,
-	writeOBJ,
-	writeTHREEJS,
-	writeSCAD2,
-	writeSCAD3,
-	writeGCodeHacklabLaser,
-	writePNG2,
-	writePNG3,
-	runOpenscad,
-	implicit,
-	SymbolicObj2,
-	SymbolicObj3
+    -- Operations
+    translate,
+    scale,
+    complement,
+    union,  intersect,  difference,
+    unionR, intersectR, differenceR,
+    shell,
+    --slice,
+    extrudeR,
+    extrudeOnEdgeOf,
+    -- Primitives
+    sphere,
+    rect3R,
+    circle,
+    cylinder,
+    cylinder2,
+    rectR,
+    --regularPolygon,
+    --zsurface,
+    polygon,
+    -- Export
+    writeSVG,
+    writeSTL,
+    writeBinSTL,
+    writeOBJ,
+    writeTHREEJS,
+    writeSCAD2,
+    writeSCAD3,
+    writeGCodeHacklabLaser,
+    writePNG2,
+    writePNG3,
+    runOpenscad,
+    implicit,
+    SymbolicObj2,
+    SymbolicObj3
 ) where
 
 -- Let's be explicit about where things come from :)

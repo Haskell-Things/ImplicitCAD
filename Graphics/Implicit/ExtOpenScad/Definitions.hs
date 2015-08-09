@@ -12,17 +12,17 @@ data Pattern = Name  Symbol
              | ListP  [Pattern]
              | Wild
              | Symbol :@ Pattern
-	deriving Show
+    deriving Show
 
 data Expr = Var Symbol
           | LitE OVal
           | ListE [Expr]
           | LamE [Pattern] Expr
           | Expr :$ [Expr]
-	deriving Show
+    deriving Show
 
 data StatementI = StatementI Int (Statement StatementI)
-	deriving Show
+    deriving Show
 
 data Statement st = Include String Bool
                | Pattern :=  Expr
@@ -32,40 +32,40 @@ data Statement st = Include String Bool
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
                | DoNothing
-	deriving Show
+    deriving Show
 
 
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined 
          | OError [String]
-		 | OBool Bool 
-		 | ONum ℝ
-		 | OList [OVal]
-		 | OString String
-		 | OFunc (OVal -> OVal)
+         | OBool Bool 
+         | ONum ℝ
+         | OList [OVal]
+         | OString String
+         | OFunc (OVal -> OVal)
          | OModule ([OVal] -> ArgParser (IO [OVal]))
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
 instance Eq OVal where
-	(OBool a) == (OBool b) = a == b
-	(ONum  a) == (ONum  b) = a == b
-	(OList a) == (OList b) = all id $ zipWith (==) a b
-	(OString a) == (OString b) = a == b
-	_ == _ = False
+    (OBool a) == (OBool b) = a == b
+    (ONum  a) == (ONum  b) = a == b
+    (OList a) == (OList b) = all id $ zipWith (==) a b
+    (OString a) == (OString b) = a == b
+    _ == _ = False
 
 instance Show OVal where
-	show OUndefined = "Undefined"
-	show (OBool b) = show b
-	show (ONum n) = show n
-	show (OList l) = show l
-	show (OString s) = show s
-	show (OFunc f) = "<function>"
-	show (OModule _) = "module"
-	show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
-	show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
-	show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
+    show OUndefined = "Undefined"
+    show (OBool b) = show b
+    show (ONum n) = show n
+    show (OList l) = show l
+    show (OString s) = show s
+    show (OFunc f) = "<function>"
+    show (OModule _) = "module"
+    show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
+    show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
+    show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
 type VarLookup = Map String OVal
 type FStack = [OVal]
@@ -93,5 +93,5 @@ data ArgParser a
                  | APBranch [ArgParser a]
 
 data TestInvariant = EulerCharacteristic Int 
-	deriving (Show)
+    deriving (Show)
 
