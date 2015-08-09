@@ -8,7 +8,19 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Control.Exception as Ex
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
+import Control.Applicative
 import Control.Monad
+
+instance Alternative ArgParser where
+	(<|>) = mplus
+	empty = mzero
+
+instance Functor ArgParser where
+	fmap  = liftM
+
+instance Applicative ArgParser where
+	pure = return
+	(<*>) = ap
 
 instance Monad ArgParser where
 

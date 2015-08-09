@@ -23,7 +23,7 @@ import Data.AffineSpace
 import Control.Applicative
 -- The following is needed to ensure backwards/forwards compatibility
 -- make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch, value, long, short, option, metavar, nullOption, reader, execParser, Parser)
+import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch, value, long, short, option, metavar, execParser, Parser)
 import System.FilePath
 
 -- Backwards compatibility with old versions of Data.Monoid:
@@ -58,8 +58,10 @@ formatExtensions =
 	, ("obj", OBJ)
 	]
 
-readOutputFormat :: String -> Maybe OutputFormat
-readOutputFormat ext = lookup (map toLower ext) formatExtensions
+readOutputFormat :: Monad m => String -> m (OutputFormat)
+readOutputFormat ext = case lookup (map toLower ext) formatExtensions of
+	Nothing -> fail ("unknown extension: "++ext)
+	Just x -> return x
 
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
@@ -71,28 +73,25 @@ guessOutputFormat fileName =
 extOpenScadOpts :: Parser ExtOpenScadOpts
 extOpenScadOpts =
 	ExtOpenScadOpts
-	<$> nullOption
+	<$> option (pure <$> str)
 		(  short 'o'
 		<> long "output"
 		<> value Nothing
 		<> metavar "FILE"
-		<> reader (pure . str)
 		<> help "Output file name"
 		)
-	<*> nullOption
+	<*> option (pure <$> (readOutputFormat =<< str))
 		(  short 'f'
 		<> long "format"
 		<> value Nothing
 		<> metavar "FORMAT"
 		<> help "Output format"
-		<> reader (pure . readOutputFormat)
 		)
-	<*> option
+	<*> option (pure <$> auto)
 		(  short 'r'
 		<> long "resolution"
 		<> value Nothing
 		<> metavar "RES"
-		<> reader (pure . auto)
 		<> help "Approximation quality"
 		)
 	<*> switch
