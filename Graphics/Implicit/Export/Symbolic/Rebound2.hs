@@ -5,8 +5,8 @@ import Graphics.Implicit.Definitions
 
 rebound2 :: BoxedObj2 -> BoxedObj2
 rebound2 (obj, (a,b)) = 
-	let
-		d :: ℝ2
-		d = (b ^-^ a) ^/ 10
-	in 
-		(obj, ((a ^-^ d), (b ^+^ d)))
+    let
+        d :: ℝ2
+        d = (b ^-^ a) ^/ 10
+    in 
+        (obj, ((a ^-^ d), (b ^+^ d)))

@@ -92,66 +92,66 @@ type BoxedObj3 = Boxed3 Obj3
 --   accelerate rendering & give ideal meshes for simple
 --   cases.
 data SymbolicObj2 =
-	-- Primitives
-	  RectR ℝ ℝ2 ℝ2
-	| Circle ℝ
-	| PolygonR ℝ [ℝ2]
-	-- (Rounded) CSG
-	| Complement2 SymbolicObj2
-	| UnionR2 ℝ [SymbolicObj2]
-	| DifferenceR2 ℝ [SymbolicObj2]
-	| IntersectR2 ℝ [SymbolicObj2]
-	-- Simple transforms
-	| Translate2 ℝ2 SymbolicObj2
-	| Scale2 ℝ2 SymbolicObj2
-	| Rotate2 ℝ SymbolicObj2
-	-- Boundary mods
-	| Outset2 ℝ SymbolicObj2
-	| Shell2 ℝ SymbolicObj2
-	-- Misc
-	| EmbedBoxedObj2 BoxedObj2
-	deriving Show
+    -- Primitives
+    RectR ℝ ℝ2 ℝ2
+    | Circle ℝ
+    | PolygonR ℝ [ℝ2]
+    -- (Rounded) CSG
+    | Complement2 SymbolicObj2
+    | UnionR2 ℝ [SymbolicObj2]
+    | DifferenceR2 ℝ [SymbolicObj2]
+    | IntersectR2 ℝ [SymbolicObj2]
+    -- Simple transforms
+    | Translate2 ℝ2 SymbolicObj2
+    | Scale2 ℝ2 SymbolicObj2
+    | Rotate2 ℝ SymbolicObj2
+    -- Boundary mods
+    | Outset2 ℝ SymbolicObj2
+    | Shell2 ℝ SymbolicObj2
+    -- Misc
+    | EmbedBoxedObj2 BoxedObj2
+    deriving Show
 
 -- | A symbolic 3D format!
 
 data SymbolicObj3 = 
-	-- Primitives
-	  Rect3R ℝ ℝ3 ℝ3
-	| Sphere ℝ
-	| Cylinder ℝ ℝ ℝ -- h r1 r2
-	-- (Rounded) CSG
-	| Complement3 SymbolicObj3
-	| UnionR3 ℝ [SymbolicObj3]
-	| IntersectR3 ℝ [SymbolicObj3]
-	| DifferenceR3 ℝ [SymbolicObj3]
-	-- Simple transforms
-	| Translate3 ℝ3 SymbolicObj3
-	| Scale3 ℝ3 SymbolicObj3
-	| Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
-	| Rotate3V ℝ ℝ3 SymbolicObj3
-	-- Boundary mods
-	| Outset3 ℝ SymbolicObj3
-	| Shell3 ℝ SymbolicObj3
-	-- Misc
-	| EmbedBoxedObj3 BoxedObj3
-	-- 2D based
-	| ExtrudeR ℝ SymbolicObj2 ℝ
-	| ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
-	| ExtrudeRM 
-		ℝ                 -- rounding radius
-		(Maybe (ℝ -> ℝ))  -- twist
-		(Maybe (ℝ -> ℝ))  -- scale
-		(Maybe (ℝ -> ℝ2)) -- translate
-		SymbolicObj2      -- object to extrude
-		(Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
-	| RotateExtrude
-		ℝ                   -- Angle to sweep to
-		(Maybe ℝ)           -- Loop or path (rounded corner)
-		(Either ℝ2 (ℝ -> ℝ2)) -- translate function
-		(Either ℝ  (ℝ -> ℝ )) -- rotate function
-		SymbolicObj2      -- object to extrude
-	| ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
-	deriving Show
+    -- Primitives
+      Rect3R ℝ ℝ3 ℝ3
+    | Sphere ℝ
+    | Cylinder ℝ ℝ ℝ -- h r1 r2
+    -- (Rounded) CSG
+    | Complement3 SymbolicObj3
+    | UnionR3 ℝ [SymbolicObj3]
+    | IntersectR3 ℝ [SymbolicObj3]
+    | DifferenceR3 ℝ [SymbolicObj3]
+    -- Simple transforms
+    | Translate3 ℝ3 SymbolicObj3
+    | Scale3 ℝ3 SymbolicObj3
+    | Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
+    | Rotate3V ℝ ℝ3 SymbolicObj3
+    -- Boundary mods
+    | Outset3 ℝ SymbolicObj3
+    | Shell3 ℝ SymbolicObj3
+    -- Misc
+    | EmbedBoxedObj3 BoxedObj3
+    -- 2D based
+    | ExtrudeR ℝ SymbolicObj2 ℝ
+    | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
+    | ExtrudeRM 
+        ℝ                 -- rounding radius
+        (Maybe (ℝ -> ℝ))  -- twist
+        (Maybe (ℝ -> ℝ))  -- scale
+        (Maybe (ℝ -> ℝ2)) -- translate
+        SymbolicObj2      -- object to extrude
+        (Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
+    | RotateExtrude
+        ℝ                   -- Angle to sweep to
+        (Maybe ℝ)           -- Loop or path (rounded corner)
+        (Either ℝ2 (ℝ -> ℝ2)) -- translate function
+        (Either ℝ  (ℝ -> ℝ )) -- rotate function
+        SymbolicObj2      -- object to extrude
+    | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
+    deriving Show
 
 -- | Rectilinear 2D set
 type Rectilinear2 = [Box2]
@@ -171,22 +171,22 @@ xmlErrorOn = unsafePerformIO $ newIORef False
 
 errorMessage :: Int -> String -> IO()
 errorMessage line msg = do
-		useXML <- readIORef xmlErrorOn
-		let
-			msg' = "At line <line>" ++ show line ++ "</line>:" ++ msg
-			-- dropXML inTag (x:xs)
-			dropXML inQuote False ('"':xs) = '"':dropXML (not inQuote) False  xs
-			dropXML True    _     ( x :xs) = x:dropXML True    False  xs
-			dropXML False   False ('<':xs) =   dropXML False   True  xs
-			dropXML False   True  ('>':xs) =   dropXML False   False xs
-			dropXML inQuote True  ( _ :xs) =   dropXML inQuote True  xs
-			dropXML inQuote False ( x :xs) = x:dropXML inQuote False xs
-			dropXML _       _        []    = []
-		if useXML 
-			then putStrLn $ "<error>" ++ msg' ++ "</error>"
-			else putStrLn $ dropXML False False $ msg'
-		return ()
+        useXML <- readIORef xmlErrorOn
+        let
+            msg' = "At line <line>" ++ show line ++ "</line>:" ++ msg
+            -- dropXML inTag (x:xs)
+            dropXML inQuote False ('"':xs) = '"':dropXML (not inQuote) False  xs
+            dropXML True    _     ( x :xs) = x:dropXML True    False  xs
+            dropXML False   False ('<':xs) =   dropXML False   True  xs
+            dropXML False   True  ('>':xs) =   dropXML False   False xs
+            dropXML inQuote True  ( _ :xs) =   dropXML inQuote True  xs
+            dropXML inQuote False ( x :xs) = x:dropXML inQuote False xs
+            dropXML _       _        []    = []
+        if useXML 
+            then putStrLn $ "<error>" ++ msg' ++ "</error>"
+            else putStrLn $ dropXML False False $ msg'
+        return ()
 
 -- HACK: This needs to be fixed correctly someday
 instance Show (a -> b) where
-		show _ = "<function>"
+        show _ = "<function>"

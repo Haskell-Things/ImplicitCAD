@@ -43,7 +43,6 @@ Library
         -rtsopts
         -funfolding-use-threshold=16 
         -fspec-constr-count=10
-        -fno-warn-tabs
 
     Extensions:
         FlexibleContexts,
@@ -121,7 +120,6 @@ Executable extopenscad
         -rtsopts
         -funfolding-use-threshold=16 
         -fspec-constr-count=10
-        -fno-warn-tabs
 
 source-repository head
     type:            git
