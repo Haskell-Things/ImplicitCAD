@@ -6,18 +6,14 @@
 -- Let's make it convenient to run our extended openscad format code
 
 -- Let's be explicit about what we're getting from where :)
-import System.IO (openFile, IOMode (ReadMode), hGetContents, hClose)
-import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writeTHREEJS, writePNG2, writePNG3)
+import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writePNG2, writePNG3)
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
-import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions (xmlErrorOn, SymbolicObj2, SymbolicObj3)
 import qualified Data.Map as Map hiding (null)
 import Data.Maybe as Maybe
 import Data.Char
-import Data.Monoid (Monoid, mappend)
 import Data.Tuple (swap)
-import Text.ParserCombinators.Parsec (errorPos, sourceLine)
-import Text.ParserCombinators.Parsec.Error
 import Data.IORef (writeIORef)
 import Data.AffineSpace
 import Control.Applicative
@@ -58,14 +54,14 @@ formatExtensions =
     , ("obj", OBJ)
     ]
 
-readOutputFormat :: Monad m => String -> m (OutputFormat)
+readOutputFormat :: Monad m => String -> m OutputFormat
 readOutputFormat ext = case lookup (map toLower ext) formatExtensions of
     Nothing -> fail ("unknown extension: "++ext)
     Just x -> return x
 
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
-    maybe (error $ "Unrecognized output format: "<>ext) id
+    Maybe.fromMaybe (error $ "Unrecognized output format: "<>ext)
     $ readOutputFormat $ tail ext
     where
         (_,ext) = splitExtension fileName
@@ -115,8 +111,8 @@ getRes (varlookup, obj:_, _) =
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
     in case Maybe.fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
-        ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
-        _                    -> min (min x y/2) ((x*y     )**0.5 / 30)
+        ONum qual | qual > 0 -> min (min x y/2) (sqrt (x*y/qual) / 30)
+        _                    -> min (min x y/2) (sqrt (x*y     ) / 30)
 
 getRes _ = 1
 
@@ -152,14 +148,14 @@ main = do
 
     content <- readFile (inputFile args)
     let format = case () of
-            _ | Just fmt <- outputFormat args -> Just $ fmt
+            _ | Just fmt <- outputFormat args -> Just fmt
             _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
             _                                 -> Nothing
     case runOpenscad content of
-        Left err -> putStrLn $ show $ err
+        Left err -> print err
         Right openscadProgram -> do
-            s@(vars, obj2s, obj3s) <- openscadProgram
-            let res = maybe (getRes s) id (resolution args)
+            s@(_vars, obj2s, obj3s) <- openscadProgram
+            let res = Maybe.fromMaybe (getRes s) (resolution args)
             let basename = fst (splitExtension $ inputFile args)
             let posDefExt = case format of
                     Just f  -> lookup f (map swap formatExtensions)
