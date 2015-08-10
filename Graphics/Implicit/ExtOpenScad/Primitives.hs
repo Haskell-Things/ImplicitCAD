@@ -7,7 +7,7 @@
 -- The code is fairly straightforward; an explanation of how 
 -- the first one works is provided.
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, OverlappingInstances  #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
@@ -146,7 +146,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
                 `defaultTo` 1
                 `doc` "radius of cylinder"
     h      :: Either ℝ ℝ2    <- argument "h"
-                `defaultTo` (Left 1)
+                `defaultTo` Left 1
                 `doc` "height of cylinder"
     r1     :: ℝ    <- argument "r1"
                 `defaultTo` 1
@@ -180,7 +180,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
                 let sides = fromIntegral fn 
                 in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
             obj3 = Prim.extrudeR 0 obj2 dh
-        in shift $ obj3
+        in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
 
 circle = moduleWithoutSuite "circle" $ do
@@ -290,8 +290,8 @@ rotate = moduleWithSuite "rotate" $ \children -> do
         ) <||> ( \(yz,zx,xy) ->
             objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad zx, deg2rad xy) ) children
         ) <||> ( \(yz,zx) ->
-            objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
-        ) <||> ( \_  -> [] )
+            objMap id (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
+        ) <||> const []
 
 
 scale = moduleWithSuite "scale" $ \children -> do
@@ -315,7 +315,7 @@ scale = moduleWithSuite "scale" $ \children -> do
 extrude = moduleWithSuite "linear_extrude" $ \children -> do
     example "linear_extrude(10) square(5);"
 
-    height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` (Left 1)
+    height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` Left 1
         `doc` "height to extrude to..."
     center :: Bool <- argument "center" `defaultTo` False
         `doc` "center? (the z component)"
@@ -329,7 +329,7 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
         `doc` "round the top?"
     
     let
-        degRotate = (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))) . (*(2*pi/360))
+        degRotate = (\θ (x,y) -> (x * cos θ + y * sin θ, y * cos θ - x * sin θ)) . (*(2*pi/360))
 
         heightn = case height of
                 Left  h -> h
@@ -370,11 +370,11 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     rotate    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
     let
-        is360m n = 360 * (fromIntegral $ round $ n / 360) /= n
+        is360m n = 360 * fromIntegral (round $ n / 360) /= n
         n = fromIntegral $ round $ totalRot / 360
         cap = is360m totalRot 
-            || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translate
-            || (Either.either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotate
+            || Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) translate
+            || Either.either is360m (\f -> is360m (f 0 - f totalRot)) rotate
         capM = if cap then Just r else Nothing
     
     return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translate rotate) children
@@ -461,7 +461,7 @@ unit = moduleWithSuite "unit" $ \children -> do
 (<|>) = Monad.mplus
 
 moduleWithSuite name modArgMapper = (name, modArgMapper)
-moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
+moduleWithoutSuite name modArgMapper = (name, const modArgMapper)
 
 addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
 addObj3 x = return $ return [OObj3 x]
