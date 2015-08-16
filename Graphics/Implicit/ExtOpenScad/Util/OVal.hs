@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE OverlappingInstances, ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal where
 
