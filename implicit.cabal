@@ -1,5 +1,5 @@
 Name:                implicit
-Version:             0.0.3
+Version:             0.0.4
 cabal-version:       >= 1.6
 Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 Description:         A math-inspired programmatic CAD library in haskell.
@@ -9,7 +9,7 @@ Description:         A math-inspired programmatic CAD library in haskell.
 License:             GPL
 License-file:        LICENSE
 Author:              Christopher Olah
-Maintainer:          Christopher Olah <chris@colah.ca>
+Maintainer:          Mike MacHenry <mike.machenry@gmail.com>, Christopher Olah <chris@colah.ca>
 Homepage:            https://github.com/colah/ImplicitCAD
 build-type:          Simple
 Category:            Graphics
