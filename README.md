@@ -294,7 +294,7 @@ What still needs to be done:
 And a wishlist of things further in the future:
 
  - More optimisation
- - openGL viewer?
- - openGL acceleration?
+ - OpenGL viewer?
+ - OpenGL acceleration?
 
 
