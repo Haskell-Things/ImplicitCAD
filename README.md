@@ -4,14 +4,14 @@ ImplicitCAD: Math Inspired CAD
 Introduction
 ------------
 
-ImplicitCAD is a programmatic CAD program, implemented in haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
+ImplicitCAD is a programmatic CAD program, implemented in [Haskell](https://www.haskell.org/). Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
  - Objects can abstracted and reused
  - Repetitive tasks can be automated
  - Objects can be designed parametrically
  - The usual tools for software development (like version control) can be used
 
-The traditional example of programmatic CAD is OpenSCAD.
+The traditional example of programmatic CAD is [OpenSCAD](http://www.openscad.org/).
 
 Generally, objects in programmatic CAD are built with Constructive Solid Geometry or CSG. Unions, intersections and differences of simpler shapes slowly build the object. ImplicitCAD supports all this and much more! For example, it provides rounded unions so that one can have smooth interfaces between objects.
 
@@ -23,11 +23,11 @@ ImplicitCAD is very much a work in progress. The author considers it ready for b
 ExtOpenSCAD Examples
 --------------------
 
-Let's being with OpenSCAD examples, since they're likely a more comfortable format that Haskell for most readers :)
+Let's being with OpenSCAD examples, since they're likely a more comfortable format than Haskell for most readers :)
 
 ImplicitCAD supports an extended version of OpenSCAD, the popular programmatic CAD tool. This is very new functionality, so expect bugs!
 
-Generally, normal openscad code should work. For example, save the following as `file.scad`.
+Generally, normal OpenSCAD code should work. For example, save the following as `file.scad`.
 
 ```c
 union() {
@@ -228,7 +228,7 @@ Try ImplicitCAD!
 ----------------
 
  1. Install GHC and cabal.
-     * Debain/Ubuntu: `apt-get install ghc cabal-install`
+     * Debian/Ubuntu: `apt-get install ghc cabal-install`
      * Archlinux: `pacman -S ghc cabal-install`
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
@@ -278,7 +278,7 @@ Status
 
 ImplicitCAD is very much a work in progress.
 
-What works (Nov 2, 2011 -- regressions are possible if not probable):
+What works (Nov 2, 2011 -- regressions are possible, if not probable):
 
  - CSG, bevelled CSG, shells.
  - 2D output (svg)
@@ -295,6 +295,6 @@ And a wishlist of things further in the future:
 
  - More optimisation
  - openGL viewer?
- - openCL acceleration?
+ - openGL acceleration?
 
 
