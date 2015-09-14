@@ -22,10 +22,7 @@ import Control.Applicative
 import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch, value, long, short, option, metavar, execParser, Parser)
 import System.FilePath
 
--- Backwards compatibility with old versions of Data.Monoid:
-infixr 6 <>
-(<>) :: Monoid a => a -> a -> a
-(<>) = mappend
+import Data.Monoid ((<>), mappend, mempty)
 
 data ExtOpenScadOpts = ExtOpenScadOpts
     { outputFile :: Maybe FilePath
