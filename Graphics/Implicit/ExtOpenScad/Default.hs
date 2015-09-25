@@ -69,6 +69,7 @@ defaultFunctionsSpecial =
         
     ]
 
+
 defaultModules :: [(String, OVal)]
 defaultModules =
     map (\(a,b) -> (a, OModule b)) primitives
@@ -86,8 +87,8 @@ defaultPolymorphicFunctions =
         ("prod", prod),
         ("/", div),
         ("-", toOObj sub), 
-        ("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)), 
                 ("%", toOObj omod),
+        ("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)),
         ("negate", toOObj negate),
         ("index", toOObj index),
         ("splice", toOObj osplice),

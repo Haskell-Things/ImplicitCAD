@@ -180,9 +180,9 @@ errorMessage line msg = do
             dropXML inQuote True  ( _ :xs) =   dropXML inQuote True  xs
             dropXML inQuote False ( x :xs) = x:dropXML inQuote False xs
             dropXML _       _        []    = []
-        putStrLn $ if useXML 
-                   then "<error>" ++ msg' ++ "</error>"
-                   else dropXML False False msg'
+        if useXML 
+            then putStrLn $ "<error>" ++ msg' ++ "</error>"
+            else putStrLn $ dropXML False False $ msg'
         return ()
 
 -- FIXME: document WHY this is wrong.

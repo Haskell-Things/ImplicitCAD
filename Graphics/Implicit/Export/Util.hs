@@ -11,7 +11,7 @@ import Graphics.Implicit.Definitions
 import Data.VectorSpace
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
-normTriangle res obj (a,b,c) = 
+normTriangle res obj (a,b,c) =
     (normify a', normify b', normify c') 
         where 
             normify = normVertex res obj

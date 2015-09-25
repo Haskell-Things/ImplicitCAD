@@ -318,7 +318,6 @@ scale = moduleWithSuite "scale" $ \children -> do
         Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
         Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
-
 extrude :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 extrude = moduleWithSuite "linear_extrude" $ \children -> do
     example "linear_extrude(10) square(5);"

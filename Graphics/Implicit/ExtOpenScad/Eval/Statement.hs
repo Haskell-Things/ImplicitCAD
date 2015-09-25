@@ -131,7 +131,7 @@ runSuite stmts = Monad.mapM_ runStatementI stmts
 
 runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
-    (res, _) <- State.runStateT 
+    (res, _) <- State.runStateT
         (runSuite suite >> getVals)
         (varlookup, [], path, (), () )
     return res

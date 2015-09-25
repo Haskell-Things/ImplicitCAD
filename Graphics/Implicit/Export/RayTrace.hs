@@ -152,7 +152,7 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                         parComponent    = v' - normalComponent
                     in
                         normalComponent - parComponent  
-            return $ illumination*(3  + 0.3*((abs $ rV ⋅ cameraV)*(abs $ rV ⋅ cameraV)))
+            return $ illumination*(3  + 0.3*(abs $ rV ⋅ cameraV)**2)
             )
         Nothing   -> defaultColor
 

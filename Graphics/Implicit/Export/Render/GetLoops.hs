@@ -62,12 +62,12 @@ getLoops' segs workingLoop =
     let
         presEnd = last $ last workingLoop
         connects (x:_) = x == presEnd
-        connects [] = False
+        connects [] = False; -- silence compiler warning.
         possibleConts = filter connects segs
         nonConts = filter (not . connects) segs
         (next, unused) = if null possibleConts
-                         then error "unclosed loop in paths given"
-                         else (head possibleConts, tail possibleConts ++ nonConts)
+            then error "unclosed loop in paths given"
+            else (head possibleConts, tail possibleConts ++ nonConts)
     in
         if null next
         then workingLoop : getLoops' segs []

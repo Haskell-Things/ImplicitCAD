@@ -151,7 +151,7 @@ interpolate_lin _ (a, _) _ _ = a
 
 -- The termination case:
 
-interpolate_bin 5 (a,aval) (b,bval) _ = 
+interpolate_bin 5 (a,aval) (b,bval) _ =
     if abs aval < abs bval
     then a
     else b
