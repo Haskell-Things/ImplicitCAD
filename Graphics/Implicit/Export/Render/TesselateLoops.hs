@@ -70,8 +70,9 @@ tesselateLoop res obj pathSides = return $ Tris $
         preNormal = foldl1 (^+^) $
             [ a `cross3` b | (a,b) <- zip path (tail path ++ [head path]) ]
         preNormalNorm = magnitude preNormal
-        deriv = (obj (mid ^+^ ((preNormal ^/ preNormalNorm) ^* (res/100)) ) ^-^ midval)/res*100
-        mid' = mid ^-^  (preNormal ^/ preNormalNorm) ^* (midval/deriv)
+        normal = preNormal ^/ preNormalNorm
+        deriv = (obj (mid ^+^ (normal ^* (res/100)) ) ^-^ midval)/res*100
+        mid' = mid ^-^ normal ^* (midval/deriv)
     in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5 
               && abs (midval/deriv) < 2*res && 3*abs (obj mid') < abs midval
         then early_tris ++ [(a,b,mid') | (a,b) <- zip path (tail path ++ [head path]) ]

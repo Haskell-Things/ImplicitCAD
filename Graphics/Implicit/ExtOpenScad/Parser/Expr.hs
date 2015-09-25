@@ -40,7 +40,7 @@ expr0 = exprN 0
 
 exprN :: Integer -> GenParser Char st Expr
 
-exprN 12 = 
+exprN 12 =
          literal
     *<|> variable
     *<|> "bracketed expression" ?: do

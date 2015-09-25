@@ -38,11 +38,11 @@ getBox2 (RectR _ a b) = (a,b)
 
 getBox2 (Circle r ) =  ((-r, -r), (r,r))
 
-getBox2 (PolygonR _ points) = ((minimum xs, minimum ys), (maximum xs, maximum ys)) 
+getBox2 (PolygonR _ points) = ((minimum xs, minimum ys), (maximum xs, maximum ys))
      where (xs, ys) = unzip points
 
 -- (Rounded) CSG
-getBox2 (Complement2 _) = 
+getBox2 (Complement2 _) =
     ((-infty, -infty), (infty, infty)) where infty = 1/0
 
 getBox2 (UnionR2 r symbObjs) =
@@ -118,7 +118,7 @@ getDist2 (x,y) symbObj =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
     in
-        sqrt (((max (abs (x1 - x)) (abs (x2 - x)))*(max (abs (x1 - x)) (abs (x2 - x)))) + ((max (abs (y1 - y)) (abs (y2 - y)))*(max (abs (y1 - y)) (abs (y2 - y)))))
+        sqrt ((max (abs (x1 - x)) (abs (x2 - x)))**2 + (max (abs (y1 - y)) (abs (y2 - y)))**2)
 
 getDist2 p (PolygonR r points) = 
     r + maximum [magnitude (p ^-^ p') | p' <- points]

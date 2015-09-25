@@ -11,9 +11,6 @@ import Data.VectorSpace
 
 import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
-isEmpty :: Box3 -> Bool
-isEmpty = (== ((0,0,0), (0,0,0)))
-
 outsetBox :: ℝ -> Box3 -> Box3
 outsetBox r (a,b) =
     (a ^-^ (r,r,r), b ^+^ (r,r,r))
@@ -28,12 +25,13 @@ getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 
 -- (Rounded) CSG
-getBox3 (Complement3 _) = 
+getBox3 (Complement3 _) =
     ((-infty, -infty, -infty), (infty, infty, infty)) where infty = 1/0
 
 getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
     where 
         boxes = map getBox3 symbObjs
+        isEmpty = ( == ((0,0,0),(0,0,0)) )
         (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
         (lefts, bots, ins) = unzip3 leftbot
         (rights, tops, outs) = unzip3 topright
@@ -44,7 +42,7 @@ getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
         top = maximum tops
         out = maximum outs
 
-getBox3 (IntersectR3 _ symbObjs) = 
+getBox3 (IntersectR3 _ symbObjs) =
     let 
         boxes = map getBox3 symbObjs
         (leftbot, topright) = unzip boxes
@@ -110,7 +108,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         ((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
 
 
-getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) = 
+getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     let
         range = [0, 0.1 .. 1.0]
 
@@ -146,11 +144,12 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     in
         ((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 
--- FIXME: what is going on in this function?
-getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) = 
+
+-- Note: Assumes x2 is always greater than x1.
+-- FIXME: Insert the above assumption as an assertion in the language structure?
+getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
     let
-        ((x1,y1),(x2,y2)) = getBox2 symbObj
---      g = maximum $ map abs [x1, x2, y1, y2]
+        ((_,y1),(x2,y2)) = getBox2 symbObj
         r = max x2 (x2 + xshift)
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))

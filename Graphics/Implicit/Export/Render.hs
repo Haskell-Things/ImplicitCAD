@@ -66,7 +66,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 import Graphics.Implicit.Export.Render.HandlePolylines ( cleanLoopsFromSegs )
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj = 
+getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
     let
         (dx,dy,dz) = p2 ^-^ p1
 
@@ -78,8 +78,6 @@ getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
         rx = dx/fromIntegral nx
         ry = dy/fromIntegral ny
         rz = dz/fromIntegral nz
-
---      l ! (a,b,c) = l !! c !! b !! a
 
         pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
         pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
@@ -193,7 +191,7 @@ getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
 
 
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
-getContour p1@(x1, y1) p2@(_, _) res obj = 
+getContour p1@(x1, y1) p2@(_, _) res obj =
     let
         (dx,dy) = p2 ^-^ p1
 
@@ -203,8 +201,6 @@ getContour p1@(x1, y1) p2@(_, _) res obj =
 
         rx = dx/fromIntegral nx
         ry = dy/fromIntegral ny
-
---      l ! (a,b) = l !! b !! a
 
         pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
         pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
