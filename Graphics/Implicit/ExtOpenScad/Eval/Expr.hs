@@ -2,18 +2,15 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Graphics.Implicit.Definitions
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 import Graphics.Implicit.ExtOpenScad.Util.StateC
 
-import qualified Data.Maybe as Maybe
 import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Map (Map)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
-import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import           Control.Monad.State (StateT, get, modify, liftIO)
 
 
 patVars :: Pattern -> [String]
@@ -85,7 +82,7 @@ evalExpr' (LamE pats fexpr) = do
 
 --------------
 
-
+{-
 simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
     let
         split b l = (filter b l, filter (not.b) l)
@@ -97,3 +94,4 @@ simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
         "*" -> (LitE $ ONum $ product numArgs'):nonNumArgs
         _ -> args'
 simplifyExpr x = x
+-}

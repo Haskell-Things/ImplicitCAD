@@ -71,7 +71,7 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         midy1 = (midy1V , y )
         midy2 = (midy2V, y + dy)
 
-        notPointLine (p1:p2:[]) = p1 /= p2
+        notPointLine (np1:np2:[]) = np1 /= np2
 
         -- takes straight lines between mid points and subdivides them to
         -- account for sharp corners, etc.

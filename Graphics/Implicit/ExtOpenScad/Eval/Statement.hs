@@ -11,13 +11,10 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 
-import qualified Data.Maybe as Maybe
-import qualified Data.List as List
 import qualified Data.Map as Map
-import           Data.Map (Map)
 import qualified Control.Monad as Monad
 import qualified Control.Monad.State as State
-import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import           Control.Monad.State (get, liftIO)
 import qualified System.FilePath as FilePath
 
 
@@ -72,6 +69,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
                 Nothing  -> argument name
             return (name, val)
         let
+{-
             children = ONum $ fromIntegral $ length vals
             child = OModule $ \vals -> do
                 n :: ℕ <- argument "n";
@@ -86,6 +84,7 @@ runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
                     _ -> OUndefined
                 _ -> OUndefined
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
+-}
             varlookup' = Map.union (Map.fromList newNameVals) varlookup
             suiteVals  = runSuiteCapture varlookup' path suite
         return suiteVals
@@ -113,7 +112,7 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
                 return []
         pushVals newVals
 
-runStatementI (StatementI lineN (Include name injectVals)) = do
+runStatementI (StatementI _ (Include name injectVals)) = do
     name' <- getRelPath name
     content <- liftIO $ readFile name'
     case parseProgram name content of
@@ -132,7 +131,7 @@ runSuite stmts = Monad.mapM_ runStatementI stmts
 
 runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
-    (res, state) <- State.runStateT 
+    (res, _) <- State.runStateT 
         (runSuite suite >> getVals)
         (varlookup, [], path, (), () )
     return res

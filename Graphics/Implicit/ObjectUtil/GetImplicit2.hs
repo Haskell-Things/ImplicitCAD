@@ -101,5 +101,5 @@ getImplicit2 (Outset2 d symbObj) =
         \p -> obj p - d
 
 -- Misc
-getImplicit2 (EmbedBoxedObj2 (obj,box)) = obj
+getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
 

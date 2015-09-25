@@ -2,14 +2,10 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC where
 
-import Graphics.Implicit.Definitions
-import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 
 import qualified Data.Map as Map
-import           Data.Map (Map)
-import           Control.Monad.State (State,StateT, get, put, modify, liftIO)
+import           Control.Monad.State (StateT, get, put, modify, liftIO)
 import           System.FilePath((</>))
 
 
@@ -64,4 +60,4 @@ errorC lineN err = liftIO $ putStrLn $ "At " ++ show lineN ++ ": " ++ err
 mapMaybeM f (Just a) = do
     b <- f a
     return (Just b)
-mapMaybeM f Nothing = return Nothing
+mapMaybeM _ Nothing = return Nothing

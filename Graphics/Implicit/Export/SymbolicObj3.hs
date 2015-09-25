@@ -14,15 +14,9 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.Render (getMesh)
 
-import Graphics.Implicit.Primitives
 import Graphics.Implicit.ObjectUtil
 import Graphics.Implicit.MathUtil
 
-import Graphics.Implicit.Export.SymbolicObj2
-
-import qualified Data.Maybe as Maybe
-
-import Graphics.Implicit.Export.Symbolic.Rebound2
 import Graphics.Implicit.Export.Symbolic.Rebound3
 --import Graphics.Implicit.Export.Util (divideMeshTo, dividePolylineTo)
 import Graphics.Implicit.Export.Util (normTriangle)
@@ -233,7 +227,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
 -- (rebound is for being safe about the bounding box --
 --  it slightly streches it to make sure nothing will 
 --  have problems because it is right at the edge )
-symbolicGetMesh res  obj = 
+symbolicGetMesh res obj = 
     case rebound3 (getImplicit3 obj, getBox3 obj) of
         (obj, (a,b)) -> getMesh a b res obj 
 

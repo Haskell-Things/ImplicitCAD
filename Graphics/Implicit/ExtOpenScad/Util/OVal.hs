@@ -83,6 +83,7 @@ instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) 
     toOObj (Right x) = toOObj x
     toOObj (Left  x) = toOObj x
 
+oTypeStr :: OVal -> [Char]
 oTypeStr (OUndefined) = "Undefined"
 oTypeStr (OBool   _ ) = "Bool"
 oTypeStr (ONum    _ ) = "Number"
@@ -117,7 +118,7 @@ infixr 2 <||>
         then f $ (\(Just a) -> a) coerceAttempt
         else g input
 
-
+divideObjs :: [OVal] -> ([SymbolicObj2], [SymbolicObj3], [OVal])
 divideObjs children = 
     (map fromOObj2 . filter isOObj2 $ children,
      map fromOObj3 . filter isOObj3 $ children,
