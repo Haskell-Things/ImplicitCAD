@@ -39,7 +39,6 @@ Library
         
     ghc-options:
         -O2 -optc-O3
-        -threaded
         -rtsopts
         -funfolding-use-threshold=16 
         -fspec-constr-count=10
