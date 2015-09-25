@@ -12,17 +12,17 @@ data Pattern = Name  Symbol
              | ListP  [Pattern]
              | Wild
              | Symbol :@ Pattern
-    deriving Show
+    deriving (Show, Eq)
 
 data Expr = Var Symbol
           | LitE OVal
           | ListE [Expr]
           | LamE [Pattern] Expr
           | Expr :$ [Expr]
-    deriving Show
+    deriving (Show, Eq)
 
 data StatementI = StatementI Int (Statement StatementI)
-    deriving Show
+    deriving (Show, Eq)
 
 data Statement st = Include String Bool
                | Pattern :=  Expr
@@ -32,7 +32,7 @@ data Statement st = Include String Bool
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
                | DoNothing
-    deriving Show
+    deriving (Show, Eq)
 
 
 
