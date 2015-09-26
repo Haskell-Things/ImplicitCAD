@@ -19,7 +19,6 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Graphics.Implicit.Primitives as Prim
 import Data.Maybe (isNothing)
 import qualified Data.Either as Either
-import           Data.Either (either)
 import qualified Control.Monad as Monad
        
 import Data.VectorSpace
@@ -31,6 +30,7 @@ primitives = [ sphere, cube, square, cylinder, circle, polygon, union, differenc
 -- sphere is a module without a suite named sphere,
 -- this means that the parser will look for this like
 --       sphere(args...);
+sphere :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 sphere = moduleWithoutSuite "sphere" $ do
     example "sphere(3);"
     example "sphere(r=5);"
@@ -46,6 +46,7 @@ sphere = moduleWithoutSuite "sphere" $ do
     -- (Graphics.Implicit.Primitives)
     addObj3 $ Prim.sphere r
 
+cube :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 cube = moduleWithoutSuite "cube" $ do
 
     -- examples
@@ -64,7 +65,6 @@ cube = moduleWithoutSuite "cube" $ do
             center :: Bool <- argument "center" 
                 `doc` "should center? (non-intervals)"  
                 `defaultTo` False
-            let toInterval' = toInterval center
             return (either (toInterval center) id x,
                     either (toInterval center) id y,
                     either (toInterval center) id z)
@@ -92,6 +92,7 @@ cube = moduleWithoutSuite "cube" $ do
 
 
 
+square :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 square = moduleWithoutSuite "square" $ do
 
     -- examples 
@@ -109,7 +110,6 @@ square = moduleWithoutSuite "square" $ do
             center :: Bool <- argument "center" 
                 `doc` "should center? (non-intervals)"  
                 `defaultTo` False
-            let toInterval' = toInterval center
             return (either (toInterval center) id x,
                     either (toInterval center) id y)
         <|> do
@@ -135,6 +135,7 @@ square = moduleWithoutSuite "square" $ do
 
 
 
+cylinder :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 cylinder = moduleWithoutSuite "cylinder" $ do
 
     example "cylinder(r=10, h=30, center=true);"
@@ -183,6 +184,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
 
+circle :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 circle = moduleWithoutSuite "circle" $ do
     
     example "circle(r=10); // circle"
@@ -204,6 +206,7 @@ circle = moduleWithoutSuite "circle" $ do
             let sides = fromIntegral fn 
             in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
+polygon :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
     
     example "polygon ([(0,0), (0,10), (10,0)]);"
@@ -275,6 +278,7 @@ translate = moduleWithSuite "translate" $ \children -> do
     return $ return $ 
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
+deg2rad :: Floating a => a -> a
 deg2rad x = x / 180.0 * pi
 
 -- This is mostly insane
@@ -328,9 +332,9 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
         `doc` "center? (the z component)"
     twist  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "twist"  `defaultTo` Nothing
         `doc` "twist as we extrude, either a total amount to twist or a function..."
-    scale  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "scale"  `defaultTo` Nothing
+    scaleArg  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "scale"  `defaultTo` Nothing
         `doc` "scale according to this funciton as we extrude..."
-    translate :: Maybe (Either ℝ2 (ℝ -> ℝ2)) <- argument "translate"  `defaultTo` Nothing
+    translateArg :: Maybe (Either ℝ2 (ℝ -> ℝ2)) <- argument "translate"  `defaultTo` Nothing
         `doc` "translate according to this funciton as we extrude..."
     r      :: ℝ   <- argument "r"      `defaultTo` 0
         `doc` "round the top?"
@@ -354,12 +358,12 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
         funcify (Right f ) h = f h
         
         twist' = fmap funcify twist
-        scale' = fmap funcify scale
-        translate' = fmap funcify translate
+        scale' = fmap funcify scaleArg
+        translate' = fmap funcify translateArg
     
     return $ return $ obj2UpMap (
         \obj -> case height of
-            Left constHeight | isNothing twist && isNothing scale && isNothing translate ->
+            Left constHeight | isNothing twist && isNothing scaleArg && isNothing translateArg ->
                 shiftAsNeeded $ Prim.extrudeR r obj constHeight
             _ -> 
                 shiftAsNeeded $ Prim.extrudeRM r twist' scale' translate' obj height'
@@ -372,18 +376,18 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     totalRot :: ℝ <- argument "a" `defaultTo` 360
         `doc` "angle to sweep"
     r        :: ℝ    <- argument "r"   `defaultTo` 0
-    translate :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
-    rotate    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
+    translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
+    rotateArg :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
     let
         is360m n = 360 * fromIntegral (round $ n / 360) /= n
         n = fromIntegral $ round $ totalRot / 360
         cap = is360m totalRot 
-            || Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) translate
-            || Either.either is360m (\f -> is360m (f 0 - f totalRot)) rotate
+            || Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) translateArg
+            || Either.either is360m (\f -> is360m (f 0 - f totalRot)) rotateArg
         capM = if cap then Just r else Nothing
     
-    return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translate rotate) children
+    return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
 
 
 
@@ -435,7 +439,7 @@ unit = moduleWithSuite "unit" $ \children -> do
     example "unit(\"inch\") {..}"
 
     -- arguments
-    unit :: String <- argument "unit"
+    unitName :: String <- argument "unit"
         `doc` "the unit you wish to work in"
 
     let 
@@ -456,9 +460,9 @@ unit = moduleWithSuite "unit" $ \children -> do
         mmRatio _      = Nothing
 
     -- The actual work...
-    return $ case mmRatio unit of
+    return $ case mmRatio unitName of
         Nothing -> do
-            putStrLn $ "unrecognized unit " ++ unit
+            putStrLn $ "unrecognized unit " ++ unitName
             return children
         Just r  -> 
             return $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
@@ -469,7 +473,10 @@ unit = moduleWithSuite "unit" $ \children -> do
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = Monad.mplus
 
+moduleWithSuite :: t -> t1 -> (t, t1)
 moduleWithSuite name modArgMapper = (name, modArgMapper)
+
+moduleWithoutSuite :: t -> a -> (t, b -> a)
 moduleWithoutSuite name modArgMapper = (name, const modArgMapper)
 
 addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
@@ -485,17 +492,21 @@ objMap obj2mod obj3mod (x:xs) = case x of
     a          -> a                    : objMap obj2mod obj3mod xs
 objMap _ _ [] = []
 
+objReduce :: ([SymbolicObj2] -> SymbolicObj2)
+                   -> ([SymbolicObj3] -> SymbolicObj3) -> [OVal] -> [OVal]
 objReduce obj2reduce obj3reduce l = case divideObjs l of
     (   [],    [], others) ->                                                       others
     (   [], obj3s, others) ->                            OObj3 (obj3reduce obj3s) : others
     (obj2s,    [], others) -> OObj2 (obj2reduce obj2s)                            : others
     (obj2s, obj3s, others) -> OObj2 (obj2reduce obj2s) : OObj3 (obj3reduce obj3s) : others
 
+obj2UpMap :: (SymbolicObj2 -> SymbolicObj3) -> [OVal] -> [OVal]
 obj2UpMap obj2upmod (x:xs) = case x of
     OObj2 obj2 -> OObj3 (obj2upmod obj2) : obj2UpMap obj2upmod xs
     a          -> a                      : obj2UpMap obj2upmod xs
 obj2UpMap _ [] = []
 
+toInterval :: Fractional t => Bool -> t -> (t, t)
 toInterval center h = 
     if center
     then (-h/2, h/2)
