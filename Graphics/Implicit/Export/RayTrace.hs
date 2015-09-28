@@ -32,17 +32,19 @@ dynamicImage = ImageRGBA8
 
 -- Math
 
-d a b = magnitude (b-a)
+vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
+vectorDistance a b = magnitude (b-a)
 
+colorMult :: RealFrac c => c -> PixelRGBA8 -> PixelRGBA8
 s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
     where 
         bound = max 0 . min 254
-        mult a b = fromIntegral . round . bound $ a * fromIntegral b
+        mult x y = fromIntegral . round . bound $ x * fromIntegral y
 
 average :: [Color] -> Color
 average l = 
     let 
-        ((rs, gs), (bs, as)) = (\(a,b) -> (unzip a, unzip b)) $ unzip $ map 
+        ((rs, gs), (bs, as)) = (\(a',b') -> (unzip a', unzip b')) $ unzip $ map 
             (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ],[ℝ]))
         n = fromIntegral $ length l :: ℝ
@@ -144,7 +146,7 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                 normal = normalized $ deriv
                 unitV = normalized $ v'
                 proj a b = (a⋅b)*^b
-                dist  = d p lightPos
+                dist  = vectorDistance p lightPos
                 illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * (25 /dist)
                 rV = 
                     let
