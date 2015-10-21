@@ -1,12 +1,14 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
 
+-- A module of math utilities.
 module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
-import Data.List
-import Data.VectorSpace
-import Data.AffineSpace
-import Graphics.Implicit.Definitions
+import Data.List (sort, sortBy)
+import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
+import Data.AffineSpace ((.-.))
+import Graphics.Implicit.Definitions (ℝ,ℝ2,ℝ3, Box2, (⋅))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2,ℝ2) -> ℝ
@@ -30,7 +32,6 @@ box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)
 		   (ax1,ax2) `near` (bx1, bx2)
 		&& (ay1,ay2) `near` (by1, by2)
 		&& (az1,az2) `near` (bz1, bz2)
-
 
 -- | Rounded Maximum
 -- Consider  max(x,y) = 0, the generated curve 
@@ -59,7 +60,6 @@ rmin r x y = if abs (x-y) < r
 -- Just as maximum is.
 -- The implementation is to take the maximum two
 -- and rmax those.
-
 rmaximum ::
 	ℝ      -- ^ radius
 	-> [ℝ] -- ^ numbers to take round maximum
@@ -85,13 +85,12 @@ rminimum r l =
 	in
 		rmin r (tops !! 0) (tops !! 1)
 
-
+-- | Pack the given objects in a box the given size.
 pack :: 
 	Box2           -- ^ The box to pack within
 	-> ℝ           -- ^ The space seperation between items
 	-> [(Box2, a)] -- ^ Objects with their boxes
 	-> ([(ℝ2, a)], [(Box2, a)] ) -- ^ Packed objects with their positions, objects that could be packed
-
 pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 	where
 		compareBoxesByY  ((_, ay1), (_, ay2))  ((_, by1), (_, by2)) = 
@@ -121,6 +120,3 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 			else
 				tmap2 (presObj:) $ packSome otherBoxedObjs box
 		packSome [] _ = ([], [])
-
-
-
