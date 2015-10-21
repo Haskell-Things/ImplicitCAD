@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014, 2015 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
+
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.TriangleMeshFormats where
 
@@ -41,6 +42,10 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 
 
 -- Write a 32-bit little-endian float to a buffer.
+
+-- convert Floats and Doubles to Float.
+toFloat = realToFrac :: (Real a) => a -> Float
+
 float32LE :: Float -> Write
 float32LE = writeStorable . LE
 
@@ -49,9 +54,9 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map t
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
           triangle (a,b,c) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
-          point (x,y,z) = fromWrite $ float32LE x <> float32LE y <> float32LE z
+          point (x,y,z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
           normalV ps = let (x,y,z) = normal ps
-                       in fromWrite $ float32LE x <> float32LE y <> float32LE z
+                       in fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
 
 jsTHREE :: TriangleMesh -> Text
 jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
