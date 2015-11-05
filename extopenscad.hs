@@ -102,7 +102,7 @@ guessOutputFormat fileName =
 -- The parser for our command line arguments.
 extOpenScadOpts :: Parser ExtOpenScadOpts
 extOpenScadOpts = ExtOpenScadOpts
-	<$> optional ( 
+	<$> optional (
 	      strOption
 		(  short 'o'
 		<> long "output"
@@ -130,7 +130,7 @@ extOpenScadOpts = ExtOpenScadOpts
 		(  long "xml-error"
 		<> help "Report XML errors"
 		)
-	<*> argument str 
+	<*> argument str
 	        (  metavar "FILE"
                 <> help "Input extended OpenSCAD file"
                 )
@@ -142,10 +142,10 @@ readOutputFormat ext = lookup (map toLower ext) formatExtensions
 -- A Read instance for our output format. Used by 'auto' in our command line parser.
 -- Reads a string, and evaluates to the appropriate OutputFormat.
 instance Read OutputFormat where
-	 readsPrec _ myvalue = 
-	  	tryParse formatExtensions
-        	where tryParse [] = []    -- If there is nothing left to try, fail
-              	      tryParse ((attempt, result):xs) =
+	 readsPrec _ myvalue =
+		tryParse formatExtensions
+		where tryParse [] = []    -- If there is nothing left to try, fail
+		      tryParse ((attempt, result):xs) =
                                  if (take (length attempt) myvalue) == attempt
                                    then [(result, drop (length attempt) myvalue)]
                                    else tryParse xs
@@ -248,7 +248,7 @@ main :: IO()
 main = execParser opts >>= run
        where
          opts= info (helper <*> extOpenScadOpts)
-       	       ( fullDesc
+	       ( fullDesc
                  <> progDesc "ImplicitCAD: Extended OpenSCAD interpreter." 
                  <> header "extopenscad - Extended OpenSCAD"
-               ) 
+               )
