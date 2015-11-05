@@ -1,0 +1,10 @@
+// example3.escad -- the extruded product of the union of five circles.
+linear_extrude (height = 40, center=true){
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}

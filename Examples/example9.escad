@@ -1,0 +1,4 @@
+// Example9.escad -- function currying.
+f = max(4);
+echo(f(5));
+echo(max(4,5));

@@ -1,0 +1,2 @@
+// Example10.escad -- map!.
+echo(map(cos, [0, pi/2, pi]));
