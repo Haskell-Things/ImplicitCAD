@@ -20,6 +20,10 @@ docs: config
 
 clean:
 	./Setup clean
+	rm -rf Examples/*.stl
+	rm -rf Examples/*.svg
+	rm -rf Tests/*.stl
+
 
 dist: build
 	./Setup sdist
