@@ -91,7 +91,7 @@ sphere = moduleWithoutSuite "sphere" $ do
 	-- The radius, r, which is a (real) number.
 	-- Because we don't provide a default, this ends right
 	-- here if it doesn't get a suitable argument!
-	r :: ℝ <- argument "r" 
+	r :: ℝ <- argument "r"
 	            `doc` "radius of the sphere"
 	-- So what does this module do?
 	-- It adds a 3D object, a sphere of radius r,
@@ -150,7 +150,7 @@ sphere r = implicit (
 and put it in `Graphics.Implicit.Primitives`. However, to allow more powerful optimizations, meta-inspection, and other goodies, frequently used objects should be put in the `SymbolicObj` definitions in `Graphics.Implicit.Definitions`. For example, `sphere`:
 
 ```haskell
-data SymbolicObj3 = 
+data SymbolicObj3 =
 	  Rect3R ℝ ℝ3 ℝ3
 	| Sphere ℝ
 	...
@@ -167,7 +167,7 @@ getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
 `Graphics.Implicit.ObjectUtil.GetImplicit3`:
 
 ```haskell
-getImplicit3 (Sphere r ) = 
+getImplicit3 (Sphere r ) =
 	\(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
 ```
 
