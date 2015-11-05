@@ -1,7 +1,10 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, NoMonomorphismRestriction #-}
+
+-- A module exporting all of the primitives, and some operations on them.
 
 module Graphics.Implicit.Primitives where
 
