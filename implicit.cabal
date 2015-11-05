@@ -4,7 +4,7 @@ cabal-version:       >= 1.6
 Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 Description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
-                     shells and more in 2D & 3D. Then export to SVGs, STLs, 
+                     shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
 License:             GPL
 License-file:        LICENSE
@@ -20,7 +20,7 @@ Library
         base >= 3 && < 5,
         filepath,
         directory,
-        optparse-applicative <=0.9.1.1,
+        optparse-applicative,
         parsec,
         unordered-containers,
         parallel,
@@ -35,13 +35,19 @@ Library
         blaze-svg,
         storable-endian,
         JuicyPixels,
-        NumInstances
-        
+        NumInstances,
+        criterion,
+        snap-core,
+        snap-server,
+        silently,
+        transformers
+
     ghc-options:
-        -O2 -optc-O3
+        -O2
         -threaded
+        -optc-O3
         -rtsopts
-        -funfolding-use-threshold=16 
+        -funfolding-use-threshold=16
         -fspec-constr-count=10
 
     Extensions:
@@ -62,7 +68,7 @@ Library
         ViewPatterns,
         OverloadedStrings
 
-    Exposed-Modules:   
+    Exposed-Modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Primitives
@@ -115,10 +121,43 @@ Executable extopenscad
 
    Main-is: extopenscad.hs
    ghc-options:
-        -O2 -optc-O3
+        -optc-O3
         -threaded
         -rtsopts
-        -funfolding-use-threshold=16 
+        -funfolding-use-threshold=16
+        -fspec-constr-count=10
+        -Wall
+
+-- FIXME: does not compile.
+--
+--Executable docgen
+--
+--   Main-is: docgen.hs
+--   ghc-options:
+--        -optc-O3
+--        -threaded
+--        -rtsopts
+--        -funfolding-use-threshold=16
+--       -fspec-constr-count=10
+
+Executable implicitsnap
+
+   Main-is: implicitsnap.hs
+   ghc-options:
+        -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16
+        -fspec-constr-count=10
+
+Executable Benchmark
+
+   Main-is: Benchmark.hs
+   ghc-options:
+        -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16
         -fspec-constr-count=10
 
 source-repository head
