@@ -1,7 +1,8 @@
 {-# LANGUAGE CPP #-}
 #if __GLASGOW_HASKELL__ < 710
-{-# LANGUAGE OverlappingInstances -#}
+{-# LANGUAGE OverlappingInstances #-}
 #endif
+
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal where
