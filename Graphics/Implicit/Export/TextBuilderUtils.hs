@@ -27,13 +27,28 @@ import Data.Text.Lazy
 -- This will become unnecessary later.
 import qualified Data.Monoid as Monoid
 
-import Data.Text.Lazy
-import Data.Text.Lazy.Internal (defaultChunkSize)
 import Data.Text.Lazy.Builder hiding (toLazyText)
 import Data.Text.Lazy.Builder.RealFloat
 import Data.Text.Lazy.Builder.Int
 
+import Foreign.Storable (sizeOf)
+import Data.Bits (shiftL)
+
 import Graphics.Implicit.Definitions
+
+-- Helper functions from Data.Text.Internal.Lazy.  These functions are needed
+-- here instead of imported as the API is not meant to be used in this way and
+-- is broken in some version of the Text library.
+-- DO NOT EXPORT from this module
+defaultChunkSize :: Int
+defaultChunkSize = 16384 - chunkOverhead
+{-# INLINE defaultChunkSize #-}
+
+-- DO NOT EXPORT from this module
+-- | The memory management overhead. Currently this is tuned for GHC only.
+chunkOverhead :: Int
+chunkOverhead = sizeOf (undefined :: Int) `shiftL` 1
+{-# INLINE chunkOverhead #-}
 
 -- The chunk size for toLazyText is very small (128 bytes), so we export
 -- a version with a much larger size (~16 K)

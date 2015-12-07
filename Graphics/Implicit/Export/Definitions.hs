@@ -9,6 +9,6 @@ import Graphics.Implicit.Definitions
 --   eg. Aproximating a 3D object with a tirangle mesh
 --       would be DiscreteApproxable Obj3 TriangleMesh
 class DiscreteAproxable obj aprox where
-	discreteAprox :: ℝ -> obj -> aprox
+    discreteAprox :: ℝ -> obj -> aprox
 
 
