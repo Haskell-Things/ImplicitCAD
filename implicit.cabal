@@ -70,6 +70,13 @@ library
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
 
+        -- Note that these modules are only temporarily exposed, to
+        -- allow coding the unit tests against the current parser
+        -- interface.
+        Graphics.Implicit.ExtOpenScad.Definitions
+        Graphics.Implicit.ExtOpenScad.Parser.Expr
+        Graphics.Implicit.ExtOpenScad.Parser.Statement
+
     other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
         Graphics.Implicit.ObjectUtil.GetBox3
@@ -77,9 +84,6 @@ library
         Graphics.Implicit.ObjectUtil.GetImplicit3
         Graphics.Implicit.ExtOpenScad.Default
         Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Parser.Statement
-        Graphics.Implicit.ExtOpenScad.Parser.Expr
-        Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Primitives
         Graphics.Implicit.ExtOpenScad.Eval.Statement
         Graphics.Implicit.ExtOpenScad.Eval.Expr
@@ -127,6 +131,21 @@ executable extopenscad
         -rtsopts
         -funfolding-use-threshold=16
         -fspec-constr-count=10
+
+test-suite test-implicit
+    type: exitcode-stdio-1.0
+    build-depends: base, mtl, containers, hspec, parsec, implicit
+    main-is: Main.hs
+    hs-source-dirs: tests
+
+benchmark parser-bench
+    type: exitcode-stdio-1.0
+    hs-source-dirs: bench
+    main-is: ParserBench.hs
+    build-depends: base, criterion, random, parsec, implicit
+    ghc-options:
+        -Wall
+        -O2 -optc-O3
 
 source-repository head
     type:            git
