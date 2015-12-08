@@ -1,22 +1,22 @@
-Name:                implicit
-Version:             0.0.5
-cabal-version:       >= 1.6
-Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
-Description:         A math-inspired programmatic CAD library in haskell.
+name:                implicit
+version:             0.0.5
+cabal-version:       >= 1.8
+synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
+description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
-                     shells and more in 2D & 3D. Then export to SVGs, STLs, 
+                     shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
-License:             GPL
-License-file:        LICENSE
-Author:              Christopher Olah
-Maintainer:          Mike MacHenry <mike.machenry@gmail.com>
-Homepage:            https://github.com/colah/ImplicitCAD
+license:             GPL
+license-file:        LICENSE
+author:              Christopher Olah
+maintainer:          Mike MacHenry <mike.machenry@gmail.com>
+homepage:            https://github.com/colah/ImplicitCAD
 build-type:          Simple
-Category:            Graphics
+category:            Graphics
 
-Library
+library
 
-    Build-Depends:
+    build-depends:
         base >= 3 && < 5,
         filepath,
         directory,
@@ -36,14 +36,14 @@ Library
         storable-endian,
         JuicyPixels,
         NumInstances
-        
+
     ghc-options:
         -O2 -optc-O3
         -rtsopts
-        -funfolding-use-threshold=16 
+        -funfolding-use-threshold=16
         -fspec-constr-count=10
 
-    Extensions:
+    extensions:
         FlexibleContexts,
         FlexibleInstances,
         FunctionalDependencies,
@@ -61,7 +61,7 @@ Library
         ViewPatterns,
         OverloadedStrings
 
-    Exposed-Modules:   
+    exposed-modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Primitives
@@ -70,7 +70,7 @@ Library
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
 
-    Other-Modules:
+    other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
         Graphics.Implicit.ObjectUtil.GetBox3
         Graphics.Implicit.ObjectUtil.GetImplicit2
@@ -110,18 +110,24 @@ Library
         Graphics.Implicit.Export.Render.TesselateLoops
         Graphics.Implicit.Export.Render.HandlePolylines
 
-Executable extopenscad
+executable extopenscad
 
-   Main-is: extopenscad.hs
+   main-is: extopenscad.hs
+   hs-source-dirs: programs
+   build-depends:
+        base,
+        containers,
+        vector-space,
+        filepath,
+        optparse-applicative,
+        implicit
    ghc-options:
         -O2 -optc-O3
         -threaded
         -rtsopts
-        -funfolding-use-threshold=16 
+        -funfolding-use-threshold=16
         -fspec-constr-count=10
 
 source-repository head
     type:            git
     location:        https://github.com/colah/ImplicitCAD.git
-
-
