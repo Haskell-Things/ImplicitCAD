@@ -1,6 +1,6 @@
 name:                implicit
 version:             0.0.5
-cabal-version:       >= 1.6
+cabal-version:       >= 1.8
 synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
@@ -113,6 +113,14 @@ library
 executable extopenscad
 
    main-is: extopenscad.hs
+   hs-source-dirs: programs
+   build-depends:
+        base,
+        containers,
+        vector-space,
+        filepath,
+        optparse-applicative,
+        implicit
    ghc-options:
         -O2 -optc-O3
         -threaded
