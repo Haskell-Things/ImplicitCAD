@@ -63,7 +63,6 @@ buildS3 (Cylinder h r1 r2) = call "cylinder" [
                              , bf h
                              ] []
 
--- TODO: Wrong.
 buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
 buildS3 (ExtrudeR 0 obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
@@ -71,7 +70,6 @@ buildS3 (ExtrudeR 0 obj h) = callNaked "linear_extrude" ["height = " <> bf h] [b
 buildS3 (ExtrudeRotateR 0 twist obj h) =
     callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
--- TODO: This is probably wrong as the first arg is height?
 buildS3 (ExtrudeRM 0 (Just twist) Nothing Nothing obj (Left height)) = do
   res <- ask
   call "union" [] [
