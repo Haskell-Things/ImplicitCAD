@@ -2,6 +2,8 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Graphics.Implicit.Export where
 
 -- The types of our objects (before rendering), and the type of the resolution to render with.

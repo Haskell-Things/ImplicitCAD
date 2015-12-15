@@ -1,5 +1,5 @@
 
-{-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
 module Graphics.Implicit.Export.RayTrace where
 
