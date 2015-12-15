@@ -4,11 +4,11 @@ RTSOPTS=+RTS -N
 
 build config install docs clean dist test: Setup
 
-build: dist/setup-config
+build: dist/setup-config Setup
 	./Setup build
 
 dist/setup-config: Setup *.cabal
-	./Setup configure --prefix=$$PREFIX
+	cabal configure
 
 install: build
 	./Setup install
@@ -23,7 +23,7 @@ clean:
 	rm -rf Examples/*.stl
 	rm -rf Examples/*.svg
 	rm -rf Tests/*.stl
-
+	rm -rf Setup
 
 dist: build
 	./Setup sdist

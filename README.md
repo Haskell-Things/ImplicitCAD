@@ -247,10 +247,11 @@ Try ImplicitCAD!
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
      * Development version:
-         * Install the dependencies: `cabal update && cabal install hashmap parallel parsec plugins JuicyPixels blaze-builder blaze-markup blaze-svg storable-endian unordered-containers vector-space`
+         * Initialize your haskell environment: `cabal update`
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
-         * cabal install it: `cabal configure && cabal install`
+         * install the dependencies: `cabal configure && cabal install --only-dependencies`
+         * cabal install it: `cabal install`
  3. Try it!
      * extopenscad test:
           * Make a test file: `echo "circle(30);" > test.escad`
