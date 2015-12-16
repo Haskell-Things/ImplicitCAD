@@ -1,42 +1,39 @@
-.PHONY: config build install clean docs dist test examples tests
+.PHONY: build install clean docs dist test examples tests
 
 RTSOPTS=+RTS -N
 
-build config install docs clean dist test: Setup
+RESOPTS=-r 10
 
-build: dist/setup-config Setup
-	./Setup build
-
-dist/setup-config: Setup *.cabal
-	cabal configure
-
-install: build
+install: dist/build/extopenscad/extopenscad
 	./Setup install
 
-config: dist/setup-config
-
-docs: config
-	./Setup haddock
-
-clean:
+clean: Setup
 	./Setup clean
 	rm -rf Examples/*.stl
 	rm -rf Examples/*.svg
 	rm -rf Tests/*.stl
 	rm -rf Setup
 
-dist: build
+docs: dist/build/extopenscad/extopenscad
+	./Setup haddock
+
+dist: dist/build/extopenscad/extopenscad
 	./Setup sdist
 
-test: config
+test: dist/build/extopenscad/extopenscad
 	./Setup test
 
-examples: build
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { ../dist/build/extopenscad/extopenscad $$each ${RTSOPTS}; } done
+examples: dist/build/extopenscad/extopenscad
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RTSOPTS}; } done
 
-tests: build
-	cd Tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../dist/build/extopenscad/extopenscad $$each ${RTSOPTS} ; } done
+tests: dist/build/extopenscad/extopenscad
+	cd Tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RESOPTS} ${RTSOPTS}; } done
 
+dist/build/extopenscad/extopenscad: Setup dist/setup-config
+	./Setup build
+
+dist/setup-config: Setup implicit.cabal
+	cabal configure
 
 Setup: Setup.*hs
 	ghc -O2 -Wall --make Setup
