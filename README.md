@@ -39,7 +39,7 @@ union() {
 
 Running `extopenscad example1.scad` will produce `example1.svg`, which will look like:
 
-![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
+![A Union of a Square and Circle](http://faikvm.com/ImplicitCAD/example1.svg)
 
 You can read more about standard openscad functionality in the [OpenSCAD User Manual](http://en.wikibooks.org/wiki/OpenSCAD_User_Manual).
 
@@ -53,7 +53,7 @@ union(r=14) {
 }
 ```
 
-![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
+![A Rounded Union of a Square and Circle](http://faikvm.com/ImplicitCAD/example2.svg)
 
 (For code like this that is not backwards compatible with OpenSCAD, it is recommended that you save it as a .escad file -- Extended OpenSCAD.)
 
@@ -74,7 +74,7 @@ linear_extrude (height = 40, center=true){
 
 And we allow you to twist them as you extrude.
 
-![An Extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeObj.png)
+![An Extrusion](http://faikvm.com/ImplicitCAD/example3.png)
 
 ```c
 // example4.escad -- the twisted extruded product of the union of five circles.
@@ -89,7 +89,7 @@ linear_extrude (height = 40, center=true, twist=90){
 }
 ```
 
-![An twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeTwistObj.png)
+![An twisted extrusion](http://faikvm.com/ImplicitCAD/example4.png)
 
 In fact, we've extended this to allow you to twist at non-constant rates and even reverse directions. You just make `twist` a function! (We're following the openscad convention of using degrees...)
 
@@ -106,7 +106,7 @@ linear_extrude (height = 40, center=true, twist(h) = 35*cos(h*2*pi/60)) {
 }
 ```
 
-![A variably twisted ImplicitCAD extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeVarTwistObj.png)
+![A variably twisted ImplicitCAD extrusion](http://faikvm.com/ImplicitCAD/example5.png)
 
 We also allow you to do rounded extrusions. See, we heard you like rounding, so we set this up so you can rounded extrude your rounded union...
 
@@ -123,7 +123,7 @@ linear_extrude (height = 40, center=true, r=5){
 }
 ```
 
-![A rounded extrusion made with ImplicitCAD](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundObj.png)
+![A rounded extrusion made with ImplicitCAD](http://faikvm.com/ImplicitCAD/example6.png)
 
 This is fully compatible with twisting, of course!
 
@@ -140,7 +140,7 @@ linear_extrude (height = 40, center=true, twist=90, r=5){
 }
 ```
 
-![A rounded twisted extrusion](http://colah.github.com/ImplicitCADDocImages/0.0/ExtrudeRoundTwist.png)
+![A rounded twisted extrusion](http://faikvm.com/ImplicitCAD/example7.png)
 
 
 ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
@@ -198,7 +198,7 @@ out = union [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnion.png)
+![A Union of a Square and Circle](http://faikvm.com/ImplicitCAD/SquareCircleUnion.png)
 
 
 A rounded union:
@@ -213,7 +213,7 @@ out = unionR 14 [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/SquareCircleUnionR.png)
+![A Rounded Union of a Square and Circle](http://faikvm.com/ImplicitCAD/SquareCircleUnionR.png)
 
 A simple 3D example:
 
@@ -227,7 +227,7 @@ out = union [
 main = writeSTL 1 "test.stl" out
 ```
 
-![A Rounded Union of a Square and Circle](http://colah.github.com/ImplicitCADDocImages/0.0/CubeSphereUnion.png)
+![A Rounded Union of a Square and Circle](http://faikvm.com/ImplicitCAD/CubeSphereUnion.png)
 
 You can do a whole lot more!
 
