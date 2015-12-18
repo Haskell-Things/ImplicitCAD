@@ -4,6 +4,13 @@ RTSOPTS=+RTS -N
 
 RESOPTS=-r 10
 
+
+# stl2ps, from stltools, available from https://github.com/rsmith-nl/stltools/tree/develop
+stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
+
+# convert, from imagemagick
+convert=convert
+
 install: dist/build/extopenscad/extopenscad
 	./Setup install
 
@@ -25,6 +32,9 @@ test: dist/build/extopenscad/extopenscad
 
 examples: dist/build/extopenscad/extopenscad
 	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RTSOPTS}; } done
+
+images:
+	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
 
 tests: dist/build/extopenscad/extopenscad
 	cd Tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RESOPTS} ${RTSOPTS}; } done
