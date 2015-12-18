@@ -7,7 +7,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD3, writeSCAD2, writeGCodeHacklabLaser, writePNG2, writePNG3)
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
+import Graphics.Implicit.ExtOpenScad
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (xmlErrorOn, SymbolicObj2, SymbolicObj3)
 import qualified Data.Map as Map hiding (null)
