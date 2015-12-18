@@ -72,9 +72,10 @@ linear_extrude (height = 40, center=true){
 }
 ```
 
+![An Extrusion](http://faikvm.com/ImplicitCAD/example3.png)
+
 And we allow you to twist them as you extrude.
 
-![An Extrusion](http://faikvm.com/ImplicitCAD/example3.png)
 
 ```c
 // example4.escad -- the twisted extruded product of the union of five circles.
