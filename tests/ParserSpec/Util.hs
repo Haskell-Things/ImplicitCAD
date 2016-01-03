@@ -3,9 +3,13 @@ module ParserSpec.Util
        , bool
        , app
        , app'
-       , parseWithEof
+       , plus
+       , minus
+       , divide
+       , modulo
+       , power
+       , mult
        , parseWithLeftOver
-       , parseExpr
        ) where
 
 import Graphics.Implicit.Definitions
@@ -21,25 +25,25 @@ num :: ℝ -> Expr
 num x
   -- note that the parser should handle negative number literals
   -- directly, we abstract that deficiency away here
-  | x < 0 = app' "negate" [LitE $ ONum (-x)]
+  | x < 0 = app "negate" [LitE $ ONum (-x)]
   | otherwise = LitE $ ONum x
 
 bool :: Bool -> Expr
 bool = LitE . OBool
 
 -- Operators and functions need two different kinds of applications
-app :: String -> [Expr] -> Expr
-app name args = Var name :$ [ListE args]
+app, app' :: String -> [Expr] -> Expr
+app name args = Var name :$ args
+app' name args = Var name :$ [ListE args]
 
-app' :: Symbol -> [Expr] -> Expr
-app' name args = Var name :$ args
+plus, minus, mult, modulo, power :: [Expr] -> Expr
+plus = app' "+"
+minus = app "-"
+mult = app' "*"
+modulo = app "%"
+power = app "^"
+divide = app "/"
 
 parseWithLeftOver :: Parser a -> String -> Either ParseError (a, String)
 parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""
   where leftOver = manyTill anyToken eof
-
-parseWithEof :: Parser a -> String -> String -> Either ParseError a
-parseWithEof p = parse (p <* eof)
-
-parseExpr :: String -> Either ParseError Expr
-parseExpr = parseWithEof expr0 "expr"
