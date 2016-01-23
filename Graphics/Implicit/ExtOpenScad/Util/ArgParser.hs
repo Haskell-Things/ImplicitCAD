@@ -6,8 +6,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Data.Map   as Map
 import qualified Data.Maybe as Maybe
-import Control.Applicative
-import Control.Monad
+import Control.Applicative(Alternative(..))
+import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
 
 instance Alternative ArgParser where
     (<|>) = mplus
@@ -44,6 +44,10 @@ instance MonadPlus ArgParser where
     mplus (APBranch as) b             = APBranch ( as  ++ [b] )
     mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
     mplus a             b             = APBranch [ a   ,   b  ]
+
+instance Alternative ArgParser where
+        (<|>) = mplus
+        empty = mzero
 
 -- * ArgParser building functions
 

@@ -1,0 +1,10 @@
+// example7.escad -- A twisted rounded extrusion of the rounded union of 5 circles.
+linear_extrude (height = 40, center=true, twist=90, r=5){
+        union ( r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}

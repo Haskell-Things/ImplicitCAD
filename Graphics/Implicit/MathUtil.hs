@@ -1,12 +1,14 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
 
+-- A module of math utilities.
 module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
-import Data.List
-import Data.VectorSpace
-import Data.AffineSpace
-import Graphics.Implicit.Definitions
+import Data.List (sort, sortBy)
+import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
+import Data.AffineSpace ((.-.))
+import Graphics.Implicit.Definitions (ℝ,ℝ2,ℝ3, Box2, (⋅))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2,ℝ2) -> ℝ
@@ -85,7 +87,7 @@ rminimum r l =
     in
         rmin r (tops !! 0) (tops !! 1)
 
-
+-- | Pack the given objects in a box the given size.
 pack :: 
     Box2           -- ^ The box to pack within
     -> ℝ           -- ^ The space seperation between items
