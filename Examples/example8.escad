@@ -1,0 +1,7 @@
+// Example8.escad -- variable assignment in loops.
+a = 5;
+for (c = [1, 2, 3]) {
+        echo(c);
+        a = a*c;
+        echo(a);
+}

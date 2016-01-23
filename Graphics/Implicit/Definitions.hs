@@ -1,19 +1,86 @@
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015, Julia Longtin (julial@turinglace.com)
+-- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU GPL, see LICENSE
 
-module Graphics.Implicit.Definitions where
+{-# LANGUAGE FlexibleInstances, TypeSynonymInstances, OverlappingInstances #-}
+
+-- Definitions of the types (and a few functions) used in ImplicitCAD.
+
+module Graphics.Implicit.Definitions (
+    ℝ,
+    ℝ2,
+    ℝ3,
+    ℕ,
+    (⋅),
+    (⋯*),
+    (⋯/),
+    Polyline,
+    Triangle,
+    NormedTriangle,
+    TriangleMesh,
+    NormedTriangleMesh,
+    Obj2,
+    Obj3,
+    Box2,
+    Box3,
+    Boxed2,
+    Boxed3,
+    BoxedObj2,
+    BoxedObj3,
+    SymbolicObj2(
+        RectR,
+        Circle,
+        PolygonR,
+        Complement2,
+        UnionR2,
+        DifferenceR2,
+        IntersectR2,
+        Translate2,
+        Scale2,
+        Rotate2,
+        Shell2,
+        Outset2,
+        EmbedBoxedObj2),
+    SymbolicObj3(
+        Rect3R,
+        Sphere,
+        Cylinder,
+        Complement3,
+        UnionR3,
+        IntersectR3,
+        DifferenceR3,
+        Translate3,
+        Scale3,
+        Rotate3,
+        Rotate3V,
+        Shell3,
+        Outset3,
+        EmbedBoxedObj3,
+        ExtrudeR,
+        ExtrudeRotateR,
+        ExtrudeRM,
+        ExtrudeOnEdgeOf,
+        RotateExtrude),
+    Rectilinear2,
+    Rectilinear3,
+    xmlErrorOn,
+    errorMessage
+    )
+where
 
 -- a few imports for great evil :(
+
 -- we want global IO refs.
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
-import Data.VectorSpace       
+import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
 -- Let's make things a bit nicer. 
--- Following math notation ℝ, ℝ², ℝ³...
-type ℝ = Float
+-- Following the math notation ℝ, ℝ², ℝ³...
+-- Supports changing Float to Double for more precision!
+-- FIXME: what about using rationals instead of Float/Double?
+type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
@@ -86,7 +153,7 @@ type BoxedObj2 = Boxed2 Obj2
 type BoxedObj3 = Boxed3 Obj3
 
 -- | A symbolic 2D object format.
---   We want to have a symbolic object so that we can 
+--   We want to have a symbolic object so that we can
 --   accelerate rendering & give ideal meshes for simple
 --   cases.
 data SymbolicObj2 =
@@ -185,7 +252,7 @@ errorMessage line msg = do
             else putStrLn $ dropXML False False $ msg'
         return ()
 
--- FIXME: document WHY this is wrong.
+-- FIXME: fix this correctly. causes functions passed to objects not to show.
 -- HACK: This needs to be fixed correctly someday
 instance Show (a -> b) where
         show _ = "<function>"

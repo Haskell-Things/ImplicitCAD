@@ -5,12 +5,17 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
-import Graphics.Implicit.Definitions
-import Data.VectorSpace
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
+                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2))
+import Data.VectorSpace (magnitude, (^-^), (^+^))
 
+-- Is a Box2 empty?
 isEmpty :: Box2 -> Bool
-isEmpty = (== ((0,0), (0,0)))
+isEmpty ((a, b), (c, d)) = a==c || b==d
+-- isEmpty = (== ((0,0), (0,0)))
 
+-- Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
 pointsBox points =
     let
@@ -31,11 +36,10 @@ outsetBox :: ℝ -> Box2 -> Box2
 outsetBox r (a,b) =
         (a ^-^ (r,r), b ^+^ (r,r))
 
+-- Define a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
-
 -- Primitives
 getBox2 (RectR _ a b) = (a,b)
-
 getBox2 (Circle r ) =  ((-r, -r), (r,r))
 
 getBox2 (PolygonR _ points) = ((minimum xs, minimum ys), (maximum xs, maximum ys))
@@ -105,13 +109,9 @@ getBox2 (EmbedBoxedObj2 (_,box)) = box
 
 -- Get the maximum distance (read upper bound) an object is from a point.
 -- Sort of a circular 
-
 getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
-
 getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
-
 getDist2 p (Translate2 v obj) = getDist2 (p ^+^ v) obj
-
 getDist2 p (Circle r) = magnitude p + r
 
 getDist2 p (PolygonR r points) = 

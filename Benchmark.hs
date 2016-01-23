@@ -1,8 +1,19 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014, 2015, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU GPL, see LICENSE
+
+-- Benchmarks
+
+-- Let's be explicit about where things come from :)
+
+-- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main
-import Graphics.Implicit
-import Graphics.Implicit.Export.SymbolicObj2
-import Graphics.Implicit.Export.SymbolicObj3
-import Graphics.Implicit.Primitives
+
+-- The parts of ImplicitCAD we know how to benchmark (in theory).
+import Graphics.Implicit (union, circle, writeSVG, writePNG2, writePNG3, writeSTL, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
+import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
+import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
 
 obj2d_1 :: SymbolicObj2
 obj2d_1 =
@@ -39,17 +50,21 @@ object3 =
 obj2Benchmarks :: String -> SymbolicObj2 -> Benchmark
 obj2Benchmarks name obj =
 	bgroup name
-	[ bench "SVG write" $ writeSVG 1 "benchmark.svg" obj
-	, bench "PNG write" $ writePNG2 1 "benchmark.png" obj
-	, bench "Get contour" $ nf (symbolicGetContour 1) obj
+	[
+--        bench "SVG write" $ writeSVG 1 "benchmark.svg" obj
+--      , bench "PNG write" $ writePNG2 1 "benchmark.png" obj
+--      ,
+          bench "Get contour" $ nf (symbolicGetContour 1) obj
 	]
 
 obj3Benchmarks :: String -> SymbolicObj3 -> Benchmark
 obj3Benchmarks name obj =
 	bgroup name
-	[ --bench "PNG write" $ writePNG3 1 "benchmark.png" obj
-	  bench "STL write" $ writeSTL 1 "benchmark.stl" obj
-	, bench "Get mesh" $ nf (symbolicGetMesh 1) obj
+	[
+--        bench "PNG write" $ writePNG3 1 "benchmark.png" obj
+--      , bench "STL write" $ writeSTL 1 "benchmark.stl" obj
+--      ,
+	  bench "Get mesh" $ nf (symbolicGetMesh 1) obj
 	]
 
 benchmarks =

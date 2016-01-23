@@ -1,29 +1,49 @@
-.PHONY: config build install clean docs dist test
+.PHONY: build install clean docs dist test examples tests
 
-build config install docs clean dist test: Setup
+RTSOPTS=+RTS -N
 
-build: dist/setup-config
-	./Setup build
+RESOPTS=-r 10
 
-dist/setup-config: Setup *.cabal
-	./Setup configure --prefix=$$PREFIX
 
-install: build
+# stl2ps, from stltools, available from https://github.com/rsmith-nl/stltools/tree/develop
+stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
+
+# convert, from imagemagick
+convert=convert
+
+install: dist/build/extopenscad/extopenscad
 	./Setup install
 
-config: dist/setup-config
+clean: Setup
+	./Setup clean
+	rm -rf Examples/*.stl
+	rm -rf Examples/*.svg
+	rm -rf Tests/*.stl
+	rm -rf Setup
 
-docs: config
+docs: dist/build/extopenscad/extopenscad
 	./Setup haddock
 
-clean:
-	./Setup clean
-
-dist: build
+dist: dist/build/extopenscad/extopenscad
 	./Setup sdist
 
-test: config
+test: dist/build/extopenscad/extopenscad
 	./Setup test
+
+examples: dist/build/extopenscad/extopenscad
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RTSOPTS}; } done
+
+images:
+	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
+
+tests: dist/build/extopenscad/extopenscad
+	cd Tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../dist/build/extopenscad/extopenscad $$each ${RESOPTS} ${RTSOPTS}; } done
+
+dist/build/extopenscad/extopenscad: Setup dist/setup-config
+	./Setup build
+
+dist/setup-config: Setup implicit.cabal
+	cabal configure
 
 Setup: Setup.*hs
 	ghc -O2 -Wall --make Setup
