@@ -1,10 +1,14 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
-{- The sole purpose of this file it to pass on the
-   functionality we want to be accessible to the end user. -}
+{- The purpose of this file is to pass on the functionality we want 
+   to be accessible to an end user who is compiling objects using
+   this haskell library. -}
+
+-- MAYBEFIXME: impliment slice operation , regularPolygon and zsurface primitives.
 
 module Graphics.Implicit(
     -- Operations
@@ -45,10 +49,19 @@ module Graphics.Implicit(
 ) where
 
 -- Let's be explicit about where things come from :)
-import Graphics.Implicit.Primitives
+
+-- The primitive objects, and functions for manipulating them.
+import Graphics.Implicit.Primitives (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygon, implicit)
+
+-- The Extended OpenScad interpreter
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
-import qualified Graphics.Implicit.Export as Export
-import Graphics.Implicit.Definitions
+
+-- Export functions, for writing files based on the result of operations on primitives
+import qualified Graphics.Implicit.Export as Export (writeSVG, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG) 
+
+-- Datatypes/classes defining the world, or part of the world.
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+
 
 -- We want Export to be a bit less polymorphic
 -- (so that types will collapse nicely)

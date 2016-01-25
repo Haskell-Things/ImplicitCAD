@@ -35,10 +35,17 @@ library
         blaze-svg,
         storable-endian,
         JuicyPixels,
-        NumInstances
+        NumInstances,
+        criterion,
+        snap-core,
+        snap-server,
+        silently,
+        transformers
 
     ghc-options:
-        -O2 -optc-O3
+        -O2
+        -threaded
+        -optc-O3
         -rtsopts
         -funfolding-use-threshold=16
         -fspec-constr-count=10
@@ -61,7 +68,7 @@ library
         ViewPatterns,
         OverloadedStrings
 
-    exposed-modules:
+    Exposed-Modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Primitives
@@ -126,7 +133,40 @@ executable extopenscad
         optparse-applicative,
         implicit
    ghc-options:
-        -O2 -optc-O3
+        -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16
+        -fspec-constr-count=10
+        -Wall
+
+-- FIXME: does not compile.
+--
+--Executable docgen
+--
+--   Main-is: docgen.hs
+--   ghc-options:
+--        -optc-O3
+--        -threaded
+--        -rtsopts
+--        -funfolding-use-threshold=16
+--       -fspec-constr-count=10
+
+Executable implicitsnap
+
+   Main-is: implicitsnap.hs
+   ghc-options:
+        -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16
+        -fspec-constr-count=10
+
+Executable Benchmark
+
+   Main-is: Benchmark.hs
+   ghc-options:
+        -optc-O3
         -threaded
         -rtsopts
         -funfolding-use-threshold=16

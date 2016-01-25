@@ -1,0 +1,5 @@
+//example2.escad -- A rounded union of a square and a circle.
+union(r=14) {
+        square([80,80]);
+        translate ([80,80]) circle(30);
+}

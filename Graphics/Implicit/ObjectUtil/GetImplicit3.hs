@@ -6,8 +6,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Graphics.Implicit.Definitions
-import qualified Graphics.Implicit.MathUtil as MathUtil
+import Prelude hiding (round)
+
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋯/), Obj3,
+                                      SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
+                                                   Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude))
+import qualified Graphics.Implicit.MathUtil as MathUtil (rmaximum, rminimum, rmax)
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
 import Data.VectorSpace       
