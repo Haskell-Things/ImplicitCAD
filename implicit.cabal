@@ -152,25 +152,25 @@ executable extopenscad
 --        -funfolding-use-threshold=16
 --       -fspec-constr-count=10
 
-Executable implicitsnap
+--Executable implicitsnap
 
-   Main-is: implicitsnap.hs
-   ghc-options:
-        -optc-O3
-        -threaded
-        -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
+--   Main-is: implicitsnap.hs
+--   ghc-options:
+--        -optc-O3
+--        -threaded
+--        -rtsopts
+--        -funfolding-use-threshold=16
+--        -fspec-constr-count=10
 
-Executable Benchmark
+--Executable Benchmark
 
-   Main-is: Benchmark.hs
-   ghc-options:
-        -optc-O3
-        -threaded
-        -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
+--   Main-is: Benchmark.hs
+--   ghc-options:
+--        -optc-O3
+--        -threaded
+--        -rtsopts
+--        -funfolding-use-threshold=16
+--        -fspec-constr-count=10
 
 test-suite test-implicit
     type: exitcode-stdio-1.0

@@ -103,14 +103,13 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
         (xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
-
         h = case eitherh of
             Left h -> h
             Right hf -> hmax + 0.2*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-                hrange = map (h*) $ range
+        hrange = map (h*) $ range
         sval = case scale of
             Nothing -> 1
             Just scale' -> maximum $ map (abs . scale') hrange

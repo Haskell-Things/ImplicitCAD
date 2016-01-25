@@ -59,7 +59,7 @@ detail n res obj [p1, p2] | n < 2 =
 
 detail _ _ _ x = x
 
-simplify :: Float -> [ℝ2] -> [ℝ2]
+simplify :: ℝ -> [ℝ2] -> [ℝ2]
 simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: [ℝ2] -> [ℝ2]
