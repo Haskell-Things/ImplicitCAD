@@ -9,10 +9,6 @@ import qualified Data.Maybe as Maybe
 import Control.Applicative(Alternative(..))
 import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
 
-instance Alternative ArgParser where
-    (<|>) = mplus
-    empty = mzero
-
 instance Functor ArgParser where
     fmap  = liftM
 
