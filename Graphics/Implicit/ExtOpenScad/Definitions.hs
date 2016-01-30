@@ -34,9 +34,9 @@ data Statement st = Include String Bool
 
 
 -- | Objects for our OpenSCAD-like language
-data OVal = OUndefined 
+data OVal = OUndefined
          | OError [String]
-         | OBool Bool 
+         | OBool Bool
          | ONum ℝ
          | OList [OVal]
          | OString String
@@ -73,13 +73,13 @@ collector s  l  = Var s :$ [ListE l]
 
 -----------------------------------------------------------------
 -- | Handles parsing arguments to modules
-data ArgParser a 
+data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
-                 = AP String (Maybe OVal) String (OVal -> ArgParser a) 
+                 = AP String (Maybe OVal) String (OVal -> ArgParser a)
                  -- | For returns:
                  --   ArgParserTerminator (return value)
-                 | APTerminator a 
+                 | APTerminator a
                  -- | For failure:
                  --   ArgParserFailIf (test) (error message) (child for if true)
                  | APFailIf Bool String (ArgParser a)
@@ -90,6 +90,6 @@ data ArgParser a
                  -- A branch where there are a number of possibilities for the parser underneath
                  | APBranch [ArgParser a]
 
-data TestInvariant = EulerCharacteristic Int 
+data TestInvariant = EulerCharacteristic Int
     deriving (Show)
 

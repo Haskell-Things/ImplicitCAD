@@ -12,7 +12,7 @@ import Graphics.Implicit.ExtOpenScad.Primitives
 import Data.Map (fromList)
 
 defaultObjects :: VarLookup -- = Map String OVal
-defaultObjects = fromList $ 
+defaultObjects = fromList $
 	defaultConstants
 	++ defaultFunctions
 	++ defaultFunctions2
@@ -21,7 +21,7 @@ defaultObjects = fromList $
 	++ defaultPolymorphicFunctions
 
 -- Missing standard ones:
--- rand, lookup, 
+-- rand, lookup,
 
 defaultConstants :: [([Char], OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
@@ -61,10 +61,10 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
 	]
 
 defaultFunctionsSpecial :: [([Char], OVal)]
-defaultFunctionsSpecial = 
+defaultFunctionsSpecial =
 	[
-		("map", toOObj $ flip $ 
-			(map :: (OVal -> OVal) -> [OVal] -> [OVal] ) 
+		("map", toOObj $ flip $
+			(map :: (OVal -> OVal) -> [OVal] -> [OVal] )
 		)
 		
 	]
@@ -79,14 +79,14 @@ defaultModules =
 -- more complicated ones:
 
 defaultPolymorphicFunctions :: [([Char], OVal)]
-defaultPolymorphicFunctions = 
-	[ 
+defaultPolymorphicFunctions =
+	[
 		("+", sum),
 		("sum", sum),
 		("*", prod),
 		("prod", prod),
 		("/", div),
-		("-", toOObj sub), 
+		("-", toOObj sub),
                 ("%", toOObj omod),
 		("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)),
 		("negate", toOObj negate),
@@ -166,35 +166,35 @@ defaultPolymorphicFunctions =
 				(Just a, Just b) -> f a b
 				_ -> False-}
 
-		index (OList l) (ONum ind) = 
-			let n = floor ind 
+		index (OList l) (ONum ind) =
+			let n = floor ind
 			in if n < length l then l !! n else OError ["List accessd out of bounds"]
-		index (OString s) (ONum ind) = 
-			let n = floor ind 
+		index (OString s) (ONum ind) =
+			let n = floor ind
 			in if n < length s then OString [s !! n] else OError ["List accessd out of bounds"]
 		index a b = errorAsAppropriate "index" a b
 
-		osplice (OList  list) (ONum a) (    ONum b    ) = 
+		osplice (OList  list) (ONum a) (    ONum b    ) =
 			OList   $ splice list (floor a) (floor b)
-		osplice (OString str) (ONum a) (    ONum b    ) = 
+		osplice (OString str) (ONum a) (    ONum b    ) =
 			OString $ splice str  (floor a) (floor b)
-		osplice (OList  list) (OUndefined) (ONum b    ) = 
+		osplice (OList  list) (OUndefined) (ONum b    ) =
 			OList   $ splice list 0 (floor b)
-		osplice (OString str) (OUndefined) (ONum b    ) = 
+		osplice (OString str) (OUndefined) (ONum b    ) =
 			OString $ splice str  0 (floor b)
-		osplice (OList  list) (ONum a) (    OUndefined) = 
+		osplice (OList  list) (ONum a) (    OUndefined) =
 			OList   $ splice list (floor a) (length list + 1)
-		osplice (OString str) (ONum a) (    OUndefined) = 
+		osplice (OString str) (ONum a) (    OUndefined) =
 			OString $ splice str  (floor a) (length str  + 1)
-		osplice (OList  list) (OUndefined) (OUndefined) = 
+		osplice (OList  list) (OUndefined) (OUndefined) =
 			OList   $ splice list 0 (length list + 1)
-		osplice (OString str) (OUndefined) (OUndefined) = 
+		osplice (OString str) (OUndefined) (OUndefined) =
 			OString $ splice str  0 (length str  + 1)
 		osplice _ _ _ = OUndefined
 
 		splice :: [a] -> Int -> Int -> [a]
 		splice [] _ _     = []
-		splice (l@(x:xs)) a b 
+		splice (l@(x:xs)) a b
 			|    a < 0  =    splice l   (a+n)  b
 			|    b < 0  =    splice l    a    (b+n)
 			|    a > 0  =    splice xs  (a-1) (b-1)
@@ -204,7 +204,7 @@ defaultPolymorphicFunctions =
 
 		errorAsAppropriate _   err@(OError _)   _ = err
 		errorAsAppropriate _   _   err@(OError _) = err
-		errorAsAppropriate name a b = OError 
+		errorAsAppropriate name a b = OError
 			["Can't " ++ name ++ " objects of types " ++ oTypeStr a ++ " and " ++ oTypeStr b ++ "."]
 
 		list_gen :: [ℝ] -> Maybe [ℝ]
@@ -214,9 +214,9 @@ defaultPolymorphicFunctions =
 				nr = (c-a)/b
 				n  = fromIntegral (floor nr)
 			in if nr - n > 0
-			then Just 
+			then Just
 				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor (c - b*(nr -n)))]
-			else Just 
+			else Just
 				[fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
 		list_gen _ = Nothing
 

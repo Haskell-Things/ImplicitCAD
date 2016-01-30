@@ -26,7 +26,7 @@ literal = ("literal" ?:) $
 		)
 	*<|> "string" ?: do
 		_ <- string "\""
-		strlit <-  many $ (string "\\\"" >> return '\"') 
+		strlit <-  many $ (string "\\\"" >> return '\"')
 		             *<|> (string "\\n" >> return '\n')
 		             *<|> ( noneOf "\"\n")
 		_ <- string "\""
@@ -56,7 +56,7 @@ exprN 12 =
 			exprs <- sepBy expr0 (char ',' )
 			_ <- string "]"
 			return $ ListE exprs
-		*<|> do 
+		*<|> do
 			-- eg. ( 1,2,3 )
 			_ <- string "("
 			exprs <- sepBy expr0 (char ',' )
@@ -100,7 +100,7 @@ exprN n@11 =
 		return $ foldl (\a b -> b a) obj mods
 	*<|> (exprN $ n+1 )
 
-exprN n@10 = 
+exprN n@10 =
 	"negation" ?: do
 		_ <- padString "-"
 		expr <- exprN $ n+1
@@ -111,52 +111,52 @@ exprN n@10 =
 		return expr
 	*<|> exprN (n+1)
 
-exprN n@9 = 
-	"exponentiation" ?: do 
+exprN n@9 =
+	"exponentiation" ?: do
 		a <- exprN $ n+1
 		_ <- padString "^"
 		b <- exprN n
 		return $ Var "^" :$ [a,b]
 	*<|> exprN (n+1)
 
-exprN n@8 = 
-	"multiplication/division" ?: do 
+exprN n@8 =
+	"multiplication/division" ?: do
 		-- outer list is multiplication, inner division.
 		-- eg. "1*2*3/4/5*6*7/8"
 		--     [[1],[2],[3,4,5],[6],[7,8]]
-		exprs <- sepBy1 
-			(sepBy1 (exprN $ n+1) (try $ padString "/" )) 
+		exprs <- sepBy1
+			(sepBy1 (exprN $ n+1) (try $ padString "/" ))
 			(try $ padString "*" )
 		let div  a b = Var "/" :$ [a, b]
 		return $ collector "*" $ map (foldl1 div) exprs
 	*<|> exprN (n+1)
 
 exprN n@7 =
-	"modulo" ?: do 
+	"modulo" ?: do
 		exprs <- sepBy1 (exprN $ n+1) (try $ padString "%")
 		let mod  a b = Var "%" :$ [a, b]
-		return $ foldl1 mod exprs 
+		return $ foldl1 mod exprs
 	*<|> exprN (n+1)
 
 exprN n@6 =
-	"append" ?: do 
+	"append" ?: do
 		exprs <- sepBy1 (exprN $ n+1) (try $ padString "++")
 		return $ collector "++" exprs
 	*<|> exprN (n+1)
 
 exprN n@5 =
-	"addition/subtraction" ?: do 
+	"addition/subtraction" ?: do
 		-- Similar to multiply & divide
-		-- eg. "1+2+3-4-5+6-7" 
+		-- eg. "1+2+3-4-5+6-7"
 		--     [[1],[2],[3,4,5],[6,7]]
-		exprs <- sepBy1 
-			(sepBy1 (exprN $ n+1) (try $ padString "-" )) 
+		exprs <- sepBy1
+			(sepBy1 (exprN $ n+1) (try $ padString "-" ))
 			(try $ padString "+" )
 		let sub a b = Var "-" :$ [a, b]
 		return $ collector "+" $ map (foldl1 sub) exprs
 	*<|> exprN (n+1)
 
-exprN n@4 = 
+exprN n@4 =
 	do
 		firstExpr <- exprN $ n+1
 		otherComparisonsExpr <- many $ do
@@ -168,11 +168,11 @@ exprN n@4 =
 				*<|> padString ">"
 				*<|> padString "<"
 			expr <- exprN $ n+1
-			return (Var comparisonSymb, expr) 
+			return (Var comparisonSymb, expr)
 		let
 			(comparisons, otherExprs) = unzip otherComparisonsExpr
 			exprs = firstExpr:otherExprs
-		return $ case comparisons of 
+		return $ case comparisons of
 			[]  -> firstExpr
 			[x] -> x :$ exprs
 			_   -> collector "all" $ zipWith3 (\c e1 e2 -> c :$ [e1,e2]) comparisons exprs (tail exprs)
@@ -185,8 +185,8 @@ exprN n@3 =
 		return $ Var "!" :$ [a]
 	*<|> exprN (n+1)
 
-exprN n@2 = 
-	"logical and/or" ?: do 
+exprN n@2 =
+	"logical and/or" ?: do
 		a <- exprN $ n+1
 		symb <-      padString "&&"
 		        *<|> padString "||"
@@ -194,8 +194,8 @@ exprN n@2 =
 		return $ Var symb :$ [a,b]
 	*<|> exprN (n+1)
 
-exprN n@1 = 
-	"ternary" ?: do 
+exprN n@1 =
+	"ternary" ?: do
 		a <- exprN $ n+1
 		_ <- padString "?"
 		b <- exprN n
@@ -204,8 +204,8 @@ exprN n@1 =
 		return $ Var "?" :$ [a,b,c]
 	*<|> exprN (n+1)
 
-exprN n@0 = 
-	do 
+exprN n@0 =
+	do
 		_ <- genSpace
 		expr <- exprN $ n+1
 		_ <- genSpace
