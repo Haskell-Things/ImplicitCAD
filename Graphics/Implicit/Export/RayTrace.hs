@@ -35,6 +35,7 @@ dynamicImage = ImageRGBA8
 vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
 vectorDistance a b = magnitude (b-a)
 
+colorMult :: RealFrac c => c -> PixelRGBA8 -> PixelRGBA8
 s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
     where 
         bound = max 0 . min 254
