@@ -44,7 +44,7 @@ s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c
 average :: [Color] -> Color
 average l = 
     let    
-        ((rs, gs), (bs, as)) = (\('a,b') -> (unzip a', unzip b')) $ unzip $ map 
+        ((rs, gs), (bs, as)) = (\(a',b') -> (unzip a', unzip b')) $ unzip $ map
             (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ],[ℝ]))
         n = fromIntegral $ length l :: ℝ
