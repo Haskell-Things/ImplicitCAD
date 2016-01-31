@@ -56,6 +56,8 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 -- and stick one on if we find it.
 -- Otherwise... something is really screwed up.
 
+-- FIXME: connects should be used with a singleton.
+
 getLoops' segs workingLoop =
     let
         presEnd = last $ last workingLoop
@@ -64,8 +66,8 @@ getLoops' segs workingLoop =
         possibleConts = filter connects segs
         nonConts = filter (not . connects) segs
         (next, unused) = if null possibleConts
-                         then error "unclosed loop in paths given"
-                         else (head possibleConts, tail possibleConts ++ nonConts)
+            then error "unclosed loop in paths given"
+            else (head possibleConts, tail possibleConts ++ nonConts)
     in
         if null next
         then workingLoop : getLoops' segs []
