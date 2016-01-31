@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
+
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.PolylineFormats where
 
@@ -26,15 +26,13 @@ svg plines = renderSvg . svg11 . svg' $ plines
       svg11 content = docTypeSvg ! A.version "1.1" 
                                  ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
                                  ! A.height (stringValue $ show (ymax-ymin) ++ "mm")
-                                 ! A.viewbox (stringValue $ concat . intersperse " " . map show $ [xmin, xmax, ymin, ymax])
+                                 ! A.viewbox (stringValue $ unwords . map show $ [xmin, xmax, ymin, ymax])
                                  $ content
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.
       svg' [] = mempty 
       -- When we have a known point, we can compute said transformation:
       svg' polylines = thinBlueGroup $ mapM_ poly polylines
-      -- Otherwise, if we don't have a point to start out with, skip this polyline:
-      svg' ([]:rest) = svg' rest
 
       poly line = polyline ! A.points pointList 
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
