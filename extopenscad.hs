@@ -206,26 +206,26 @@ run args = do
     content <- readFile (inputFile args)
 
     let format =
-        case () of
-            _ | Just fmt <- outputFormat args -> Just $ fmt
-            _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
-            _                                 -> Nothing
+            case () of
+                _ | Just fmt <- outputFormat args -> Just $ fmt
+                _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
+                _                                 -> Nothing
     putStrLn $ "Processing File."
 
-        case runOpenscad content of
+    case runOpenscad content of
         Left err -> putStrLn $ show $ err
         Right openscadProgram -> do
             s@(_, obj2s, obj3s) <- openscadProgram
             let res = maybe (getRes s) id (resolution args)
             let basename = fst (splitExtension $ inputFile args)
             let posDefExt = case format of
-                Just f  -> Prelude.lookup f (map swap formatExtensions)
-                Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+                                Just f  -> Prelude.lookup f (map swap formatExtensions)
+                                Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
             case (obj2s, obj3s) of
                 ([], [obj]) -> do
                     let output = fromMaybe
-                        (basename ++ "." ++ fromMaybe "stl" posDefExt)
-                        (outputFile args)
+                                     (basename ++ "." ++ fromMaybe "stl" posDefExt)
+                                     (outputFile args)
                     putStrLn $ "Rendering 3D object to " ++ output
                     putStrLn $ "With resolution " ++ show res
                     putStrLn $ "In box " ++ show (getBox3 obj)
@@ -233,8 +233,8 @@ run args = do
                     export3 format res output obj
                 ([obj], []) -> do
                     let output = fromMaybe
-                        (basename ++ "." ++ fromMaybe "svg" posDefExt)
-                        (outputFile args)
+                                     (basename ++ "." ++ fromMaybe "svg" posDefExt)
+                                     (outputFile args)
                     putStrLn $ "Rendering 2D object to " ++ output
                     putStrLn $ "With resolution " ++ show res
                     putStrLn $ "In box " ++ show (getBox2 obj)
