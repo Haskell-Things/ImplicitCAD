@@ -28,9 +28,9 @@ runOpenscad s =
   in case parseProgram [] s of
     Left e -> Left e
     Right sts -> Right
-    $ fmap rearrange
-    $ (\sts -> do
-      path <- Dir.getCurrentDirectory
-      State.runStateT sts (initial, [], path, (), () )
-    )
-    $ Monad.mapM_ runStatementI sts
+        $ fmap rearrange
+        $ (\sts -> do
+          path <- Dir.getCurrentDirectory
+          State.runStateT sts (initial, [], path, (), () )
+        )
+        $ Monad.mapM_ runStatementI sts
