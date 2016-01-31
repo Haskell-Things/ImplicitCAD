@@ -26,7 +26,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       svg11 content = docTypeSvg ! A.version "1.1" 
                                  ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
                                  ! A.height (stringValue $ show (ymax-ymin) ++ "mm")
-                                 ! A.viewbox (stringValue $ unwords . map show $ [xmin, xmax, ymin, ymax])
+                                 ! A.viewbox (stringValue $ unwords . map show $ [0,0,xmax-xmin,ymax-ymin])
                                  $ content
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.
