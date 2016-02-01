@@ -32,13 +32,13 @@ object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
 object2 :: SymbolicObj3
 object2 = squarePipe (10,10,10) 1 100
     where squarePipe (x,y,z) diameter precision =
-          union
-          $ map (\start-> translate start
-                 $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
-                )
-          $ zip3 (map (\n->(n/precision)*x) [0..precision])
-                 (map (\n->(n/precision)*y) [0..precision])
-                 (map (\n->(n/precision)*z) [0..precision])
+            union
+            $ map (\start-> translate start
+                   $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
+                  )
+            $ zip3 (map (\n->(n/precision)*x) [0..precision])
+                   (map (\n->(n/precision)*y) [0..precision])
+                   (map (\n->(n/precision)*z) [0..precision])
 
 object3 :: SymbolicObj3
 object3 =
