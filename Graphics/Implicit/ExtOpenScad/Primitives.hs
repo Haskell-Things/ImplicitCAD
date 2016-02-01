@@ -7,7 +7,7 @@
 -- The code is fairly straightforward; an explanation of how
 -- the first one works is provided.
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables, OverlappingInstances  #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
@@ -19,7 +19,6 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal
 import qualified Graphics.Implicit.Primitives as Prim
 import Data.Maybe (isNothing)
 import qualified Data.Either as Either
-import           Data.Either (either)
 import qualified Control.Monad as Monad
 
 import Data.VectorSpace
@@ -67,9 +66,9 @@ cube = moduleWithoutSuite "cube" $ do
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
             let toInterval' = toInterval center
-            return (either (toInterval center) id x,
-                    either (toInterval center) id y,
-                    either (toInterval center) id z)
+            return (either toInterval' id x,
+                    either toInterval' id y,
+                    either toInterval' id z)
         <|> do
             size   :: Either ℝ ℝ3  <- argument "size"
                 `doc`  "square size"
@@ -110,8 +109,8 @@ square = moduleWithoutSuite "square" $ do
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
             let toInterval' = toInterval center
-            return (either (toInterval center) id x,
-                    either (toInterval center) id y)
+            return (either toInterval' id x,
+                    either toInterval' id y)
         <|> do
             size   :: Either ℝ ℝ2  <- argument "size"
                 `doc`  "square size"
