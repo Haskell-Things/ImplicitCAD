@@ -22,15 +22,15 @@ import qualified System.Directory as Dir (getCurrentDirectory)
 runOpenscad :: [Char] -> Either Parsec.ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
 runOpenscad s =
     let
-      initial =  defaultObjects
-      rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
+        initial =  defaultObjects
+        rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
                                 (obj2s, obj3s, _ ) = divideObjs ovals
     in case parseProgram [] s of
-      Left e -> Left e
-      Right sts -> Right
-          $ fmap rearrange
-          $ (\sts -> do
-            path <- Dir.getCurrentDirectory
-            State.runStateT sts (initial, [], path, (), () )
-          )
-          $ Monad.mapM_ runStatementI sts
+        Left e -> Left e
+        Right sts -> Right
+            $ fmap rearrange
+            $ (\sts -> do
+              path <- Dir.getCurrentDirectory
+              State.runStateT sts (initial, [], path, (), () )
+            )
+            $ Monad.mapM_ runStatementI sts
