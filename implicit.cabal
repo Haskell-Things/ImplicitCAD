@@ -1,6 +1,6 @@
 Name:                implicit
-Version:             0.0.3
-cabal-version:       >= 1.6
+Version:             0.0.6
+cabal-version:       >= 1.8
 Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 Description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
@@ -20,7 +20,6 @@ Library
         base >= 3 && < 5,
         filepath,
         directory,
-        optparse-applicative,
         parsec,
         unordered-containers,
         parallel,
@@ -28,7 +27,7 @@ Library
         deepseq,
         vector-space,
         text,
-        mtl,
+        monads-tf,
         bytestring,
         blaze-builder,
         blaze-markup,
@@ -76,6 +75,9 @@ Library
         Graphics.Implicit.MathUtil
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
+        Graphics.Implicit.ExtOpenScad.Parser.Statement
+        Graphics.Implicit.ExtOpenScad.Parser.Expr
+        Graphics.Implicit.ExtOpenScad.Definitions
 
     Other-Modules:
         Graphics.Implicit.ObjectUtil.GetBox2
@@ -84,9 +86,6 @@ Library
         Graphics.Implicit.ObjectUtil.GetImplicit3
         Graphics.Implicit.ExtOpenScad.Default
         Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Parser.Statement
-        Graphics.Implicit.ExtOpenScad.Parser.Expr
-        Graphics.Implicit.ExtOpenScad.Definitions
         Graphics.Implicit.ExtOpenScad.Primitives
         Graphics.Implicit.ExtOpenScad.Eval.Statement
         Graphics.Implicit.ExtOpenScad.Eval.Expr
@@ -120,6 +119,15 @@ Library
 Executable extopenscad
 
    Main-is: extopenscad.hs
+   hs-source-dirs: programs
+   build-depends:
+                 base,
+                 containers,
+                 vector-space,
+                 filepath,
+                 parallel,
+                 optparse-applicative >= 0.10.0,
+                 implicit
    ghc-options:
         -optc-O3
         -threaded
@@ -143,6 +151,27 @@ Executable extopenscad
 Executable implicitsnap
 
    Main-is: implicitsnap.hs
+   build-depends:
+                 base,
+                 vector-space,
+                 text,
+                 JuicyPixels,
+                 blaze-builder,
+                 blaze-svg,
+                 blaze-markup,
+                 parallel,
+                 deepseq,
+                 vector-space,
+                 monads-tf,
+                 bytestring,
+                 storable-endian,
+                 parsec,
+                 directory,
+                 containers,
+                 filepath,
+                 snap-core,
+                 snap-server,
+                 silently
    ghc-options:
         -optc-O3
         -threaded
@@ -153,6 +182,24 @@ Executable implicitsnap
 Executable Benchmark
 
    Main-is: Benchmark.hs
+   build-depends:
+                 base,
+                 text,
+                 JuicyPixels,
+                 blaze-svg,
+                 blaze-markup,
+                 parallel,
+                 deepseq,
+                 vector-space,
+                 monads-tf,
+                 blaze-builder,
+                 bytestring,
+                 storable-endian,
+                 parsec,
+                 directory,
+                 containers,
+                 filepath,
+                 criterion
    ghc-options:
         -optc-O3
         -threaded
