@@ -18,7 +18,7 @@ sphere ::
     ℝ                  -- ^ Radius of the sphere
     -> SymbolicObj3    -- ^ Resulting sphere
 
-sphere r = Sphere r
+sphere = Sphere
 
 rect3R ::
     ℝ                 -- ^ Rounding of corners
@@ -36,6 +36,7 @@ cylinder2 ::
 
 cylinder2 r1 r2 h = Cylinder h r1 r2
 
+cylinder :: ℝ -> ℝ -> SymbolicObj3
 cylinder r = cylinder2 r r
 
 -- $ 2D Primitives
@@ -61,6 +62,7 @@ polygonR ::
 
 polygonR = PolygonR
 
+polygon :: [ℝ2] -> SymbolicObj2
 polygon = polygonR 0
 
 -- $ Shared Operations
@@ -158,21 +160,39 @@ instance Object SymbolicObj3 ℝ3 where
 
 union = unionR 0
 difference = differenceR 0
+
+--intersect :: forall obj vec. Object obj vec => [obj] -> obj
 intersect = intersectR 0
 
 -- 3D operations
 
+extrudeR :: ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeR = ExtrudeR
 
+extrudeRM :: ℝ
+    -> Maybe (ℝ -> ℝ)
+    -> Maybe (ℝ -> ℝ)
+    -> Maybe (ℝ -> ℝ2)
+    -> SymbolicObj2
+    -> Either ℝ (ℝ2 -> ℝ)
+    -> SymbolicObj3
 extrudeRM = ExtrudeRM
 
+rotateExtrude :: ℝ
+    -> Maybe ℝ
+    -> Either ℝ2 (ℝ -> ℝ2)
+    -> Either ℝ (ℝ -> ℝ)
+    -> SymbolicObj2
+    -> SymbolicObj3
 rotateExtrude = RotateExtrude
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
+rotate3 :: (ℝ, ℝ, ℝ) -> SymbolicObj3 -> SymbolicObj3
 rotate3 = Rotate3
 
+rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3V = Rotate3V
 
 
@@ -189,6 +209,7 @@ pack3 (dx, dy) sep objs =
 
 -- 2D operations
 
+rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
 
 
