@@ -168,7 +168,7 @@ getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
 
 ```haskell
 getImplicit3 (Sphere r ) =
-	\(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
+	\(x,y,z) -> sqrt (x^2 + y^2 + z^2) - r
 ```
 
 
