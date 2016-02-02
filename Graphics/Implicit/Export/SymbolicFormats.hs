@@ -1,7 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
+
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.SymbolicFormats where
 
@@ -33,8 +33,11 @@ call name args objs  = do
 buildArgs [] = "()"
 buildArgs args = "([" <> mconcat (intersperse "," args) <> "])"
 
-
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
+
+buildS3 (Rotate3 (x,y,z) obj) = call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
+    where
+        rad2deg r = r * (180/pi)
 
 buildS3 (UnionR3 0 objs) = call "union" [] $ map buildS3 objs
 
@@ -57,16 +60,16 @@ buildS3 (Cylinder h r1 r2) = call "cylinder" [
 
 buildS3 (Sphere r) = call "sphere" ["r = " <> bf r] []
 
-buildS3 (ExtrudeR 0 obj h) = call "linear_extrude" [bf h] [buildS2 obj]
+buildS3 (ExtrudeR 0 obj h) = call "linear_extrude" ["height =" <> bf h] [buildS2 obj]
 
 buildS3 (ExtrudeRotateR 0 twist obj h) =
-    call "linear_extrude" [bf h, "twist = " <> bf twist] [buildS2 obj]
+    call "linear_extrude" ["height =" <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
 buildS3 (ExtrudeRM 0 (Just twist) Nothing Nothing obj (Left height)) = do
   res <- ask
   call "union" [] [
              call "rotate" ["0","0", bf $ twist h] [
-                        call "linear_extrude" [bf res, "twist = " <> bf (twist (h+res) - twist h)][
+                        call "linear_extrude" ["height =" <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
                                    buildS2 obj
                                   ]                         
                        ] |  h <- init [0, res .. height]
