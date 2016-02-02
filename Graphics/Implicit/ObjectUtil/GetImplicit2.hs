@@ -16,7 +16,7 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) = \(x,y) -> MathUtil.rmaximum r
     [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
         where (dx, dy) = (x2-x1, y2-y1)
 getImplicit2 (Circle r ) =
-    \(x,y) -> sqrt (x**2 + y**2) - r
+    \(x,y) -> sqrt (x^2 + y^2) - r
 getImplicit2 (PolygonR _ points) =
     \p -> let
         pair :: Int -> (ℝ2,ℝ2)
