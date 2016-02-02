@@ -22,7 +22,7 @@ clean: Setup
 	rm -rf Examples/*.svg
 	rm -rf Examples/*.ps
 	rm -rf Examples/*.png
-	rm -rf Tests/*.stl
+	rm -rf tests/*.stl
 	rm -rf Setup
 
 docs: $(EXTOPENSCAD)
@@ -41,7 +41,7 @@ images:
 	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
 
 tests: $(EXTOPENSCAD)
-	cd Tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
+	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
 
 dist/build/extopenscad/extopenscad: Setup dist/setup-config
 	./Setup build
