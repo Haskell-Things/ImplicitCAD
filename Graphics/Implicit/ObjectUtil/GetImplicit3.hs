@@ -1,5 +1,6 @@
-
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU GPL, see LICENSE
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ViewPatterns #-}
@@ -26,10 +27,10 @@ getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
     [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
         where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
 getImplicit3 (Sphere r ) =
-    \(x,y,z) -> sqrt (x**2 + y**2 + z**2) - r
+    \(x,y,z) -> sqrt (x^2 + y^2 + z^2) - r
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     let
-        d = sqrt(x**2+y**2) - ((r2-r1)/h*z+r1)
+        d = sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
@@ -162,13 +163,13 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         \(x,y,z) -> minimum $ do
             
             let
-                r = sqrt (x**2 + y**2)
+                r = sqrt (x^2 + y^2)
                 θ = atan2 y x
                 ns :: [Int]
                 ns =
                     if capped
                     then -- we will cap a different way, but want leeway to keep the function cont
-                        [-1 .. (ceiling (totalRotation' / tau) :: Int) + (1 :: Int)]
+                        [-1 .. (ceiling (totalRotation' / tau)) + 1]
                     else
                         [0 .. floor $ (totalRotation' - θ) /tau]
             n <- ns
