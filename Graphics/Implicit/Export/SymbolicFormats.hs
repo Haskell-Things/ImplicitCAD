@@ -23,15 +23,19 @@ scad3 res obj = toLazyText $ runReader (buildS3 obj) res
 
 -- Format an openscad call given that all the modified objects are in the Reader monad...
 
-call :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
-call name args []    = return $ name <> buildArgs args <> ";"
-call name args [obj] = fmap ((name <> buildArgs args) <>) obj
-call name args objs  = do
+callToken :: (Text, Text) -> Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
+callToken cs name args []    = return $ name <> buildArgs cs args <> ";"
+callToken cs name args [obj] = fmap ((name <> buildArgs cs args) <>) obj
+callToken cs name args objs  = do
   objs' <- fmap (mconcat . map (<> "\n")) $ sequence objs
-  return $! name <> buildArgs args <> "{\n" <> objs' <> "}\n"
+  return $! name <> buildArgs cs args <> "{\n" <> objs' <> "}\n"
 
-buildArgs [] = "()"
-buildArgs args = "([" <> mconcat (intersperse "," args) <> "])"
+buildArgs :: (Text, Text) -> [Builder] -> Builder
+buildArgs _ [] = "()"
+buildArgs (c1, c2) args = "(" <> (fromLazyText c1) <> mconcat (intersperse "," args) <> (fromLazyText c2) <> ")"
+
+call      = callToken ("[", "]")
+callNaked = callToken ("",   "")
 
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
@@ -58,18 +62,18 @@ buildS3 (Cylinder h r1 r2) = call "cylinder" [
                              , bf h
                              ] []
 
-buildS3 (Sphere r) = call "sphere" ["r = " <> bf r] []
+buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
-buildS3 (ExtrudeR 0 obj h) = call "linear_extrude" ["height =" <> bf h] [buildS2 obj]
+buildS3 (ExtrudeR 0 obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
 
 buildS3 (ExtrudeRotateR 0 twist obj h) =
-    call "linear_extrude" ["height =" <> bf h, "twist = " <> bf twist] [buildS2 obj]
+    callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
 buildS3 (ExtrudeRM 0 (Just twist) Nothing Nothing obj (Left height)) = do
   res <- ask
   call "union" [] [
              call "rotate" ["0","0", bf $ twist h] [
-                        call "linear_extrude" ["height =" <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
+                        callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
                                    buildS2 obj
                                   ]                         
                        ] |  h <- init [0, res .. height]
