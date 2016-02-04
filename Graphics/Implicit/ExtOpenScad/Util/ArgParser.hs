@@ -1,5 +1,8 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Released under the GNU GPL, see LICENSE
 
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
+
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
 import Graphics.Implicit.ExtOpenScad.Definitions
@@ -10,11 +13,11 @@ import Control.Applicative(Alternative(..))
 import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
 
 instance Functor ArgParser where
-        fmap = liftM
+    fmap = liftM
 
 instance Applicative ArgParser where
-        pure = return
-        (<*>) = ap
+    pure = return
+    (<*>) = ap
 
 instance Monad ArgParser where
 
