@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
+-- Copyright (C) 2014 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU GPL, see LICENSE
 
 -- FIXME: add support for AMF.
@@ -75,7 +76,7 @@ data OutputFormat
     | GCode
     | STL
     | OBJ
---    | AMF
+--  | AMF
     deriving (Show, Eq, Ord)
 
 -- A list mapping file extensions to output formats.
@@ -88,7 +89,7 @@ formatExtensions =
     , ("gcode", GCode)
     , ("stl", STL)
     , ("obj", OBJ)
---    , ("amf", AMF)
+--  , ("amf", AMF)
     ]
 
 -- Lookup an output format for a given output file. Throw an error if one cannot be found.
