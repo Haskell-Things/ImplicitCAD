@@ -472,7 +472,7 @@ unit = moduleWithSuite "unit" $ \children -> do
 moduleWithSuite :: t -> t1 -> (t, t1)
 moduleWithSuite name modArgMapper = (name, modArgMapper)
 moduleWithoutSuite :: t -> a -> (t, b -> a)
-moduleWithoutSuite name modArgMapper = (name, \suite -> modArgMapper)
+moduleWithoutSuite name modArgMapper = (name, const modArgMapper)
 
 addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
 addObj3 x = return $ return [OObj3 x]
