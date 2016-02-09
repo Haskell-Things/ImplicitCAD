@@ -296,7 +296,7 @@ rotate = moduleWithSuite "rotate" $ \children -> do
         ) <||> ( \(yz,zx,xy) ->
             objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad zx, deg2rad xy) ) children
         ) <||> ( \(yz,zx) ->
-            objMap (id ) (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
+            objMap id (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
         ) <||> const []
 
 scale :: ([Char], [OVal] -> ArgParser (IO [OVal]))
