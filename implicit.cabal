@@ -1,22 +1,22 @@
-Name:                implicit
-Version:             0.0.6
+name:                implicit
+version:             0.0.6
 cabal-version:       >= 1.8
-Synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
-Description:         A math-inspired programmatic CAD library in haskell.
+synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
+description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
                      shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
-License:             GPL
-License-file:        LICENSE
-Author:              Christopher Olah
-Maintainer:          Christopher Olah <chris@colah.ca>
-Homepage:            https://github.com/colah/ImplicitCAD
+license:             GPL
+license-file:        LICENSE
+author:              Christopher Olah
+maintainer:          Christopher Olah <chris@colah.ca>
+homepage:            https://github.com/colah/ImplicitCAD
 build-type:          Simple
-Category:            Graphics
+category:            Graphics
 
-Library
+library
 
-    Build-Depends:
+    build-Depends:
         base >= 3 && < 5,
         filepath,
         directory,
@@ -49,7 +49,7 @@ Library
         -funfolding-use-threshold=16
         -fspec-constr-count=10
 
-    Extensions:
+    extensions:
         FlexibleContexts,
         FlexibleInstances,
         FunctionalDependencies,
@@ -67,7 +67,7 @@ Library
         ViewPatterns,
         OverloadedStrings
 
-    Exposed-Modules:
+    exposed-modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Primitives
@@ -75,11 +75,14 @@ Library
         Graphics.Implicit.MathUtil
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
+        -- Note that these modules are only temporarily exposed, to
+        -- allow coding the unit tests against the current parser
+        -- interface.
         Graphics.Implicit.ExtOpenScad.Parser.Statement
         Graphics.Implicit.ExtOpenScad.Parser.Expr
         Graphics.Implicit.ExtOpenScad.Definitions
 
-    Other-Modules:
+    other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
         Graphics.Implicit.ObjectUtil.GetBox3
         Graphics.Implicit.ObjectUtil.GetImplicit2
@@ -116,9 +119,9 @@ Library
         Graphics.Implicit.Export.Render.TesselateLoops
         Graphics.Implicit.Export.Render.HandlePolylines
 
-Executable extopenscad
+executable extopenscad
 
-   Main-is: extopenscad.hs
+   main-is: extopenscad.hs
    hs-source-dirs: programs
    build-depends:
                  base,
@@ -148,9 +151,9 @@ Executable extopenscad
 --        -funfolding-use-threshold=16
 --       -fspec-constr-count=10
 
-Executable implicitsnap
+executable implicitsnap
 
-   Main-is: implicitsnap.hs
+   main-is: implicitsnap.hs
    build-depends:
                  base,
                  vector-space,
@@ -179,9 +182,9 @@ Executable implicitsnap
         -funfolding-use-threshold=16
         -fspec-constr-count=10
 
-Executable Benchmark
+executable Benchmark
 
-   Main-is: Benchmark.hs
+   main-is: Benchmark.hs
    build-depends:
                  base,
                  text,
