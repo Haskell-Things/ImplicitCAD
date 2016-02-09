@@ -9,14 +9,14 @@ description:         A math-inspired programmatic CAD library in haskell.
 license:             GPL
 license-file:        LICENSE
 author:              Christopher Olah
-maintainer:          Christopher Olah <chris@colah.ca>
+maintainer:          Mike MacHenry <mike.machenry@gmail.com>
 homepage:            https://github.com/colah/ImplicitCAD
 build-type:          Simple
 category:            Graphics
 
 library
 
-    build-Depends:
+    build-depends:
         base >= 3 && < 5,
         filepath,
         directory,
@@ -210,8 +210,21 @@ executable Benchmark
         -funfolding-use-threshold=16
         -fspec-constr-count=10
 
+test-suite test-implicit
+    type: exitcode-stdio-1.0
+    build-depends: base, mtl, containers, hspec, parsec, implicit
+    main-is: Main.hs
+    hs-source-dirs: tests
+
+benchmark parser-bench
+    type: exitcode-stdio-1.0
+    hs-source-dirs: bench
+    main-is: ParserBench.hs
+    build-depends: base, criterion, random, parsec, implicit
+    ghc-options:
+        -Wall
+        -O2 -optc-O3
+
 source-repository head
     type:            git
     location:        https://github.com/colah/ImplicitCAD.git
-
-
