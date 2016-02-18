@@ -4,14 +4,14 @@ ImplicitCAD: Math Inspired CAD
 Introduction
 ------------
 
-ImplicitCAD is a programmatic CAD package, implemented in [Haskell](https://www.haskell.org/). Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
+ImplicitCAD is a programmatic CAD program, implemented in haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
  - Objects can abstracted and reused
  - Repetitive tasks can be automated
  - Objects can be designed parametrically
  - The usual tools for software development (like version control) can be used
 
-A well known example of a programmatic CAD language and environment is [OpenSCAD](http://www.openscad.org/).
+The traditional example of programmatic CAD is OpenSCAD.
 
 Generally, objects in programmatic CAD are built with Constructive Solid Geometry or CSG. Unions, intersections and differences of simpler shapes slowly build the object. ImplicitCAD supports all this and much more! For example, it provides rounded unions so that one can have smooth interfaces between objects.
 
@@ -23,7 +23,7 @@ ImplicitCAD is very much a work in progress. The author considers it ready for b
 ExtOpenSCAD Examples
 --------------------
 
-Let's being with OpenSCAD examples, since they're likely a more comfortable format that Haskell for most readers. :)
+Let's begin with OpenSCAD examples, since they're likely a more comfortable format that Haskell for most readers :)
 
 ImplicitCAD supports a modified version of the OpenSCAD language, used by the popular programmatic CAD tool of the same name.
 
@@ -236,7 +236,7 @@ Try ImplicitCAD!
 ----------------
 
  1. Install GHC and cabal.
-     * Debian/Ubuntu: `apt-get install ghc cabal-install`
+     * Debain/Ubuntu: `apt-get install ghc cabal-install`
      * Archlinux: `pacman -S ghc cabal-install`
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
