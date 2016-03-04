@@ -6,7 +6,7 @@ description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
                      shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
-license:             GPL
+license:             AGPL-3
 license-file:        LICENSE
 author:              Christopher Olah
 maintainer:          Mike MacHenry <mike.machenry@gmail.com>
