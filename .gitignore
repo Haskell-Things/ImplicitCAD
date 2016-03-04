@@ -1,6 +1,10 @@
 *~
 *.o
 *.hi
+*.svg
+*.png
+*.ps
+*.stl
 dist/
 extopenscad
 Setup

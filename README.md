@@ -190,6 +190,7 @@ Haskell Examples
 Everything you saw above can be done with the Haskell API. For example, a simple 2D example, the same as our first ExtOpenSCAD one:
 
 ```haskell
+-- Example 11 - the union of a square and a circle.
 import Graphics.Implicit
 
 out = union [
@@ -199,12 +200,13 @@ out = union [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Union of a Square and Circle](http://faikvm.com/ImplicitCAD/SquareCircleUnion.png)
+![A Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example11.png)
 
 
 A rounded union:
 
 ```haskell
+-- Example 12 - the rounded union of a square and a circle.
 import Graphics.Implicit
 
 out = unionR 14 [
@@ -214,11 +216,12 @@ out = unionR 14 [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Rounded Union of a Square and Circle](http://faikvm.com/ImplicitCAD/SquareCircleUnionR.png)
+![A Rounded Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example12.png)
 
 A simple 3D example:
 
 ```haskell
+-- Example 13 - the rounded union of a cube and a sphere.
 import Graphics.Implicit
 
 out = union [
@@ -228,7 +231,7 @@ out = union [
 main = writeSTL 1 "test.stl" out
 ```
 
-![A Rounded Union of a Square and Circle](http://faikvm.com/ImplicitCAD/CubeSphereUnion.png)
+![A Rounded Union of a Cube and a Sphere](http://faikvm.com/ImplicitCAD/example13.png)
 
 You can do a whole lot more!
 

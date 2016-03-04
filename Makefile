@@ -36,6 +36,7 @@ test: $(EXTOPENSCAD)
 
 examples: $(EXTOPENSCAD)
 	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
+	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; ghc $$filename.hs -o $$filename; $$filename; } done
 
 images:
 	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
