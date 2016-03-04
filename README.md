@@ -200,7 +200,7 @@ out = union [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example11.png)
+![A Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example11.svg)
 
 
 A rounded union:
@@ -216,7 +216,7 @@ out = unionR 14 [
 main = writeSVG 2 "test.svg" out
 ```
 
-![A Rounded Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example12.png)
+![A Rounded Union of a Square and a Circle](http://faikvm.com/ImplicitCAD/example12.svg)
 
 A simple 3D example:
 
