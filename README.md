@@ -6,7 +6,7 @@ Introduction
 
 ImplicitCAD is a programmatic CAD program, implemented in haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
- - Objects can abstracted and reused
+ - Objects can be abstracted and reused
  - Repetitive tasks can be automated
  - Objects can be designed parametrically
  - The usual tools for software development (like version control) can be used
@@ -221,7 +221,7 @@ main = writeSVG 2 "test.svg" out
 A simple 3D example:
 
 ```haskell
--- Example 13 - the rounded union of a cube and a sphere.
+-- Example 13 - the union of a cube and a sphere.
 import Graphics.Implicit
 
 out = union [
@@ -246,7 +246,7 @@ Try ImplicitCAD!
          * Homebrew: `brew install ghc cabal-install`
          * *Fink doesn't seem to have a package for cabal* Install the Haskell Platform manually as described [here](http://hackage.haskell.org/platform/mac.html).
      * Windows: Follows [these install instructions](http://hackage.haskell.org/platform/windows.html).
-     * Other unices: If your package manager does not include ghc and cabal you should install the Haskell platform as described [here](
+     * Other unices: If your package manager does not include ghc and cabal you should install the Haskell platform as described [here](http://www.haskell.org/platform)
  2. You now have two options for installation:
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
@@ -272,7 +272,7 @@ Try ImplicitCAD!
      * Haskell test results in `module is not loaded: 'Graphics.Implicit' (./Graphics/Implicit.hs)`
          * This is most likely a problem with your Linux distro and cabal not playing nice.
            GHC is not configured to see the ImplicitCAD libraries. You can confirm this by
-           try the test in `~/.cabal/lib/`. If that works, you should be able to use ghc
+           trying the test in `~/.cabal/lib/`. If that works, you should be able to use ghc
            anywhere with the `-Ldir` or `-llib` options. Alternatively, some people have
            permanently fixed this by doing the cabal install as root.
 
