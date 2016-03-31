@@ -18,12 +18,18 @@ install: $(EXTOPENSCAD)
 
 clean: Setup
 	./Setup clean
-	rm -rf Examples/*.stl
-	rm -rf Examples/*.svg
-	rm -rf Examples/*.ps
-	rm -rf Examples/*.png
-	rm -rf tests/*.stl
-	rm -rf Setup
+	rm -f Examples/*.stl
+	rm -f Examples/*.svg
+	rm -f Examples/*.ps
+	rm -f Examples/*.png
+	rm -f Examples/example[0-9][0-9]
+	rm -f tests/*.stl
+	rm -f Setup
+
+distclean: clean
+	rm -f `find ./ -name *~`
+	rm -f `find ./ -name \#*\#`
+
 
 docs: $(EXTOPENSCAD)
 	./Setup haddock
