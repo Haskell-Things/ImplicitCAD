@@ -185,10 +185,14 @@ getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
              | segX' <- segsX
             ]
 
-    in mergedSquareTris $ concat $ concat $ concat sqTris -- (5) merge squares, etc
+    in cleanupTris res $ mergedSquareTris $ concat $ concat $ concat sqTris -- (5) merge squares, etc
+    
 
-
-
+--cleanupTris :: ℝ -> TriangleMesh -> TriangleMesh
+cleanupTris res tris =
+    let
+        isDegenerateTri (a, b, c) = (a == b) || (b == c) || (a == c)
+    in filter (not . isDegenerateTri) tris
 
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
 getContour p1@(x1, y1) p2@(_, _) res obj =

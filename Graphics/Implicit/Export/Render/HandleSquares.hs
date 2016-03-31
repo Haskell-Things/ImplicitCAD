@@ -74,9 +74,10 @@ mergedSquareTris sqTris =
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
     in
-        -- merge them to triangles, and combine with the original triagneles.
-        triTriangles ++ concat (map squareToTri finishedSquares)
-
+        -- merge them to triangles, and combine with the original triangles.
+        -- Disable square merging temporarily.
+        --triTriangles ++ concat (map squareToTri finishedSquares)
+        triTriangles ++ concat (map squareToTri squares)
 
 -- And now for a bunch of helper functions that do the heavy lifting...
 
