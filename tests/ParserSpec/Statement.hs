@@ -40,11 +40,11 @@ assignmentSpec = do
     "function foo(x, y) = x * y;" `parsesAs` single fooFunction
   it "nested indexing" $
     "x = [y[0] - z * 2];" `parsesAs`
-    (single $ Name "x" := ListE [app' "-" [app' "index" [Var "y", num 0],
-                                           app "*" [Var "z", num 2]]])
+    (single $ Name "x" := ListE [minus [app "index" [Var "y", num 0],
+                                        mult [Var "z", num 2]]])
   where
     fooFunction = Name "foo" := (LamE [Name "x", Name "y"]
-                                 (app "*" [Var "x", Var "y"]))
+                                 (mult [Var "x", Var "y"]))
 
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
