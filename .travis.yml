@@ -1,0 +1,47 @@
+# Configuration for Travis CI, see <https://travis-ci.org/>
+#
+# This doesn't use direct Travis Haskell support, since that only goes
+# up to 7.8, which is too old to build ImplicitCAD. Based on the
+# instructions on <https://github.com/hvr/multi-ghc-travis>.
+
+language: c
+
+# explicitly request container-based infrastructure
+sudo: false
+
+matrix:
+  include:
+    - env: CABALVER=1.22 GHCVER=7.10.2
+      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.2],sources: [hvr-ghc]}}
+    - env: CABALVER=head GHCVER=head
+      addons: {apt: {packages: [cabal-install-head,ghc-head],  sources: [hvr-ghc]}}
+
+  allow_failures:
+    - env: CABALVER=head GHCVER=head
+
+before_install:
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+
+install:
+  - cabal --version
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - travis_retry cabal update
+  - cabal install --only-dependencies --enable-tests --enable-benchmarks
+
+script:
+  # -v2 provides useful information for debugging
+  - cabal configure --enable-tests --enable-benchmarks -v2
+
+  # this builds all libraries and executables
+  # (including tests/benchmarks)
+  - cabal build
+
+  - cabal test
+
+  # tests that a source-distribution can be generated
+  - cabal sdist
+
+  # check that the generated source-distribution can be built & installed
+  - |
+    SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
+    (cd dist && cabal install --force-reinstalls "$SRC_TGZ")
