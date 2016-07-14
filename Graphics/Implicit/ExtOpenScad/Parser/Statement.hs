@@ -37,8 +37,9 @@ computation =
         _ <- genSpace
         s <- tryMany [
             echo,
-            assignment,
-            include--,
+            include,
+            function,
+            assignment--,
             --use
             ]
         _ <- stringGS " ; "
@@ -107,9 +108,13 @@ assignment = ("assignment " ?:) $
         _ <- stringGS " = "
         valExpr <- expr0
         return $ StatementI line$ pattern := valExpr
-    *<|> do
+
+-- | A function declaration  (parser)
+function :: GenParser Char st StatementI
+function = ("function " ?:) $
+    do
         line <- lineNumber
-        varSymb <- (string "function" >> space >> genSpace >> variableSymb) 
+        varSymb <- (string "function" >> space >> genSpace >> variableSymb)
                    *<|> variableSymb
         _ <- stringGS " ( "
         argVars <- sepBy patternMatcher (stringGS " , ")
@@ -121,7 +126,7 @@ assignment = ("assignment " ?:) $
 echo :: GenParser Char st StatementI
 echo = do
     line <- lineNumber
-    _ <- stringGS " echo ( "
+    _ <- stringGS "echo ( "
     exprs <- expr0 `sepBy` (stringGS " , ")
     _ <- stringGS " ) "
     return $ StatementI line $ Echo exprs
@@ -146,7 +151,7 @@ forStatementI =
         --      for ( vsymb = vexpr   ) loops
         -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
         -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-        _ <- stringGS " for ( "
+        _ <- stringGS "for ( "
         pattern <- patternMatcher
         _ <- stringGS " = "
         vexpr <- expr0

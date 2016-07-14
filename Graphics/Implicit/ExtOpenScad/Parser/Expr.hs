@@ -42,6 +42,21 @@ exprN :: Integer -> GenParser Char st Expr
 
 exprN 12 =
          literal
+    *<|> "let expression" ?: do
+        _ <- string "let"
+        _ <- genSpace
+        _ <- string "("
+        _ <- sepBy (do 
+            _ <- genSpace
+            variable <- variableSymb
+            _ <- genSpace
+            _ <- string "="
+            _ <- genSpace
+            expr <- expr0
+            return $ LamE [Name variable] expr) (char ',' )
+        _ <- string ")"
+        expr <- expr0
+        return $ LamE [Name "asdf"] expr
     *<|> variable
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )
