@@ -40,23 +40,29 @@ expr0 = exprN 0
 
 exprN :: Integer -> GenParser Char st Expr
 
-exprN 12 =
-         literal
-    *<|> "let expression" ?: do
+letExpr = "let expression" ?: do
         _ <- string "let"
         _ <- genSpace
         _ <- string "("
-        _ <- sepBy (do 
-            _ <- genSpace
-            variable <- variableSymb
-            _ <- genSpace
-            _ <- string "="
-            _ <- genSpace
-            expr <- expr0
-            return $ LamE [Name variable] expr) (char ',' )
+        _ <- genSpace
+        bindingPairs <- sepBy
+            (do _ <- genSpace
+                boundName <- variableSymb
+                _ <- genSpace
+                _ <- string "="
+                _ <- genSpace
+                boundExpr <- expr0
+                return $ ListE [Var boundName, boundExpr])
+            (char ',')
         _ <- string ")"
         expr <- expr0
-        return $ LamE [Name "asdf"] expr
+        let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+            bindLets _ e = e
+        return $ foldr bindLets expr bindingPairs
+
+exprN 12 =
+         literal
+    *<|> letExpr
     *<|> variable
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )

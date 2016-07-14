@@ -58,8 +58,8 @@ evalExpr' (ListE exprs) = do
     return $ \s -> OList $ map ($s) valFuncs
 
 evalExpr' (fexpr :$ argExprs) = do
-    fValFunc <- evalExpr' fexpr
     argValFuncs <- Monad.mapM evalExpr' argExprs
+    fValFunc <- evalExpr' fexpr
     return $ \s -> app (fValFunc s) (map ($s) argValFuncs)
         where 
             app f l = case (getErrors f, getErrors $ OList l) of
