@@ -3,6 +3,7 @@ module ParserSpec.Util
        , bool
        , app
        , app'
+       , lambda'
        , parseWithEof
        , parseWithLeftOver
        , parseExpr
@@ -33,6 +34,9 @@ app name args = Var name :$ [ListE args]
 
 app' :: Symbol -> [Expr] -> Expr
 app' name args = Var name :$ args
+
+lambda' :: [Pattern] -> Expr -> [Expr] -> Expr
+lambda' params expr args = LamE params expr :$ args
 
 parseWithLeftOver :: Parser a -> String -> Either ParseError (a, String)
 parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""

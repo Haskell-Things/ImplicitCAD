@@ -30,6 +30,8 @@ logicalSpec = do
   describe "ternary operator" $ do
     specify "with primitive expressions" $
       "x ? 2 : 3" --> app' "?" [Var "x", num 2, num 3]
+    specify "with parenthesized comparison" $
+      "(1 > 0) ? 5 : -5" --> app' "?" [app' ">" [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position" $
       ternaryIssue $ "1 > 0 ? 5 : -5" --> app' "?" [app' ">" [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position, and addition in tail" $
@@ -46,6 +48,17 @@ literalSpec = do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
 
+letBindingSpec :: Spec
+letBindingSpec = do
+    it "handles let with integer binding and spaces" $ do
+        "let ( a = 1 ) a" --> lambda' [Name "a"] (Var "a") [num 1]
+    it "handles multiple variable let" $ do
+        "let (a = x, b = y) a + b" --> lambda' [Name "a"] ((lambda' [Name "b"] (app "+" [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    it "handles empty let" $ do
+        "let () a" --> (Var "a")
+    it "handles nested let" $ do
+        "let(a=x) let(b = y) a + b" --> lambda' [Name "a"] ((lambda' [Name "b"] (app "+" [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    
 exprSpec :: Spec
 exprSpec = do
   describe "literals" literalSpec
@@ -99,3 +112,5 @@ exprSpec = do
     parseExpr "foo ++ bar ++ baz" `shouldBe`
     (Right $ app "++" [Var "foo", Var "bar", Var "baz"])
   describe "logical operators" logicalSpec
+  describe "let expressions" letBindingSpec
+  

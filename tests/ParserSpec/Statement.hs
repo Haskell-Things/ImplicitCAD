@@ -38,6 +38,9 @@ assignmentSpec = do
     "foo (x, y) = x * y;" `parsesAs` single fooFunction
   it "handles the function keyword" $
     "function foo(x, y) = x * y;" `parsesAs` single fooFunction
+  it "handles function with let expression" $
+    "function withlet(b) = let (c = 5) b + c;" `parsesAs` 
+    (single $ (Name "withlet" := LamE [Name "b"] (LamE [Name "c"] (Var "+" :$ [ListE [Var "b",Var "c"]]) :$ [num 5])))
   it "nested indexing" $
     "x = [y[0] - z * 2];" `parsesAs`
     (single $ Name "x" := ListE [app' "-" [app' "index" [Var "y", num 0],
