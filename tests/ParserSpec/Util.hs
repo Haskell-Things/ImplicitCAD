@@ -12,7 +12,6 @@ module ParserSpec.Util
        , (-->+)
        , num
        , bool
-<<<<<<< HEAD
        , stringLiteral
        , fapp
        , plus
@@ -31,12 +30,6 @@ module ParserSpec.Util
        , append
        , index
        , lambda
-=======
-       , app
-       , app'
-       , lambda'
-       , parseWithEof
->>>>>>> Added tests for let expressions in extopenscad, and a test for a function with a let expression. Also added a test for another ternary operator case which works, to make sure it keeps working.
        , parseWithLeftOver
        ) where
 
