@@ -22,6 +22,13 @@ import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
+isUndef source = 
+    let result = (parseExpr source)
+        undef (Right (LitE OUndefined)) = True
+        undef _ = False
+    in
+        undef result `shouldBe` True
+ 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 
@@ -116,8 +123,9 @@ exprSpec = do
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
 
   describe "arithmetic" $ do
-    it "handles unary +/-" $ do
+    it "handles unary -" $ do
       "-42" --> num (-42)
+    it "handles unary +" $ do
       "+42" -->  num 42
     it "handles unary - with extra spaces" $ do
       "-  42" --> num (-42)

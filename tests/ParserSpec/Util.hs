@@ -99,7 +99,7 @@ plus = fapp "+"
 mult = fapp "*"
 append = fapp "++"
 
--- | we need two different kinds of application functions
+-- | We need two different kinds of application functions, one for operators, and one for functions.
 oapp,fapp :: String -> [Expr] -> Expr
 oapp name args = Var name :$ args
 fapp name args = Var name :$ [ListE args]
