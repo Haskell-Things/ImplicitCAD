@@ -22,18 +22,32 @@ import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
-isUndef source = 
-    let result = (parseExpr source)
-        undef (Right (LitE OUndefined)) = True
-        undef _ = False
-    in
-        undef result `shouldBe` True
- 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 
 negationIssue :: Expectation -> Expectation
 negationIssue _ = pendingWith "parser doesn't handle negation operator correctly"
+
+listIssue :: Expectation -> Expectation
+listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
+
+enableAlternateParser = False
+
+originalParserAdditionAstStyle :: Expectation -> Expectation
+originalParserAdditionAstStyle a =
+    if enableAlternateParser
+    then pendingWith "original parser generates + expression trees differently than - expression trees. The experimental parser treats them the same."
+    else a
+
+experimentalParserAstStyle a =
+    if enableAlternateParser
+    then a
+    else pendingWith "The test was written for the experimental parser's AST generation."
+
+experimentalFeature a =
+    if enableAlternateParser
+    then a
+    else pendingWith "This tests a feature of the experimental parser that does not work in the original parser."
 
 logicalSpec :: Spec
 logicalSpec = do
@@ -52,34 +66,35 @@ logicalSpec = do
     specify "with comparison in head position" $
       ternaryIssue $ "1 > 0 ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position, and addition in tail" $
-      ternaryIssue $ "1 > 0 ? 5 : 1 + 2" -->
+      originalParserAdditionAstStyle $ ternaryIssue $
+      "1 > 0 ? 5 : 1 + 2" -->
         ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
 
 literalSpec :: Spec
 literalSpec = do
   it "handles integers" $
-    "12356" -->  num 12356
-  it "handles positive leading zero integers" $ do
-    "000012356" -->  num 12356
-  it "handles zero integer" $ do
-    "0" -->  num 0
-  it "handles leading zero integer" $ do
-    "0000" -->  num 0
+    "12356" --> num 12356
+  it "handles positive leading zero integers" $
+    "000012356" --> num 12356
+  it "handles zero integer" $
+    "0" --> num 0
+  it "handles leading zero integer" $
+    "0000" --> num 0
   it "handles floats" $
-    "23.42" -->  num 23.42
+    "23.42" --> num 23.42
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
 
 letBindingSpec :: Spec
 letBindingSpec = do
-  it "handles let with integer binding and spaces" $ do
+  it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
-  it "handles multiple variable let" $ do
+  it "handles multiple variable let" $
     "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles empty let" $ do
+  it "handles empty let" $
     "let () a" --> (Var "a")
-  it "handles nested let" $ do
+  it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
 
 exprSpec :: Spec
@@ -91,24 +106,40 @@ exprSpec = do
       "foo_bar" --> Var "foo_bar"
   describe "grouping" $ do
     it "allows parens" $
-      "( false )" -->  bool False
+      "( false )" --> bool False
+    it "handles empty vectors" $
+      "[]" --> ListE []
+    it "handles single element vectors" $
+      "[a]" --> ListE [Var "a"]
     it "handles vectors" $
-      "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
-    it "handles empty vectors" $ do
-      "[]" -->  ListE []
-    it "handles single element vectors" $ do
-      "[a]" -->  ListE [Var "a"]
-    it "handles nested vectors" $ do
+      "[ 1, 2, 3 ]" --> ListE [num 1, num 2, num 3]
+    it "handles nested vectors" $
       "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
-      "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
+      listIssue $
+      "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
+      originalParserAdditionAstStyle $
+      "[ a : b ]" -->
+      fapp "list_gen" [Var "a", Var "b"]
+    it "handles generators" $
+      experimentalParserAstStyle $
       "[ a : b ]" -->
       fapp "list_gen" [Var "a", Var "b"]
     it "handles generators with expression" $
+      originalParserAdditionAstStyle $
+      "[ a : b + 10 ]" -->
+      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
+    it "handles generators with expression" $
+      experimentalParserAstStyle $
       "[ a : b + 10 ]" -->
       fapp "list_gen" [Var "a", plus [Var "b", num 10]]
     it "handles increment generators" $
+      originalParserAdditionAstStyle $
+      "[ a : 3 : b + 10 ]" -->
+      fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
+    it "handles increment generators" $
+      experimentalParserAstStyle $
       "[ a : 3 : b + 10 ]" -->
       fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
     it "handles indexing" $
@@ -121,52 +152,80 @@ exprSpec = do
       "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
     it "handles multiple function calls" $
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
-
   describe "arithmetic" $ do
-    it "handles unary -" $ do
+    it "handles unary -" $
       "-42" --> num (-42)
-    it "handles unary +" $ do
-      "+42" -->  num 42
-    it "handles unary - with extra spaces" $ do
+    it "handles unary +" $
+      "+42" --> num 42
+    it "handles unary - with extra spaces" $
       "-  42" --> num (-42)
-    it "handles unary + with extra spaces" $ do
-      "+  42" -->  num 42
-    it "handles unary - with parentheses" $ do
-      "-(4 - 3)" -->  negate [ minus [num 4, num 3]]
-    it "handles unary + with parentheses" $ do
-      "+(4 - 1)" -->  minus [num 4, num 1]
-    it "handles unary - with identifier" $ do
+    it "handles unary + with extra spaces" $
+      "+  42" --> num 42
+    it "handles unary - with parentheses" $
+      "-(4 - 3)" --> negate [ minus [num 4, num 3]]
+    it "handles unary + with parentheses" $
+      "+(4 - 1)" --> minus [num 4, num 1]
+    it "handles unary - with identifier" $
       "-foo" --> negate [Var "foo"]
-    it "handles unary + with identifier" $ do
-      "+foo" -->  Var "foo"
-    it "handles unary - with string literal" $ do
+    it "handles unary + with identifier" $
+      "+foo" --> Var "foo"
+    it "handles unary - with string literal" $
       "-\"foo\"" --> negate [stringLiteral "foo"]
-    it "handles unary + with string literal" $ do
-      "+\"foo\"" -->  stringLiteral "foo"
+    it "handles unary + with string literal" $
+      "+\"foo\"" --> stringLiteral "foo"
     it "handles +" $ do
-      "1 + 2" --> plus [num 1, num 2]
-      "1 + 2 + 3" --> plus [num 1, num 2, num 3]
+      originalParserAdditionAstStyle $
+        "1 + 2" --> plus [num 1, num 2]
+      experimentalParserAstStyle $
+        "1 + 2" --> plus [num 1, num 2]
+    it "handles > 2 term +" $ do
+      originalParserAdditionAstStyle $
+        "1 + 2 + 3" --> plus [num 1, num 2, num 3]
+      experimentalParserAstStyle $
+        "1 + 2 + 3" --> plus [plus [num 1, num 2], num 3]
     it "handles -" $ do
       "1 - 2" --> minus [num 1, num 2]
       "1 - 2 - 3" --> minus [minus [num 1, num 2], num 3]
     it "handles +/- in combination" $ do
-      "1 + 2 - 3" --> plus [num 1, minus [num 2, num 3]]
-      "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
-      "1 + 2 - 3 + 4" --> plus [num 1, minus [num 2, num 3], num 4]
-      "1 + 2 - 3 + 4 - 5 - 6" --> plus [num 1,
+      originalParserAdditionAstStyle $
+        "1 + 2 - 3" --> plus [num 1, minus [num 2, num 3]]
+      experimentalParserAstStyle $
+        "1 + 2 - 3" --> minus [plus [num 1, num 2], num 3]
+      originalParserAdditionAstStyle $
+        "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
+      experimentalParserAstStyle $
+        "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
+      originalParserAdditionAstStyle $
+        "1 + 2 - 3 + 4" --> plus [num 1, minus [num 2, num 3], num 4]
+      experimentalParserAstStyle $
+        "1 + 2 - 3 + 4" --> plus [minus [plus [num 1, num 2], num 3], num 4]
+      originalParserAdditionAstStyle $
+        "1 + 2 - 3 + 4 - 5 - 6" --> plus [num 1,
                                            minus [num 2, num 3],
                                            minus [minus [num 4, num 5],
                                                      num 6]]
+      experimentalParserAstStyle $
+        "1 + 2 - 3 + 4 - 5 - 6" --> minus [minus [plus [minus [plus [num 1, num 2], num 3], num 4], num 5], num 6]
     it "handles exponentiation" $
-      "x ^ y" -->  power [Var "x", Var "y"]
+      "x ^ y" --> power [Var "x", Var "y"]
     it "handles multiple exponentiations" $
-      "x ^ y ^ z" -->  power [Var "x", power [Var "y", Var "z"]]
+      "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
     it "handles *" $ do
-      "3 * 4" -->  mult [num 3, num 4]
-      "3 * 4 * 5" -->  mult [num 3, num 4, num 5]
+     originalParserAdditionAstStyle $
+      "3 * 4" --> mult [num 3, num 4]
+     experimentalParserAstStyle $
+      "3 * 4" --> mult [num 3, num 4]
+    it "handles > 2 term *" $ do
+     originalParserAdditionAstStyle $
+      "3 * 4 * 5" --> mult [num 3, num 4, num 5]
+     experimentalParserAstStyle $
+      "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
     it "handles /" $
-      "4.2 / 2.3" -->  divide [num 4.2, num 2.3]
-    it "handles precedence" $
+      "4.2 / 2.3" --> divide [num 4.2, num 2.3]
+    it "handles precedence" $ do
+     originalParserAdditionAstStyle $
+      "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
+     experimentalParserAstStyle $
       "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
     it "handles append" $
       "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]

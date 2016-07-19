@@ -1,4 +1,4 @@
-module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0, altExpr) where
 
 -- TODO remove tracing
 import Debug.Trace;
@@ -40,28 +40,41 @@ nonOperator = do -- boolean true
         matchChar ')'
         return expr
     <|> do
-        matchChar '['
-        exprs <- sepBy expr (matchChar ',')
-        matchChar ']'
-        return $ ListE exprs
-        
-{-
-          , \higher -> do -- 
-                    matchChar '['
-                    do
-                        matchChar ']'
-                        return $ ListE []
-                    <|> do
-                        firstExpr <- expr
-                        matchChar ','
-                        do
-                            elements <- sepBy expr (matchChar ',')
-                            matchChar ']'
-                            return $ ListE elements
-                <|> higher
-                -}
+        matchVectorOrRange
     <?> "an expression"
 
+matchVectorOrRange :: GenParser Char st Expr
+matchVectorOrRange = do
+        matchChar '['
+        (do
+            matchChar ']'
+            return $ ListE []
+         <|> do
+            first <- expr
+            (do
+                matchChar ']'
+                return $ ListE [first]
+             <|> do
+                matchChar ','
+                exprs <- sepBy expr (matchChar ',')
+                matchChar ']'
+                return $ ListE $ first:exprs
+             <|> do
+                matchChar ':'
+                second <- expr
+                (do
+                    matchChar ':'
+                    third <- expr
+                    matchChar ']'
+                    return $ Var "list_gen" :$ [ListE [first, second, third]]
+                 <|> do
+                    matchChar ']'
+                    return $ Var "list_gen" :$ [ListE [first, LitE $ ONum 1.0, second]]
+                    )
+                )
+            )
+
+    
 binaryOperation :: String -> Expr -> Expr -> Expr
 binaryOperation symbol left right = Var symbol :$ [left, right]
 

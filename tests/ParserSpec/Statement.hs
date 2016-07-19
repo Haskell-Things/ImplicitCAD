@@ -47,12 +47,10 @@ ifSpec = it "parses" $
 -- | Test assignments.
 assignmentSpec :: Spec
 assignmentSpec = do
-  it "parses correctly" $
+  it "handles assignment" $
     "y = -5;" --> single ( Name "y" := num (-5))
   it "handles pattern matching" $
     "[x, y] = [1, 2];" --> single (ListP [Name "x", Name "y"] := ListE [num 1, num 2])
-  it "handles function definition" $
-    "foo(x, y) = x * y;" --> single fooFunction
   it "handles the function keyword" $
     "function foo(x, y) = x * y;" --> single fooFunction
   it "handles function with let expression" $
