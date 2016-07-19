@@ -14,8 +14,8 @@ openScadStyle
     , commentEnd = "*/"
     , commentLine = "//"
     , nestedComments = True
-    , identStart = letter <|> char '$'
-    , identLetter = alphaNum
+    , identStart = letter <|> char '$' <|> char '_'
+    , identLetter = alphaNum <|> char '_'
     , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef"]
     , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||"]
     , caseSensitive = True

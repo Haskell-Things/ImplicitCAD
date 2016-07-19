@@ -7,37 +7,61 @@ import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer
 
+altExpr = expr0
+
 expr0 = do
         expr
     <?> "an expression"
 
 nonOperator :: GenParser Char st Expr
-nonOperator = do
+nonOperator = do -- boolean true
         matchTrue
         return $ LitE $ OBool True
-    <|> do
+    <|> do -- boolean false
         matchFalse
         return $ LitE $ OBool False
-    <|> do
+    <|> do -- undef
         matchUndef
         return $ LitE OUndefined
-    <|> do
+    <|> do -- integer or double precision number
         n <- number
         case n of
             Left integer -> return $ LitE $ ONum $ fromIntegral integer
             Right double -> return $ LitE $ ONum double
-    <|> do
+    <|> do -- string literal
         str <- literalString
         return $ LitE $ OString str
     <|> do
         ident <- identifier
         return $ Var ident
     <|> do
-        _ <- matchChar '('
+        matchChar '('
         expr <- expr
-        _ <- matchChar ')'
+        matchChar ')'
         return expr
+    <|> do
+        matchChar '['
+        exprs <- sepBy expr (matchChar ',')
+        matchChar ']'
+        return $ ListE exprs
+        
+{-
+          , \higher -> do -- 
+                    matchChar '['
+                    do
+                        matchChar ']'
+                        return $ ListE []
+                    <|> do
+                        firstExpr <- expr
+                        matchChar ','
+                        do
+                            elements <- sepBy expr (matchChar ',')
+                            matchChar ']'
+                            return $ ListE elements
+                <|> higher
+                -}
     <?> "an expression"
+
 binaryOperation :: String -> Expr -> Expr -> Expr
 binaryOperation symbol left right = Var symbol :$ [left, right]
 
@@ -105,8 +129,8 @@ expr = foldr ($) nonOperator levels
                 chainl1 higher (do
                     op <- matchChar '-' <|> matchChar '+'
                     return $ binaryOperation op)
-                    
-          , \higher -> fix $ \self -> -- OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same.
+
+          , \higher -> fix $ \self -> -- OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
                 do
                     bang <- matchChar '!'
                     right <- self
@@ -118,12 +142,30 @@ expr = foldr ($) nonOperator levels
                         op <- matchChar '*' <|> matchChar '/' <|> matchChar '%'
                         return $ binaryOperation op)
 
-          , \higher -> -- function call - in OpenSCAD a function call can only happen to a indentifier. In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
-                    do func <- higher
-                       (do
-                            matchChar '(' <?> "func '('"
-                            arguments <- sepBy expr (matchChar ',')
-                            matchChar ')'
-                            return $ func :$ arguments
-                        <|> return func)
+          , \higher -> fix $ \self -> -- unary -, +. OpenSCAD's YACC parser puts '-' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
+                do
+                    negative <- matchChar '-'
+                    right <- self
+                    return $ case right of LitE (ONum num) -> LitE $ ONum (-num)
+                                           LitE (OString str) -> LitE OUndefined
+                                           expr -> Var negative :$ [expr]
+                <|> do
+                    matchChar '+'
+                    right <- self
+                    return $ right
+                <|> higher
+
+          , \higher -> 
+                do left <- higher -- function call - in OpenSCAD a function call can only happen to a identifier. In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
+                   (do
+                        matchChar '('
+                        arguments <- sepBy expr (matchChar ',')
+                        matchChar ')'
+                        return $ left :$ arguments
+                    <|> do 
+                        matchChar '['
+                        index <- expr
+                        matchChar ']'
+                        return $ Var "index" :$ [left, index]
+                    <|> return left)
           ]
