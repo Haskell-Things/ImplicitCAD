@@ -13,8 +13,10 @@ expr0 = do
         expr
     <?> "an expression"
 
-nonOperator :: GenParser Char st Expr
-nonOperator = do -- boolean true
+-- parse expressions that don't associate, either because they are not operators or because they are operators 
+-- that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
+nonAssociativeExpr :: GenParser Char st Expr
+nonAssociativeExpr = do -- boolean true
         matchTrue
         return $ LitE $ OBool True
     <|> do -- boolean false
@@ -31,10 +33,10 @@ nonOperator = do -- boolean true
     <|> do -- string literal
         str <- literalString
         return $ LitE $ OString str
-    <|> do
+    <|> do -- non-keyword identifier
         ident <- identifier
         return $ Var ident
-    <|> do
+    <|> do -- parenthesized expression
         matchChar '('
         expr <- expr
         matchChar ')'
@@ -43,6 +45,7 @@ nonOperator = do -- boolean true
         matchVectorOrRange
     <?> "an expression"
 
+--There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
 matchVectorOrRange :: GenParser Char st Expr
 matchVectorOrRange = do
         matchChar '['
@@ -74,10 +77,11 @@ matchVectorOrRange = do
                 )
             )
 
-    
+-- combine left and right operands with an binary operator
 binaryOperation :: String -> Expr -> Expr -> Expr
 binaryOperation symbol left right = Var symbol :$ [left, right]
 
+-- an assignment expression within a let's bindings list
 assignment :: GenParser Char st Expr
 assignment = do
     ident <- identifier
@@ -85,6 +89,7 @@ assignment = do
     expr <- expr
     return $ ListE [Var ident, expr]
 
+-- build nested let statements when foldr'd.
 bindLets :: Expr -> Expr -> Expr
 bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
 bindLets _ e = e
@@ -93,7 +98,7 @@ bindLets _ e = e
 -- In the levels list, the first element is the lowest precedent, and the last is the highest.
 -- "higher" represents the higher precedence parser, ie. the next one in the levels list.
 -- "fix $ \self ->..." is used to consume all expressions in the same level, "self" being the current level.
-expr = foldr ($) nonOperator levels
+expr = foldr ($) nonAssociativeExpr levels
     where
         levels = 
           [ id
@@ -107,7 +112,7 @@ expr = foldr ($) nonOperator levels
             <|>
                 higher
 
-          , \higher -> fix $ \self -> do -- ternary operator, ? :
+          , \higher -> fix $ \self -> do -- ?: ternary operator.
                condition <- higher 
                (do
                     matchChar '?'
@@ -118,12 +123,12 @@ expr = foldr ($) nonOperator levels
                 <|>
                     return condition)
 
-          , \higher -> do -- || operator
+          , \higher -> do -- || boolean OR operator
                 chainl1 higher (do
                     op <- matchOR
                     return $ binaryOperation op)
                     
-          , \higher -> do -- && operator
+          , \higher -> do -- && boolean AND operator
                 chainl1 higher (do
                     op <- matchAND
                     return $ binaryOperation op)
@@ -140,45 +145,64 @@ expr = foldr ($) nonOperator levels
                     
           , \higher -> do -- + and - operators
                 chainl1 higher (do
-                    op <- matchChar '-' <|> matchChar '+'
+                    op <- matchChar '+' <|> matchChar '-'
                     return $ binaryOperation op)
 
-          , \higher -> fix $ \self -> -- OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
+          , \higher -> do -- ++ string catenation operator. This is an ExtOpenScad operation that is not available in OpenSCAD.
+                chainl1 higher (do
+                    op <- matchCAT
+                    return $ binaryOperation op)
+
+          , \higher -> fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
                 do
-                    bang <- matchChar '!'
+                    op <- matchChar '!'
                     right <- self
-                    return $ Var bang :$ [right]
+                    return $ Var op :$ [right]
                 <|> higher
+
+          , \higher -> do -- ^ exponent operator
+                chainl1 higher (do
+                        op <- matchChar '^'
+                        return $ binaryOperation op)
 
           , \higher -> do -- *, /, % operators
                 chainl1 higher (do
                         op <- matchChar '*' <|> matchChar '/' <|> matchChar '%'
                         return $ binaryOperation op)
 
-          , \higher -> fix $ \self -> -- unary -, +. OpenSCAD's YACC parser puts '-' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
-                do
+          , \higher -> fix $ \self -> -- Not sure where OpenSCAD puts this in the order of operations, but C++ puts it about here.
+                do -- Unary -. Handle literal numbers by negating them. Should maybe let an AST optimizer do that, but there isn't one. :)
                     negative <- matchChar '-'
                     right <- self
                     return $ case right of LitE (ONum num) -> LitE $ ONum (-num)
                                            LitE (OString str) -> LitE OUndefined
                                            expr -> Var negative :$ [expr]
-                <|> do
+                <|> do -- Unary +. Handle this by ignoring the +
                     matchChar '+'
                     right <- self
                     return $ right
                 <|> higher
 
-          , \higher -> 
-                do left <- higher -- function call - in OpenSCAD a function call can only happen to a identifier. In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
-                   (do
-                        matchChar '('
-                        arguments <- sepBy expr (matchChar ',')
-                        matchChar ')'
-                        return $ left :$ arguments
-                    <|> do 
-                        matchChar '['
-                        index <- expr
-                        matchChar ']'
-                        return $ Var "index" :$ [left, index]
-                    <|> return left)
+          , \higher ->
+                do left <- higher -- function call and vector index - in OpenSCAD a function call can only happen to a identifier. 
+                                  -- In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
+                   nestedExprs <- functionCallAndIndex left
+                   return $ nestedExprs
           ]
+
+functionCallAndIndex :: Expr -> GenParser Char st Expr
+functionCallAndIndex left = 
+    do -- function call of function returned by the expression to the left
+        matchChar '('
+        arguments <- sepBy expr (matchChar ',')
+        matchChar ')'
+        right <- functionCallAndIndex $ left :$ arguments
+        return $ right
+    <|> do -- vector index of vector returned by the expression to the left
+        matchChar '['
+        index <- expr
+        matchChar ']'
+        right <- functionCallAndIndex $ Var "index" :$ [left, index]
+        return $ right
+    <|> do -- no match, just return the left expression
+        return $ left

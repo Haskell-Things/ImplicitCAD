@@ -31,7 +31,7 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
 
-enableAlternateParser = False
+enableAlternateParser = True
 
 originalParserAdditionAstStyle :: Expectation -> Expectation
 originalParserAdditionAstStyle a =
@@ -69,6 +69,10 @@ logicalSpec = do
       originalParserAdditionAstStyle $ ternaryIssue $
       "1 > 0 ? 5 : 1 + 2" -->
         ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
+    specify "nested in true and false expressions" $
+     experimentalFeature $
+      "c0 ? c1 ? t1 : f1 : c2 ? t2 : f2" -->
+      ternary [Var "c0", ternary [Var "c1",Var "t1",Var "f1"], ternary [Var "c2",Var "t2",Var "f2"]]
 
 literalSpec :: Spec
 literalSpec = do
@@ -208,27 +212,30 @@ exprSpec = do
         "1 + 2 - 3 + 4 - 5 - 6" --> minus [minus [plus [minus [plus [num 1, num 2], num 3], num 4], num 5], num 6]
     it "handles exponentiation" $
       "x ^ y" --> power [Var "x", Var "y"]
-    it "handles multiple exponentiations" $
-      "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
+    it "handles multiple exponentiations" $ do
+      originalParserAdditionAstStyle $
+        "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
+      experimentalParserAstStyle $
+        "x ^ y ^ z" -->  power [power [Var "x", Var "y"], Var "z"]
     it "handles *" $ do
-     originalParserAdditionAstStyle $
-      "3 * 4" --> mult [num 3, num 4]
-     experimentalParserAstStyle $
-      "3 * 4" --> mult [num 3, num 4]
+      originalParserAdditionAstStyle $
+        "3 * 4" --> mult [num 3, num 4]
+      experimentalParserAstStyle $
+        "3 * 4" --> mult [num 3, num 4]
     it "handles > 2 term *" $ do
-     originalParserAdditionAstStyle $
-      "3 * 4 * 5" --> mult [num 3, num 4, num 5]
-     experimentalParserAstStyle $
-      "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
+      originalParserAdditionAstStyle $
+        "3 * 4 * 5" --> mult [num 3, num 4, num 5]
+      experimentalParserAstStyle $
+        "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
     it "handles /" $
       "4.2 / 2.3" --> divide [num 4.2, num 2.3]
-    it "handles precedence" $ do
-     originalParserAdditionAstStyle $
+    it "handles precedence" $
       "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
-     experimentalParserAstStyle $
-      "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
-    it "handles append" $
-      "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]
+    it "handles append" $ do
+      originalParserAdditionAstStyle $
+        "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]
+      experimentalParserAstStyle $
+        "foo ++ bar ++ baz" --> append [append [Var "foo", Var "bar"], Var "baz"]
   describe "logical operators" logicalSpec
   describe "let expressions" letBindingSpec
   describe "application" $ do
@@ -238,4 +245,4 @@ exprSpec = do
     specify "multiple" $
       "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
     specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> (index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"])
+      "foo(x)[0](y)" --> index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"]

@@ -65,6 +65,7 @@ matchEQ = P.reservedOp lexer "==" >> return "=="
 matchNE = P.reservedOp lexer "!=" >> return "!="
 matchAND = P.reservedOp lexer "&&" >> return "&&"
 matchOR = P.reservedOp lexer "||" >> return "||"
+matchCAT = P.reservedOp lexer "++" >> return "++"
 
 -- single character tokens can be handled fine in the main parser, just strip the trailing whitespace.
 matchChar char = P.lexeme lexer $ P.symbol lexer [char]
