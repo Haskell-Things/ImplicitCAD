@@ -31,6 +31,8 @@ module ParserSpec.Util
        , index
        , lambda
        , parseWithLeftOver
+       , origParseExpr
+       , parseAltExpr
        ) where
 
 -- be explicit about where we get things from.
@@ -50,8 +52,12 @@ import Test.Hspec (Expectation, shouldBe)
 
 import Data.Either (Either(Right))
 
--- the expression parser entry point.
+-- The expression parser entry point.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+
+-- The alternative parser entry point.
+import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
+
 
 -- An operator for expressions for "the left side should parse to the right side."
 infixr 1 -->
@@ -112,3 +118,12 @@ parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""
   where
     leftOver :: Parser String
     leftOver = manyTill anyChar eof
+
+parseWithEof :: Parser a -> String -> String -> Either ParseError a
+parseWithEof p = parse (p <* eof)
+
+origParseExpr :: String -> Either ParseError Expr
+origParseExpr = parseWithEof expr0 "expr"
+
+parseAltExpr :: String -> Either ParseError Expr
+parseAltExpr = parseWithEof altExpr "altexpr"

@@ -1,11 +1,15 @@
--- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+ -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
 module ParserSpec.Expr (exprSpec) where
 
+
 -- Be explicit about what we import.
 import Prelude (Bool(True, False), ($))
+
+-- TODO remove tracing
+import Debug.Trace
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
@@ -17,10 +21,20 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)), Patter
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver, parseAltExpr, origParseExpr)
+
+import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+import Graphics.Implicit.ExtOpenScad.Parser.Statement
+import Text.ParserCombinators.Parsec hiding (State)
+import Data.Either
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
+
+
+-- to choose which expression parser to test, change enableAlternateParser to True or False
+enableAlternateParser = False
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
@@ -31,11 +45,15 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
 
--- | not used in any examples yet?
-letIssue :: Expectation -> Expectation
-letIssue _ = pendingWith "parser doesn't handle let as an rvalue of an arithmetic operator."
+parseExpr = 
+    if enableAlternateParser
+    then trace ("altExpr") parseAltExpr
+    else trace ("origExpr") origParseExpr
 
-enableAlternateParser = True
+testParser = 
+    if enableAlternateParser
+    then trace ("altExpr") altExpr
+    else trace ("origExpr") expr0
 
 originalParserAdditionAstStyle :: Expectation -> Expectation
 originalParserAdditionAstStyle a =
@@ -98,15 +116,25 @@ letBindingSpec :: Spec
 letBindingSpec = do
   it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
-  it "handles multiple variable let" $
-    "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles multiple variable let" $ do
+    originalParserAdditionAstStyle $
+      "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    experimentalParserAstStyle $
+      "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles empty let" $
     "let () a" --> (Var "a")
-  it "handles nested let" $
-    "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles let on right side of a binary operator" $
-    letIssue $
-    "1 + let(b = y) b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles nested let" $ do
+    originalParserAdditionAstStyle $
+      "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    experimentalParserAstStyle $
+      "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles let on right side of a binary operator" $ do
+    originalParserAdditionAstStyle $
+      "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
+    experimentalParserAstStyle $
+      "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
+  it "handles let on right side of a unary negation" $
+    "- let(b = y) b" --> negate [lambda [Name "b"] (Var "b") [Var "y"]]
 
 exprSpec :: Spec
 exprSpec = do

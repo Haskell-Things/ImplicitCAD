@@ -59,6 +59,7 @@ Library
                     -- These modules are exposed for the unit tests against the parser interface.
                     Graphics.Implicit.ExtOpenScad.Parser.Statement
                     Graphics.Implicit.ExtOpenScad.Parser.Expr
+                    Graphics.Implicit.ExtOpenScad.Parser.AltExpr
                     Graphics.Implicit.ExtOpenScad.Definitions
                     -- These are exposed for Benchmark.
                     Graphics.Implicit.Export.SymbolicObj2
@@ -79,6 +80,7 @@ Library
                   Graphics.Implicit.ObjectUtil.GetImplicit3
                   Graphics.Implicit.ExtOpenScad.Default
                   Graphics.Implicit.ExtOpenScad.Parser.Util
+                  Graphics.Implicit.ExtOpenScad.Parser.Lexer
                   Graphics.Implicit.ExtOpenScad.Eval.Statement
                   Graphics.Implicit.ExtOpenScad.Eval.Expr
                   Graphics.Implicit.ExtOpenScad.Util.ArgParser
