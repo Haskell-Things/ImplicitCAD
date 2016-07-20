@@ -31,6 +31,10 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
 
+-- | not used in any examples yet?
+letIssue :: Expectation -> Expectation
+letIssue _ = pendingWith "parser doesn't handle let as an rvalue of an arithmetic operator."
+
 enableAlternateParser = True
 
 originalParserAdditionAstStyle :: Expectation -> Expectation
@@ -100,6 +104,9 @@ letBindingSpec = do
     "let () a" --> (Var "a")
   it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles let on right side of a binary operator" $
+    letIssue $
+    "1 + let(b = y) b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
 
 exprSpec :: Spec
 exprSpec = do

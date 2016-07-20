@@ -102,16 +102,6 @@ expr = foldr ($) nonAssociativeExpr levels
     where
         levels = 
           [ id
-          , \higher -> fix $ \self -> do -- "let" expression
-                matchLet
-                matchChar '('
-                bindings <- sepBy assignment (matchChar ',')
-                matchChar ')'
-                expr <- self
-                return $ foldr bindLets expr bindings
-            <|>
-                higher
-
           , \higher -> fix $ \self -> do -- ?: ternary operator.
                condition <- higher 
                (do
@@ -188,6 +178,17 @@ expr = foldr ($) nonAssociativeExpr levels
                                   -- In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
                    nestedExprs <- functionCallAndIndex left
                    return $ nestedExprs
+
+          , \higher -> fix $ \self -> do -- "let" expression
+                matchLet
+                matchChar '('
+                bindings <- sepBy assignment (matchChar ',')
+                matchChar ')'
+                expr <- self
+                return $ foldr bindLets expr bindings
+            <|>
+                higher
+
           ]
 
 functionCallAndIndex :: Expr -> GenParser Char st Expr
