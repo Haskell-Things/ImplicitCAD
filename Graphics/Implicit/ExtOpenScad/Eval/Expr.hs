@@ -63,7 +63,30 @@ evalExpr' (ListE exprs) = do
     valFuncs <- mapM evalExpr' exprs
     return $ \s -> OList $ map ($s) valFuncs
 
-evalExpr' (fexpr :$ argExprs) = do
+evalExpr' (Var "+" :$ [ListE argExprs]) =
+    evalExpr'' $ Var "+" :$ [ListE argExprs]
+
+evalExpr' (Var "+" :$ argExprs) =
+    evalExpr'' $ Var "+" :$ [ListE argExprs]
+
+evalExpr' (Var "*" :$ [ListE argExprs]) =
+    evalExpr'' $ Var "*" :$ [ListE argExprs]
+
+evalExpr' (Var "*" :$ argExprs) =
+    evalExpr'' $ Var "*" :$ [ListE argExprs]
+
+evalExpr' (fexpr :$ argExprs) = evalExpr'' (fexpr :$ argExprs)
+
+evalExpr' (LamE pats fexpr) = do
+    fparts <- forM pats $ \pat -> do
+        modify (second (patVars pat ++))
+        return $ \f xss -> OFunc $ \val -> case patMatch pat val of
+            Just xs -> f (xs ++ xss)
+            Nothing -> OError ["Pattern match failed"]
+    fval <- evalExpr' fexpr
+    return $ foldr ($) fval fparts
+
+evalExpr'' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
     argValFuncs <- mapM evalExpr' argExprs
     return $ \s -> app (fValFunc s) (map ($s) argValFuncs)
@@ -75,16 +98,6 @@ evalExpr' (fexpr :$ argExprs) = do
                     app' x _ = OError ["Can't apply arguments to " ++ oTypeStr x]
                 (Just err, _     ) -> OError [err]
                 (_,      Just err) -> OError [err]
-
-evalExpr' (LamE pats fexpr) = do
-    fparts <- forM pats $ \pat -> do
-        modify (second (patVars pat ++))
-        return $ \f xss -> OFunc $ \val -> case patMatch pat val of
-            Just xs -> f (xs ++ xss)
-            Nothing -> OError ["Pattern match failed"]
-    fval <- evalExpr' fexpr
-    return $ foldr ($) fval fparts
-
 
 --------------
 
