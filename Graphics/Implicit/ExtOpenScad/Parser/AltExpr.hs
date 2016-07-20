@@ -1,7 +1,8 @@
 module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0, altExpr) where
 
 -- TODO remove tracing
-import Debug.Trace;
+import Debug.Trace
+
 import Control.Monad.Fix
 import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
@@ -11,8 +12,8 @@ altExpr = expr0
 
 expr0 = do
         expr
-    <?> "an expression"
-
+--    <?> "an expression"
+    
 -- parse expressions that don't associate, either because they are not operators or because they are operators 
 -- that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
 nonAssociativeExpr :: GenParser Char st Expr
@@ -43,7 +44,7 @@ nonAssociativeExpr = do -- boolean true
         return expr
     <|> do
         matchVectorOrRange
-    <?> "an expression"
+--    <?> "an expression"
 
 --There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
 matchVectorOrRange :: GenParser Char st Expr
@@ -98,10 +99,12 @@ bindLets _ e = e
 -- In the levels list, the first element is the lowest precedent, and the last is the highest.
 -- "higher" represents the higher precedence parser, ie. the next one in the levels list.
 -- "fix $ \self ->..." is used to consume all expressions in the same level, "self" being the current level.
+expr :: GenParser Char st Expr
 expr = foldr ($) nonAssociativeExpr levels
     where
         levels = 
           [ id
+                
           , \higher -> fix $ \self -> do -- ?: ternary operator.
                condition <- higher 
                (do
@@ -150,8 +153,8 @@ expr = foldr ($) nonAssociativeExpr levels
                     return $ Var op :$ [right]
                 <|> higher
 
-          , \higher -> do -- ^ exponent operator
-                chainl1 higher (do
+          , \higher -> do -- ^ exponent operator. This is not available in OpenSCAD.
+                chainr1 higher (do
                         op <- matchChar '^'
                         return $ binaryOperation op)
 
@@ -161,12 +164,10 @@ expr = foldr ($) nonAssociativeExpr levels
                         return $ binaryOperation op)
 
           , \higher -> fix $ \self -> -- Not sure where OpenSCAD puts this in the order of operations, but C++ puts it about here.
-                do -- Unary -. Handle literal numbers by negating them. Should maybe let an AST optimizer do that, but there isn't one. :)
-                    negative <- matchChar '-'
+                do -- Unary -. -- Unary - applied to strings is undefined, but handle that in the interpreter.
+                    matchChar '-'
                     right <- self
-                    return $ case right of LitE (ONum num) -> LitE $ ONum (-num)
-                                           LitE (OString str) -> LitE OUndefined
-                                           expr -> Var negative :$ [expr]
+                    return $ Var "negate" :$ [right]
                 <|> do -- Unary +. Handle this by ignoring the +
                     matchChar '+'
                     right <- self
@@ -179,12 +180,12 @@ expr = foldr ($) nonAssociativeExpr levels
                    nestedExprs <- functionCallAndIndex left
                    return $ nestedExprs
 
-          , \higher -> fix $ \self -> do -- "let" expression
+          , \higher -> do -- "let" expression
                 matchLet
                 matchChar '('
                 bindings <- sepBy assignment (matchChar ',')
                 matchChar ')'
-                expr <- self
+                expr <- expr
                 return $ foldr bindLets expr bindings
             <|>
                 higher
