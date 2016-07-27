@@ -1,20 +1,17 @@
 module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0, altExpr) where
 
--- TODO remove tracing
-import Debug.Trace
-
 import Control.Monad.Fix
 import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer
 
+altExpr :: GenParser Char st Expr
 altExpr = expr0
 
-expr0 = do
-        expr
---    <?> "an expression"
-    
--- parse expressions that don't associate, either because they are not operators or because they are operators 
+expr0 :: GenParser Char st Expr
+expr0 = expr
+
+-- parse expressions that don't associate, either because they are not operators or because they are operators
 -- that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
 nonAssociativeExpr :: GenParser Char st Expr
 nonAssociativeExpr = do -- boolean true
@@ -38,45 +35,42 @@ nonAssociativeExpr = do -- boolean true
         ident <- identifier
         return $ Var ident
     <|> do -- parenthesized expression
-        matchChar '('
+        matchTok '('
         expr <- expr
-        matchChar ')'
+        matchTok ')'
         return expr
-    <|> do
+    <|>
         matchVectorOrRange
 --    <?> "an expression"
 
 --There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
 matchVectorOrRange :: GenParser Char st Expr
 matchVectorOrRange = do
-        matchChar '['
-        (do
-            matchChar ']'
+        matchTok '['
+        do
+            matchTok ']'
             return $ ListE []
          <|> do
             first <- expr
-            (do
-                matchChar ']'
+            do
+                matchTok ']'
                 return $ ListE [first]
              <|> do
-                matchChar ','
-                exprs <- sepBy expr (matchChar ',')
-                matchChar ']'
+                matchTok ','
+                exprs <- sepBy expr (matchTok ',')
+                matchTok ']'
                 return $ ListE $ first:exprs
              <|> do
-                matchChar ':'
+                matchTok ':'
                 second <- expr
-                (do
-                    matchChar ':'
+                do
+                    matchTok ':'
                     third <- expr
-                    matchChar ']'
+                    matchTok ']'
                     return $ Var "list_gen" :$ [ListE [first, second, third]]
                  <|> do
-                    matchChar ']'
+                    matchTok ']'
                     return $ Var "list_gen" :$ [ListE [first, LitE $ ONum 1.0, second]]
-                    )
-                )
-            )
 
 -- combine left and right operands with an binary operator
 binaryOperation :: String -> Expr -> Expr -> Expr
@@ -86,13 +80,13 @@ binaryOperation symbol left right = Var symbol :$ [left, right]
 assignment :: GenParser Char st Expr
 assignment = do
     ident <- identifier
-    matchChar '='
+    matchTok '='
     expr <- expr
     return $ ListE [Var ident, expr]
 
 -- build nested let statements when foldr'd.
 bindLets :: Expr -> Expr -> Expr
-bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
 bindLets _ e = e
 
 -- Borrowed the pattern from http://compgroups.net/comp.lang.functional/parsing-ternary-operator-with-parsec/1052460
@@ -102,89 +96,87 @@ bindLets _ e = e
 expr :: GenParser Char st Expr
 expr = foldr ($) nonAssociativeExpr levels
     where
-        levels = 
+        levels =
           [ id
-                
+
           , \higher -> fix $ \self -> do -- ?: ternary operator.
-               condition <- higher 
-               (do
-                    matchChar '?'
+               condition <- higher
+               do
+                    matchTok '?'
                     trueExpr <- self
-                    matchChar ':'
+                    matchTok ':'
                     falseExpr <- self
                     return $ Var "?" :$ [condition, trueExpr, falseExpr]
                 <|>
-                    return condition)
+                    return condition
 
-          , \higher -> do -- || boolean OR operator
+          , \higher -> -- || boolean OR operator
                 chainl1 higher (do
                     op <- matchOR
                     return $ binaryOperation op)
-                    
-          , \higher -> do -- && boolean AND operator
+
+          , \higher -> -- && boolean AND operator
                 chainl1 higher (do
                     op <- matchAND
                     return $ binaryOperation op)
-                    
-          , \higher -> do -- <, <=, >=, > comparison operators
+
+          , \higher -> -- <, <=, >=, > comparison operators
                 chainl1 higher (do
-                    op <- matchChar '<' <|> matchLE <|> matchGE <|> matchChar '>'
-                    return $ binaryOperation op)
-                    
-          , \higher -> do -- == and != operators
-                chainl1 higher (do
-                    op <-(matchEQ <|> matchNE)
-                    return $ binaryOperation op)
-                    
-          , \higher -> do -- + and - operators
-                chainl1 higher (do
-                    op <- matchChar '+' <|> matchChar '-'
+                    op <- matchTok '<' <|> matchLE <|> matchGE <|> matchTok '>'
                     return $ binaryOperation op)
 
-          , \higher -> do -- ++ string catenation operator. This is an ExtOpenScad operation that is not available in OpenSCAD.
+          , \higher -> -- == and != operators
+                chainl1 higher (do
+                    op <-matchEQ <|> matchNE
+                    return $ binaryOperation op)
+
+          , \higher -> -- + and - operators
+                chainl1 higher (do
+                    op <- matchTok '+' <|> matchTok '-'
+                    return $ binaryOperation op)
+
+          , \higher -> -- ++ string catenation operator. This is an ExtOpenScad operation that is not available in OpenSCAD.
                 chainl1 higher (do
                     op <- matchCAT
                     return $ binaryOperation op)
 
           , \higher -> fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
                 do
-                    op <- matchChar '!'
+                    op <- matchTok '!'
                     right <- self
                     return $ Var op :$ [right]
                 <|> higher
 
-          , \higher -> do -- ^ exponent operator. This is not available in OpenSCAD.
+          , \higher -> -- ^ exponent operator. This is not available in OpenSCAD.
                 chainr1 higher (do
-                        op <- matchChar '^'
+                        op <- matchTok '^'
                         return $ binaryOperation op)
 
-          , \higher -> do -- *, /, % operators
+          , \higher -> -- *, /, % operators
                 chainl1 higher (do
-                        op <- matchChar '*' <|> matchChar '/' <|> matchChar '%'
+                        op <- matchTok '*' <|> matchTok '/' <|> matchTok '%'
                         return $ binaryOperation op)
 
           , \higher -> fix $ \self -> -- Not sure where OpenSCAD puts this in the order of operations, but C++ puts it about here.
                 do -- Unary -. -- Unary - applied to strings is undefined, but handle that in the interpreter.
-                    matchChar '-'
+                    matchTok '-'
                     right <- self
                     return $ Var "negate" :$ [right]
                 <|> do -- Unary +. Handle this by ignoring the +
-                    matchChar '+'
-                    right <- self
-                    return $ right
+                    matchTok '+'
+                    self
                 <|> higher
 
           , \higher ->
-                do left <- higher -- function call and vector index - in OpenSCAD a function call can only happen to a identifier. 
+                do left <- higher -- function call and vector index - in OpenSCAD a function call can only happen to a identifier.
                                   -- In ExtOpenScad a function call can happen to any expression that returns a function (or lambda expression)
-                   nestedExprs <- functionCallAndIndex left
-                   return $ nestedExprs
+                   functionCallAndIndex left
 
           , \higher -> do -- "let" expression
                 matchLet
-                matchChar '('
-                bindings <- sepBy assignment (matchChar ',')
-                matchChar ')'
+                matchTok '('
+                bindings <- sepBy assignment (matchTok ',')
+                matchTok ')'
                 expr <- expr
                 return $ foldr bindLets expr bindings
             <|>
@@ -193,18 +185,16 @@ expr = foldr ($) nonAssociativeExpr levels
           ]
 
 functionCallAndIndex :: Expr -> GenParser Char st Expr
-functionCallAndIndex left = 
+functionCallAndIndex left =
     do -- function call of function returned by the expression to the left
-        matchChar '('
-        arguments <- sepBy expr (matchChar ',')
-        matchChar ')'
-        right <- functionCallAndIndex $ left :$ arguments
-        return $ right
+        matchTok '('
+        arguments <- sepBy expr (matchTok ',')
+        matchTok ')'
+        functionCallAndIndex $ left :$ arguments
     <|> do -- vector index of vector returned by the expression to the left
-        matchChar '['
+        matchTok '['
         index <- expr
-        matchChar ']'
-        right <- functionCallAndIndex $ Var "index" :$ [left, index]
-        return $ right
-    <|> do -- no match, just return the left expression
-        return $ left
+        matchTok ']'
+        functionCallAndIndex $ Var "index" :$ [left, index]
+    <|> -- no match, just return the left expression
+        return left
