@@ -103,6 +103,7 @@ data Statement st = Include String Bool
                | If Expr [st] [st]
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
+               | Sequence [st]
                | DoNothing
     deriving (Show, Eq)
 
