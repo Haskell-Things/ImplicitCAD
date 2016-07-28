@@ -32,37 +32,29 @@ input = many1 statement
 statement :: GenParser Char st StatementI
 statement =
     do
-        line <- lineNumber
-        _    <- many1 (matchTok ';')
-        return $ StatementI line DoNothing
+        _ <- many1 (matchTok ';')
+        returnStatement DoNothing
     <|> do
-        line  <- lineNumber
-        _     <- matchTok '{'
-        stmts <- many statement
-        _     <- matchTok '}'
-        return $ StatementI line $ Sequence stmts
+        stmts <- surroundedBy '{' (many statement) '}'
+        returnStatement $ Sequence stmts
     <|>
         assignment
     <|> do -- user module declaration, e.g. "module foo(a, b = [1,2]) { }
-        line       <- lineNumber
         _          <- matchModule
         moduleName <- identifier
-        _          <- matchTok '('
-        argDecls   <- argumentsDeclaration
-        _          <- matchTok ')'
+        argDecls   <- surroundedBy '(' argumentsDeclaration ')'
         stmt       <- statement
-        return $ StatementI line $ NewModule moduleName argDecls [stmt]
+        returnStatement $ NewModule moduleName argDecls [stmt]
 
 -- An assignment statement, not a default value assignment in formal parameters or an argument assignment in calling a module.
 assignment :: GenParser Char st StatementI
 assignment =
     do
-        line  <- lineNumber
         ident <- identifier
         _     <- matchTok '='
         expr  <- altExpr
         _     <- matchTok ';'
-        return $ StatementI line $ Name ident := expr
+        returnStatement $ Name ident := expr
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
@@ -76,5 +68,10 @@ argumentDeclaration =
         defaultValueExpression <- optionMaybe (matchTok '=' >> altExpr)
         return (parameterName, defaultValueExpression)
 
-lineNumber :: GenParser Char m Line
-lineNumber = fmap sourceLine getPosition
+surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
+surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
+
+returnStatement :: Statement StatementI -> GenParser Char st StatementI
+returnStatement ast = do
+    line <- fmap sourceLine getPosition
+    return $ StatementI line ast

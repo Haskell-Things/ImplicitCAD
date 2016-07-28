@@ -36,60 +36,11 @@ nonAssociativeExpr = do -- boolean true
     <|> do -- non-keyword identifier
         ident <- identifier
         return $ Var ident
-    <|> do -- parenthesized expression
-        _          <- matchTok '('
-        expression <- expr
-        _          <- matchTok ')'
-        return expression
+    <|> -- parenthesized expression
+        surroundedBy '(' expr ')'
     <|>
         matchVectorOrRange
 --    <?> "an expression"
-
---There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
-matchVectorOrRange :: GenParser Char st Expr
-matchVectorOrRange = do
-        _ <- matchTok '['
-        do
-            _ <- matchTok ']'
-            return $ ListE []
-         <|> do
-            first <- expr
-            do
-                _ <- matchTok ']'
-                return $ ListE [first]
-             <|> do
-                _     <- matchTok ','
-                exprs <- sepBy expr (matchTok ',')
-                _     <- matchTok ']'
-                return $ ListE $ first:exprs
-             <|> do
-                _      <- matchTok ':'
-                second <- expr
-                do
-                    _     <- matchTok ':'
-                    third <- expr
-                    _     <- matchTok ']'
-                    return $ Var "list_gen" :$ [ListE [first, second, third]]
-                 <|> do
-                    _ <- matchTok ']'
-                    return $ Var "list_gen" :$ [ListE [first, LitE $ ONum 1.0, second]]
-
--- combine left and right operands with an binary operator
-binaryOperation :: String -> Expr -> Expr -> Expr
-binaryOperation symbol left right = Var symbol :$ [left, right]
-
--- an assignment expression within a let's bindings list
-assignment :: GenParser Char st Expr
-assignment = do
-    ident       <- identifier
-    _           <- matchTok '='
-    expression  <- expr
-    return $ ListE [Var ident, expression]
-
--- build nested let statements when foldr'd.
-bindLets :: Expr -> Expr -> Expr
-bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
-bindLets _ e = e
 
 -- Borrowed the pattern from http://compgroups.net/comp.lang.functional/parsing-ternary-operator-with-parsec/1052460
 -- In the levels list, the first element is the lowest precedent, and the last is the highest.
@@ -176,9 +127,7 @@ expr = foldr ($) nonAssociativeExpr levels
 
           , \higher -> do -- "let" expression
                 _          <- matchLet
-                _          <- matchTok '('
-                bindings   <- sepBy assignment (matchTok ',')
-                _          <- matchTok ')'
+                bindings   <- surroundedBy '(' (assignment `sepBy` matchTok ',') ')'
                 expression <- expr
                 return $ foldr bindLets expression bindings
             <|>
@@ -188,14 +137,59 @@ expr = foldr ($) nonAssociativeExpr levels
 functionCallAndIndex :: Expr -> GenParser Char st Expr
 functionCallAndIndex left =
     do -- function call of function returned by the expression to the left
-        _         <- matchTok '('
-        arguments <- sepBy expr (matchTok ',')
-        _         <- matchTok ')'
+        arguments <- surroundedBy '(' (expr `sepBy` matchTok ',') ')'
         functionCallAndIndex $ left :$ arguments
     <|> do -- vector index of vector returned by the expression to the left
-        _     <- matchTok '['
-        index <- expr
-        _     <- matchTok ']'
+        index <- surroundedBy '[' expr ']'
         functionCallAndIndex $ Var "index" :$ [left, index]
     <|> -- no match, just return the left expression
         return left
+
+--There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
+matchVectorOrRange :: GenParser Char st Expr
+matchVectorOrRange = do
+        _ <- matchTok '['
+        do
+            _ <- matchTok ']'
+            return $ ListE []
+         <|> do
+            first <- expr
+            do
+                _ <- matchTok ']'
+                return $ ListE [first]
+             <|> do
+                _     <- matchTok ','
+                exprs <- sepBy expr (matchTok ',')
+                _     <- matchTok ']'
+                return $ ListE $ first:exprs
+             <|> do
+                _      <- matchTok ':'
+                second <- expr
+                do
+                    _     <- matchTok ':'
+                    third <- expr
+                    _     <- matchTok ']'
+                    return $ Var "list_gen" :$ [ListE [first, second, third]]
+                 <|> do
+                    _ <- matchTok ']'
+                    return $ Var "list_gen" :$ [ListE [first, LitE $ ONum 1.0, second]]
+
+-- combine left and right operands with an binary operator
+binaryOperation :: String -> Expr -> Expr -> Expr
+binaryOperation symbol left right = Var symbol :$ [left, right]
+
+-- an assignment expression within a let's bindings list
+assignment :: GenParser Char st Expr
+assignment = do
+    ident       <- identifier
+    _           <- matchTok '='
+    expression  <- expr
+    return $ ListE [Var ident, expression]
+
+-- build nested let statements when foldr'd.
+bindLets :: Expr -> Expr -> Expr
+bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
+bindLets _ e = e
+
+surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
+surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
