@@ -101,6 +101,7 @@ data Statement st = Include String Bool
                | Echo [Expr]
                | For Pattern Expr [st]
                | If Expr [st] [st]
+               | NewFunction Symbol [(Symbol, Maybe Expr)] Expr
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
                | Sequence [st]
