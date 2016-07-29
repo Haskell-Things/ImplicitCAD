@@ -3,6 +3,7 @@ module Graphics.Implicit.ExtOpenScad.Parser.AltStatement (
     altParseProgram
 ) where
 
+import Data.Maybe
 import Text.ParserCombinators.Parsec  hiding (State)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer
@@ -33,7 +34,7 @@ input = many1 statement
 statement :: GenParser Char st StatementI
 statement =
         do
-        _ <- many1 (matchTok ';')
+        _ <- oneOrMoreSemis
         returnStatement DoNothing
     <|> do
         stmts <- surroundedBy '{' (many statement) '}'
@@ -54,8 +55,25 @@ statement =
         argDecls   <- surroundedBy '(' argumentsDeclaration ')'
         _          <- matchTok '='
         funcExpr   <- expression
-        _          <- many1 (matchTok ';')
+        _          <- oneOrMoreSemis
         returnStatement $ NewFunction funcName argDecls funcExpr
+    <|> do
+        _          <- matchIf
+        condition  <- surroundedBy '(' expression ')'
+        trueScope  <- statement
+        falseMaybe <- optionMaybe $ matchElse >> statement
+        n <- nothing
+        returnStatement $ If condition [trueScope] [fromMaybe n falseMaybe]
+
+nothing :: GenParser Char st StatementI
+nothing = returnStatement DoNothing
+
+flattenStatement :: GenParser Char st [StatementI]
+flattenStatement = do
+    stmts <- statement
+    case stmts of StatementI _ DoNothing -> return []
+                  StatementI _ (Sequence [sts]) -> return [sts]
+                  _ -> return [stmts]
 
 -- Assignment and module instantiation both start with the same token, an identifier.
 -- So, in order to keep the parser predictive (for performance reasons),
@@ -83,7 +101,7 @@ assignment ident =
     do
     _     <- matchTok '='
     expr  <- expression
-    _     <- matchTok ';'
+    _     <- oneOrMoreSemis
     returnStatement $ Name ident := expr
 
 flaggedModuleInstantiation :: GenParser Char st StatementI
@@ -133,7 +151,7 @@ childStatements = many innerChildStatement
 childStatement :: GenParser Char st StatementI
 childStatement =
         do
-        _ <- matchTok ';'
+        _ <- oneOrMoreSemis
         returnStatement DoNothing
     <|> do
         statements <- surroundedBy '{' childStatements '}'
@@ -144,7 +162,7 @@ childStatement =
 innerChildStatement :: GenParser Char st StatementI
 innerChildStatement =
         do
-        _ <- matchTok ';'
+        _ <- oneOrMoreSemis
         returnStatement DoNothing
     <|> do
         statements <- surroundedBy '{' childStatements '}'
@@ -176,6 +194,9 @@ argumentCall = do
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
 oneOrMoreCommas :: GenParser Char st ()
 oneOrMoreCommas = skipMany1 $ matchTok ','
+
+oneOrMoreSemis :: GenParser Char st ()
+oneOrMoreSemis =  skipMany1 $ matchTok ';'
 
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
 surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
