@@ -65,8 +65,17 @@ statement =
 -- parser.
 moduleInstantiationOrAssignment :: GenParser Char st StatementI
 moduleInstantiationOrAssignment = do
-    ident <- identifier
-    moduleInstantiationTail ident <|> assignment ident
+        ident <- identifier
+        moduleInstantiationTail ident <|> assignment ident
+    <|> do
+        _ <- matchFor
+        moduleInstantiationTail "for"
+    <|> do
+        _ <- matchEach
+        moduleInstantiationTail "each"
+    <|> do
+        _ <- matchLet
+        moduleInstantiationTail "let"
 
 -- An assignment statement, not a default value assignment in formal parameters or an argument assignment in calling a module.
 assignment :: Symbol -> GenParser Char st StatementI
@@ -148,17 +157,20 @@ innerChildStatement =
 argumentsCall :: GenParser Char st [(Maybe Symbol, Expr)]
 argumentsCall = sepEndBy argumentCall oneOrMoreCommas
 
-followedBy :: GenParser Char st a -> GenParser Char st b -> GenParser Char st a
-followedBy importantStuff recognize = do
-    result <- importantStuff
-    _      <- recognize
-    return result
-
 argumentCall :: GenParser Char st (Maybe Symbol, Expr)
 argumentCall = do
-    paramName <- optionMaybe $ identifier `followedBy` matchTok '='
     argValue  <- expression
-    return (paramName, argValue)
+    do
+        _ <- matchTok '='
+        expr <- expression
+        case argValue of --Var paramName :$ lambdaParams -> return (Just paramName, LamE lambdaParams expr)
+                         Var paramName -> return (Just paramName, expr)
+                         _ -> return (Nothing, argValue)
+      <|>
+        return (Nothing, argValue)
+
+--Var "f" :$ [LitE 1.0,LitE 2.0]))]
+--LamE [Name boundName] nestedExpr :$ [boundExpr]
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
