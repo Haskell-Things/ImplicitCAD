@@ -140,7 +140,11 @@ runStatementI (StatementI _ _ (Include name injectVals)) = do
             vals' <- getVals
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
-runStatementI (StatementI _ _ DoNothing) = liftIO $ putStrLn "Do Nothing?"
+runStatementI (StatementI _ _ (Sequence suite)) =
+    runSuite suite
+
+runStatementI (StatementI _ _ DoNothing) =
+    return ()
 
 runSuite :: [StatementI] -> StateC ()
 runSuite = mapM_ runStatementI
