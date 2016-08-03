@@ -32,9 +32,8 @@ import Data.Either
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
-
 -- to choose which expression parser to test, change enableAlternateParser to True or False
-enableAlternateParser = False
+enableAlternateParser = True
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
@@ -50,7 +49,7 @@ parseExpr =
     then trace ("altExpr") parseAltExpr
     else trace ("origExpr") origParseExpr
 
-testParser = 
+testParser =
     if enableAlternateParser
     then trace ("altExpr") altExpr
     else trace ("origExpr") expr0
@@ -212,7 +211,7 @@ exprSpec = do
       "-\"foo\"" --> negate [stringLiteral "foo"]
     it "handles unary + with string literal" $
       "+\"foo\"" --> stringLiteral "foo"
-    it "handles +" $ do
+    it "handles 2 term +" $ do
       originalParserAdditionAstStyle $
         "1 + 2" --> plus [num 1, num 2]
       experimentalParserAstStyle $

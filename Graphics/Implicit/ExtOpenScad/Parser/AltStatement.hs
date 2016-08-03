@@ -68,13 +68,6 @@ statement =
 nothing :: GenParser Char st StatementI
 nothing = returnStatement DoNothing
 
-flattenStatement :: GenParser Char st [StatementI]
-flattenStatement = do
-    stmts <- statement
-    case stmts of StatementI _ DoNothing -> return []
-                  StatementI _ (Sequence [sts]) -> return [sts]
-                  _ -> return [stmts]
-
 -- Assignment and module instantiation both start with the same token, an identifier.
 -- So, in order to keep the parser predictive (for performance reasons),
 -- the grammar is factored to first recognize the identifier, and choose between
@@ -127,6 +120,14 @@ maybeFlaggedModuleInstantiation =
     <|> do
         moduleName <- identifier
         moduleInstantiationTail moduleName
+        _ <- matchFor
+        moduleInstantiationTail "for"
+    <|> do
+        _ <- matchEach
+        moduleInstantiationTail "each"
+    <|> do
+        _ <- matchLet
+        moduleInstantiationTail "let"
     where moduleFlag tok inst = matchTok tok >> inst
 
 moduleInstantiationTail :: Symbol -> GenParser Char st StatementI
@@ -204,7 +205,8 @@ surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok righ
 returnStatement :: Statement StatementI -> GenParser Char st StatementI
 returnStatement ast = do
     line <- fmap sourceLine getPosition
-    return $ StatementI line ast
+    column <- fmap sourceColumn getPosition
+    return $ StatementI line column ast
 
 expression :: GenParser Char st Expr
 expression = altExpr

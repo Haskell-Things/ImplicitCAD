@@ -13,18 +13,13 @@ module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup,
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal, StateC, CompState(CompState))
 
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
 import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
 import Data.Kind (Type)
-
--- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
-newtype CompState = CompState (VarLookup, [OVal], FilePath)
-
-type StateC = StateT CompState IO
 
 getVarLookup :: StateC VarLookup
 getVarLookup = fmap (\(CompState (a,_,_)) -> a) get

@@ -10,17 +10,18 @@ module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, putStrLn, concatMap, return, (++), fmap, reverse, fst, readFile)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
+                                                  Statement(Include, (:=), Echo, For, If, NewFunction, NewModule, ModuleCall, Sequence, DoNothing),
                                                   Pattern(Name),
                                                   Expr(LitE),
-                                                  OVal(OString, OBool, OList, OModule),
+                                                  OVal(OString, OBool, OList, OModule, OVargsModule),
                                                   VarLookup,
-                                                  StatementI(StatementI)
+                                                  StatementI(StatementI),
+                                                  CompState(CompState)
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -117,7 +118,11 @@ runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
         newVals <- case maybeMod of
             Just (OModule mod') -> liftIO ioNewVals where
                 argparser = mod' childVals
-                ioNewVals = fromMaybe (return []) (fst $ argMap argsVal argparser)
+                ioNewVals = case fst $ argMap argsVal argparser of
+                    Just iovals -> iovals
+                    Nothing     -> return []
+            Just (OVargsModule mod') ->
+                mod' argsVal
             Just foo            -> do
                     case getErrors foo of
                         Just err -> errorC lineN columnN err
@@ -142,6 +147,9 @@ runStatementI (StatementI _ _ (Include name injectVals)) = do
 
 runStatementI (StatementI _ _ (Sequence suite)) =
     runSuite suite
+
+runStatementI (StatementI _ _ (NewFunction _ _ _)) =
+    return ()
 
 runStatementI (StatementI _ _ DoNothing) =
     return ()

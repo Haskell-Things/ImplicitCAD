@@ -7,14 +7,16 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Pattern(Wild, Name, ListP),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
-                                                  Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule,OError, OObj2, OObj3),
+                                                  Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OVargsModule, OObj2, OObj3),
                                                   VarLookup,
                                                   FStack,
+                                                  CompState(CompState),
+                                                  StateC,
                                                   TestInvariant(EulerCharacteristic),
                                                   collector) where
 
-import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
@@ -22,9 +24,14 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
 import Data.Map (Map)
+import Control.Monad.State (StateT)
 
 -- for keeping track of the line and column number we are on in our extopenscad file.
 import Text.ParserCombinators.Parsec (Line, Column)
+
+-- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
+newtype CompState = CompState (VarLookup, [OVal], FilePath)
+type StateC = StateT CompState IO
 
 -----------------------------------------------------------------
 -- | Handles parsing arguments to modules
@@ -119,6 +126,7 @@ data OVal = OUndefined
          | OString String
          | OFunc (OVal -> OVal)
          | OModule ([OVal] -> ArgParser (IO [OVal]))
+         | OVargsModule ([(Maybe Symbol, OVal)] -> StateC [OVal])
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -137,6 +145,7 @@ instance Show OVal where
     show (OString s) = show s
     show (OFunc _) = "<function>"
     show (OModule _) = "module"
+    show (OVargsModule _) = "varargs module"
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"

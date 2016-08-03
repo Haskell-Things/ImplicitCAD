@@ -13,8 +13,13 @@ import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
 
+import Text.ParserCombinators.Parsec hiding (State)
+import Data.Either
+
 -- Parse an ExtOpenScad program.
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+-- New parser
+import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
 
 import Data.Either (Either(Right), isLeft)
 

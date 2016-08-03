@@ -10,15 +10,17 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
+--import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC)
 import Data.Map (fromList)
-import Data.List (genericIndex, genericLength)
+import Data.List (genericIndex, genericLength, intercalate)
 import Control.Arrow (second)
+import Control.Monad.State (liftIO)
 
 defaultObjects :: VarLookup -- = Map String OVal
 defaultObjects = fromList $
@@ -27,6 +29,7 @@ defaultObjects = fromList $
     ++ defaultFunctions2
     ++ defaultFunctionsSpecial
     ++ defaultModules
+    ++ varArgModules
     ++ defaultPolymorphicFunctions
 
 -- Missing standard ones:
@@ -80,6 +83,19 @@ defaultFunctionsSpecial =
 defaultModules :: [(String, OVal)]
 defaultModules =
     map (second OModule) primitives
+
+varArgModules :: [(String, OVal)]
+varArgModules =
+    [
+        ("echo", OVargsModule echo)
+    ] where
+        echo :: [(Maybe Symbol, OVal)] -> StateC [OVal]
+        echo args = do
+            let text = intercalate ", " $ map show2 args
+                show2 (Nothing, arg) = show arg
+                show2 (Just var, arg) = var ++ " = " ++ show arg
+            liftIO $ putStrLn $ "ECHO: " ++ text
+            return $ return OUndefined
 
 -- more complicated ones:
 
@@ -240,4 +256,3 @@ defaultPolymorphicFunctions =
         olength (OString s) = ONum $ genericLength s
         olength (OList s)   = ONum $ genericLength s
         olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
-
