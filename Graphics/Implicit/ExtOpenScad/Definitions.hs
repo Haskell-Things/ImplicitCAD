@@ -14,6 +14,9 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   CompState(CompState),
                                                   StateC,
                                                   TestInvariant(EulerCharacteristic),
+                                                  LanguageOpts(LanguageOpts),
+                                                  openScadCompatibility,
+                                                  alternateParser,
                                                   collector) where
 
 import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
@@ -30,7 +33,7 @@ import Control.Monad.State (StateT)
 import Text.ParserCombinators.Parsec (Line, Column)
 
 -- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
-newtype CompState = CompState (VarLookup, [OVal], FilePath)
+newtype CompState = CompState (VarLookup, [OVal], FilePath, LanguageOpts)
 type StateC = StateT CompState IO
 
 -----------------------------------------------------------------
@@ -152,6 +155,18 @@ instance Show OVal where
 
 type VarLookup = Map String OVal
 type FStack = [OVal]
+
+data LanguageOpts = LanguageOpts
+    { alternateParser :: Bool
+    , openScadCompatibility :: Bool
+    }
+
+instance Show LanguageOpts where
+    show (LanguageOpts altParser openScadCompat) =
+        "LanguageOpts alternateParser: " ++
+        show altParser ++
+        ", openScadCompatibility: " ++
+        show openScadCompat
 
 collector :: Symbol -> [Expr] -> Expr
 collector _ [x] = x

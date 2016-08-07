@@ -13,15 +13,16 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI, LanguageOpts, openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup)
 import Data.Map (fromList, insert)
-import Data.List (genericIndex, genericLength, intercalate)
+import Data.List (genericIndex, genericLength, intercalate, concatMap)
 import Control.Arrow (second)
-import Control.Monad.State (lift, liftIO, liftM)
+import Control.Monad.State (lift, liftIO, liftM, forM)
 
-defaultObjects :: VarLookup -- = Map String OVal
+defaultObjects :: VarLookup
 defaultObjects = fromList $
     defaultConstants
     ++ defaultFunctions
@@ -36,7 +37,8 @@ defaultObjects = fromList $
 
 defaultConstants :: [(String, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [("pi", pi)]
+    [("pi", pi)
+    ,("PI", pi)]
 
 defaultFunctions :: [(String, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
@@ -92,10 +94,17 @@ varArgModules =
 
         echo :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         echo args suite runSuite = do
+            languageOpts <- languageOptions
             let text a = intercalate ", " $ map show' a
                 show' (Nothing, arg) = show arg
                 show' (Just var, arg) = var ++ " = " ++ show arg
-            liftIO $ putStrLn $ "ECHO: " ++ text args
+                showe' (Nothing, OString arg) = arg
+                showe' (Just var, arg) = var ++ " = " ++ showe' (Nothing, arg)
+                showe' a = show' a
+                compat = openScadCompatibility languageOpts
+                openScadFormat = "ECHO: " ++ text args
+                extopenscadFormat = concatMap showe' args
+            liftIO $ putStrLn $ if compat then openScadFormat else extopenscadFormat
             runSuite suite
 
         -- convert the loop iterator variable's expression value to a list (possibly of one value)

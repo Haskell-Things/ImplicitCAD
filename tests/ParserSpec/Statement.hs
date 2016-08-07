@@ -29,11 +29,11 @@ import Text.ParserCombinators.Parsec (Line, Column)
 infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
-    parseProgram source `shouldBe` Right stmts
+    parseProgram "noname" source `shouldBe` Right stmts
 
 -- | an expectation that a string generates an error.
 parsesAsError :: String -> Expectation
-parsesAsError source = parseProgram  source `shouldSatisfy` isLeft
+parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]

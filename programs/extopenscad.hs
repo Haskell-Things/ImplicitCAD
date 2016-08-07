@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup)
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup, Bool)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -34,7 +34,7 @@ import Data.Tuple (swap)
 -- Functions and types for dealing with the types used by runOpenscad.
 -- Note that Map is different than the maps used by the prelude functions.
 import qualified Data.Map.Strict as Map (Map, lookup)
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), LanguageOpts(LanguageOpts))
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
@@ -44,7 +44,7 @@ import Data.Monoid (Monoid, mappend)
 import Control.Applicative ((<$>), (<*>))
 
 -- NOTE: make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption)
+import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption, switch)
 
 -- For handling input/output files.
 import System.FilePath (splitExtension)
@@ -61,6 +61,8 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , outputFormat :: Maybe OutputFormat
     , resolution :: Maybe ℝ
     , inputFile :: FilePath
+    , alternateParser :: Bool
+    , openScadCompatibility :: Bool
     }
 
 -- | A type serving to enumerate our output formats.
@@ -127,6 +129,16 @@ extOpenScadOpts = ExtOpenScadOpts
     <*> argument str
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
+        )
+    <*> switch
+        (  short 'A'
+        <> long "alternate-parser"
+        <> help "Use the experimental alternate parser which will work with fewer ExtOpenScad files and more OpenSCAD files"
+        )
+    <*> switch
+        (  short 'O'
+        <> long "openscad-compatibility"
+        <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
         )
 
 -- | Try to look up an output format from a supplied extension.
@@ -206,9 +218,10 @@ run args = do
                 _ | Just fmt <- outputFormat args -> Just fmt
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
+        languageOpts = LanguageOpts (alternateParser args) (openScadCompatibility args)
     putStrLn "Processing File."
 
-    case runOpenscad content of
+    case runOpenscad languageOpts content of
         Left err -> print err
         Right openscadProgram -> do
             s@(_, obj2s, obj3s) <- openscadProgram

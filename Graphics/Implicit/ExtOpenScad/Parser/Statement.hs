@@ -20,7 +20,7 @@ import Data.Functor.Identity(Identity)
 import Data.Kind (Type)
 
 -- We use parsec to parse.
-import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
+import Text.ParserCombinators.Parsec (SourceName, try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
 import Text.Parsec.Prim (ParsecT)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI))
@@ -29,8 +29,8 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
-parseProgram :: String -> Either ParseError [StatementI]
-parseProgram = parse program "" where -- "" is our program name.
+parseProgram :: SourceName -> String -> Either ParseError [StatementI]
+parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
         sts <- many1 computation

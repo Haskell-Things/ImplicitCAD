@@ -16,12 +16,13 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   OVal(OString, OBool, OList, OModule, OVargsModule),
                                                   VarLookup,
                                                   StatementI(StatementI),
-                                                  CompState(CompState)
+                                                  CompState(CompState),
+                                                  LanguageOpts
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, languageOptions)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -76,10 +77,11 @@ runStatementI (StatementI lineN columnN (If expr a b)) = do
         _                 -> return ()
 
 runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
+    opts <- languageOptions
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (varlookup, _, path)) <- get
+    (CompState (varlookup, _, path, langOpts)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI lineN columnN $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -105,18 +107,19 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals  = runSuiteCapture varlookup' path suite
+            suiteVals  = runSuiteCapture varlookup' path langOpts suite
         return suiteVals
 
 runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
+        opts <- languageOptions
         maybeMod  <- lookupVar name
-        (CompState (varlookup, _, path)) <- get
+        (CompState (varlookup, _, path, _)) <- get
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
             Just (OModule mod') -> do
-                childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path suite
+                childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path opts suite
                 let
                     argparser = mod' childVals
                     ioNewVals = case fst $ argMap argsVal argparser of
@@ -139,7 +142,7 @@ runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
 runStatementI (StatementI _ _ (Include name injectVals)) = do
     name' <- getRelPath name
     content <- liftIO $ readFile name'
-    case parseProgram content of
+    case parseProgram name' content of
         Left e -> liftIO $ putStrLn $ "Error parsing " ++ name ++ ":" ++ show e
         Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
@@ -160,12 +163,12 @@ runStatementI (StatementI _ _ DoNothing) =
 runSuite :: [StatementI] -> StateC ()
 runSuite = mapM_ runStatementI
 
-runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
-runSuiteCapture varlookup path suite = do
+runSuiteCapture :: VarLookup -> FilePath -> LanguageOpts -> [StatementI] -> IO [OVal]
+runSuiteCapture varlookup path opts suite = do
     (res, _) <- runStateT
         (runSuite suite >> getVals)
-        (CompState (varlookup, [], path))
+        (CompState (varlookup, [], path, opts))
     return res
 
-runSuiteInModule :: FilePath -> [StatementI] -> VarLookup -> IO [OVal]
-runSuiteInModule path suite varlookup = runSuiteCapture varlookup path suite
+runSuiteInModule :: FilePath -> LanguageOpts -> [StatementI] -> VarLookup -> IO [OVal]
+runSuiteInModule path opts suite varlookup = runSuiteCapture varlookup path opts suite
