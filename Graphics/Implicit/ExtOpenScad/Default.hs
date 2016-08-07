@@ -10,17 +10,16 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
---import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC)
-import Data.Map (fromList)
+import Data.Map (fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate)
 import Control.Arrow (second)
-import Control.Monad.State (liftIO)
+import Control.Monad.State (lift, liftIO, liftM)
 
 defaultObjects :: VarLookup -- = Map String OVal
 defaultObjects = fromList $
@@ -88,14 +87,36 @@ varArgModules :: [(String, OVal)]
 varArgModules =
     [
         ("echo", OVargsModule echo)
+       ,("for", OVargsModule for)
     ] where
-        echo :: [(Maybe Symbol, OVal)] -> StateC [OVal]
-        echo args = do
-            let text = intercalate ", " $ map show2 args
-                show2 (Nothing, arg) = show arg
-                show2 (Just var, arg) = var ++ " = " ++ show arg
-            liftIO $ putStrLn $ "ECHO: " ++ text
-            return $ return OUndefined
+
+        echo :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        echo args suite runSuite = do
+            let text a = intercalate ", " $ map show' a
+                show' (Nothing, arg) = show arg
+                show' (Just var, arg) = var ++ " = " ++ show arg
+            liftIO $ putStrLn $ "ECHO: " ++ text args
+            runSuite suite
+
+        -- convert the loop iterator variable's expression value to a list (possibly of one value)
+        valsList :: OVal -> [OVal]
+        valsList v@(OBool _) = [v]
+        valsList v@(ONum _) = [v]
+        valsList v@(OString _) = [v]
+        valsList (OList vs) = vs
+        valsList _ = []
+
+        -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
+        iterator :: [(Maybe String, OVal)] -> [VarLookup -> VarLookup]
+        iterator [] = [id]
+        iterator ((Nothing, vals):iteratorz) = [outer | _ <- valsList vals, outer <- iterator iteratorz]
+        iterator ((Just var, vals):iteratorz) = [outer . inner | inner <- map (insert var) (valsList vals), outer <- iterator iteratorz]
+
+        for :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        for args runSuite = do
+            --varlookup <- getVarLookup
+            --_ <- return $ map (runSuite.($ varlookup)) $ iterator args
+            return $ return ()
 
 -- more complicated ones:
 

@@ -111,18 +111,21 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
 runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
         maybeMod  <- lookupVar name
         (CompState (varlookup, _, path)) <- get
-        childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
-            Just (OModule mod') -> liftIO ioNewVals where
-                argparser = mod' childVals
-                ioNewVals = case fst $ argMap argsVal argparser of
-                    Just iovals -> iovals
-                    Nothing     -> return []
-            Just (OVargsModule mod') ->
-                mod' argsVal
+            Just (OModule mod') -> do
+                childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path suite
+                let
+                    argparser = mod' childVals
+                    ioNewVals = case fst $ argMap argsVal argparser of
+                        Just iovals -> iovals
+                        Nothing     -> return []
+                liftIO ioNewVals
+            Just (OVargsModule mod') -> do
+                _ <- mod' argsVal suite runSuite -- no values are returned
+                return []
             Just foo            -> do
                     case getErrors foo of
                         Just err -> errorC lineN columnN err
@@ -164,6 +167,5 @@ runSuiteCapture varlookup path suite = do
         (CompState (varlookup, [], path))
     return res
 
-
-
-
+runSuiteInModule :: FilePath -> [StatementI] -> VarLookup -> IO [OVal]
+runSuiteInModule path suite varlookup = runSuiteCapture varlookup path suite

@@ -126,7 +126,7 @@ data OVal = OUndefined
          | OString String
          | OFunc (OVal -> OVal)
          | OModule ([OVal] -> ArgParser (IO [OVal]))
-         | OVargsModule ([(Maybe Symbol, OVal)] -> StateC [OVal])
+         | OVargsModule ([(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
