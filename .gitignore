@@ -12,3 +12,6 @@ docs/iscad.md
 .stack-work/
 Examples/*cachegrind*
 *.orig
+*.log
+/ImplicitCAD.lkshs
+/ImplicitCAD.lkshw
