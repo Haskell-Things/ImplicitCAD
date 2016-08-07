@@ -41,6 +41,8 @@ Library
                 -O2
                 -optc-O3
 --                -dynamic
+                -funfolding-use-threshold=16
+                -fspec-constr-count=10
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
                 -- for debugging.
