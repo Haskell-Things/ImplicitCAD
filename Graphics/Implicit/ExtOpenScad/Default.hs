@@ -109,14 +109,15 @@ varArgModules =
         -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
         iterator :: [(Maybe String, OVal)] -> [VarLookup -> VarLookup]
         iterator [] = [id]
-        iterator ((Nothing, vals):iteratorz) = [outer | _ <- valsList vals, outer <- iterator iteratorz]
-        iterator ((Just var, vals):iteratorz) = [outer . inner | inner <- map (insert var) (valsList vals), outer <- iterator iteratorz]
+        iterator ((Nothing, vals):iterators) = [outer | _ <- valsList vals, outer <- iterator iterators]
+        iterator ((Just var, vals):iterators) = [outer . inner | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
 
         for :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
-        for args runSuite = do
-            --varlookup <- getVarLookup
-            --_ <- return $ map (runSuite.($ varlookup)) $ iterator args
-            return $ return ()
+        for args suite runSuite = do
+            _ <- forM (iterator args) $ \iter -> do
+                modifyVarLookup iter
+                runSuite suite
+            return ()
 
 -- more complicated ones:
 
