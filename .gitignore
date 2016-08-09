@@ -15,3 +15,6 @@ Examples/*cachegrind*
 *.log
 /ImplicitCAD.lkshs
 /ImplicitCAD.lkshw
+/.dist-buildwrapper
+/.settings
+/.project
