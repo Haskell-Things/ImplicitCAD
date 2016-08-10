@@ -1,9 +1,12 @@
-import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
+import Prelude (IO, String, Char, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
 import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
-import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as Orig (expr0)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
+import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
+import Graphics.Implicit.ExtOpenScad.Parser.AltStatement (altParseProgram)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
-import Text.ParserCombinators.Parsec (parse)
+import Text.ParserCombinators.Parsec (parse, SourceName, ParseError, GenParser)
 import Text.Printf (printf)
 
 lineComment :: Int -> String
@@ -27,13 +30,13 @@ assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
 intList :: Int -> String
 intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
 
-parseExpr :: String -> Expr
-parseExpr s = case parse expr0 "src" s of
+parseExpr :: (GenParser Char () Expr) -> String -> Expr
+parseExpr exprParser s = case parse exprParser "src" s of
                Left err -> error (show err)
                Right e -> e
 
-parseStatements :: String -> [StatementI]
-parseStatements s = case parseProgram "noname" s of
+parseStatements :: (SourceName -> String -> Either ParseError [StatementI]) -> String -> [StatementI]
+parseStatements parseProgram s = case parseProgram "noname" s of
                      Left err -> error (show err)
                      Right e -> e
 
@@ -51,12 +54,23 @@ run name func input =
 
 main :: IO ()
 main =
-  defaultMain
-  [ bgroup "comments"
-    [ run "line" parseStatements (lineComments 5000)
-    , run "block" parseStatements (blockComments 10 500)
+  defaultMain $
+  [ bgroup "orig"
+    [ bgroup "comments"
+      [ run "line" (parseStatements Orig.parseProgram) (lineComments 5000)
+      , run "block" (parseStatements Orig.parseProgram) (blockComments 10 500)
+      ]
+    , run "assignments" (parseStatements Orig.parseProgram) (assignments 100)
+    , run "int list" (parseExpr Orig.expr0) (intList 1000)
+    , run "deep arithmetic" (parseExpr Orig.expr0) (deepArithmetic 3)
     ]
-  , run "assignments" parseStatements (assignments 100)
-  , run "int list" parseExpr (intList 1000)
-  , run "deep arithmetic" parseExpr (deepArithmetic 3)
+  , bgroup "alt"
+    [ bgroup "comments"
+      [ run "line" (parseStatements altParseProgram) (lineComments 5000)
+      , run "block" (parseStatements altParseProgram) (blockComments 10 500)
+      ]
+    , run "assignments" (parseStatements altParseProgram) (assignments 100)
+    , run "int list" (parseExpr altExpr) (intList 1000)
+    , run "deep arithmetic" (parseExpr altExpr) (deepArithmetic 3)
+    ]
   ]
