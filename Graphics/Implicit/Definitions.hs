@@ -294,4 +294,3 @@ data SymbolicObj3 =
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
 
-

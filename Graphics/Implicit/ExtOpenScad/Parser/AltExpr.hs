@@ -145,7 +145,7 @@ functionCallAndIndex left =
     <|> -- no match, just return the left expression
         return left
 
---There are several non-associative things that begin and end with [, ]. This parser does not handle vector indexing.
+--There are several non-associative things that begin and end with [ and ]. This parser does not handle vector indexing.
 matchVectorOrRange :: GenParser Char st Expr
 matchVectorOrRange = do
         _ <- matchTok '['
