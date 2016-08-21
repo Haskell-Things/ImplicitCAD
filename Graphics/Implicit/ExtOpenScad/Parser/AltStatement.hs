@@ -46,7 +46,7 @@ statement =
     <|> do -- user module declaration, e.g. "module foo(a, b = [1,2]) { }
         _          <- matchModule
         moduleName <- identifier
-        argDecls   <- surroundedBy '(' argumentsDeclaration ')'
+        argDecls   <- surroundedBy '(' moduleArgumentsDeclaration ')'
         stmt       <- statement
         returnStatement $ NewModule moduleName argDecls [stmt]
     <|> do -- user function declaration, e.g. "function foo(a, b = [1,2]) a;
@@ -120,6 +120,7 @@ maybeFlaggedModuleInstantiation =
     <|> do
         moduleName <- identifier
         moduleInstantiationTail moduleName
+    <|> do
         _ <- matchFor
         moduleInstantiationTail "for"
     <|> do
@@ -135,6 +136,28 @@ moduleInstantiationTail moduleName = do
     arguments  <- surroundedBy '(' argumentsCall ')'
     child      <- childStatement
     returnStatement $ ModuleCall moduleName arguments [child]
+
+moduleArgumentsDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
+moduleArgumentsDeclaration = sepEndBy moduleArgumentDeclaration oneOrMoreCommas
+
+moduleArgumentDeclaration :: GenParser Char st (Symbol, Maybe Expr)
+moduleArgumentDeclaration = do
+    parameterName <- identifier
+    defaultExpr   <- optionMaybe defaultExpression
+    return (parameterName, defaultExpr)
+    where
+        defaultExpression = do
+            lambdaArgs <- lambdaFormalParameters
+            _          <- matchTok '='
+            lambdaExpr <- expression
+            return $ LamE lambdaArgs lambdaExpr
+          <|> (matchTok '=' >> expression)
+
+lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
+    where
+        symbol = do
+            ident <- identifier
+            return $ Name ident
 
 argumentsDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
 argumentsDeclaration = sepEndBy argumentDeclaration oneOrMoreCommas
@@ -177,19 +200,28 @@ argumentsCall :: GenParser Char st [(Maybe Symbol, Expr)]
 argumentsCall = sepEndBy argumentCall oneOrMoreCommas
 
 argumentCall :: GenParser Char st (Maybe Symbol, Expr)
-argumentCall = do
-    argValue  <- expression
-    do
-        _ <- matchTok '='
-        expr <- expression
-        case argValue of --Var paramName :$ lambdaParams -> return (Just paramName, LamE lambdaParams expr)
-                         Var paramName -> return (Just paramName, expr)
-                         _ -> return (Nothing, argValue)
-      <|>
+argumentCall =
+    try (do
+        -- In order to suport the Extopenscad syntax of defining a function in the module call, we will use 'try'.
+        -- The worst case performance penalty will be paid when the argument is not a lambda, but looks like one,
+        -- except for the missing '= expression' part. In this case the whole attempt to parse a lambda expression
+        -- argument will be rolled back and parsed a second time as an expression.
+        -- considering not supporting this exact syntax if favour of one that is more manageable with an LL1 grammar.
+        -- it is less costly for the 'paramName = expression' syntax if it is a miss, as only one token will be
+        -- rolled back.
+        paramName <- identifier
+        do
+            _        <- matchTok '='
+            argValue <- expression
+            return (Just paramName, argValue)
+         <|> do
+            lambdaArgs <- lambdaFormalParameters
+            _          <- matchTok '='
+            lambdaExpr <- expression
+            return (Just paramName, LamE lambdaArgs lambdaExpr))
+    <|> do
+        argValue  <- expression
         return (Nothing, argValue)
-
---Var "f" :$ [LitE 1.0,LitE 2.0]))]
---LamE [Name boundName] nestedExpr :$ [boundExpr]
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
