@@ -239,7 +239,7 @@ Try ImplicitCAD!
 ----------------
 
  1. Install GHC and cabal.
-     * Debain/Ubuntu: `apt-get install ghc cabal-install`
+     * Debain/Ubuntu: `apt-get install ghc cabal-install zlibg1-dev`
      * Archlinux: `pacman -S ghc cabal-install`
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
@@ -255,7 +255,9 @@ Try ImplicitCAD!
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * install the dependencies: `cabal configure && cabal install --only-dependencies`
-         * cabal install it: `cabal install`
+	     * The previous step may fail, but it should tell you what's missing.
+	     * try to 'cabal install' each of the things it tells you are missing.
+         * Finally, cabal install implicitcad: `cabal install`
  3. Try it!
      * extopenscad test:
           * Make a test file: `echo "circle(30);" > test.escad`

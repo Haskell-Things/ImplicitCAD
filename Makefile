@@ -24,7 +24,7 @@ clean: Setup
 	rm -f Examples/*.png
 	rm -f Examples/example[0-9][0-9]
 	rm -f tests/*.stl
-	rm -f Setup
+	rm -f Setup Setup.hi Setup.o
 
 distclean: clean
 	rm -f `find ./ -name *~`
@@ -51,7 +51,7 @@ tests: $(EXTOPENSCAD)
 	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
 
 dist/build/extopenscad/extopenscad: Setup dist/setup-config
-	./Setup build
+	cabal build
 
 dist/setup-config: Setup implicit.cabal
 	cabal configure
