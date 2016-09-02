@@ -9,11 +9,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr
 
--- The structure of this file tries to follow the ordering of rules in the OpenSCAD parser.y,
--- in order to support easier comparison and maintenance.
--- The grammar is predictive and requires no more than one character of lookahead,
+-- In general, the grammar is predictive and requires no more than one character of lookahead,
 -- except when differentiating between keywords and identifiers.
--- Or at least, that is the goal.
+-- Or at least, that is the goal. exceptions are documented.
 
 altParseProgram :: SourceName -> String -> Either ParseError [StatementI]
 altParseProgram = parseProgram
@@ -31,13 +29,16 @@ parseProgram = parse program where
 input :: GenParser Char st [StatementI]
 input = many1 statement
 
+statements :: GenParser Char st [StatementI]
+statements = removeNoOps <$> many1 statement
+
 statement :: GenParser Char st StatementI
 statement =
         do
         _ <- oneOrMoreSemis
         returnStatement DoNothing
     <|> do
-        stmts <- surroundedBy '{' (many statement) '}'
+        stmts <- surroundedBy '{' statements '}'
         returnStatement $ Sequence stmts
     <|> -- things starting with an identifier
         moduleInstantiationOrAssignment
@@ -46,9 +47,9 @@ statement =
     <|> do -- user module declaration, e.g. "module foo(a, b = [1,2]) { }
         _          <- matchModule
         moduleName <- identifier
-        argDecls   <- surroundedBy '(' moduleArgumentsDeclaration ')'
-        stmt       <- statement
-        returnStatement $ NewModule moduleName argDecls [stmt]
+        argDecls   <- surroundedBy '(' moduleParametersDeclaration ')'
+        stmt       <- statements
+        returnStatement $ NewModule moduleName argDecls stmt
     <|> do -- user function declaration, e.g. "function foo(a, b = [1,2]) a;
         _          <- matchFunction
         funcName   <- identifier
@@ -60,13 +61,9 @@ statement =
     <|> do
         _          <- matchIf
         condition  <- surroundedBy '(' expression ')'
-        trueScope  <- statement
-        falseMaybe <- optionMaybe $ matchElse >> statement
-        n <- nothing
-        returnStatement $ If condition [trueScope] [fromMaybe n falseMaybe]
-
-nothing :: GenParser Char st StatementI
-nothing = returnStatement DoNothing
+        trueScope  <- statements
+        falseMaybe <- optionMaybe $ matchElse >> statements
+        returnStatement $ If condition trueScope $ fromMaybe [] falseMaybe
 
 -- Assignment and module instantiation both start with the same token, an identifier.
 -- So, in order to keep the parser predictive (for performance reasons),
@@ -133,31 +130,22 @@ maybeFlaggedModuleInstantiation =
 
 moduleInstantiationTail :: Symbol -> GenParser Char st StatementI
 moduleInstantiationTail moduleName = do
-    arguments  <- surroundedBy '(' argumentsCall ')'
+    arguments  <- surroundedBy '(' moduleCallArguments ')'
     child      <- childStatement
-    returnStatement $ ModuleCall moduleName arguments [child]
+    returnStatement $ ModuleCall moduleName arguments $ removeNoOps [child]
 
-moduleArgumentsDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
-moduleArgumentsDeclaration = sepEndBy moduleArgumentDeclaration oneOrMoreCommas
+moduleParametersDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
+moduleParametersDeclaration = sepEndBy moduleParameterDeclaration oneOrMoreCommas
 
-moduleArgumentDeclaration :: GenParser Char st (Symbol, Maybe Expr)
-moduleArgumentDeclaration = do
+moduleParameterDeclaration :: GenParser Char st (Symbol, Maybe Expr)
+moduleParameterDeclaration = do
     parameterName <- identifier
     defaultExpr   <- optionMaybe defaultExpression
     return (parameterName, defaultExpr)
     where
-        defaultExpression = do
-            lambdaArgs <- lambdaFormalParameters
-            _          <- matchTok '='
-            lambdaExpr <- expression
-            return $ LamE lambdaArgs lambdaExpr
+        defaultExpression =
+              lambdaDeclaration
           <|> (matchTok '=' >> expression)
-
-lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
-    where
-        symbol = do
-            ident <- identifier
-            return $ Name ident
 
 argumentsDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
 argumentsDeclaration = sepEndBy argumentDeclaration oneOrMoreCommas
@@ -170,13 +158,13 @@ argumentDeclaration = do
     where defaultValueExpression = matchTok '=' >> expression
 
 childStatements :: GenParser Char st [StatementI]
-childStatements = many innerChildStatement
+childStatements = removeNoOps <$> many innerChildStatement
 
 childStatement :: GenParser Char st StatementI
 childStatement =
         do
         _ <- oneOrMoreSemis
-        returnStatement DoNothing
+        returnDoNothing
     <|> do
         statements <- surroundedBy '{' childStatements '}'
         returnStatement $ Sequence statements
@@ -187,7 +175,7 @@ innerChildStatement :: GenParser Char st StatementI
 innerChildStatement =
         do
         _ <- oneOrMoreSemis
-        returnStatement DoNothing
+        returnDoNothing
     <|> do
         statements <- surroundedBy '{' childStatements '}'
         returnStatement $ Sequence statements
@@ -196,13 +184,13 @@ innerChildStatement =
     <|> -- module instantiations with '!', '#', '%', '*' prefixes
         flaggedModuleInstantiation
 
-argumentsCall :: GenParser Char st [(Maybe Symbol, Expr)]
-argumentsCall = sepEndBy argumentCall oneOrMoreCommas
+moduleCallArguments :: GenParser Char st [(Maybe Symbol, Expr)]
+moduleCallArguments = sepEndBy moduleCallArgument oneOrMoreCommas
 
-argumentCall :: GenParser Char st (Maybe Symbol, Expr)
-argumentCall =
+moduleCallArgument :: GenParser Char st (Maybe Symbol, Expr)
+moduleCallArgument =
     try (do
-        -- In order to suport the Extopenscad syntax of defining a function in the module call, we will use 'try'.
+        -- In order to support the Extopenscad syntax of defining a function in the module call, we will use 'try'.
         -- The worst case performance penalty will be paid when the argument is not a lambda, but looks like one,
         -- except for the missing '= expression' part. In this case the whole attempt to parse a lambda expression
         -- argument will be rolled back and parsed a second time as an expression.
@@ -215,13 +203,24 @@ argumentCall =
             argValue <- expression
             return (Just paramName, argValue)
          <|> do
-            lambdaArgs <- lambdaFormalParameters
-            _          <- matchTok '='
-            lambdaExpr <- expression
-            return (Just paramName, LamE lambdaArgs lambdaExpr))
+            lambda <- lambdaDeclaration
+            return (Just paramName, lambda))
     <|> do
         argValue  <- expression
         return (Nothing, argValue)
+
+lambdaDeclaration :: GenParser Char st Expr
+lambdaDeclaration = do
+    lambdaArgs <- lambdaFormalParameters
+    _          <- matchTok '='
+    lambdaExpr <- expression
+    return $ LamE lambdaArgs lambdaExpr
+
+lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
+    where
+        symbol = do
+            ident <- identifier
+            return $ Name ident
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
@@ -234,11 +233,21 @@ oneOrMoreSemis =  skipMany1 $ matchTok ';'
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
 surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
 
+returnDoNothing :: GenParser Char st StatementI
+returnDoNothing = returnStatement DoNothing
+
 returnStatement :: Statement StatementI -> GenParser Char st StatementI
 returnStatement ast = do
     line <- fmap sourceLine getPosition
     column <- fmap sourceColumn getPosition
     return $ StatementI line column ast
+
+removeNoOps :: [StatementI] -> [StatementI]
+removeNoOps [] = []
+removeNoOps a@(StatementI _ (Sequence []):sts) = removeNoOps sts
+removeNoOps a@(StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
+removeNoOps a@(StatementI _ DoNothing:sts) = removeNoOps sts
+removeNoOps (st:sts) = st : removeNoOps sts
 
 expression :: GenParser Char st Expr
 expression = altExpr
