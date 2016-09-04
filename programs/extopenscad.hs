@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup, Bool)
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup, Bool, id, return)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -23,10 +23,12 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 
 -- Use default values when a Maybe is Nothing.
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybe)
 
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
+
+import Data.List (intercalate)
 
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
@@ -49,6 +51,8 @@ import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help
 -- For handling input/output files.
 import System.FilePath (splitExtension)
 
+import System.IO
+
 -- | The following is needed to ensure backwards/forwards compatibility
 -- | with old versions of Data.Monoid:
 infixr 6 <>
@@ -63,6 +67,7 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , inputFile :: FilePath
     , alternateParser :: Bool
     , openScadCompatibility :: Bool
+    , messageOutputFile :: Maybe FilePath
     }
 
 -- | A type serving to enumerate our output formats.
@@ -140,6 +145,15 @@ extOpenScadOpts = ExtOpenScadOpts
         <> long "openscad-compatibility"
         <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
         )
+    <*> optional (
+      strOption
+        (  short 'e'
+        <> long "echo-output"
+        <> metavar "FILE"
+        <> help "Output file name for echo statements"
+        )
+      )
+
 
 -- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
@@ -206,6 +220,9 @@ export2 posFmt res output obj =
         Nothing    -> writeSVG res output obj
         Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
 
+messageOutputHandle :: ExtOpenScadOpts -> IO Handle
+messageOutputHandle args = maybe (return stdout) (`openFile` WriteMode) (messageOutputFile args)
+
 -- | Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO ()
 run args = do
@@ -219,13 +236,17 @@ run args = do
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
         languageOpts = LanguageOpts (alternateParser args) (openScadCompatibility args)
+        (messages, openscadProgram) = runOpenscad languageOpts content
     putStrLn "Processing File."
 
-    case runOpenscad languageOpts content of
-        Left err -> print err
-        Right openscadProgram -> do
-            s@(_, obj2s, obj3s) <- openscadProgram
-            let res = fromMaybe (getRes s) (resolution args)
+    hMessageOutput <- messageOutputHandle args
+    hPutStr hMessageOutput $ intercalate "\n" messages
+
+    case openscadProgram of
+        Nothing -> putStrLn "Nothing was created."
+        Just results -> do
+            s@(_, obj2s, obj3s) <- results
+            let res = maybe (getRes s) id (resolution args)
             let basename = fst (splitExtension $ inputFile args)
             let posDefExt = case format of
                                 Just f  -> Prelude.lookup f (map swap formatExtensions)

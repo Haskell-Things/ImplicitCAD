@@ -4,6 +4,8 @@ import System.Directory
 import System.IO
 import Data.Char (toLower)
 
+import Data.List (intercalate)
+
 import System.FilePath.Posix
 
 -- NOTE: make sure we don't import (<>) in new versions.
@@ -40,10 +42,14 @@ runFile :: FilePath -> FilePath -> FilePath -> IO ()
 runFile inputPath fileName outputPath = do
     putStrLn $ "File: " ++ inputPath </> fileName ++ " " ++ baseName
     content <- readFile $ inputPath </> fileName
-    case runOpenscad (LanguageOpts True True) content of
-        Left err -> withFile (outputPath </> baseName <.> "err") WriteMode $ \h -> hPrint h err
-        Right openscadProgram -> do
-        return ()
+    let (messages, openscadProgram) = runOpenscad (LanguageOpts True True) content
+
+    withFile (outputPath </> baseName <.> "err") WriteMode $ \h -> hPutStr h $ intercalate "\n" messages
+
+    case openscadProgram of
+        Nothing -> return ()
+        Just results -> return ()
+
     where baseName = fst $ splitExtension fileName
 --    writeFile (outputPath </> fileName) contents
 

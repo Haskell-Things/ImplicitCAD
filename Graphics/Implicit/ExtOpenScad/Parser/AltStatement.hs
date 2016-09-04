@@ -244,9 +244,9 @@ returnStatement ast = do
 
 removeNoOps :: [StatementI] -> [StatementI]
 removeNoOps [] = []
-removeNoOps a@(StatementI _ (Sequence []):sts) = removeNoOps sts
-removeNoOps a@(StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
-removeNoOps a@(StatementI _ DoNothing:sts) = removeNoOps sts
+removeNoOps a@(StatementI _ _ (Sequence []):sts) = removeNoOps sts
+removeNoOps a@(StatementI _ _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
+removeNoOps a@(StatementI _ _ DoNothing:sts) = removeNoOps sts
 removeNoOps (st:sts) = st : removeNoOps sts
 
 expression :: GenParser Char st Expr

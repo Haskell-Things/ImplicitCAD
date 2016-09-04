@@ -46,8 +46,9 @@ import Data.AffineSpace ((.-.))
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
-import Data.String (IsString)
+import Data.List(concatMap)
 import Data.Map.Strict as Map (lookup, Map)
+import Data.String (IsString)
 
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
@@ -167,18 +168,14 @@ executeAndExport content callback maybeFormat =
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
         languageOptions = LanguageOpts False False
-    in case runOpenscad languageOptions content of
-        Left err ->
-            let
-                line = sourceLine . errorPos $ err
-                showErrorMessages' = showErrorMessages
-                    "or" "unknown parse error" "expecting" "unexpected" "end of input"
-                msgs :: String
-                msgs = showErrorMessages' $ errorMessages err
-            in callbackF False False 1 $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
-        Right openscadProgram -> unsafePerformIO $ do
-            (msgs,s) <- capture openscadProgram
-            let
+        (msgs, openscadProgram) = runOpenscad languageOptions content
+        
+    in case openscadProgram of
+        Nothing ->
+            callbackF False False 1 $ (\s-> "error :" ++ s) $ concatMap (\l->l++"\n") msgs
+        Just results -> unsafePerformIO $ do
+          s <- results
+          let
                 res = getRes   s
                 w   = getWidth s
                 is2D = case s of
@@ -197,12 +194,11 @@ executeAndExport content callback maybeFormat =
                         if res > 0
                         then Right (Just x, extrudeR 0 x res)
                         else Left highResError
-                    _            ->  Left $ msgs ++ "Nothing to render."
-
-            return $ case (objOrErr, maybeFormat) of
+                    _            ->  Left $ (concatMap (\l->l++"\n") msgs) ++ "Nothing to render."
+          return $ case (objOrErr, maybeFormat) of
                 (Left errmsg, _) -> callbackF False False 1 errmsg
                 (Right (_,obj), Nothing)  ->
-                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ callbackF True is2D w msgs
+                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ concatMap (\l->l++"\n") msgs )
                 (Right (_,obj), Just "STL") ->
                     callbackS (TL.unpack (stl (discreteAprox res obj))) msgs
                 (Right (Just obj, _), Just "SVG") ->

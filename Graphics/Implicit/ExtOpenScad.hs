@@ -9,7 +9,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap)
+import Prelude(String, Either(Left, Right), IO, ($), fmap, Maybe(Just, Nothing), show)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, LanguageOpts, alternateParser)
@@ -26,21 +26,20 @@ import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: LanguageOpts -> String -> Either ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
+runOpenscad :: LanguageOpts -> String -> ([String], Maybe (IO (VarLookup, [SymbolicObj2], [SymbolicObj3])))
 runOpenscad languageOpts source =
     let
-        
         initial =  defaultObjects
         rearrange :: forall t. (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3])
         rearrange (_, (CompState (varlookup, ovals, _, _))) = (varlookup, obj2s, obj3s) where
                                   (obj2s, obj3s, _) = divideObjs ovals
         parseProgram = if alternateParser languageOpts then Alt.parseProgram else Orig.parseProgram
     in case parseProgram "" source of
-        Left e -> Left e
-        Right sts -> Right
+        Left e -> ([show e], Nothing)
+        Right sts -> ([], Just
             $ fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
                 runStateT sts' $ CompState (initial, [], path, languageOpts)
             )
-            $ mapM_ runStatementI sts
+            $ mapM_ runStatementI sts)
