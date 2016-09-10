@@ -15,6 +15,9 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   StateC,
                                                   TestInvariant(EulerCharacteristic),
                                                   LanguageOpts(LanguageOpts),
+                                                  SourcePosition(SourcePosition),
+                                                  sourceLine,
+                                                  sourceColumn,
                                                   openScadCompatibility,
                                                   alternateParser,
                                                   collector) where
@@ -22,7 +25,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
 import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
-import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
@@ -102,8 +105,8 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
--- a statement, along with the line and column number it is found on.
-data StatementI = StatementI Line Column (Statement StatementI)
+-- | a statement, along with the line and column number it is found on.
+data StatementI = StatementI SourcePosition (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool
@@ -117,8 +120,6 @@ data Statement st = Include String Bool
                | Sequence [st]
                | DoNothing
     deriving (Show, Eq)
-
-
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined
@@ -155,6 +156,26 @@ instance Show OVal where
 
 type VarLookup = Map String OVal
 type FStack = [OVal]
+
+-- in order to not propagate Parsec or other classes around, create our own source position type for the AST.
+data SourcePosition = SourcePosition
+    { sourceLine :: Fastℕ
+    , sourceColumn :: Fastℕ
+    , sourceName :: FilePath
+    }
+    deriving (Show, Eq)
+
+data MessageType = Info
+                 | Warning
+                 | Error
+                 | SyntaxError
+                 | Advice
+                 | Lint
+                 | Debug
+                 | Trace
+                 | Compatibility
+
+data Message = Message (MessageType, String)
 
 data LanguageOpts = LanguageOpts
     { alternateParser :: Bool

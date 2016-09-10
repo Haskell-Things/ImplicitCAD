@@ -39,27 +39,27 @@ import System.FilePath (takeDirectory)
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
-runStatementI (StatementI lineN columnN (pat := expr)) = do
+runStatementI (StatementI sourcePos (pat := expr)) = do
     val <- evalExpr expr
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
-        (Just err,  _ ) -> errorC lineN columnN err
+        (Just err,  _ ) -> errorC sourcePos err
         (_, Just match) -> modifyVarLookup $ union match
-        (_,   Nothing ) -> errorC lineN columnN "pattern match failed in assignment"
+        (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
-runStatementI (StatementI lineN columnN (Echo exprs)) = do
+runStatementI (StatementI sourcePos (Echo exprs)) = do
     let
         show2 (OString s) = s
         show2 x = show x
     vals <- mapM evalExpr exprs
     case getErrors (OList vals) of
         Nothing  -> liftIO . putStrLn $ concatMap show2 vals
-        Just err -> errorC lineN columnN err
+        Just err -> errorC sourcePos err
 
-runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
+runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
     val <- evalExpr expr
     case (getErrors val, val) of
-        (Just err, _)      -> errorC lineN columnN err
+        (Just err, _)      -> errorC sourcePos err
         (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
@@ -68,22 +68,22 @@ runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
                 Nothing -> return ()
         _ -> return ()
 
-runStatementI (StatementI lineN columnN (If expr a b)) = do
+runStatementI (StatementI sourcePos (If expr a b)) = do
     val <- evalExpr expr
     case (getErrors val, val) of
-        (Just err,  _  )  -> errorC lineN columnN ("In conditional expression of if statement: " ++ err)
+        (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " ++ err)
         (_, OBool True )  -> runSuite a
         (_, OBool False)  -> runSuite b
         _                 -> return ()
 
-runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
+runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     opts <- languageOptions
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
     (CompState (varlookup, _, path, langOpts)) <- get
 --  FIXME: \_? really?
-    runStatementI . StatementI lineN columnN $ (Name name :=) $ LitE $ OModule $ \_ -> do
+    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument name' `defaultTo` def
@@ -110,7 +110,7 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
             suiteVals  = runSuiteCapture varlookup' path langOpts suite
         return suiteVals
 
-runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
+runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
         opts <- languageOptions
         maybeMod  <- lookupVar name
         (CompState (varlookup, _, path, _)) <- get
@@ -131,15 +131,15 @@ runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
                 return []
             Just foo            -> do
                     case getErrors foo of
-                        Just err -> errorC lineN columnN err
-                        Nothing  -> errorC lineN columnN "Object called not module!"
+                        Just err -> errorC sourcePos err
+                        Nothing  -> errorC sourcePos "Object called not module!"
                     return []
             Nothing -> do
-                errorC lineN columnN $ "Module " ++ name ++ " not in scope."
+                errorC sourcePos $ "Module " ++ name ++ " not in scope."
                 return []
         pushVals newVals
 
-runStatementI (StatementI _ _ (Include name injectVals)) = do
+runStatementI (StatementI _ (Include name injectVals)) = do
     name' <- getRelPath name
     content <- liftIO $ readFile name'
     case parseProgram name' content of
@@ -151,13 +151,13 @@ runStatementI (StatementI _ _ (Include name injectVals)) = do
             vals' <- getVals
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
-runStatementI (StatementI _ _ (Sequence suite)) =
+runStatementI (StatementI _ (Sequence suite)) =
     runSuite suite
 
-runStatementI (StatementI _ _ (NewFunction _ _ _)) =
+runStatementI (StatementI _ (NewFunction _ _ _)) =
     return ()
 
-runStatementI (StatementI _ _ DoNothing) =
+runStatementI (StatementI _ DoNothing) =
     return ()
 
 runSuite :: [StatementI] -> StateC ()

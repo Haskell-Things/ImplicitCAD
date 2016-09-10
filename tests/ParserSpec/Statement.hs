@@ -11,10 +11,12 @@ import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, 
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP), SourcePosition(SourcePosition))
 
 import Text.ParserCombinators.Parsec hiding (State)
 import Data.Either
+
+import Graphics.Implicit.Definitions(Fastℕ)
 
 -- Parse an ExtOpenScad program.
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
@@ -22,8 +24,6 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
 
 import Data.Either (Either(Right), isLeft)
-
-import Text.ParserCombinators.Parsec (Line, Column)
 
 -- | an expectation that a string is equivalent to a statement.
 infixr 1 -->
@@ -37,11 +37,11 @@ parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
-single st = [StatementI 1 1 st]
+single st = [StatementI (SourcePosition 1 1 "noname") st]
 
 -- | A function call.
-call :: Symbol -> Column -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
-call name position args stmts = StatementI 1 position (ModuleCall name args stmts)
+call :: Symbol -> Fastℕ -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
+call name column args stmts = StatementI (SourcePosition 1 column "noname") (ModuleCall name args stmts)
 
 -- | Test a simple if block.
 ifSpec :: Spec
