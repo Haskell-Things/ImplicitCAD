@@ -81,7 +81,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (varlookup, _, path, langOpts)) <- get
+    (CompState (varlookup, _, path, langOpts, _)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -113,7 +113,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
 runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
         opts <- languageOptions
         maybeMod  <- lookupVar name
-        (CompState (varlookup, _, path, _)) <- get
+        (CompState (varlookup, _, path, _, _)) <- get
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)

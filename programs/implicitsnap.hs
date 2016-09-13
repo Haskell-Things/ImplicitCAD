@@ -26,7 +26,7 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup, LanguageOpts(LanguageOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup, LanguageOpts(LanguageOpts), Message)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -89,13 +89,16 @@ renderHandler = method GET $ withCompression $ do
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
+lookupVar :: String -> VarLookup -> (Maybe OVal)
+lookupVar name vars = Map.lookup name vars
+
 -- | Find the resolution to raytrace at.
-getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 -- | If a resolution was specified in the input file, just use it.
-getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+getRes (lookupVar "$res" -> Just (ONum res), _, _, _) = res
 -- | If there was no resolution specified, use a resolution chosen for 3D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, _, obj:_) =
+getRes (varlookup, _, obj:_, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
@@ -104,7 +107,7 @@ getRes (varlookup, _, obj:_) =
         _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
 -- | ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, obj:_, _) =
+getRes (varlookup, obj:_, _, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
@@ -145,12 +148,12 @@ getRes (varlookup, obj2s, obj3s) =
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?
-getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
-getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
+getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], a) -> ℝ
+getWidth (_,     _, obj:_, _) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
+getWidth (_, obj:_,     _, _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 obj
-getWidth (_,    [],    []) = 0
+getWidth (_,    [],    [], _) = 0
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
@@ -179,18 +182,18 @@ executeAndExport content callback maybeFormat =
                 res = getRes   s
                 w   = getWidth s
                 is2D = case s of
-                    (_, _, _:_)  -> False
-                    (_, _:_, _)  -> True
-                    _             -> False
+                    (_, _, _:_, _)  -> False
+                    (_, _:_, _, _)  -> True
+                    _               -> False
                 highResError = "Unreasonable resolution requested: "
                             ++ "the server imps revolt! "
                             ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
                 objOrErr = case s of
-                    (_, _, x:_)  ->
+                    (_, _, x:_, _)  ->
                         if res > 0
                         then Right (Nothing, x)
                         else Left highResError
-                    (_, x:_, _) ->
+                    (_, x:_, _, _) ->
                         if res > 0
                         then Right (Just x, extrudeR 0 x res)
                         else Left highResError

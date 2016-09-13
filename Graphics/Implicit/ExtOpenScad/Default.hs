@@ -13,10 +13,10 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI, LanguageOpts, openScadCompatibility)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI, LanguageOpts, SourcePosition, MessageType(Info), openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup, addMessage)
 import Data.Map (fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
 import Control.Arrow (second)

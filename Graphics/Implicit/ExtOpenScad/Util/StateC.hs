@@ -9,11 +9,11 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), languageOptions) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), languageOptions) where
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal, StateC, CompState(CompState), LanguageOpts, sourceLine, sourceColumn)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal, StateC, CompState(CompState), LanguageOpts, SourcePosition, Message(Message), MessageType(Error), sourceLine, sourceColumn)
 
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
@@ -22,10 +22,10 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup
-getVarLookup = fmap (\(CompState (a,_,_,_)) -> a) get
+getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
-modifyVarLookup = modify . (\f (CompState (a,b,c,d)) -> CompState (f a, b, c, d))
+modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
 
 -- | Perform a variable lookup
 lookupVar :: String -> StateC (Maybe OVal)
@@ -34,31 +34,31 @@ lookupVar name = do
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals = modify (\(CompState (a,b,c,d)) -> CompState (a, vals ++ b, c, d))
+pushVals vals = modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, d, e))
 
 getVals :: StateC [OVal]
 getVals = do
-    (CompState (_,b,_,_)) <- get
+    (CompState (_,b,_,_,_)) <- get
     return b
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
-    (CompState (a,_,c,d)) <- get
-    put $ CompState (a,vals,c,d)
+    (CompState (a,_,c,d,e)) <- get
+    put $ CompState (a,vals,c,d,e)
 
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
 withPathShiftedBy pathShift s = do
-    (CompState (a,b,path,d)) <- get
-    put $ CompState (a, b, path </> pathShift, d)
+    (CompState (a,b,path,d,e)) <- get
+    put $ CompState (a, b, path </> pathShift, d, e)
     x <- s
-    (CompState (a',b',_,d')) <- get
-    put $ CompState (a', b', path, d')
+    (CompState (a',b',_,d',e')) <- get
+    put $ CompState (a', b', path, d', e')
     return x
 
 -- | Return the path stored in the state.
 getPath :: StateC FilePath
 getPath = do
-    (CompState (_,_,path,_)) <- get
+    (CompState (_,_,path,_,_)) <- get
     return path
 
 getRelPath :: FilePath -> StateC FilePath
@@ -68,11 +68,11 @@ getRelPath relPath = do
 
 languageOptions :: StateC LanguageOpts
 languageOptions = do
-    (CompState (_, _, _, opts)) <- get
+    (CompState (_, _, _, opts, _)) <- get
     return opts
 
 addMesg :: Message -> StateC ()
-addMesg = modify . (\message (a, b, c, d, messages) -> (a, b, c, d, messages ++ [message]))
+addMesg = modify . (\message (CompState (a, b, c, d, messages)) -> (CompState (a, b, c, d, messages ++ [message])))
 
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text

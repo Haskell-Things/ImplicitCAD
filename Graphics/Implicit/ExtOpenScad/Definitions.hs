@@ -16,6 +16,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   TestInvariant(EulerCharacteristic),
                                                   LanguageOpts(LanguageOpts),
                                                   SourcePosition(SourcePosition),
+                                                  Message(Message),
+                                                  MessageType(..),
                                                   sourceLine,
                                                   sourceColumn,
                                                   openScadCompatibility,

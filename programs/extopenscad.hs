@@ -173,12 +173,12 @@ instance Read OutputFormat where
               else tryParse xs
 
 -- | Find the resolution to raytrace at.
-getRes :: (Map.Map String OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes :: (Map.Map String OVal, [SymbolicObj2], [SymbolicObj3], a) -> ℝ
 -- | First, use a resolution specified by a variable in the input file.
-getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+getRes (Map.lookup "$res" -> Just (ONum res), _, _, _) = res
 -- | Use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
-getRes (varlookup, _, obj:_) =
+getRes (varlookup, _, obj:_, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
@@ -187,7 +187,7 @@ getRes (varlookup, _, obj:_) =
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
 -- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
-getRes (varlookup, obj:_, _) =
+getRes (varlookup, obj:_, _, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
@@ -245,12 +245,13 @@ run args = do
     case openscadProgram of
         Nothing -> putStrLn "Nothing was created."
         Just results -> do
-            s@(_, obj2s, obj3s) <- results
+            s@(_, obj2s, obj3s, messages) <- results
             let res = maybe (getRes s) id (resolution args)
             let basename = fst (splitExtension $ inputFile args)
             let posDefExt = case format of
                                 Just f  -> Prelude.lookup f (map swap formatExtensions)
                                 Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+            hPutStr hMessageOutput $ intercalate "\n" $ map show messages
             case (obj2s, obj3s) of
                 ([], [obj]) -> do
                     let output = fromMaybe
