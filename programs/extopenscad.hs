@@ -236,43 +236,38 @@ run args = do
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
         languageOpts = LanguageOpts (alternateParser args) (openScadCompatibility args)
-        (messages, openscadProgram) = runOpenscad languageOpts content
+        openscadProgram = runOpenscad languageOpts content
     putStrLn "Processing File."
 
     hMessageOutput <- messageOutputHandle args
-    hPutStr hMessageOutput $ intercalate "\n" messages
-
-    case openscadProgram of
-        Nothing -> putStrLn "Nothing was created."
-        Just results -> do
-            s@(_, obj2s, obj3s, messages) <- results
-            let res = maybe (getRes s) id (resolution args)
-            let basename = fst (splitExtension $ inputFile args)
-            let posDefExt = case format of
-                                Just f  -> Prelude.lookup f (map swap formatExtensions)
-                                Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
-            hPutStr hMessageOutput $ intercalate "\n" $ map show messages
-            case (obj2s, obj3s) of
-                ([], [obj]) -> do
-                    let output = fromMaybe
-                                     (basename ++ "." ++ fromMaybe "stl" posDefExt)
-                                     (outputFile args)
-                    putStrLn $ "Rendering 3D object to " ++ output
-                    putStrLn $ "With resolution " ++ show res
-                    putStrLn $ "In box " ++ show (getBox3 obj)
-                    print obj
-                    export3 format res output obj
-                ([obj], []) -> do
-                    let output = fromMaybe
-                                     (basename ++ "." ++ fromMaybe "svg" posDefExt)
-                                     (outputFile args)
-                    putStrLn $ "Rendering 2D object to " ++ output
-                    putStrLn $ "With resolution " ++ show res
-                    putStrLn $ "In box " ++ show (getBox2 obj)
-                    print obj
-                    export2 format res output obj
-                ([], []) -> putStrLn "No objects to render."
-                _        -> putStrLn "A mixture of 2D and 3D objects, what do you want to render?"
+    s@(_, obj2s, obj3s, messages) <- openscadProgram
+    let res = maybe (getRes s) id (resolution args)
+    let basename = fst (splitExtension $ inputFile args)
+    let posDefExt = case format of
+                        Just f  -> Prelude.lookup f (map swap formatExtensions)
+                        Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+    hPutStr hMessageOutput $ intercalate "\n" $ map show messages
+    case (obj2s, obj3s) of
+        ([], [obj]) -> do
+            let output = fromMaybe
+                             (basename ++ "." ++ fromMaybe "stl" posDefExt)
+                             (outputFile args)
+            putStrLn $ "Rendering 3D object to " ++ output
+            putStrLn $ "With resolution " ++ show res
+            putStrLn $ "In box " ++ show (getBox3 obj)
+            putStrLn $ show obj
+            export3 format res output obj
+        ([obj], []) -> do
+            let output = fromMaybe
+                             (basename ++ "." ++ fromMaybe "svg" posDefExt)
+                             (outputFile args)
+            putStrLn $ "Rendering 2D object to " ++ output
+            putStrLn $ "With resolution " ++ show res
+            putStrLn $ "In box " ++ show (getBox2 obj)
+            putStrLn $ show obj
+            export2 format res output obj
+        ([], []) -> putStrLn "No objects to render."
+        _        -> putStrLn "A mixture of 2D and 3D objects, what do you want to render?"
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()

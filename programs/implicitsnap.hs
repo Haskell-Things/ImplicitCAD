@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
+import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return, map)
 
 import Control.Applicative ((<|>))
 
@@ -46,7 +46,7 @@ import Data.AffineSpace ((.-.))
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
-import Data.List(concatMap)
+import Data.List (concatMap, intercalate)
 import Data.Map.Strict as Map (lookup, Map)
 import Data.String (IsString)
 
@@ -171,13 +171,13 @@ executeAndExport content callback maybeFormat =
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
         languageOptions = LanguageOpts False False
-        (msgs, openscadProgram) = runOpenscad languageOptions content
+        openscadProgram = runOpenscad languageOptions content
         
-    in case openscadProgram of
-        Nothing ->
-            callbackF False False 1 $ (\s-> "error :" ++ s) $ concatMap (\l->l++"\n") msgs
-        Just results -> unsafePerformIO $ do
-          s <- results
+--            callbackF False False 1 $ (\s-> "error :" ++ s) $ concatMap (\l->l++"\n") msgs
+    in
+    unsafePerformIO $ do
+--          hMessageOutput <- messageOutputHandle args
+          s@(_,_,_,messages) <- openscadProgram
           let
                 res = getRes   s
                 w   = getWidth s
@@ -197,17 +197,17 @@ executeAndExport content callback maybeFormat =
                         if res > 0
                         then Right (Just x, extrudeR 0 x res)
                         else Left highResError
-                    _            ->  Left $ (concatMap (\l->l++"\n") msgs) ++ "Nothing to render."
+                    _            ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
           return $ case (objOrErr, maybeFormat) of
                 (Left errmsg, _) -> callbackF False False 1 errmsg
                 (Right (_,obj), Nothing)  ->
-                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ concatMap (\l->l++"\n") msgs )
+                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ (intercalate "\n" $ map show messages))
                 (Right (_,obj), Just "STL") ->
-                    callbackS (TL.unpack (stl (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (stl (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (Just obj, _), Just "SVG") ->
-                    callbackS (TL.unpack (svg (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (svg (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (Just obj, _), Just "gcode/hacklab-laser") ->
-                    callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (_ , _), _) ->
                     callbackF False False 1 "unexpected case"
 
