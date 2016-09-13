@@ -71,8 +71,16 @@ languageOptions = do
     (CompState (_, _, _, opts)) <- get
     return opts
 
+addMesg :: Message -> StateC ()
+addMesg = modify . (\message (a, b, c, d, messages) -> (a, b, c, d, messages ++ [message]))
+
+addMessage :: MessageType -> SourcePosition -> String -> StateC ()
+addMessage mtype pos text = addMesg $ Message mtype pos text
+
 --errorC :: forall (m :: Type -> Type) a. (Show a, MonadIO m) => a -> a -> String -> m ()
-errorC sourcePos err = liftIO $ putStrLn $ "On line " ++ show (sourceLine sourcePos) ++ ", column " ++ show (sourceColumn sourcePos) ++ ": " ++ err
+errorC sourcePos err = do
+    liftIO $ putStrLn $ "At " ++ show sourcePos ++ ": " ++ err
+    addMessage Error sourcePos err
 {-# INLINABLE errorC #-}
 
 mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)

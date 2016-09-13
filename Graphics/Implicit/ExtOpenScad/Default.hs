@@ -92,8 +92,8 @@ varArgModules =
        ,("for", OVargsModule for)
     ] where
 
-        echo :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
-        echo args suite runSuite = do
+        echo :: SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        echo pos args suite runSuite = do
             languageOpts <- languageOptions
             let text a = intercalate ", " $ map show' a
                 show' (Nothing, arg) = show arg
@@ -104,7 +104,9 @@ varArgModules =
                 compat = openScadCompatibility languageOpts
                 openScadFormat = "ECHO: " ++ text args
                 extopenscadFormat = concatMap showe' args
-            liftIO $ putStrLn $ if compat then openScadFormat else extopenscadFormat
+                formattedMessage = if compat then openScadFormat else extopenscadFormat
+            liftIO $ putStrLn $ formattedMessage
+            addMessage Info pos $ formattedMessage
             runSuite suite
 
         -- convert the loop iterator variable's expression value to a list (possibly of one value)
@@ -121,8 +123,8 @@ varArgModules =
         iterator ((Nothing, vals):iterators) = [outer | _ <- valsList vals, outer <- iterator iterators]
         iterator ((Just var, vals):iterators) = [outer . inner | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
 
-        for :: [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
-        for args suite runSuite = do
+        for :: SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        for _ args suite runSuite = do
             _ <- forM (iterator args) $ \iter -> do
                 modifyVarLookup iter
                 runSuite suite

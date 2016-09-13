@@ -127,7 +127,7 @@ runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
                         Nothing     -> return []
                 liftIO ioNewVals
             Just (OVargsModule mod') -> do
-                _ <- mod' argsVal suite runSuite -- no values are returned
+                _ <- mod' sourcePos argsVal suite runSuite -- no values are returned
                 return []
             Just foo            -> do
                     case getErrors foo of
@@ -167,7 +167,7 @@ runSuiteCapture :: VarLookup -> FilePath -> LanguageOpts -> [StatementI] -> IO [
 runSuiteCapture varlookup path opts suite = do
     (res, _) <- runStateT
         (runSuite suite >> getVals)
-        (CompState (varlookup, [], path, opts))
+        (CompState (varlookup, [], path, opts, []))
     return res
 
 runSuiteInModule :: FilePath -> LanguageOpts -> [StatementI] -> VarLookup -> IO [OVal]
