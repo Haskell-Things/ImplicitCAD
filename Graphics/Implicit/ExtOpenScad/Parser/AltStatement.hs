@@ -59,12 +59,15 @@ statement =
         funcExpr   <- expression
         _          <- oneOrMoreSemis
         returnStatement $ NewFunction funcName argDecls funcExpr
-    <|> do
-        _          <- matchIf
-        condition  <- surroundedBy '(' expression ')'
-        trueScope  <- statements
-        falseMaybe <- optionMaybe $ matchElse >> statements
-        returnStatement $ If condition trueScope $ fromMaybe [] falseMaybe
+    <|>
+        ifStatement
+
+ifStatement = do
+    _          <- matchIf
+    condition  <- surroundedBy '(' expression ')'
+    trueScope  <- statements
+    falseMaybe <- optionMaybe $ matchElse >> statements
+    returnStatement $ If condition trueScope $ fromMaybe [] falseMaybe
 
 -- Assignment and module instantiation both start with the same token, an identifier.
 -- So, in order to keep the parser predictive (for performance reasons),
@@ -96,25 +99,33 @@ assignment ident =
     returnStatement $ Name ident := expr
 
 flaggedModuleInstantiation :: GenParser Char st StatementI
-flaggedModuleInstantiation =
+flaggedModuleInstantiation = do
         moduleFlag '!' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '#' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '%' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '*' maybeFlaggedModuleInstantiation
+        returnDoNothing
     where moduleFlag tok inst = matchTok tok >> inst
 
 maybeFlaggedModuleInstantiation :: GenParser Char st StatementI
-maybeFlaggedModuleInstantiation =
+maybeFlaggedModuleInstantiation = do
         moduleFlag '!' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '#' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '%' maybeFlaggedModuleInstantiation
-    <|>
+        returnDoNothing
+    <|> do
         moduleFlag '*' maybeFlaggedModuleInstantiation
+        returnDoNothing
     <|> do
         moduleName <- identifier
         moduleInstantiationTail moduleName
@@ -127,6 +138,9 @@ maybeFlaggedModuleInstantiation =
     <|> do
         _ <- matchLet
         moduleInstantiationTail "let"
+    <|> do
+        ifStatement
+        returnDoNothing
     where moduleFlag tok inst = matchTok tok >> inst
 
 moduleInstantiationTail :: Symbol -> GenParser Char st StatementI
