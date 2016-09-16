@@ -24,9 +24,13 @@ import Control.Monad (mapM_)
 import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
 import Text.ParserCombinators.Parsec(errorPos)
+import qualified Text.Parsec.Error as Err (errorPos, errorMessages, showErrorMessages)
+import qualified Control.Monad as Monad (mapM_)
+import qualified Control.Monad.State as State (runStateT)
+import qualified System.Directory as Dir (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: LanguageOpts -> String -> (IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]))
+runOpenscad :: LanguageOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
 runOpenscad languageOpts source =
     let
         initial =  defaultObjects
@@ -34,8 +38,13 @@ runOpenscad languageOpts source =
         rearrange (_, (CompState (varlookup, ovals, _, _, messages))) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
         parseProgram = if alternateParser languageOpts then Alt.parseProgram else Orig.parseProgram
+        show' err
+            = Err.showErrorMessages "or" "unknown parse error"
+                                "expecting" "unexpected" "end of input"
+                               (Err.errorMessages err)
+        mesg e = Message SyntaxError (sourcePosition $ Err.errorPos e) $ show' e
     in case parseProgram "" source of
-        Left e -> return (initial, [], [], [Message SyntaxError (sourcePosition $ errorPos e) $ show e])
+        Left e -> return (initial, [], [], [mesg e])
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory

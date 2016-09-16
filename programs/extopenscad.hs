@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup, Bool, id, return)
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup, Bool, id, return, unlines)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -41,6 +41,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), LanguageOpts(Lang
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
 
+-- For defining the <> operator.
 import Data.Monoid (Monoid, mappend)
 
 import Control.Applicative ((<$>), (<*>))
@@ -240,13 +241,14 @@ run args = do
     putStrLn "Processing File."
 
     hMessageOutput <- messageOutputHandle args
+
     s@(_, obj2s, obj3s, messages) <- openscadProgram
     let res = maybe (getRes s) id (resolution args)
     let basename = fst (splitExtension $ inputFile args)
     let posDefExt = case format of
                         Just f  -> Prelude.lookup f (map swap formatExtensions)
                         Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
-    hPutStr hMessageOutput $ intercalate "\n" $ map show messages
+    hPutStr hMessageOutput $ unlines $ map show messages
     case (obj2s, obj3s) of
         ([], [obj]) -> do
             let output = fromMaybe

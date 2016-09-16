@@ -182,7 +182,7 @@ data MessageType = Info
 data Message = Message MessageType SourcePosition String
     deriving (Eq)
 instance Show Message where
-    show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ show text
+    show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
 data LanguageOpts = LanguageOpts
     { alternateParser :: Bool
