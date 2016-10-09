@@ -129,7 +129,7 @@ data OVal = OUndefined
          | OString String
          | OFunc (OVal -> OVal)
          | OModule ([OVal] -> ArgParser (IO [OVal]))
-         | OVargsModule (SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
+         | OVargsModule String (String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -148,7 +148,7 @@ instance Show OVal where
     show (OString s) = show s
     show (OFunc _) = "<function>"
     show (OModule _) = "module"
-    show (OVargsModule _) = "varargs module"
+    show (OVargsModule name _) = "varargs module " ++ name
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
@@ -177,6 +177,7 @@ data MessageType = Info
                  | Advice
                  | Lint
                  | Compatibility
+                 | Unimplemented
     deriving (Show, Eq)
 
 data Message = Message MessageType SourcePosition String

@@ -126,8 +126,8 @@ runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
                         Just iovals -> iovals
                         Nothing     -> return []
                 liftIO ioNewVals
-            Just (OVargsModule mod') -> do
-                _ <- mod' sourcePos argsVal suite runSuite -- no values are returned
+            Just (OVargsModule name mod') -> do
+                _ <- mod' name sourcePos argsVal suite runSuite -- no values are returned
                 return []
             Just foo            -> do
                     case getErrors foo of
