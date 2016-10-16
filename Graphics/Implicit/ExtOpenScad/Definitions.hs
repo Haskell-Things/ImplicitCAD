@@ -10,6 +10,61 @@ import Data.Map (Map)
 import Control.Applicative(Alternative(..))
 import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
 
+-----------------------------------------------------------------
+-- | Handles parsing arguments to modules
+data ArgParser a
+                 -- | For actual argument entries:
+                 --   ArgParser (argument name) (default) (doc) (next Argparser...)
+                 = AP String (Maybe OVal) String (OVal -> ArgParser a)
+                 -- | For returns:
+                 --   ArgParserTerminator (return value)
+                 | APTerminator a
+                 -- | For failure:
+                 --   ArgParserFailIf (test) (error message) (child for if true)
+                 | APFailIf Bool String (ArgParser a)
+                 --  An example, then next
+                 | APExample String (ArgParser a)
+                 --  A string to run as a test, then invariants for the results, then next
+                 | APTest String [TestInvariant] (ArgParser a)
+                 -- A branch where there are a number of possibilities for the parser underneath
+                 | APBranch [ArgParser a]
+
+instance Functor ArgParser where
+    fmap = liftM
+
+instance Applicative ArgParser where
+    pure = return
+    (<*>) = ap
+
+instance Monad ArgParser where
+
+    -- return is easy: if we want an ArgParser that just gives us a, that is
+    -- ArgParserTerminator a
+    return a = APTerminator a
+
+    -- Now things get more interesting. We need to describe how (>>=) works.
+    -- Let's get the hard ones out of the way first.
+    -- ArgParser actually
+    (AP str fallback d f) >>= g = AP str fallback d (\a -> (f a) >>= g)
+    (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
+    -- These next to is easy, they just pass the work along to their child
+    (APExample str child) >>= g = APExample str (child >>= g)
+    (APTest str tests child) >>= g = APTest str tests (child >>= g)
+    -- And an ArgParserTerminator happily gives away the value it contains
+    (APTerminator a) >>= g = g a
+    (APBranch bs) >>= g = APBranch $ map (>>= g) bs
+
+instance MonadPlus ArgParser where
+    mzero = APFailIf True "" undefined
+    mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
+    mplus (APBranch as) b             = APBranch ( as  ++ [b] )
+    mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
+    mplus a             b             = APBranch [ a   ,   b  ]
+
+instance Alternative ArgParser where
+        (<|>) = mplus
+        empty = mzero
+
 type Symbol = String
 
 data Pattern = Name  Symbol
@@ -77,25 +132,6 @@ type FStack = [OVal]
 collector :: Symbol -> [Expr] -> Expr
 collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
-
------------------------------------------------------------------
--- | Handles parsing arguments to modules
-data ArgParser a
-                 -- | For actual argument entries:
-                 --   ArgParser (argument name) (default) (doc) (next Argparser...)
-                 = AP String (Maybe OVal) String (OVal -> ArgParser a)
-                 -- | For returns:
-                 --   ArgParserTerminator (return value)
-                 | APTerminator a
-                 -- | For failure:
-                 --   ArgParserFailIf (test) (error message) (child for if true)
-                 | APFailIf Bool String (ArgParser a)
-                 --  An example, then next
-                 | APExample String (ArgParser a)
-                 --  A string to run as a test, then invariants for the results, then next
-                 | APTest String [TestInvariant] (ArgParser a)
-                 -- A branch where there are a number of possibilities for the parser underneath
-                 | APBranch [ArgParser a]
 
 data TestInvariant = EulerCharacteristic Int
     deriving (Show)
