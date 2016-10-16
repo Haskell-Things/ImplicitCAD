@@ -63,8 +63,10 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
+errorC :: forall (m :: * -> *) a. (Show a, MonadIO m) => a -> [Char] -> m ()
 errorC lineN err = liftIO $ putStrLn $ "At " ++ show lineN ++ ": " ++ err
 
+mapMaybeM :: forall t (m :: * -> *) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do
     b <- f a
     return (Just b)
