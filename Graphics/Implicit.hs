@@ -15,8 +15,7 @@ module Graphics.Implicit(
     -- Operations
     translate,
     scale,
-    complement,
-    union,  intersect,  difference,
+    complement, union, intersect, difference,
     unionR, intersectR, differenceR,
     shell,
     extrudeR,
@@ -28,7 +27,13 @@ module Graphics.Implicit(
     cylinder,
     cylinder2,
     rectR,
-    polygon,
+    polygonR,
+    rotateExtrude,
+    rotate3,
+    rotate3V,
+    pack3,
+    rotate,
+    pack2,
     -- Export
     writeSVG,
     writeSTL,
@@ -46,10 +51,8 @@ module Graphics.Implicit(
     SymbolicObj3
 ) where
 
--- Let's be explicit about where things come from :)
-
 -- The primitive objects, and functions for manipulating them.
-import Graphics.Implicit.Primitives (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygon, implicit)
+import Graphics.Implicit.Primitives (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeRotateR, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit)
 
 -- The Extended OpenScad interpreter
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
@@ -58,8 +61,7 @@ import Graphics.Implicit.ExtOpenScad (runOpenscad)
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
 
 -- Datatypes/classes defining the world, or part of the world.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
-
+import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
 
 -- We want Export to be a bit less polymorphic
 -- (so that types will collapse nicely)
