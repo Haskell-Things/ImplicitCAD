@@ -69,8 +69,6 @@ module Graphics.Implicit.Definitions (
     )
 where
 
--- a few imports for great evil :(
-
 -- we want global IO refs.
 import Data.IORef (IORef, newIORef, readIORef)
 import System.IO.Unsafe (unsafePerformIO)
@@ -118,18 +116,11 @@ type Triangle = (ℝ3, ℝ3, ℝ3)
 --   with corresponding normals n1, n2, and n3
 type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
-
 -- | A triangle mesh is a bunch of triangles :)
 type TriangleMesh = [Triangle]
 
 -- | A normed triangle mesh is a bunch of normed trianlges!!
 type NormedTriangleMesh = [NormedTriangle]
-
--- $ In Implicit CAD, we consider objects as functions
--- of `outwardness'. The boundary is 0, negative is the
--- interior and positive the exterior. The magnitude is
--- how far out or in.
--- For more details, refer to http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/
 
 -- | A 2D object
 type Obj2 = (ℝ2 -> ℝ)

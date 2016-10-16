@@ -17,7 +17,7 @@ import qualified Control.Monad.State as State
 import           Control.Monad.State (get, liftIO)
 import qualified System.FilePath as FilePath
 
-
+-- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
 runStatementI (StatementI lineN (pat := expr)) = do

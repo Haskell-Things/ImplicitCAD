@@ -1,5 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -18,8 +19,6 @@ scad2 res obj = toLazyText $ runReader (buildS2 obj) res
 
 scad3 :: ℝ -> SymbolicObj3 -> Text 
 scad3 res obj = toLazyText $ runReader (buildS3 obj) res
-
-
 
 -- Format an openscad call given that all the modified objects are in the Reader monad...
 

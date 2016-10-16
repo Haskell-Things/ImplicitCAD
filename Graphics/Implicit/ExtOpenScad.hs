@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 

@@ -1,6 +1,11 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Allow us to use the tearser parallel list comprehension syntax, to avoid having to call zip in the complicated comprehensions below.
 {-# LANGUAGE ParallelListComp #-}
 
 module Graphics.Implicit.Export.Render where
@@ -58,16 +63,16 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 
 -- Note: As far as the actual results of the rendering algorithm, nothing in
 --       this file really matters. All the actual decisions about how to build
---       the mesh are abstracted into the imported files. They are likely what
---       you are interested in.
+--       the mesh are abstracted into the imported files.
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 
 import Graphics.Implicit.Export.Render.HandlePolylines ( cleanLoopsFromSegs )
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
-getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
+getMesh p1@(x1,y1,z1) p2 res obj =
     let
+        -- How much space are we rendering?
         (dx,dy,dz) = p2 ^-^ p1
 
         -- How many steps will we take on each axis?
@@ -75,6 +80,7 @@ getMesh p1@(x1,y1,z1) p2@(_,_,_) res obj =
         ny = ceiling $ dy / res
         nz = ceiling $ dz / res
 
+        -- How big are the steps?
         rx = dx/fromIntegral nx
         ry = dy/fromIntegral ny
         rz = dz/fromIntegral nz

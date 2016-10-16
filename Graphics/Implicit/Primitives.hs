@@ -36,7 +36,11 @@ cylinder2 ::
 
 cylinder2 r1 r2 h = Cylinder h r1 r2
 
-cylinder :: ℝ -> ℝ -> SymbolicObj3
+cylinder ::
+    ℝ                   -- ^ Radius of the cylinder
+    -> ℝ                -- ^ Height of the cylinder
+    -> SymbolicObj3     -- ^ Resulting cylinder
+
 cylinder r = cylinder2 r r
 
 -- $ 2D Primitives
@@ -195,7 +199,7 @@ rotate3 = Rotate3
 rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3V = Rotate3V
 
-
+-- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs =
     let
@@ -206,12 +210,10 @@ pack3 (dx, dy) sep objs =
             (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
             _ -> Nothing
 
-
 -- 2D operations
 
 rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
-
 
 pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
 pack2 (dx, dy) sep objs =

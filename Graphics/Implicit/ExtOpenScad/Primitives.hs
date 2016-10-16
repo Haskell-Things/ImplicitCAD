@@ -26,22 +26,20 @@ import Data.VectorSpace
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
--- **Exmaple of implementing a module**
--- sphere is a module without a suite named sphere,
+-- sphere is a module without a suite.
 -- this means that the parser will look for this like
 --       sphere(args...);
 sphere :: ([Char], [OVal] -> ArgParser (IO [OVal]))
 sphere = moduleWithoutSuite "sphere" $ do
     example "sphere(3);"
     example "sphere(r=5);"
-    -- What are the arguments?
+    -- arguments:
     -- The radius, r, which is a (real) number.
     -- Because we don't provide a default, this ends right
     -- here if it doesn't get a suitable argument!
     r :: ℝ <- argument "r"
                 `doc` "radius of the sphere"
-    -- So what does this module do?
-    -- It adds a 3D object, a sphere of radius r,
+    -- This module adds a 3D object, a sphere of radius r,
     -- using the sphere implementation in Prim
     -- (Graphics.Implicit.Primitives)
     addObj3 $ Prim.sphere r

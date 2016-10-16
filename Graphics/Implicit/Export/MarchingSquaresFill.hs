@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
-
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Graphics.Implicit.Definitions

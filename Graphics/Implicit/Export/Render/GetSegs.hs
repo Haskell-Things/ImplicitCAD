@@ -54,8 +54,6 @@ import Data.VectorSpace
 -}
 
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
-{-- # INLINE getSegs #-}
-
 getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
     let
         (x,y) = p1

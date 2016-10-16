@@ -1,6 +1,6 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014, 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 -- Benchmarks
 
@@ -14,6 +14,10 @@ import Graphics.Implicit (union, circle, writeSVG, writePNG2, writePNG3, writeST
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
+
+-- Haskell representations of objects to benchmark.
+
+--  FIXME: move each of these objects into seperate compilable files.
 
 obj2d_1 :: SymbolicObj2
 obj2d_1 =

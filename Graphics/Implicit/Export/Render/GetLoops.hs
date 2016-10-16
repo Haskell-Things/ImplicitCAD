@@ -1,13 +1,12 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
+-- The goal of getLoops is to extract loops from a list of segments.
 
--- The goal of getLoops is, if you can imagine, extracting loops
--- from a list of segments.
-
--- The input is a list of segments
+-- The input is a list of segments.
 -- the output a list of loops, where each loop is a list of 
 -- segments, which each piece representing a "side".
 
@@ -31,16 +30,15 @@ getLoops :: Eq a => [[a]] -> [[[a]]]
 
 getLoops a = getLoops' a []
 
-
 getLoops' :: Eq a => [[a]] -> [[a]] -> [[[a]]]
 
--- Obviously if there aren't any segments,
+-- If there aren't any segments,
 -- and the "building loop" is empty, 
 -- we produce no loops.
 
 getLoops' [] [] = []
 
--- And if the building loop is empty,
+-- If the building loop is empty,
 -- we stick the first segment we have onto it
 -- to give us something to build on.
 
