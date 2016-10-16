@@ -130,12 +130,32 @@ polygonR ::
 
 polygonR = PolygonR
 
-polygon :: [ℝ2] -> SymbolicObj2
-polygon = polygonR 0
-
 -- $ Shared Operations
 
 class Object obj vec | obj -> vec where
+    
+    -- | Complement an Object
+    complement ::
+        obj     -- ^ Object to complement
+        -> obj  -- ^ Result
+    
+    -- | Rounded union
+    unionR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ objects to union
+        -> obj   -- ^ Resulting object
+
+    -- | Rounded difference
+    differenceR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ Objects to difference
+        -> obj   -- ^ Resulting object
+
+    -- | Rounded minimum
+    intersectR ::
+        ℝ        -- ^ The radius of rounding
+        -> [obj] -- ^ Objects to intersect
+        -> obj   -- ^ Resulting object
     
     -- | Translate an object by a vector of appropriate dimension.
     translate ::
@@ -148,29 +168,6 @@ class Object obj vec | obj -> vec where
         vec     -- ^ Amount to scale by
         -> obj  -- ^ Object to scale
         -> obj  -- ^ Resulting scaled object
-    
-    -- | Complement an Object
-    complement ::
-        obj     -- ^ Object to complement
-        -> obj  -- ^ Result
-    
-    -- | Rounded union
-    unionR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ objects to union
-        -> obj   -- ^ Resulting object
-    
-    -- | Rounded minimum
-    intersectR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ Objects to intersect
-        -> obj   -- ^ Resulting object
-    
-    -- | Rounded difference
-    differenceR ::
-        ℝ        -- ^ The radius of rounding
-        -> [obj] -- ^ Objects to difference
-        -> obj   -- ^ Resulting object
 
     -- | Outset an object.
     outset ::
@@ -226,16 +223,22 @@ instance Object SymbolicObj3 ℝ3 where
     getImplicit = getImplicit3
     implicit a b= EmbedBoxedObj3 (a,b)
 
+union :: forall obj vec. Object obj vec => [obj] -> obj
 union = unionR 0
+
+difference :: forall obj vec. Object obj vec => [obj] -> obj
 difference = differenceR 0
 
---intersect :: forall obj vec. Object obj vec => [obj] -> obj
+intersect :: forall obj vec. Object obj vec => [obj] -> obj
 intersect = intersectR 0
 
 -- 3D operations
 
 extrudeR :: ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeR = ExtrudeR
+
+extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
+extrudeRotateR = ExtrudeRotateR
 
 extrudeRM :: ℝ
     -> Maybe (ℝ -> ℝ)
