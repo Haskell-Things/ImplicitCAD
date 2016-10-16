@@ -41,9 +41,9 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
         ("tanh",  tanh),
         ("abs",   abs),
         ("sign",  signum),
-        ("floor", fromIntegral . floor ),
-        ("ceil",  fromIntegral . ceiling ),
-        ("round", fromIntegral . round ),
+        ("floor", fromInteger . floor ),
+        ("ceil",  fromInteger . ceiling ),
+        ("round", fromInteger . round ),
         ("exp",   exp),
         ("ln",    log),
         ("log",   log),
@@ -81,15 +81,15 @@ defaultModules =
 defaultPolymorphicFunctions :: [([Char], OVal)]
 defaultPolymorphicFunctions =
     [
-        ("+", sum),
-        ("sum", sum),
+        ("+", sumtotal),
+        ("sum", sumtotal),
         ("*", prod),
         ("prod", prod),
-        ("/", div),
+        ("/", divide),
         ("-", toOObj sub),
         ("%", toOObj omod),
         ("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)),
-        ("negate", toOObj negate),
+        ("negate", toOObj negatefun),
         ("index", toOObj index),
         ("splice", toOObj osplice),
         ("<", toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
@@ -103,7 +103,7 @@ defaultPolymorphicFunctions =
         ("||", toOObj (||) ),
         ("!", toOObj not ),
         ("list_gen", toOObj list_gen),
-        ("++", concat),
+        ("++", concatenate),
         ("len", toOObj olength),
         ("str", toOObj (show :: OVal -> String))
     ] where
@@ -111,16 +111,16 @@ defaultPolymorphicFunctions =
         -- Some key functions are written as OVals in optimizations attempts
 
         prod = OFunc $ \x -> case x of
-            (OList (x:xs)) -> foldl mult x xs
+            (OList (y:ys)) -> foldl mult y ys
             (OList [])     -> ONum 1
-            a              -> OError ["Product takes a list"]
+            _              -> OError ["Product takes a list"]
 
         mult (ONum a)  (ONum b)  = ONum  (a*b)
         mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
         mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
         mult a         b         = errorAsAppropriate "multiply" a b
 
-        div = OFunc $ \x -> case x of
+        divide = OFunc $ \x -> case x of
             (ONum a) -> OFunc $ \y -> case y of
                 (ONum b) -> ONum (a/b)
                 b        -> errorAsAppropriate "divide" (ONum a) b
@@ -131,22 +131,22 @@ defaultPolymorphicFunctions =
         div' (OList a) (ONum b) = OList (map (\x -> div' x (ONum b)) a)
         div' a         b        = errorAsAppropriate "divide" a b
 
-        omod (ONum a) (ONum b) = ONum $ fromIntegral $ mod (floor a) (floor b)
+        omod (ONum a) (ONum b) = ONum $ fromInteger $ mod (floor a) (floor b)
         omod a        b        = errorAsAppropriate "modulo" a b
 
         append (OList   a) (OList   b) = OList   $ a++b
         append (OString a) (OString b) = OString $ a++b
         append a           b           = errorAsAppropriate "append" a b
 
-        concat = OFunc $ \x -> case x of
-            (OList (x:xs)) -> foldl append x xs
+        concatenate = OFunc $ \x -> case x of
+            (OList (y:ys)) -> foldl append y ys
             (OList [])     -> OList []
             _              -> OError ["concat takes a list"]
 
-        sum = OFunc $ \x -> case x of
-            (OList (x:xs)) -> foldl add x xs
+        sumtotal = OFunc $ \x -> case x of
+            (OList (y:ys)) -> foldl add y ys
             (OList [])     -> ONum 0
-            a              -> OError ["Product takes a list"]
+            _              -> OError ["Sum takes a list"]
 
         add (ONum a) (ONum b) = ONum (a+b)
         add (OList a) (OList b) = OList $ zipWith add a b
@@ -156,9 +156,9 @@ defaultPolymorphicFunctions =
         sub (OList a) (OList b) = OList $ zipWith sub a b
         sub a b = errorAsAppropriate "subtract" a b
 
-        negate (ONum n) = ONum (-n)
-        negate (OList l) = OList $ map negate l
-        negate a = OError ["Can't negate " ++ oTypeStr a ++ "(" ++ show a ++ ")"]
+        negatefun (ONum n) = ONum (-n)
+        negatefun (OList l) = OList $ map negatefun l
+        negatefun a = OError ["Can't negate " ++ oTypeStr a ++ "(" ++ show a ++ ")"]
 
         {-numCompareToExprCompare :: (ℝ -> ℝ -> Bool) -> Oval -> OVal -> Bool
         numCompareToExprCompare f a b =
@@ -208,16 +208,16 @@ defaultPolymorphicFunctions =
             ["Can't " ++ name ++ " objects of types " ++ oTypeStr a ++ " and " ++ oTypeStr b ++ "."]
 
         list_gen :: [ℝ] -> Maybe [ℝ]
-        list_gen [a,b] = Just [fromIntegral (ceiling a).. fromIntegral (floor b)]
+        list_gen [a,b] = Just [fromInteger (ceiling a).. fromInteger (floor b)]
         list_gen [a, b, c] =
             let
                 nr = (c-a)/b
-                n  = fromIntegral (floor nr)
+                n  = fromInteger (floor nr)
             in if nr - n > 0
             then Just
-                [fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor (c - b*(nr -n)))]
+                [fromInteger (ceiling a), fromInteger (ceiling (a+b)).. fromInteger (floor (c - b*(nr -n)))]
             else Just
-                [fromIntegral (ceiling a), fromIntegral (ceiling (a+b)).. fromIntegral (floor c)]
+                [fromInteger (ceiling a), fromInteger (ceiling (a+b)).. fromInteger (floor c)]
         list_gen _ = Nothing
 
         ternary True a _ = a

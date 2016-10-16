@@ -215,7 +215,7 @@ polygon = moduleWithoutSuite "polygon" $ do
                         `doc` "rounding of the polygon corners; ignored for now"
                         `defaultTo` 0
     case paths of
-        [] -> addObj2 $ Prim.polygonR 0 points
+        [] -> addObj2 $ Prim.polygonR r points
         _ -> return $ return []
 
 
@@ -374,8 +374,7 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
     let
-        is360m n = 360 * fromIntegral (round $ n / 360) /= n
-        n = fromIntegral $ round $ totalRot / 360
+        is360m n = 360 * fromInteger (round $ n / 360) /= n
         cap = is360m totalRot
             || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translateArg
             || (Either.either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotateArg

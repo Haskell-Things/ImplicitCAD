@@ -1,6 +1,16 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+{-# LANGUAGE KindSignatures #-}
+
 module Graphics.Implicit.ExtOpenScad.Parser.Statement where
 
 import Text.ParserCombinators.Parsec hiding (State)
+import Text.Parsec.Prim (ParsecT)
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.ExtOpenScad.Parser.Util
 import Graphics.Implicit.ExtOpenScad.Parser.Expr
@@ -216,9 +226,12 @@ moduleArgsUnitDecl = do
         *<|> do
             symb <- variableSymb;
             _ <- stringGS " ( "
-            argVars <- sepBy variableSymb (try $ stringGS " , ")
+                 -- FIXME: why match this content, then drop it?
+            _ <- sepBy variableSymb (try $ stringGS " , ")
             _ <- stringGS " ) = "
             expr <- expr0
+-- FIXME: this line looks right, but.. what does this change?
+--            return $ (Just symb, LamE (map Name argVars) expr)
             return (symb, Just expr)
         *<|> do
             symb <- variableSymb
@@ -227,5 +240,7 @@ moduleArgsUnitDecl = do
     _ <- stringGS " ) "
     return argTemplate
 
+lineNumber :: forall s u (m :: * -> *).
+              Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 

@@ -33,10 +33,10 @@ obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
         vertcode = mconcat $ map v verts
         normcode = mconcat $ map n norms
         trianglecode = mconcat $ do
-            n <- map ((+1).(*3)) [0,1 .. length normedtriangles -1]
+            n' <- map ((+1).(*3)) [0,1 .. length normedtriangles -1]
             let
-                vta = buildInt  n
-                vtb = buildInt (n+1)
-                vtc = buildInt (n+2)
+                vta = buildInt  n'
+                vtb = buildInt (n'+1)
+                vtc = buildInt (n'+2)
             return $ "f " <> vta <> " " <> vtb <> " " <> vtc <> " " <> "\n"
 

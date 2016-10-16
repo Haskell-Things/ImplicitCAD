@@ -12,7 +12,6 @@ module Graphics.Implicit.Export.SymbolicObj2 where
 
 import Graphics.Implicit.Definitions
 
-import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.MarchingSquaresFill
 import Graphics.Implicit.ObjectUtil
 
@@ -41,12 +40,12 @@ symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res sym
 symbolicGetContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [[ (x1,y1), (x2,y1), (x2,y2), (x1,y2), (x1,y1) ]]
 symbolicGetContour res (Circle r) = [[ ( r*cos(2*pi*m/n), r*sin(2*pi*m/n) ) | m <- [0.. n] ]] where
-    n = max 5 (fromIntegral $ ceiling $ 2*pi*r/res)
+    n = max 5 (fromInteger $ ceiling $ 2*pi*r/res)
 symbolicGetContour res (Translate2 v obj) = map (map (+ v) ) $ symbolicGetContour res obj
 symbolicGetContour res (Scale2 s@(a,b) obj) = map (map (⋯* s)) $ symbolicGetContour (res/sc) obj
     where sc = max a b
 symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-    (obj, (a,b)) -> Render.getContour a b res obj
+    (obj', (a,b)) -> Render.getContour a b res obj'
 
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [(ℝ2,ℝ2,ℝ2)]
@@ -61,8 +60,8 @@ symbolicGetContourMesh res (Circle r) =
        (r*cos(2*pi*(m+1)/n), r*sin(2*pi*(m+1)/n))
       )| m <- [0.. n-1] ]
     where
-        n = max 5 (fromIntegral $ ceiling $ 2*pi*r/res)
+        n = max 5 (fromInteger $ ceiling $ 2*pi*r/res)
 symbolicGetContourMesh res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-    (obj, (a,b)) -> getContourMesh a b (res,res) obj
+    (obj', (a,b)) -> getContourMesh a b (res,res) obj'
 
 

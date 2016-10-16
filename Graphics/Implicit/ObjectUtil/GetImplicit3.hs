@@ -12,7 +12,7 @@ import Prelude hiding (round)
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude))
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR))
 import qualified Graphics.Implicit.MathUtil as MathUtil (rmaximum, rminimum, rmax)
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
@@ -27,10 +27,10 @@ getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) = \(x,y,z) -> MathUtil.rmaximum r
     [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
         where (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
 getImplicit3 (Sphere r ) =
-    \(x,y,z) -> sqrt (x^2 + y^2 + z^2) - r
+    \(x,y,z) -> sqrt (x*x + y*y + z*z) - r
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     let
-        d = sqrt(x^2+y^2) - ((r2-r1)/h*z+r1)
+        d = sqrt(x*x + y*y) - ((r2-r1)/h*z+r1)
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
@@ -57,7 +57,7 @@ getImplicit3 (IntersectR3 r symbObjs) =
 getImplicit3 (DifferenceR3 r symbObjs) =
     let
         obj:objs = map getImplicit3 symbObjs
-        complement obj = \p -> - obj p
+        complement obj' = \p -> - obj' p
     in
         if r == 0
         then \p -> maximum $ map ($p) $ obj:(map complement objs)
@@ -78,11 +78,11 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
     let
         obj = getImplicit3 symbObj
         rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateYZ θ obj = \(x,y,z) -> obj ( x, cos(θ)*y + sin(θ)*z, cos(θ)*z - sin(θ)*y)
+        rotateYZ θ obj' = \(x,y,z) -> obj' ( x, cos(θ)*y + sin(θ)*z, cos(θ)*z - sin(θ)*y)
         rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateZX θ obj = \(x,y,z) -> obj ( cos(θ)*x - sin(θ)*z, y, cos(θ)*z + sin(θ)*x)
+        rotateZX θ obj' = \(x,y,z) -> obj' ( cos(θ)*x - sin(θ)*z, y, cos(θ)*z + sin(θ)*x)
         rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateXY θ obj = \(x,y,z) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
+        rotateXY θ obj' = \(x,y,z) -> obj' ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
     in
         rotateYZ yz $ rotateZX zx $ rotateXY xy $ obj
 getImplicit3 (Rotate3V θ axis symbObj) =
@@ -163,7 +163,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         \(x,y,z) -> minimum $ do
             
             let
-                r = sqrt (x^2 + y^2)
+                r = sqrt (x*x + y*y)
                 θ = atan2 y x
                 ns :: [Int]
                 ns =
@@ -191,4 +191,5 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                     (obj rz_pos)
                 else obj rz_pos
 -- FIXME: implement this, or implement a fallthrough function.
---getImplicit3 (RotateExtrudeR) =
+--getImplicit3 (ExtrudeRotateR) =
+getImplicit3 (ExtrudeRotateR _ _ _ _) = error "ExtrudeRotateR unimplimented!"

@@ -8,7 +8,7 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.Render.Definitions
 import Graphics.Implicit.Export.Util (centroid)
 import Data.VectorSpace
-import Data.Cross
+import Data.Cross hiding (normal)
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 

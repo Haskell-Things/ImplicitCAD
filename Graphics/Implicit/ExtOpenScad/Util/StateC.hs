@@ -28,12 +28,12 @@ pushVals vals = modify (\(a,b,c,d,e) -> (a, vals ++ b,c,d,e))
 
 getVals :: StateC [OVal]
 getVals = do
-    (a,b,c,d,e) <- get
+    (_,b,_,_,_) <- get
     return b
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
-    (a,b,c,d,e) <- get
+    (a,_,c,d,e) <- get
     put (a,vals,c,d,e)
 
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
@@ -47,7 +47,7 @@ withPathShiftedBy pathShift s = do
 
 getPath :: StateC FilePath
 getPath = do
-    (a,b,c,d,e) <- get
+    (_,_,c,_,_) <- get
     return c
 
 getRelPath :: FilePath -> StateC FilePath

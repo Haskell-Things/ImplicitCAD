@@ -218,8 +218,8 @@ getContour p1@(x1, y1) p2@(_, _) res obj =
         rx = dx/fromIntegral nx
         ry = dy/fromIntegral ny
 
-        pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
-        pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
+        pYs = [ y1 + ry*n | n <- [0.. fromInteger ny] ]
+        pXs = [ x1 + rx*n | n <- [0.. fromInteger nx] ]
 
 
         {-# INLINE par2DList #-}

@@ -32,7 +32,7 @@ instance OTypeMirror ℝ where
     toOObj n = ONum n
 
 instance OTypeMirror ℕ where
-    fromOObj (ONum n) = if n == fromIntegral (floor n) then Just (floor n) else Nothing
+    fromOObj (ONum n) = if n == fromInteger (floor n) then Just (floor n) else Nothing
     fromOObj _ = Nothing
     toOObj n = ONum $ fromIntegral n
 
@@ -110,24 +110,24 @@ oTypeStr (OString _ ) = "String"
 oTypeStr (OFunc   _ ) = "Function"
 oTypeStr (OModule _ ) = "Module"
 oTypeStr (OError  _ ) = "Error"
+oTypeStr (OObj2   _ ) = "2D Object"
+oTypeStr (OObj3   _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
 getErrors (OList l)   = Monad.msum $ map getErrors l
 getErrors _           = Nothing
 
-
 type Any = OVal
 
+caseOType :: forall c a. a -> (a -> c) -> c
 caseOType = flip ($)
 
 infixr 2 <||>
-
 (<||>) :: forall desiredType out. (OTypeMirror desiredType)
     => (desiredType -> out)
     -> (OVal -> out)
     -> (OVal -> out)
-
 (<||>) f g = \input ->
     let
         coerceAttempt = fromOObj input :: Maybe desiredType

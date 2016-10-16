@@ -106,8 +106,8 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
         (xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
 
         h = case eitherh of
-            Left h -> h
-            Right hf -> hmax + 0.2*(hmax-hmin)
+              Left h' -> h'
+              Right hf -> hmax + 0.2*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
@@ -154,3 +154,4 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     in
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 -- FIXME: add case for ExtrudeRotateR!
+getBox3(ExtrudeRotateR _ _ _ _ ) = error "ExtrudeRotateR implementation incomplete!"

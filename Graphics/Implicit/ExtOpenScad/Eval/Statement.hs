@@ -58,16 +58,17 @@ runStatementI (StatementI lineN (If expr a b)) = do
         _                 -> return ()
 
 runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
-    argTemplate' <- Monad.forM argTemplate $ \(name, defexpr) -> do
+    argTemplate' <- Monad.forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
-        return (name, defval)
+        return (name', defval)
     (varlookup, _, path, _, _) <- get
-    runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \vals -> do
-        newNameVals <- Monad.forM argTemplate' $ \(name, maybeDef) -> do
+--  FIXME: \_? really?
+    runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \_ -> do
+        newNameVals <- Monad.forM argTemplate' $ \(name', maybeDef) -> do
             val <- case maybeDef of
-                Just def -> argument name `defaultTo` def
-                Nothing  -> argument name
-            return (name, val)
+                Just def -> argument name' `defaultTo` def
+                Nothing  -> argument name'
+            return (name', val)
         let
 {-
             children = ONum $ fromIntegral $ length vals
@@ -97,8 +98,8 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
-            Just (OModule mod) -> liftIO ioNewVals  where
-                argparser = mod childVals
+            Just (OModule mod') -> liftIO ioNewVals where
+                argparser = mod' childVals
                 ioNewVals = case fst $ argMap argsVal argparser of
                     Just iovals -> iovals
                     Nothing     -> return []
@@ -125,6 +126,8 @@ runStatementI (StatementI _ (Include name injectVals)) = do
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
 
+runStatementI (StatementI _ DoNothing) = do
+  liftIO $ putStrLn $ "Do Nothing?"
 
 runSuite :: [StatementI] -> StateC ()
 runSuite stmts = Monad.mapM_ runStatementI stmts

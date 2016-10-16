@@ -229,5 +229,5 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
 --  have problems because it is right at the edge )
 symbolicGetMesh res obj =
     case rebound3 (getImplicit3 obj, getBox3 obj) of
-        (obj, (a,b)) -> getMesh a b res obj 
+        (obj', (a,b)) -> getMesh a b res obj'
 

@@ -61,6 +61,7 @@ mergedSquareTris sqTris =
         triTriangles = concat $ map (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
         squares = filter (not . isTris) sqTris
+{-
         -- Collect ones that are on the same plane.
         planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
         -- For each plane:
@@ -73,6 +74,7 @@ mergedSquareTris sqTris =
             planeAligned
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
+-}
     in
         -- merge them to triangles, and combine with the original triangles.
         -- Disable square merging temporarily.
@@ -85,7 +87,7 @@ isTris :: TriSquare -> Bool
 isTris (Tris _) = True
 isTris _ = False
 
-
+{-
 joinXaligned :: [TriSquare] -> [TriSquare]
 joinXaligned quads@((Sq b z xS _):_) =
     let
@@ -119,7 +121,7 @@ joinYaligned quads@((Sq b z _ yS):_) =
     in
         mergeAdjacent orderedQuads
 joinYaligned [] = []
-
+-}
 
 -- Reconstruct a triangle
 squareToTri :: TriSquare -> [Triangle]
@@ -134,5 +136,7 @@ squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
         d = zV ^+^ x2V ^+^ y2V
     in
         [(a,b,c),(c,b,d)]
+
+squareToTri(Tris t) = t
 
 

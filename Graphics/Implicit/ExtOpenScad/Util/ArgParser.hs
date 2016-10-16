@@ -68,11 +68,14 @@ argument name =
         -- Using /= Nothing would require Eq desiredType
         APFailIf (Maybe.isNothing val) errmsg $ APTerminator $ (\(Just a) -> a) val
 
+doc :: forall a. ArgParser a -> String -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
+doc _ _ = error "Impossible!"
 
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
-defaultTo (AP name _ doc next) newDefVal =
-    AP name (Just $ toOObj newDefVal) doc next
+defaultTo (AP name _ doc' next) newDefVal =
+    AP name (Just $ toOObj newDefVal) doc' next
+defaultTo _ _ = error "Impossible!"
 
 -- ** example
 
@@ -87,6 +90,7 @@ test str = APTest str [] (return ())
 eulerCharacteristic :: ArgParser a -> Int -> ArgParser a
 eulerCharacteristic (APTest str tests child) χ =
     APTest str ((EulerCharacteristic χ) : tests) child
+eulerCharacteristic _ _ = error "Impossible!"
 
 -- * Tools for handeling ArgParsers
 
@@ -131,8 +135,8 @@ argMap2 a b (APTerminator val) =
         else []
     )
 
-argMap2 a b (APFailIf test err child) =
-    if test
+argMap2 a b (APFailIf testval err child) =
+    if testval
     then (Nothing, [err])
     else argMap2 a b child
 

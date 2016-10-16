@@ -117,6 +117,9 @@ interpolate (a,aval) (b,bval) f _ =
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
+interpolate_lin :: forall a a1.
+                   (Fractional a1, Num a, Ord a, Ord a1) =>
+                   a -> (a1, a1) -> (a1, a1) -> (a1 -> a1) -> a1
 
 interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
     let
@@ -150,6 +153,9 @@ interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
 interpolate_lin _ (a, _) _ _ = a
 
 -- Now for binary searching!
+interpolate_bin :: forall a a1 a2.
+                   (Eq a, Fractional a2, Num a, Num a1, Ord a1) =>
+                   a -> (a2, a1) -> (a2, a1) -> (a2 -> a1) -> a2
 
 -- The termination case:
 

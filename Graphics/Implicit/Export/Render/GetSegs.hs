@@ -70,6 +70,9 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         midy2 = (midy2V, y + dy)
 
         notPointLine (np1:np2:[]) = np1 /= np2
+        notPointLine [] = False
+        notPointLine [_] = False
+        notPointLine (_ : (_ : (_ : _))) = False
 
         -- takes straight lines between mid points and subdivides them to
         -- account for sharp corners, etc.
@@ -144,9 +147,7 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
 
 
 -- A convenience function, we don't actually care too much about
-
-{-- # INLINE getSegs' #-}
-
+getSegs' :: (ℝ, ℝ) -> (ℝ, ℝ) -> ((ℝ, ℝ) -> ℝ) -> (ℝ, ℝ, ℝ, ℝ) -> [Polyline]
 getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) =
     let
         x1y1 = obj (x1, y1)

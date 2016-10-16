@@ -44,6 +44,7 @@ stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> st
 -- Write a 32-bit little-endian float to a buffer.
 
 -- convert Floats and Doubles to Float.
+toFloat :: Real a => a -> Float
 toFloat = realToFrac :: (Real a) => a -> Float
 
 float32LE :: Float -> Write

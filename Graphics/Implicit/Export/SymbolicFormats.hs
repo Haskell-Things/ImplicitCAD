@@ -78,7 +78,22 @@ buildS3 (ExtrudeRM 0 (Just twist) Nothing Nothing obj (Left height)) = do
                        ] |  h <- init [0, res .. height]
             ]
 
+-- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
+
+-- Now the 2D objects/transforms.
+
 buildS2 :: SymbolicObj2 -> Reader ℝ Builder
+
+buildS2 (RectR 0 (x1,y1) (x2,y2)) = call "translate" [bf x1, bf y1] [
+                                    call "cube" [bf $ x2 - x1, bf $ y2 - y1] []
+                                   ]
+
+buildS2 (Circle r) = call "circle" [bf r] []
+
+buildS2 (PolygonR 0 points) = call "polygon" [buildVector [x,y] | (x,y) <- points] []
+    where buildVector comps = "[" <> mconcat (intersperse "," $ map bf comps) <> "]"
+
+buildS2 (Complement2 obj) = call "complement" [] $ [buildS2 obj]
 
 buildS2 (UnionR2 0 objs)       = call "union" [] $ map buildS2 objs
 
@@ -90,13 +105,13 @@ buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] $ [buildS2 obj]
 
 buildS2 (Scale2 (x,y) obj)     = call "scale" [bf x, bf y] $ [buildS2 obj]
 
-buildS2 (RectR 0 (x1,y1) (x2,y2)) = call "translate" [bf x1, bf y1] [
-                                    call "cube" [bf $ x2 - x1, bf $ y2 - y1] []
-                                   ]
+buildS2 (Rotate2 (r) obj)     = call "rotate" [bf (rad2deg r)] $ [buildS2 obj]
+    where
+        rad2deg myr = myr * (180/pi)
 
-buildS2 (Circle r) = call "circle" [bf r] []
+buildS2 (Outset2 0 obj) = call "outset" [] $ [buildS2 obj]
 
-buildS2 (PolygonR 0 points) = call "polygon" [buildVector [x,y] | (x,y) <- points] []
-    where buildVector comps = "[" <> mconcat (intersperse "," $ map bf comps) <> "]"
+buildS2 (Shell2 0 obj) = call "shell" [] $ [buildS2 obj]
 
+-- FIXME: missing EmbedBoxedObj2?
 

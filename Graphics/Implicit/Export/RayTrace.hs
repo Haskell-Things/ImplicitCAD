@@ -35,22 +35,22 @@ dynamicImage = ImageRGBA8
 vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
 vectorDistance a b = magnitude (b-a)
 
-colorMult :: RealFrac c => c -> PixelRGBA8 -> PixelRGBA8
+colorMult :: RealFrac a => a -> PixelRGBA8 -> PixelRGBA8
 s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
     where 
         bound = max 0 . min 254
-        mult x y = fromIntegral . round . bound $ x * fromIntegral y
+        mult x y = fromInteger . round . bound $ x * fromIntegral y
 
 average :: [Color] -> Color
 average l = 
     let    
-        ((rs, gs), (bs, as)) = (\(a',b') -> (unzip a', unzip b')) $ unzip $ map
+        ((rs, gs), (bs, as)) = (\(a'',b'') -> (unzip a'', unzip b'')) $ unzip $ map
             (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ],[ℝ]))
         n = fromIntegral $ length l :: ℝ
-        (r, g, b, a) = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
+        (r', g', b', a') = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
     in PixelRGBA8
-        (fromIntegral . round $ r) (fromIntegral . round $ g) (fromIntegral . round $ b) (fromIntegral . round $ a)
+        (fromInteger . round $ r') (fromInteger . round $ g') (fromInteger . round $ b') (fromInteger . round $ a')
 
 -- Ray Utilities
 
@@ -139,13 +139,14 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
             guard . not $ intersects ray' ((0, obj p),20) step obj
             let
                 pval = obj p
-                step = 0.1 :: ℝ
+                       -- FIXME: why was this here?
+--                step = 0.1 :: ℝ
                 dirDeriv :: ℝ3 -> ℝ
-                dirDeriv v = (obj (p ^+^ step*^v) ^-^ pval)/step
+                dirDeriv v'' = (obj (p ^+^ step*^v'') ^-^ pval)/step
                 deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
                 normal = normalized $ deriv
                 unitV = normalized $ v'
-                proj a b = (a⋅b)*^b
+                proj a' b' = (a'⋅b')*^b'
                 dist  = vectorDistance p lightPos
                 illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * (25 /dist)
                 rV = 
