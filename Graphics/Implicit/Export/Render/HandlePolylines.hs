@@ -23,15 +23,17 @@ joinSegs (present:remaining) =
             if last ps == last present then (Just (reverse $ p3:ps), segs) else
             case findNext segs of (res1,res2) -> (res1,(p3:ps):res2)
         findNext [] = (Nothing, [])
+        findNext (([]):_) = (Nothing, [])
     in
         case findNext remaining of
             (Nothing, _) -> present:(joinSegs remaining)
             (Just match, others) -> joinSegs $ (present ++ tail match): others
 
--- FIXME: magic number.
+--reducePolyline :: forall t. (Fractional t, Ord t) => [(t, t)] -> [(t, t)]
+reducePolyline :: [(ℝ, ℝ)] -> [(ℝ, ℝ)]
 reducePolyline ((x1,y1):(x2,y2):(x3,y3):others) =
     if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):(x3,y3):others) else
-    if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) < 0.0001
+    if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
        || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0)
     then reducePolyline ((x1,y1):(x3,y3):others)
     else (x1,y1) : reducePolyline ((x2,y2):(x3,y3):others)
