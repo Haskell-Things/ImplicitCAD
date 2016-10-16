@@ -1,9 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright 2014 2015, Julia Longtin (julial@turinglace.com)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
--- Released under the GNU GPL, see LICENSE
+-- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE FlexibleInstances, TypeSynonymInstances, OverlappingInstances #-}
+-- This module deliberately declares orphan instances of Show.
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
+-- Required.
+{-# LANGUAGE FlexibleInstances #-}
 
 -- Definitions of the types (and a few functions) used in ImplicitCAD.
 
@@ -82,11 +86,38 @@ type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
-type ℕ = Int
+minℝ :: ℝ
+-- for Floats.
+--minℝ = 0.00000011920928955078125 * 2
+
+-- for Doubles.
+minℝ = 0.0000000000000002
+
+type ℕ = Integer
 
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
+
+
+-- handle additional instances of Show.
+instance Show (ℝ -> ℝ) where
+    show _ = "<function ℝ>"
+
+instance Show (ℝ -> ℝ2) where
+    show _ = "<expand ℝ -> ℝ2>"
+
+instance Show (ℝ2 -> ℝ) where
+    show _ = "<collapse ℝ2 -> ℝ>"
+
+instance Show (ℝ3 -> ℝ) where
+    show _ = "<collapse ℝ3 -> ℝ>"
+
+--instance Show BoxedObj2 where
+--    show _ = "<BoxedObj2>"
+
+--instance Show BoxedObj3 where
+--    show _ = "<BoxedObj3>"
 
 -- TODO: Find a better way to do this?
 class ComponentWiseMultable a where
@@ -243,7 +274,3 @@ errorMessage line msg = do
         else putStrLn $ dropXML False False $ msg'
     return ()
 
--- FIXME: fix this correctly. causes functions passed to objects not to show.
--- HACK: This needs to be fixed correctly someday
-instance Show (a -> b) where
-    show _ = "<function>"
