@@ -1,12 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.GetSegs where
+module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
 
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline)
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
-import Data.VectorSpace
+import Data.VectorSpace ((^-^))
 
 {- The goal of getSegs is to create polylines to separate
    the interior and exterior vertices of a square intersecting
