@@ -138,18 +138,10 @@ infixr 2 <||>
 
 divideObjs :: [OVal] -> ([SymbolicObj2], [SymbolicObj3], [OVal])
 divideObjs children =
-    (map fromOObj2 . filter isOObj2 $ children,
-     map fromOObj3 . filter isOObj3 $ children,
-     filter (not . isOObj)          $ children)
+    ([ x | OObj2 x <- children ],
+     [ x | OObj3 x <- children ],
+     filter (not . isOObj) $ children )
         where
-            isOObj2 (OObj2 _) = True
-            isOObj2    _      = False
-            isOObj3 (OObj3 _) = True
-            isOObj3    _      = False
-            isOObj  (OObj2 _) = True
-            isOObj  (OObj3 _) = True
-            isOObj     _      = False
-            fromOObj2 (OObj2 x) = x
-            fromOObj3 (OObj3 x) = x
-
-
+          isOObj  (OObj2 _) = True
+          isOObj  (OObj3 _) = True
+          isOObj  _         = False
