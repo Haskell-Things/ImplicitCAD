@@ -15,6 +15,7 @@ module Graphics.Implicit.Definitions (
     ℝ,
     ℝ2,
     ℝ3,
+    minℝ,
     ℕ,
     (⋅),
     (⋯*),
@@ -130,12 +131,6 @@ instance ComponentWiseMultable ℝ3 where
     (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
     (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
 
--- nxn matrices
--- eg. M2 ℝ = M₂(ℝ)
-type M2 a = ((a,a),(a,a))
-type M3 a = ((a,a,a),(a,a,a),(a,a,a))
-
-
 -- | A chain of line segments, as in SVG
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
@@ -165,10 +160,10 @@ type Box2 = (ℝ2, ℝ2)
 -- | A 3D box
 type Box3 = (ℝ3, ℝ3)
 
--- | Boxed 2D object
+-- | A Boxed 2D object
 type Boxed2 a = (a, Box2)
 
--- | Boxed 3D object
+-- | A Boxed 3D object
 type Boxed3 a = (a, Box3)
 
 type BoxedObj2 = Boxed2 Obj2
@@ -180,9 +175,9 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      RectR ℝ ℝ2 ℝ2
-    | Circle ℝ
-    | PolygonR ℝ [ℝ2]
+      RectR ℝ ℝ2 ℝ2 -- rounding, start, stop.
+    | Circle ℝ -- radius
+    | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
     | Complement2 SymbolicObj2
     | UnionR2 ℝ [SymbolicObj2]
@@ -205,16 +200,16 @@ data SymbolicObj3 =
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3
     | Sphere ℝ
-    | Cylinder ℝ ℝ ℝ -- h r1 r2
+    | Cylinder ℝ ℝ ℝ
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
-    | IntersectR3 ℝ [SymbolicObj3]
     | DifferenceR3 ℝ [SymbolicObj3]
+    | IntersectR3 ℝ [SymbolicObj3]
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
-    | Rotate3 (ℝ,ℝ,ℝ) SymbolicObj3
+    | Rotate3 ℝ3 SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3
