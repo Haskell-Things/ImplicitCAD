@@ -49,25 +49,9 @@ library
         -rtsopts
         -funfolding-use-threshold=16
         -fspec-constr-count=10
+        -Wall
 
     extensions:
-        FlexibleContexts,
-        FlexibleInstances,
-        FunctionalDependencies,
-        GADTs,
-        IncoherentInstances,
-        KindSignatures,
-        MultiParamTypeClasses,
-        NoMonomorphismRestriction,
-        OverloadedStrings,
-        ParallelListComp,
-        RankNTypes,
-        ScopedTypeVariables,
-        TypeSynonymInstances,
-        UndecidableInstances,
-        ViewPatterns,
-        OverloadedStrings
-
     exposed-modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
@@ -175,7 +159,8 @@ executable implicitsnap
                  filepath,
                  snap-core,
                  snap-server,
-                 silently
+                 silently,
+                 transformers
    ghc-options:
         -optc-O3
         -threaded
@@ -203,7 +188,8 @@ executable Benchmark
                  directory,
                  containers,
                  filepath,
-                 criterion
+                 criterion,
+                 transformers
    ghc-options:
         -optc-O3
         -threaded
