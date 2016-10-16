@@ -40,11 +40,14 @@ literal = ("literal" ?:) $
 -- by the Int argument
 
 expr0 :: GenParser Char st Expr
-expr0 = exprN 0
+expr0 = exprN A0
 
-exprN :: Integer -> GenParser Char st Expr
+-- what state in the expression parser tree we are inside of.
+data ExprIdx = A0 | A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12
 
-exprN 12 =
+exprN :: ExprIdx -> GenParser Char st Expr
+
+exprN A12 =
          literal
     *<|> variable
     *<|> "bracketed expression" ?: do
@@ -74,9 +77,9 @@ exprN 12 =
         _ <- string "]"
         return $ collector "list_gen" exprs
 
-exprN n@11 =
+exprN A11 =
     do
-        obj <- exprN $ n+1
+        obj <- exprN $ A12
         _ <- genSpace
         mods <- many1 (
             "function application" ?: do
@@ -102,67 +105,67 @@ exprN n@11 =
                     (Just s,  Just e )  -> \l -> Var "splice" :$ [l, s, e]
             )
         return $ foldl (\a b -> b a) obj mods
-    *<|> (exprN $ n+1 )
+    *<|> (exprN $ A12 )
 
-exprN n@10 =
+exprN A10 =
     "negation" ?: do
         _ <- padString "-"
-        expr <- exprN $ n+1
+        expr <- exprN $ A11
         return $ Var "negate" :$ [expr]
     *<|> do
         _ <- padString "+"
-        expr <- exprN $ n+1
+        expr <- exprN $ A11
         return expr
-    *<|> exprN (n+1)
+    *<|> exprN (A11)
 
-exprN n@9 =
+exprN A9 =
     "exponentiation" ?: do
-        a <- exprN $ n+1
+        a <- exprN $ A10
         _ <- padString "^"
-        b <- exprN n
+        b <- exprN A9
         return $ Var "^" :$ [a,b]
-    *<|> exprN (n+1)
+    *<|> exprN (A10)
 
-exprN n@8 =
+exprN A8 =
     "multiplication/division" ?: do
         -- outer list is multiplication, inner division.
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN $ n+1) (try $ padString "/" ))
+            (sepBy1 (exprN $ A9) (try $ padString "/" ))
             (try $ padString "*" )
-        let div  a b = Var "/" :$ [a, b]
-        return $ collector "*" $ map (foldl1 div) exprs
-    *<|> exprN (n+1)
+        let div' a b = Var "/" :$ [a, b]
+        return $ collector "*" $ map (foldl1 div') exprs
+    *<|> exprN (A9)
 
-exprN n@7 =
+exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN $ n+1) (try $ padString "%")
-        let mod  a b = Var "%" :$ [a, b]
-        return $ foldl1 mod exprs
-    *<|> exprN (n+1)
+        exprs <- sepBy1 (exprN $ A8) (try $ padString "%")
+        let mod' a b = Var "%" :$ [a, b]
+        return $ foldl1 mod' exprs
+    *<|> exprN (A8)
 
-exprN n@6 =
+exprN A6 =
     "append" ?: do
-        exprs <- sepBy1 (exprN $ n+1) (try $ padString "++")
+        exprs <- sepBy1 (exprN $ A7) (try $ padString "++")
         return $ collector "++" exprs
-    *<|> exprN (n+1)
+    *<|> exprN (A7)
 
-exprN n@5 =
+exprN A5 =
     "addition/subtraction" ?: do
         -- Similar to multiply & divide
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN $ n+1) (try $ padString "-" ))
+            (sepBy1 (exprN $ A6) (try $ padString "-" ))
             (try $ padString "+" )
         let sub a b = Var "-" :$ [a, b]
         return $ collector "+" $ map (foldl1 sub) exprs
-    *<|> exprN (n+1)
+    *<|> exprN (A6)
 
-exprN n@4 =
+exprN A4 =
     do
-        firstExpr <- exprN $ n+1
+        firstExpr <- exprN $ A5
         otherComparisonsExpr <- many $ do
             comparisonSymb <-
                      padString "=="
@@ -171,7 +174,7 @@ exprN n@4 =
                 *<|> padString "<="
                 *<|> padString ">"
                 *<|> padString "<"
-            expr <- exprN $ n+1
+            expr <- exprN $ A5
             return (Var comparisonSymb, expr)
         let
             (comparisons, otherExprs) = unzip otherComparisonsExpr
@@ -180,39 +183,39 @@ exprN n@4 =
             []  -> firstExpr
             [x] -> x :$ exprs
             _   -> collector "all" $ zipWith3 (\c e1 e2 -> c :$ [e1,e2]) comparisons exprs (tail exprs)
-    *<|> exprN (n+1)
+    *<|> exprN (A5)
 
-exprN n@3 =
+exprN A3 =
     "logical-not" ?: do
         _ <- padString "!"
-        a <- exprN $ n+1
+        a <- exprN $ A4
         return $ Var "!" :$ [a]
-    *<|> exprN (n+1)
+    *<|> exprN (A4)
 
-exprN n@2 =
+exprN A2 =
     "logical and/or" ?: do
-        a <- exprN $ n+1
+        a <- exprN $ A3
         symb <-      padString "&&"
                 *<|> padString "||"
-        b <- exprN n
+        b <- exprN A2
         return $ Var symb :$ [a,b]
-    *<|> exprN (n+1)
+    *<|> exprN (A3)
 
-exprN n@1 =
+exprN A1 =
     "ternary" ?: do
-        a <- exprN $ n+1
+        a <- exprN $ A2
         _ <- padString "?"
-        b <- exprN n
+        b <- exprN A1
         _ <- padString ":"
-        c <- exprN n
+        c <- exprN A1
         return $ Var "?" :$ [a,b,c]
-    *<|> exprN (n+1)
+    *<|> exprN (A2)
 
-exprN n@0 =
+exprN A0 =
     do
         _ <- genSpace
-        expr <- exprN $ n+1
+        expr <- exprN $ A1
         _ <- genSpace
         return expr
-    *<|> exprN (n+1)
+    *<|> exprN (A1)
 
