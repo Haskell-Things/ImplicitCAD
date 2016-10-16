@@ -27,9 +27,6 @@ import Data.Maybe (fromMaybe)
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
 
--- For defining the <> operator.
-import Data.Monoid (Monoid, mappend)
-
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
 
@@ -43,9 +40,6 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
-
--- Monadic operators. For creating our applicative parser.
-import Control.Applicative ((<*>), (<$>))
 
 -- NOTE: make sure we don't import (<>) in new versions.
 import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch,  long, short, option, metavar, execParser, Parser, optional, strOption)
