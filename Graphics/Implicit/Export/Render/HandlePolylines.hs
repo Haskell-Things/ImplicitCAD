@@ -1,9 +1,13 @@
 -- Implicit CAD. Copyright (C) 2012, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs) where
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
 
-import Graphics.Implicit.Definitions
+module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
+
+import Graphics.Implicit.Definitions (minℝ, Polyline, ℝ)
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =

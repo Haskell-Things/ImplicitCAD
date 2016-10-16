@@ -1,9 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
+import Graphics.Implicit.Export.Render.HandlePolylines(reducePolyline)
+
 import Graphics.Implicit.Definitions
+
 -- FIXME: commented out for now, parallelism is not properly implemented.
 -- import Control.Parallel.Strategies (using, parList, rdeepseq)
 import Data.VectorSpace
