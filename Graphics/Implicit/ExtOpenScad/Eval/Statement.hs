@@ -1,10 +1,22 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 {-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Definitions (
+                                                  Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
+                                                  Pattern(Name),
+                                                  Expr(LitE),
+                                                  OVal(OString, OBool, OList, OModule),
+                                                  VarLookup,
+                                                  StatementI(..)
+                                                 )
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal
+
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser
 import Graphics.Implicit.ExtOpenScad.Util.StateC
 import Graphics.Implicit.ExtOpenScad.Eval.Expr

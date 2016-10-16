@@ -1,11 +1,13 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.Render.RefineSegs where
 
-import Data.VectorSpace
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, Obj2, (⋅))
 import Graphics.Implicit.Export.Util (centroid)
+
+import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
 
 -- The purpose of refine is to add detail to a polyline aproximating
 -- the boundary of an implicit function and to remove redundant points.

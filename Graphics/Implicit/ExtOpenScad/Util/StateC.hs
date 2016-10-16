@@ -1,13 +1,21 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+{-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC) where
 
 import Graphics.Implicit.ExtOpenScad.Definitions
 
 import qualified Data.Map as Map
 import           Control.Monad.State (StateT, get, put, modify, liftIO)
 import           System.FilePath((</>))
-
+import           Control.Monad.IO.Class (MonadIO)
 
 type CompState = (VarLookup, [OVal], FilePath, (), ())
 type StateC = StateT CompState IO

@@ -1,14 +1,78 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, NoMonomorphismRestriction #-}
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Required.
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances #-}
 
 -- A module exporting all of the primitives, and some operations on them.
+module Graphics.Implicit.Primitives (
+                                     translate,
+                                     scale,
+                                     complement, union, intersect, difference,
+                                     unionR, intersectR, differenceR,
+                                     shell,
+                                     extrudeR,
+                                     extrudeRM,
+                                     extrudeRotateR,
+                                     extrudeOnEdgeOf,
+                                     sphere,
+                                     rect3R,
+                                     circle,
+                                     cylinder,
+                                     cylinder2,
+                                     rectR,
+                                     polygonR,
+                                     rotateExtrude,
+                                     rotate3,
+                                     rotate3V,
+                                     pack3,
+                                     rotate,
+                                     pack2,
+                                     implicit
+                                    ) where
 
-module Graphics.Implicit.Primitives where
-
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
+                                      SymbolicObj2(
+                                                   RectR,
+                                                   Circle,
+                                                   PolygonR,
+                                                   Complement2,
+                                                   UnionR2,
+                                                   DifferenceR2,
+                                                   IntersectR2,
+                                                   Translate2,
+                                                   Scale2,
+                                                   Rotate2,
+                                                   Outset2,
+                                                   Shell2,
+                                                   EmbedBoxedObj2
+                                                  ),
+                                      SymbolicObj3(
+                                                   Rect3R,
+                                                   Sphere,
+                                                   Cylinder,
+                                                   Complement3,
+                                                   UnionR3,
+                                                   DifferenceR3,
+                                                   IntersectR3,
+                                                   Translate3,
+                                                   Scale3,
+                                                   Rotate3,
+                                                   Rotate3V,
+                                                   Outset3,
+                                                   Shell3,
+                                                   EmbedBoxedObj3,
+                                                   ExtrudeR,
+                                                   ExtrudeRotateR,
+                                                   ExtrudeRM,
+                                                   RotateExtrude,
+                                                   ExtrudeOnEdgeOf
+                                                  )
+                                     )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 

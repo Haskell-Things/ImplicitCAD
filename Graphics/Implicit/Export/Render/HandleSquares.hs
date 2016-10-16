@@ -1,13 +1,16 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
-import GHC.Exts (groupWith)
-import Data.List (sortBy)
-import Data.VectorSpace
+import Graphics.Implicit.Definitions (Triangle)
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+import Data.VectorSpace ((^*), (*^), (^+^))
+
+-- Disable square merging temporarily.
+--import GHC.Exts (groupWith)
+--import Data.List (sortBy)
 
 -- We want small meshes. Essential to this, is getting rid of triangles.
 -- We secifically mark quads in tesselation (refer to Graphics.Implicit.

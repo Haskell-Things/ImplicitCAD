@@ -1,7 +1,14 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 module Graphics.Implicit.ExtOpenScad.Definitions where
 
 import Graphics.Implicit.Definitions
 import Data.Map (Map)
+
+import Control.Applicative(Alternative(..))
+import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
 
 type Symbol = String
 

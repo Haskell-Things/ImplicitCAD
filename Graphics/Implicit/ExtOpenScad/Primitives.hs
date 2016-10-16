@@ -1,23 +1,28 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
--- We'd like to parse openscad code, with some improvements, for backwards compatability.
+-- Idealy, we'd like to parse openscad code, with some improvements, for backwards compatability.
 
 -- This file provides primitive objects for the openscad parser.
--- The code is fairly straightforward; an explanation of how
--- the first one works is provided.
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
+-- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser
-import Graphics.Implicit.ExtOpenScad.Util.OVal
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3)
+
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3), ArgParser)
+
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, argument, example, test, eulerCharacteristic)
+
+import Graphics.Implicit.ExtOpenScad.Util.OVal (caseOType, divideObjs, (<||>))
 
 import qualified Graphics.Implicit.Primitives as Prim
+
 import Data.Maybe (isNothing)
+
 import qualified Data.Either as Either
 import qualified Control.Monad as Monad
 
