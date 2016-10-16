@@ -1,25 +1,28 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
 module Graphics.Implicit.Export.RayTrace where
 
-import Graphics.Implicit.ObjectUtil
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋅), Obj3)
 import Codec.Picture
 import Control.Monad
-import Data.VectorSpace       
-import Data.AffineSpace       
-import Data.Cross
+import Data.VectorSpace
+import Data.Cross hiding (normal)
 
 -- Definitions
 
 data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
     deriving Show
+
 data Ray    = Ray ℝ3 ℝ3
     deriving Show
+
 data Light  = Light ℝ3 ℝ
     deriving Show
+
 data Scene  = Scene Obj3 Color [Light] Color
 
 type Color  = PixelRGBA8
@@ -120,6 +123,7 @@ refine' n (a, b) (aval, bval) obj =
         then refine' (pred n) (a, mid) (aval, midval) obj
         else refine' (pred n) (mid, b) (midval, bval) obj
 
+intersects :: Ray -> ((ℝ, ℝ), ℝ) -> ℝ -> Obj3 -> Bool
 intersects a b c d = case intersection a b c d of
     Nothing -> False
     Just _  -> True
@@ -155,64 +159,8 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                         parComponent    = v' - normalComponent
                     in
                         normalComponent - parComponent    
-            return $ illumination*(3  + 0.3*(abs $ rV ⋅ cameraV)^2)
+            return $ illumination*(3 + 0.3*(abs $ rV ⋅ cameraV)*(abs $ rV ⋅ cameraV))
             )
         Nothing   -> defaultColor
-
-instance DiscreteAproxable SymbolicObj3 DynamicImage where
-    discreteAprox _ symbObj = dynamicImage $ generateImage pixelRenderer (round w) (round h)
-        where
-            (w,h) = (150, 150) :: ℝ2
-            obj = getImplicit3 symbObj
-            box@((x1,y1,z1), (_,y2,z2)) = getBox3 symbObj
-            av :: ℝ -> ℝ -> ℝ
-            av a b = (a+b)/(2::ℝ)
-            avY = av y1 y2
-            avZ = av z1 z2
-            deviation = maximum [abs $ y1 - avY, abs $ y2 - avY, abs $ z1 - avZ, abs $ z2 - avZ]
-            camera = Camera (x1-deviation*(2.2::ℝ), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
-            lights = [Light (x1-deviation*(1.5::ℝ), y1 - (0.4::ℝ)*(y2-y1), avZ) ((0.03::ℝ)*deviation) ]
-            scene = Scene obj (PixelRGBA8 200 200 230 255) lights (PixelRGBA8 255 255 255 0)
-            pixelRenderer :: Int -> Int -> Color
-            pixelRenderer a b = renderScreen 
-                ((fromIntegral a :: ℝ)/w - (0.5::ℝ)) ((fromIntegral b :: ℝ)/h - (0.5 ::ℝ))
-            renderScreen :: ℝ -> ℝ -> Color
-            renderScreen a b =
-                    average $ [
-                        traceRay 
-                            (cameraRay camera ((a,b) ^+^ ( 0.25/w, 0.25/h)))
-                            2 box scene,
-                        traceRay 
-                            (cameraRay camera ((a,b) ^+^ (-0.25/w, 0.25/h)))
-                            0.5 box scene,
-                        traceRay 
-                            (cameraRay camera ((a,b) ^+^ (0.25/w, -0.25/h)))
-                            0.5 box scene,
-                        traceRay 
-                            (cameraRay camera ((a,b) ^+^ (-0.25/w,-0.25/h)))
-                            0.5 box scene
-                        ]
-
-
-instance DiscreteAproxable SymbolicObj2 DynamicImage where
-    discreteAprox _ symbObj = dynamicImage $ generateImage pixelRenderer (round w) (round h)
-        where
-            (w,h) = (150, 150) :: ℝ2
-            obj = getImplicit2 symbObj
-            (p1@(x1,_), p2@(_,y2)) = getBox2 symbObj
-            (dx, dy) = p2 ^-^ p1
-            dxy = max dx dy
-            pixelRenderer :: Int -> Int -> Color
-            pixelRenderer a b = color
-                where
-                    xy a b = ((x1,y2) .-^ (dxy-dx, dy-dxy)^/2) .+^ dxy*^(a/w, -b/h)
-                    s = 0.25 :: ℝ
-                    (a', b') = (realToFrac a, realToFrac b)
-                    color = average [objColor $ xy a' b', objColor $ xy a' b',
-                        objColor $ xy (a'+s) (b'+s),
-                        objColor $ xy (a'-s) (b'-s),
-                        objColor $ xy (a'+s) (b'+s),
-                        objColor $ xy (a'-s) (b'-s)]
-            objColor p = if obj p < 0 then PixelRGBA8 150 150 160 255 else PixelRGBA8 255 255 255 0
 
 

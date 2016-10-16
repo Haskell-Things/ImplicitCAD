@@ -26,7 +26,7 @@ import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, ℝ)
 
 -- class DiscreteApprox
-import Graphics.Implicit.Export.Definitions (discreteAprox)
+import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
 
 import Data.Map.Strict as Map (lookup)

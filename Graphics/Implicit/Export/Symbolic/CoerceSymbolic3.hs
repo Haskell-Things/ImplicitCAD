@@ -8,7 +8,7 @@
 module Graphics.Implicit.Export.Symbolic.CoerceSymbolic3 (coerceSymbolic3) where
 
 import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Definitions
+import Graphics.Implicit.Export.DiscreteAproxable
 
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Primitives

@@ -12,21 +12,12 @@ module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
 import Graphics.Implicit.Definitions
 
-import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Export.Render (getMesh)
 
 import Graphics.Implicit.ObjectUtil
 import Graphics.Implicit.MathUtil
 
 import Graphics.Implicit.Export.Symbolic.Rebound3
-import Graphics.Implicit.Export.Util (normTriangle)
-
-
-instance DiscreteAproxable SymbolicObj3 TriangleMesh where
-    discreteAprox res obj = symbolicGetMesh res obj
-
-instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
-    discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 

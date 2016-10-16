@@ -1,13 +1,14 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.Export.Symbolic.CoerceSymbolic2 (coerceSymbolic2) where
 
 import Graphics.Implicit.Definitions
+import Graphics.Implicit.Export.DiscreteAproxable
 
-import Graphics.Implicit.Export.Definitions
 import Graphics.Implicit.Operations
 import Graphics.Implicit.Primitives
 

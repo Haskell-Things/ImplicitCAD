@@ -21,14 +21,13 @@ import qualified Graphics.Implicit.Export.Render as Render (getContour)
 
 import Data.VectorSpace
 
-instance DiscreteAproxable SymbolicObj2 [Polyline] where
-    discreteAprox res obj = symbolicGetContour res obj
-
 symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res symbObj
     where
         obj = getImplicit2 symbObj
         orient :: Polyline -> Polyline
+        orient [] = []
+        orient [_] = []
         orient points@(x:y:_) =
             let
                 v = (\(a,b) -> (b, -a)) (y - x)
