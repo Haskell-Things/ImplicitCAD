@@ -18,35 +18,28 @@ import Data.VectorSpace
 -- (1) We calculate midpoints using interpolate.
 --     This guarentees that our mesh will line up everywhere.
 --     (Contrast with calculating them in getSegs)
-
 import Graphics.Implicit.Export.Render.Interpolate (interpolate)
 
 -- (2) We calculate the segments separating the inside and outside of our
 --     object on the sides of the cube.
 --     getSegs internally uses refine from RefineSegs to subdivide the segs
 --     to better match the boundary.
-
 import Graphics.Implicit.Export.Render.GetSegs (getSegs)
--- import Graphics.Implicit.Export.Render.RefineSegs (refine)
 
 -- (3) We put the segments from all sides of the cube together
 --     and extract closed loops.
-
 import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 
 -- (4) We tesselate the loops, using a mixture of triangles and squares
-
 import Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop)
 
 -- (5) We try to merge squares, then turn everything into triangles.
-
 import Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris)
 
 -- Success: This is our mesh.
 
 -- Each step is done in parallel using Control.Parallel.Strategies
-
-import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
 
 -- The actual code is just a bunch of ugly argument passing.
 -- Utility functions can be found at the end.
@@ -84,83 +77,80 @@ getMesh p1@(x1,y1,z1) p2 res obj =
         ry = dy/fromIntegral ny
         rz = dz/fromIntegral nz
 
+        -- The positions we're rendering.
         pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
         pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
         pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
 
-
-        {-# INLINE par3DList #-}
         par3DList lenx leny lenz f =
             [[[f
                 (\n -> x1 + rx*fromInteger (mx+n)) mx
                 (\n -> y1 + ry*fromInteger (my+n)) my
                 (\n -> z1 + rz*fromInteger (mz+n)) mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-                `using` (parListChunk (max 1 $ fromInteger $ div lenz 32) rdeepseq)
-
+                `using` (parBuffer (max 1 $ fromInteger $ div lenz 32) rdeepseq)
 
         -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ = [[[
-                 interpolate (z0, objX0Y0Z0) (z1, objX0Y0Z1) (appAB obj x0 y0) res
+                 interpolate (z0, objX0Y0Z0) (z1', objX0Y0Z1) (appAB obj x0 y0) res
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0 | objY0Z1 <- objZ1
-                ]| z0 <- pZs | z1 <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
-                ] `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+                ]| z0 <- pZs | z1' <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
+                ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
         midsY = [[[
-                 interpolate (y0, objX0Y0Z0) (y1, objX0Y1Z0) (appAC obj x0 z0) res
+                 interpolate (y0, objX0Y0Z0) (y1', objX0Y1Z0) (appAC obj x0 z0) res
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
-                ]| y0 <- pYs | y1 <- tail pYs | objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
+                ]| y0 <- pYs | y1' <- tail pYs | objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+                ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
         midsX = [[[
-                 interpolate (x0, objX0Y0Z0) (x1, objX1Y0Z0) (appBC obj y0 z0) res
-                 | x0 <- pXs | x1 <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
+                 interpolate (x0, objX0Y0Z0) (x1', objX1Y0Z0) (appBC obj y0 z0) res
+                 | x0 <- pXs | x1' <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+                ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
         -- Calculate segments for each side
         segsZ = [[[
-            map2  (inj3 z0) $ getSegs (x0,y0) (x1,y1) (obj **$ z0)
+            map2  (inj3 z0) $ getSegs (x0,y0) (x1',y1') (obj **$ z0)
                 (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
                 (midA0, midA1, midB0, midB1)
-             |x0<-pXs|x1<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
+             |x0<-pXs|x1'<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
              |objX0Y0Z0<-objY0Z0|objX1Y0Z0<-tail objY0Z0|objX0Y1Z0<-objY1Z0|objX1Y1Z0<-tail objY1Z0
-            ]|y0<-pYs|y1<-tail pYs|mX'' <-mX'  |mX'T <-tail mX'|mY'' <-mY'
+            ]|y0<-pYs|y1'<-tail pYs|mX'' <-mX'  |mX'T <-tail mX'|mY'' <-mY'
              |objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
             ]|z0<-pZs             |mX'  <-midsX|                mY'  <-midsY
              |objZ0 <- objV
-            ] `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+            ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
         segsY = [[[
-            map2  (inj2 y0) $ getSegs (x0,z0) (x1,z1) (obj *$* y0)
+            map2  (inj2 y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0)
                  (objX0Y0Z0,objX1Y0Z0,objX0Y0Z1,objX1Y0Z1)
                  (midA0, midA1, midB0, midB1)
-             |x0<-pXs|x1<-tail pXs|midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-tail mA''
+             |x0<-pXs|x1'<-tail pXs|midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-tail mA''
              |objX0Y0Z0<-objY0Z0|objX1Y0Z0<-tail objY0Z0|objX0Y0Z1<-objY0Z1|objX1Y0Z1<-tail objY0Z1
             ]|y0<-pYs|             mB'' <-mB'  |mBT' <-mBT       |mA'' <-mA'
              |objY0Z0 <- objZ0 | objY0Z1 <- objZ1
-            ]|z0<-pZs|z1<-tail pZs|mB'  <-midsX|mBT  <-tail midsX|mA'  <-midsZ
+            ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsX|mBT  <-tail midsX|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ] `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+            ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
-        segsX =
-            [[[
-            map2  (inj1 x0) $ getSegs (y0,z0) (y1,z1) (obj $** x0)
+        segsX = [[[
+            map2  (inj1 x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0)
                  (objX0Y0Z0,objX0Y1Z0,objX0Y0Z1,objX0Y1Z1)
                  (midA0, midA1, midB0, midB1)
              |x0<-pXs|             midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-mA'T
              |objX0Y0Z0<-objY0Z0|objX0Y1Z0<-    objY1Z0|objX0Y0Z1<-objY0Z1|objX0Y1Z1<-     objY1Z1
-            ]|y0<-pYs|y1<-tail pYs|mB'' <-mB'  |mBT' <-mBT       |mA'' <-mA'  |mA'T <-tail mA'
+            ]|y0<-pYs|y1'<-tail pYs|mB'' <-mB'  |mBT' <-mBT       |mA'' <-mA'  |mA'T <-tail mA'
              |objY0Z0  <-objZ0  |objY1Z0  <-tail objZ0  |objY0Z1  <-objZ1  |objY1Z1  <-tail objZ1
-            ]|z0<-pZs|z1<-tail pZs|mB'  <-midsY|mBT  <-tail midsY|mA'  <-midsZ
+            ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsY|mBT  <-tail midsY|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ]  `using` (parListChunk (max 1 $ fromInteger $ div nz 32) rdeepseq)
+            ]  `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
 
         -- (3) & (4) : get and tesselate loops
         sqTris = [[[
@@ -184,7 +174,8 @@ getMesh p1@(x1,y1,z1) p2 res obj =
             ]| segZ'  <- segsZ | segZT  <- tail segsZ
              | segY' <- segsY
              | segX' <- segsX
-            ]
+            ]   `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
+
     in cleanupTris $ mergedSquareTris $ concat $ concat $ concat sqTris -- (5) merge squares, etc
 
 -- Removes triangles that are empty, when converting their positions to Float resolution.
@@ -221,38 +212,38 @@ getContour p1@(x1, y1) p2@(_, _) res obj =
                 (\n -> x1 + rx*fromIntegral (mx+n)) mx
                 (\n -> y1 + ry*fromIntegral (my+n)) my
             | mx <- [0..lenx] ] | my <- [0..leny] ]
-                `using` (parListChunk (max 1 $ fromInteger $ div leny 32) rdeepseq)
+                `using` (parBuffer (max 1 $ fromInteger $ div leny 32) rdeepseq)
 
 
         -- Evaluate obj to avoid waste in mids, segs, later.
 
         objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
 
-        -- (1) Calculate mid poinsts on X, Y, and Z axis in 3D space.
+        -- (1) Calculate mid points on X, and Y axis in 2D space.
 
         midsY = [[
-                 interpolate (y0, objX0Y0) (y1, objX0Y1) (obj $* x0) res
+                 interpolate (y0, objX0Y0) (y1', objX0Y1) (obj $* x0) res
                  | x0 <- pXs |                  objX0Y0 <- objY0   | objX0Y1 <- objY1
-                ]| y0 <- pYs | y1 <- tail pYs | objY0   <- objV    | objY1   <- tail objV
-                ] `using` (parListChunk (max 1 $ fromInteger $ div ny 32) rdeepseq)
+                ]| y0 <- pYs | y1' <- tail pYs | objY0   <- objV    | objY1   <- tail objV
+                ] `using` (parBuffer (max 1 $ fromInteger $ div ny 32) rdeepseq)
 
         midsX = [[
-                 interpolate (x0, objX0Y0) (x1, objX1Y0) (obj *$ y0) res
-                 | x0 <- pXs | x1 <- tail pXs | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
+                 interpolate (x0, objX0Y0) (x1', objX1Y0) (obj *$ y0) res
+                 | x0 <- pXs | x1' <- tail pXs | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
                 ]| y0 <- pYs |                  objY0   <- objV
-                ] `using` (parListChunk (max 1 $ fromInteger $ div ny 32) rdeepseq)
+                ] `using` (parBuffer (max 1 $ fromInteger $ div ny 32) rdeepseq)
 
         -- Calculate segments for each side
 
         segs = [[
-            getSegs (x0,y0) (x1,y1) obj
+            getSegs (x0,y0) (x1',y1') obj
                 (objX0Y0, objX1Y0, objX0Y1, objX1Y1)
                 (midA0, midA1, midB0, midB1)
-             |x0<-pXs|x1<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
+             |x0<-pXs|x1'<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
              |objX0Y0<-objY0|objX1Y0<-tail objY0|objX0Y1<-objY1|objX1Y1<-tail objY1
-            ]|y0<-pYs|y1<-tail pYs|mX'' <-midsX|mX'T <-tail midsX|mY'' <-midsY
+            ]|y0<-pYs|y1'<-tail pYs|mX'' <-midsX|mX'T <-tail midsX|mY'' <-midsY
              |objY0 <- objV  | objY1 <- tail objV
-            ] `using` (parListChunk (max 1 $ fromInteger $ div ny 32) rdeepseq)
+            ] `using` (parBuffer (max 1 $ fromInteger $ div ny 32) rdeepseq)
 
     in cleanLoopsFromSegs $ concat $ concat $ segs -- (5) merge squares, etc
 
