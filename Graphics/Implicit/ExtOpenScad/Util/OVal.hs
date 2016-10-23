@@ -17,6 +17,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions
 import qualified Control.Monad as Monad
 import Data.Maybe (isJust)
 
+-- for some minimal paralellism.
+import Control.Parallel.Strategies(runEval, rpar, rseq)
+
 -- | We'd like to be able to turn OVals into a given Haskell type
 class OTypeMirror a where
     fromOObj :: OVal -> Maybe a
@@ -136,9 +139,11 @@ infixr 2 <||>
 
 divideObjs :: [OVal] -> ([SymbolicObj2], [SymbolicObj3], [OVal])
 divideObjs children =
-    ([ x | OObj2 x <- children ],
-     [ x | OObj3 x <- children ],
-     filter (not . isOObj) $ children )
+    runEval $ do
+    obj2s <- rseq ([ x | OObj2 x <- children ])
+    obj3s <- rseq ([ x | OObj3 x <- children ])
+    objs <- rpar (filter (not . isOObj) $ children )
+    return (obj2s, obj3s, objs)
         where
           isOObj  (OObj2 _) = True
           isOObj  (OObj3 _) = True
