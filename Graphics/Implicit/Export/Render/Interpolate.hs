@@ -117,10 +117,7 @@ interpolate (a,aval) (b,bval) f _ =
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
-interpolate_lin :: forall a a1.
-                   (Fractional a1, Num a, Ord a, Ord a1) =>
-                   a -> (a1, a1) -> (a1, a1) -> (a1 -> a1) -> a1
-
+interpolate_lin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
