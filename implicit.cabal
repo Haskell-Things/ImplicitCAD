@@ -43,13 +43,10 @@ library
         transformers
 
     ghc-options:
-        -O2
         -threaded
-        -optc-O3
         -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
         -Wall
+        -O2
 
     extensions:
     exposed-modules:
@@ -117,12 +114,10 @@ executable extopenscad
                  optparse-applicative >= 0.10.0,
                  implicit
    ghc-options:
-        -optc-O3
         -threaded
         -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
         -Wall
+        -O2
 
 -- FIXME: does not compile.
 --

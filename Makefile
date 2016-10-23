@@ -4,6 +4,8 @@ RTSOPTS=+RTS -N
 
 RESOPTS=-r 10
 
+#uncomment for profiling support.
+#PROFILING= --enable-library-profiling --enable-executable-profiling
 
 # stl2ps, from stltools, available from https://github.com/rsmith-nl/stltools/tree/develop
 stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
@@ -54,7 +56,8 @@ dist/build/extopenscad/extopenscad: Setup dist/setup-config
 	cabal build
 
 dist/setup-config: Setup implicit.cabal
-	cabal configure
+	cabal install --only-dependencies
+	cabal configure $(PROFILING)
 
 Setup: Setup.*hs
 	ghc -O2 -Wall --make Setup
