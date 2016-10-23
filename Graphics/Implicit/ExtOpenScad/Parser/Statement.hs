@@ -9,11 +9,13 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Statement where
 
-import Text.ParserCombinators.Parsec hiding (State)
+import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
+
 import Text.Parsec.Prim (ParsecT)
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Util
-import Graphics.Implicit.ExtOpenScad.Parser.Expr
+
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(..), Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE))
+import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb)
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 parseProgram :: SourceName -> [Char] -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
@@ -73,7 +75,7 @@ computation =
 --      union() sphere(3);
 --
 --  We consider it to be a list of s which
---  are in tern StatementI s.
+--  are in turn StatementI s.
 --  So this parses them.
 -}
 suite :: GenParser Char st [StatementI]
@@ -244,3 +246,9 @@ lineNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 
+--FIXME: use the below function to improve error handling.
+{-
+columnNumber :: forall s u (m :: * -> *).
+              Monad m => ParsecT s u m Column
+columnNumber = fmap sourceColumn getPosition
+-}

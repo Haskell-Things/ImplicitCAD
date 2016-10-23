@@ -3,8 +3,6 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ViewPatterns #-}
-
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
 import Prelude hiding (round)
@@ -16,7 +14,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋯/), Obj3,
 import qualified Graphics.Implicit.MathUtil as MathUtil (rmaximum, rminimum, rmax)
 import qualified Data.Maybe as Maybe
 import qualified Data.Either as Either
-import Data.VectorSpace
+import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
 import Data.Cross (cross3)
 
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)

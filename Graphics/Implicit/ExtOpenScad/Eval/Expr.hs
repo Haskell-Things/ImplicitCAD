@@ -2,11 +2,14 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE ViewPatterns #-}
-
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Definitions (
+                                                  Pattern(Name, ListP, Wild),
+                                                  OVal(OList, OError, OFunc),
+                                                  Expr(LitE, Var, ListE, LamE, (:$)),
+                                                  VarLookup)
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal
 import Graphics.Implicit.ExtOpenScad.Util.StateC
 

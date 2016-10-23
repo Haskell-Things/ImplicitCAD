@@ -118,8 +118,6 @@ getErrors (OError er) = Just $ head er
 getErrors (OList l)   = Monad.msum $ map getErrors l
 getErrors _           = Nothing
 
-type Any = OVal
-
 caseOType :: forall c a. a -> (a -> c) -> c
 caseOType = flip ($)
 

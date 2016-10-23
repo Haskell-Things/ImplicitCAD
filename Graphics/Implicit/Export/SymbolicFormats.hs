@@ -4,7 +4,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.Export.SymbolicFormats where
+module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.TextBuilderUtils

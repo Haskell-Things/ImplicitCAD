@@ -6,6 +6,7 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- Required.
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeSCAD3, writeSCAD2, writePNG) where
@@ -26,7 +27,6 @@ import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats
-
 import qualified Codec.Picture as ImageFormatCodecs
 
 -- Write an object using the given format function.

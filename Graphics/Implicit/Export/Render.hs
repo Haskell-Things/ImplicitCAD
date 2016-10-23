@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.Export.Render where
 
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Obj2, Obj3, TriangleMesh, Triangle, Polyline)
 import Data.VectorSpace
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
@@ -66,8 +66,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parListChunk)
 --       the mesh are abstracted into the imported files.
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
-
-import Graphics.Implicit.Export.Render.HandlePolylines ( cleanLoopsFromSegs )
+import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
 getMesh p1@(x1,y1,z1) p2 res obj =

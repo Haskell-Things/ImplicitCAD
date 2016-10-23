@@ -50,7 +50,7 @@ interpolate _ (b, 0) _ _  = b
 
 -- It may seem, at first, that our task is trivial.
 -- Just use linear interpolation!
--- Unfortunatly, there's a nasty failure case
+-- Unfortunately, there's a nasty failure case
 
 {-                   /
                     /
