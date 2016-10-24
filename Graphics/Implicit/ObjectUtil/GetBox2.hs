@@ -83,8 +83,10 @@ getBox2 (Translate2 v symbObj) =
 getBox2 (Scale2 s symbObj) =
     let
         (a,b) = getBox2 symbObj
+        (sax,say) = s ⋯* a
+        (sbx,sby) = s ⋯* b
     in
-        (s ⋯* a, s ⋯* b)
+        ((min sax sbx, min say sby), (max sax sbx, max say sby))
 
 getBox2 (Rotate2 θ symbObj) = 
     let
