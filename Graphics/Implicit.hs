@@ -54,10 +54,10 @@ module Graphics.Implicit(
 -- The primitive objects, and functions for manipulating them.
 import Graphics.Implicit.Primitives (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeRotateR, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit)
 
--- The Extended OpenScad interpreter
+-- The Extended OpenScad interpreter.
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
 
--- Export functions, for writing files based on the result of operations on primitives
+-- Functions for writing files based on the result of operations on primitives.
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
 
 -- Datatypes/classes defining the world, or part of the world.

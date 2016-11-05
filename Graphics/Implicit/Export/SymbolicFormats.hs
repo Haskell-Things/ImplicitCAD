@@ -4,6 +4,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
+-- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Graphics.Implicit.Definitions
@@ -12,7 +13,6 @@ import Graphics.Implicit.Export.TextBuilderUtils
 import Control.Monad.Reader
 
 import Data.List (intersperse)
-
 
 scad2 :: ℝ -> SymbolicObj2 -> Text 
 scad2 res obj = toLazyText $ runReader (buildS2 obj) res

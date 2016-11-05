@@ -6,7 +6,7 @@
 -- FIXME: add support for AMF.
 -- An interpreter to run extended OpenScad code, outputing STL, OBJ, SVG, SCAD, PNG, or GCODE.
 
--- Enable additional syntax to make our code prettier.
+-- Enable additional syntax to make our code more readable.
 {-# LANGUAGE ViewPatterns , PatternGuards #-}
 
 -- Let's be explicit about what we're getting from where :)

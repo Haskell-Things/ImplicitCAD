@@ -3,7 +3,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
 
--- FIXME: this doesn't work. looks like it never has.
+-- FIXME: this doesn't work. looks like it broke badly when ArgParser became a Monad.
 
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser

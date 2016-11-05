@@ -166,7 +166,6 @@ forStatementI =
         loopContent <- suite
         return $ StatementI line $ For pattern vexpr loopContent
 
-
 userModule :: GenParser Char st StatementI
 userModule = do
     line <- lineNumber
@@ -246,7 +245,7 @@ lineNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 
---FIXME: use the below function to improve error handling.
+--FIXME: use the below function to improve error reporting.
 {-
 columnNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Column

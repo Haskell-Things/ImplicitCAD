@@ -41,6 +41,8 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
    #__#
 -}
 
+-- NOTE: colah thought this was broken.
+
 tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
     let
         b1 = normalized $ a ^-^ b
