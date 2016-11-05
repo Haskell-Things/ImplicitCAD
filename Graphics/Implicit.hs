@@ -19,6 +19,8 @@ module Graphics.Implicit(
     unionR, intersectR, differenceR,
     shell,
     extrudeR,
+    extrudeRotateR,
+    extrudeRM,
     extrudeOnEdgeOf,
     -- Primitives
     sphere,
