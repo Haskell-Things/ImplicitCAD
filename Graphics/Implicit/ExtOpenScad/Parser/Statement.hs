@@ -9,7 +9,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Statement where
 
-import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
+import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, (<|>), (<?>))
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -49,13 +49,14 @@ computation =
         _ <- genSpace
         s <- tryMany [
             echo,
-            assignment,
-            include--,
+            include,
+            function,
+            assignment--,
             --use
             ]
         _ <- stringGS " ; "
         return s
-    *<|> do
+    *<|> do -- Modules
         _ <- genSpace
         s <- userModule
         _ <- genSpace
@@ -119,10 +120,13 @@ assignment = ("assignment " ?:) $
         _ <- stringGS " = "
         valExpr <- expr0
         return $ StatementI line$ pattern := valExpr
-    *<|> do
+
+-- | A function declaration (parser)
+function :: GenParser Char st StatementI
+function = ("function " ?:) $
+    do
         line <- lineNumber
         varSymb <- (string "function" >> space >> genSpace >> variableSymb)
-                   *<|> variableSymb
         _ <- stringGS " ( "
         argVars <- sepBy patternMatcher (stringGS " , ")
         _ <- stringGS " ) = "

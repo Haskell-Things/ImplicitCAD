@@ -21,9 +21,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
+
+import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, ℝ)
+
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
-import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, ℝ)
 
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
