@@ -137,7 +137,7 @@ function = ("function " ?:) $
 echo :: GenParser Char st StatementI
 echo = do
     line <- lineNumber
-    _ <- stringGS " echo ( "
+    _ <- stringGS "echo ( "
     exprs <- expr0 `sepBy` (stringGS " , ")
     _ <- stringGS " ) "
     return $ StatementI line $ Echo exprs
@@ -162,7 +162,7 @@ forStatementI =
         --      for ( vsymb = vexpr   ) loops
         -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
         -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-        _ <- stringGS " for ( "
+        _ <- stringGS "for ( "
         pattern <- patternMatcher
         _ <- stringGS " = "
         vexpr <- expr0
