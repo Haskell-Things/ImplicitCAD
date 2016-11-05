@@ -30,6 +30,8 @@ logicalSpec = do
   describe "ternary operator" $ do
     specify "with primitive expressions" $
       "x ? 2 : 3" --> app' "?" [Var "x", num 2, num 3]
+    specify "with parenthesized comparison" $
+      "(1 > 0) ? 5 : -5" --> app' "?" [app' ">" [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position" $
       ternaryIssue $ "1 > 0 ? 5 : -5" --> app' "?" [app' ">" [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position, and addition in tail" $
