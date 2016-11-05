@@ -47,6 +47,8 @@ library
         -rtsopts
         -Wall
         -O2
+        -optc-O3
+        -optc-ffast-math
 
     extensions:
     exposed-modules:
@@ -63,6 +65,13 @@ library
         Graphics.Implicit.ExtOpenScad.Parser.Statement
         Graphics.Implicit.ExtOpenScad.Parser.Expr
         Graphics.Implicit.ExtOpenScad.Definitions
+        -- these are exported for Benchmark.
+        Graphics.Implicit.Export.SymbolicObj2
+        Graphics.Implicit.Export.SymbolicObj3
+        -- these are exported for implicitsnap.
+        Graphics.Implicit.Export.TriangleMeshFormats
+        Graphics.Implicit.Export.PolylineFormats
+        Graphics.Implicit.Export.DiscreteAproxable
 
     other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
@@ -79,12 +88,7 @@ library
         Graphics.Implicit.ExtOpenScad.Util.OVal
         Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill
-        Graphics.Implicit.Export.SymbolicObj2
-        Graphics.Implicit.Export.SymbolicObj3
-        Graphics.Implicit.Export.DiscreteAproxable
         Graphics.Implicit.Export.RayTrace
-        Graphics.Implicit.Export.PolylineFormats
-        Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.NormedTriangleMeshFormats
         Graphics.Implicit.Export.SymbolicFormats
         Graphics.Implicit.Export.Util
@@ -118,22 +122,46 @@ executable extopenscad
         -rtsopts
         -Wall
         -O2
+        -optc-O3
+        -optc-ffast-math
 
 -- FIXME: does not compile.
---
 --Executable docgen
---
---   Main-is: docgen.hs
+
+--   main-is: docgen.hs
+--   build-depends:
+--                 base,
+--                 vector-space,
+--                 text,
+--                 JuicyPixels,
+--                 blaze-builder,
+--                 blaze-svg,
+--                 blaze-markup,
+--                 parallel,
+--                 deepseq,
+--                 vector-space,
+--                 monads-tf,
+--                 bytestring,
+--                 storable-endian,
+--                 parsec,
+--                 directory,
+--                 containers,
+--                 filepath,
+--                 snap-core,
+--                 snap-server,
+--                 silently,
+--                 transformers
 --   ghc-options:
 --        -optc-O3
 --        -threaded
 --        -rtsopts
 --        -funfolding-use-threshold=16
 --       -fspec-constr-count=10
-
+               
 executable implicitsnap
 
    main-is: implicitsnap.hs
+   hs-source-dirs: programs
    build-depends:
                  base,
                  vector-space,
@@ -155,17 +183,20 @@ executable implicitsnap
                  snap-core,
                  snap-server,
                  silently,
-                 transformers
+                 transformers,
+                 implicit
    ghc-options:
-        -optc-O3
         -threaded
         -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
+        -Wall
+        -O2
+        -optc-O3
+        -optc-ffast-math
 
 executable Benchmark
 
    main-is: Benchmark.hs
+   hs-source-dirs: programs
    build-depends:
                  base,
                  text,
@@ -184,13 +215,15 @@ executable Benchmark
                  containers,
                  filepath,
                  criterion,
-                 transformers
+                 transformers,
+                 implicit
    ghc-options:
-        -optc-O3
         -threaded
         -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
+        -Wall
+        -O2
+        -optc-O3
+        -optc-ffast-math
 
 test-suite test-implicit
     type: exitcode-stdio-1.0
