@@ -63,7 +63,7 @@ formatObject res format = format . discreteAprox res
 writeSVG :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
 writeSVG res = writeObject res PolylineFormats.svg
 
-writeSTL :: forall obj. DiscreteAproxable obj [Graphics.Implicit.Definitions.Triangle] => ℝ -> FilePath -> obj -> IO ()
+writeSTL :: forall obj. DiscreteAproxable obj [Triangle] => ℝ -> FilePath -> obj -> IO ()
 writeSTL res = writeObject res TriangleMeshFormats.stl
 
 writeBinSTL :: forall obj. DiscreteAproxable obj [Triangle] => ℝ -> FilePath -> obj -> IO ()
