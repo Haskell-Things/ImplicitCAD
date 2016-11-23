@@ -67,6 +67,7 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
                     ,"G21 (units=mm)\n"
                     ,"F400 (set feedrate)\n"
                     ,"M3 S1 (enable laser)\n\n"]
+      gcodeFooter :: Builder
       gcodeFooter = mconcat [
                      "M5 (disable laser)\n"
                     ,"G00 X0.0 Y0.0 (move to 0)\n"

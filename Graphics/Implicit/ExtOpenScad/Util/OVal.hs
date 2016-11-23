@@ -86,7 +86,8 @@ instance forall a b. (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) wher
         let
             oInput = toOObj input
             oOutput = f oInput
-            output = fromOObj oOutput :: Maybe b
+            output :: Maybe b
+            output = fromOObj oOutput
         in case output of
             Just out -> out
             Nothing -> error $ "coercing OVal to a -> b isn't always safe; use a -> Maybe b"
@@ -133,10 +134,11 @@ infixr 2 <||>
     -> (OVal -> out)
 (<||>) f g = \input ->
     let
-        coerceAttempt = fromOObj input :: Maybe desiredType
+        coerceAttempt :: Maybe desiredType
+        coerceAttempt = fromOObj input
     in
         if isJust coerceAttempt -- ≅ (/= Nothing) but no Eq req
-        then f $ (\(Just a) -> a) coerceAttempt
+        then f $ fromJust coerceAttempt
         else g input
 
 divideObjs :: [OVal] -> ([SymbolicObj2], [SymbolicObj3], [OVal])

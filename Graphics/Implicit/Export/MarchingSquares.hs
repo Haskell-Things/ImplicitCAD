@@ -25,12 +25,19 @@ getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour p1 p2 d obj =
     let
         -- How many steps will we take on each axis?
-        n@(nx,ny) = (ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+        n :: (Int, Int)
+        n =  (ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
+        nx = fst n
+        ny = snd n
         -- Divide it up and compute the polylines
         gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
-        gridPos (nx',ny') (mx,my) = let p = ( fromIntegral mx / fromIntegral nx'
-                                          , fromIntegral my / fromIntegral ny')
-                                  in p1 ^+^ (p2 ^-^ p1) ⋯* p
+        gridPos (nx',ny') (mx,my) =
+            let
+                p :: ℝ2
+                p = ( fromIntegral mx / fromIntegral nx'
+                    , fromIntegral my / fromIntegral ny')
+            in
+              p1 ^+^ (p2 ^-^ p1) ⋯* p
         linesOnGrid :: [[[Polyline]]]
         linesOnGrid = [[getSquareLineSegs
                    (gridPos n (mx,my))
@@ -108,6 +115,7 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
         midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
         midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
         midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
+        notPointLine :: Eq a => [a] -> Bool
         notPointLine (p1:p2:[]) = p1 /= p2
         notPointLine ([]) = False
         notPointLine ([_]) = False

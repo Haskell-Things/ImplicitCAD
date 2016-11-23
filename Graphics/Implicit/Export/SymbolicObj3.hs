@@ -199,6 +199,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
         boxes = map getBox3 objs
         boxedObjs = zip boxes objs
         
+        sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
         sepFree ((box,obj):others) = 
             if length (filter (box3sWithin r box) boxes) > 1
             then (\(a,b) -> (obj:a,b)) $ sepFree others

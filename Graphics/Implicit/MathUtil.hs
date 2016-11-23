@@ -98,6 +98,7 @@ pack ::
     -> ([(ℝ2, a)], [(Box2, a)] ) -- ^ Packed objects with their positions, objects that could be packed
 pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
     where
+        compareBoxesByY :: forall t t1 t2 t3 a. (Ord a, Num a) => ((t, a), (t1, a)) -> ((t2, a), (t3, a)) -> Ordering
         compareBoxesByY  ((_, ay1), (_, ay2))  ((_, by1), (_, by2)) =
                 compare (abs $ by2-by1) (abs $ ay2 - ay1)
 
@@ -105,10 +106,12 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
             (\(boxa, _) (boxb, _) -> compareBoxesByY boxa boxb )
             objs
 
+        tmap1 :: forall t t1 t2. (t2 -> t) -> (t2, t1) -> (t, t1)
         tmap1 f (a,b) = (f a, b)
+        tmap2 :: forall t t1 t2. (t2 -> t1) -> (t, t2) -> (t, t1)
         tmap2 f (a,b) = (a, f b)
 
-        --packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
+        packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
         packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) =
             if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
             then

@@ -32,7 +32,9 @@ normal (a,b,c) =
 stl :: [Triangle] -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
     where
+        stlHeader :: Builder
         stlHeader = "solid ImplictCADExport\n"
+        stlFooter :: Builder
         stlFooter = "endsolid ImplictCADExport\n"
         vector :: ℝ3 -> Builder
         vector (x,y,z) = bf x <> " " <> bf y <> " " <> bf z
@@ -62,6 +64,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map t
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
           triangle (a,b,c) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
+          point :: forall a a1 a2. (Real a2, Real a1, Real a) => (a, a1, a2) -> BI.Builder
           point (x,y,z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
           normalV ps = let (x,y,z) = normal ps
                        in fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
@@ -70,6 +73,7 @@ jsTHREE :: TriangleMesh -> Text
 jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
         where
                 -- some dense JS. Let's make helper functions so that we don't repeat code each line
+                header :: Builder
                 header = mconcat [
                           "var Shape = function(){\n"
                          ,"var s = this;\n"
@@ -79,6 +83,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                          ,"function f(a,b,c){"
                          ,"s.faces.push(new THREE.Face3(a,b,c));"
                          ,"}\n" ]
+                footer :: Builder
                 footer = mconcat [
                           "}\n"
                          ,"Shape.prototype = new THREE.Geometry();\n"
@@ -100,5 +105,5 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 facecode = mconcat $ do
                         (n,_) <- zip [0, 3 ..] triangles
                         let
-                                (posa, posb, posc) = (n, n+1, n+2)
+                            (posa, posb, posc) = (n, n+1, n+2) :: (Int, Int, Int)
                         return $ f posa posb posc

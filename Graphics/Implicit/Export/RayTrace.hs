@@ -149,13 +149,12 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
             guard . not $ intersects ray' ((0, obj p),20) step obj
             let
                 pval = obj p
-                       -- FIXME: why was this here?
---                step = 0.1 :: ℝ
                 dirDeriv :: ℝ3 -> ℝ
                 dirDeriv v'' = (obj (p ^+^ step*^v'') ^-^ pval)/step
                 deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
                 normal = normalized $ deriv
                 unitV = normalized $ v'
+                proj :: forall v. InnerSpace v => v -> v -> v
                 proj a' b' = (a'⋅b')*^b'
                 dist  = vectorDistance p lightPos
                 illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * (25 /dist)

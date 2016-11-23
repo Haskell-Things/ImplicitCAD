@@ -171,7 +171,7 @@ class Object obj vec | obj -> vec where
         -> obj  -- ^ Object to scale
         -> obj  -- ^ Resulting scaled object
 
-    -- | Outset an object.
+    -- | Outset of an object.
     outset ::
         ℝ        -- ^ distance to outset
         -> obj   -- ^ object to outset
@@ -272,6 +272,7 @@ rotate3V = Rotate3V
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs =
     let
+        boxDropZ :: forall t t1 t2 t3 t4 t5. ((t2, t3, t), (t4, t5, t1)) -> ((t2, t3), (t4, t5))
         boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
         withBoxes :: [(Box2, SymbolicObj3)]
         withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs

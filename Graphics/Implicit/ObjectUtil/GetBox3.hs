@@ -33,7 +33,10 @@ getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
 getBox3 (Complement3 _) =
-    ((-infty, -infty, -infty), (infty, infty, infty)) where infty = 1/0
+    ((-infty, -infty, -infty), (infty, infty, infty))
+        where
+          infty :: (Fractional t) => t
+          infty = 1/0
 getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
     where
         boxes = map getBox3 symbObjs
@@ -64,9 +67,7 @@ getBox3 (IntersectR3 _ symbObjs) =
           && out   > inward
         then ((left,bot,inward),(right,top,out))
         else ((0,0,0),(0,0,0))
-getBox3 (DifferenceR3 _ symbObjs) = firstBox
-    where
-        firstBox:_ = map getBox3 symbObjs
+getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
 -- Simple transforms
 getBox3 (Translate3 v symbObj) =
     let
@@ -103,6 +104,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 -- FIXME: magic numbers in range.
 getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     let
+        range :: [ℝ]
         range = [0, 0.1 .. 1.0]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)

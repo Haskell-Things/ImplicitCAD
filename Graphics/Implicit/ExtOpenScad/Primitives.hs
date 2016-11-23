@@ -71,13 +71,15 @@ cube = moduleWithoutSuite "cube" $ do
             center :: Bool <- argument "center"
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
-            let toInterval' = toInterval center
+            let
+                toInterval' :: Fractional t => t -> (t, t)
+                toInterval' = toInterval center
             return (either toInterval' id x,
                     either toInterval' id y,
                     either toInterval' id z)
         <|> do
             size   :: Either ℝ ℝ3  <- argument "size"
-                `doc`  "square size"
+                `doc`  "cube size"
             center :: Bool <- argument "center"
                 `doc` "should center?"
                 `defaultTo` False
@@ -114,7 +116,9 @@ square = moduleWithoutSuite "square" $ do
             center :: Bool <- argument "center"
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
-            let toInterval' = toInterval center
+            let
+                toInterval' :: Fractional t => t -> (t, t)
+                toInterval' = toInterval center
             return (either toInterval' id x,
                     either toInterval' id y)
         <|> do
@@ -174,14 +178,20 @@ cylinder = moduleWithoutSuite "cylinder" $ do
     let
         (h1, h2) = either (toInterval center) id h
         dh = h2 - h1
-        shift = if h1 == 0 then id else Prim.translate (0,0,h1)
+        shift :: SymbolicObj3 -> SymbolicObj3
+        shift =
+            if h1 == 0
+            then id
+            else Prim.translate (0,0,h1)
 
     -- The result is a computation state modifier that adds a 3D object,
     -- based on the args.
     addObj3 $ if r1 == 1 && r2 == 1
         then let
             obj2 = if fn  < 0 then Prim.circle r else Prim.polygonR 0 $
-                let sides = fromIntegral fn
+                let
+                    sides :: ℝ
+                    sides = fromIntegral fn
                 in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
             obj3 = Prim.extrudeR 0 obj2 dh
         in shift obj3
@@ -206,7 +216,9 @@ circle = moduleWithoutSuite "circle" $ do
     addObj2 $ if fn < 3
         then Prim.circle r
         else Prim.polygonR 0 $
-            let sides = fromIntegral fn
+             let
+                 sides :: ℝ
+                 sides = fromIntegral fn
             in [(r*cos θ, r*sin θ )| θ <- [2*pi*n/sides | n <- [0.0 .. sides - 1.0]]]
 
 polygon :: ([Char], [OVal] -> ArgParser (IO [OVal]))
@@ -281,7 +293,7 @@ translate = moduleWithSuite "translate" $ \children -> do
     return $ return $
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
-deg2rad :: Floating a => a -> a
+deg2rad :: ℝ -> ℝ
 deg2rad x = x / 180.0 * pi
 
 -- This is mostly insane
@@ -316,8 +328,8 @@ scale = moduleWithSuite "scale" $ \children -> do
         `doc` "vector or scalar to scale by"
     
     let
-        scaleObjs strech2 strech3 =
-            objMap (Prim.scale strech2) (Prim.scale strech3) children
+        scaleObjs stretch2 stretch3 =
+            objMap (Prim.scale stretch2) (Prim.scale stretch3) children
     
     return $ return $ case v of
         Left   x              -> scaleObjs (x,1) (x,1,1)
@@ -350,6 +362,7 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
             Right f -> Right $ uncurry f
             Left a -> Left a
 
+        shiftAsNeeded :: SymbolicObj3 -> SymbolicObj3
         shiftAsNeeded =
             if center
             then Prim.translate (0,0,-heightn/2.0)
@@ -382,10 +395,11 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
 
     let
+        is360m :: RealFrac a => a -> Bool
         is360m n = 360 * fromInteger (round $ n / 360) /= n
         cap = is360m totalRot
-            || (Either.either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translateArg
-            || (Either.either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotateArg
+            || (either ( /= (0,0)) (\f -> f 0 /= f totalRot) ) translateArg
+            || (either (is360m) (\f -> is360m (f 0 - f totalRot)) ) rotateArg
         capM = if cap then Just r else Nothing
 
     return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
@@ -397,7 +411,7 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     center <- boolArgumentWithDefault "center" False
     twist <- realArgumentWithDefault 0.0
     r <- realArgumentWithDefault "r" 0.0
-    getAndModUpObj2s suite (\obj -> Prim.extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h)
+    getAndModUpObj2s suite (\obj -> extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h)
 -}
 
 shell :: ([Char], [OVal] -> ArgParser (IO [OVal]))
@@ -444,6 +458,7 @@ unit = moduleWithSuite "unit" $ \children -> do
         `doc` "the unit you wish to work in"
 
     let
+        mmRatio :: Fractional a => [Char] -> Maybe a
         mmRatio "inch" = Just 25.4
         mmRatio "in"   = mmRatio "inch"
         mmRatio "foot" = Just 304.8

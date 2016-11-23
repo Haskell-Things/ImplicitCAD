@@ -91,7 +91,7 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
                 where
                     xy a b = ((x1,y2) .-^ (dxy-dx, dy-dxy)^/2) .+^ dxy*^(a/w, -b/h)
                     s = 0.25 :: ℝ
-                    (a', b') = (realToFrac mya, realToFrac myb)
+                    (a', b') = (realToFrac mya, realToFrac myb) :: (ℝ2)
                     mycolor = average [objColor $ xy a' b', objColor $ xy a' b',
                         objColor $ xy (a'+s) (b'+s),
                         objColor $ xy (a'-s) (b'-s),

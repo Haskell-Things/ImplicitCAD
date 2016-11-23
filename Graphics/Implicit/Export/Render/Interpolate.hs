@@ -123,6 +123,7 @@ interpolate_lin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
+        mid :: ℝ
         mid = a + (b-a)*aval/(aval-bval)
         midval = obj mid
     -- Are we done?
@@ -152,9 +153,7 @@ interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
 interpolate_lin _ (a, _) _ _ = a
 
 -- Now for binary searching!
-interpolate_bin :: forall a a1 a2.
-                   (Eq a, Fractional a2, Num a, Num a1, Ord a1) =>
-                   a -> (a2, a1) -> (a2, a1) -> (a2 -> a1) -> a2
+interpolate_bin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 
 -- The termination case:
 
@@ -167,6 +166,7 @@ interpolate_bin 5 (a,aval) (b,bval) _ =
 
 interpolate_bin n (a,aval) (b,bval) f =
     let
+        mid :: ℝ
         mid = (a+b)/2
         midval = f mid
     in if midval > 0

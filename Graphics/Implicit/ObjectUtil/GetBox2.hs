@@ -49,14 +49,13 @@ getBox2 (PolygonR _ points) = ((minimum xs, minimum ys), (maximum xs, maximum ys
      where (xs, ys) = unzip points
 -- (Rounded) CSG
 getBox2 (Complement2 _) =
-    ((-infty, -infty), (infty, infty)) where infty = 1/0
+    ((-infty, -infty), (infty, infty))
+        where
+          infty :: (Fractional t) => t
+          infty = 1/0
 getBox2 (UnionR2 r symbObjs) =
     outsetBox r $ unionBoxes (map getBox2 symbObjs)
-getBox2 (DifferenceR2 _ symbObjs) =
-    let
-        firstBox:_ = map getBox2 symbObjs
-    in
-        firstBox
+getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
 getBox2 (IntersectR2 r symbObjs) =
     let
         boxes = map getBox2 symbObjs

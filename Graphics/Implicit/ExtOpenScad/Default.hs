@@ -174,10 +174,15 @@ defaultPolymorphicFunctions =
                 _ -> False-}
 
         index (OList l) (ONum ind) =
-            let n = floor ind
-            in if n < length l then l !! n else OError ["List accessd out of bounds"]
+            let
+                n :: Int
+                n = floor ind
+            in
+              if n < length l then l !! n else OError ["List accessd out of bounds"]
         index (OString s) (ONum ind) =
-            let n = floor ind
+            let
+                n :: Int
+                n = floor ind
             in if n < length s then OString [s !! n] else OError ["List accessd out of bounds"]
         index a b = errorAsAppropriate "index" a b
 
@@ -219,6 +224,7 @@ defaultPolymorphicFunctions =
         list_gen [a, b, c] =
             let
                 nr = (c-a)/b
+                n :: ℝ
                 n  = fromInteger (floor nr)
             in if nr - n > 0
             then Just
@@ -227,11 +233,11 @@ defaultPolymorphicFunctions =
                 [fromInteger (ceiling a), fromInteger (ceiling (a+b)).. fromInteger (floor c)]
         list_gen _ = Nothing
 
+        ternary :: forall t. Bool -> t -> t -> t
         ternary True a _ = a
         ternary False _ b = b
 
         olength (OString s) = ONum $ fromIntegral $ length s
         olength (OList s)   = ONum $ fromIntegral $ length s
         olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
-
 

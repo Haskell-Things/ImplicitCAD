@@ -24,7 +24,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 parseProgram :: SourceName -> [Char] -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
-    program :: forall u. ParsecT [Char] u Identity [StatementI]
+    program :: ParsecT [Char] u Identity [StatementI]
     program = do
         sts <- many1 computation
         eof
