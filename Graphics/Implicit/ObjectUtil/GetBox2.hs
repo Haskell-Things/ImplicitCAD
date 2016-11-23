@@ -6,15 +6,18 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
+import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, max, abs, head)
+
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2))
+
 import Data.VectorSpace (magnitude, (^-^), (^+^))
 
 -- Is a Box2 empty?
+-- Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: Box2 -> Bool
 isEmpty ((a, b), (c, d)) = a==c || b==d
--- isEmpty = (== ((0,0), (0,0)))
 
 -- Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2

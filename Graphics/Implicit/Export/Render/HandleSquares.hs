@@ -4,6 +4,8 @@
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
+import Prelude(concatMap, (++))
+
 import Graphics.Implicit.Definitions (Triangle)
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Data.VectorSpace ((^*), (*^), (^+^))

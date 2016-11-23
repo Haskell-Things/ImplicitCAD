@@ -2,22 +2,23 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
--- The purpose of this function is to symbolicaly compute triangle meshes where possible.
+-- The purpose of this function is to symbolicaly compute triangle meshes using the symbolic system where possible.
 -- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
 
--- We just want to export the instance...
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Graphics.Implicit.Definitions
+import Prelude(map, zip, length, filter, (>), ($), null, concat, (++))
 
+import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3))
 import Graphics.Implicit.Export.Render (getMesh)
-
-import Graphics.Implicit.ObjectUtil
-import Graphics.Implicit.MathUtil
-
-import Graphics.Implicit.Export.Symbolic.Rebound3
+import Graphics.Implicit.ObjectUtil (getBox3, getImplicit3)
+import Graphics.Implicit.MathUtil(box3sWithin)
+import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 

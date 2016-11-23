@@ -2,21 +2,28 @@
 -- Copyright (C) 2014, 2015, 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Make string litearls more polymorphic, so we can use them with Builder.
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.TriangleMeshFormats where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.TextBuilderUtils
+import Prelude (Real, Float, Int, ($), (+), map, (.), mconcat, realToFrac, toEnum, length, zip, return)
 
-import Blaze.ByteString.Builder hiding (Builder)
+import Graphics.Implicit.Definitions (Triangle, TriangleMesh, ℝ3)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildInt)
+
+import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
+import qualified Data.ByteString.Builder.Internal as BI (Builder)
+
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
-import Data.Storable.Endian
+import Data.Storable.Endian (LittleEndian(LE))
 
-import Prelude hiding (replicate)
-import Data.VectorSpace
-import Data.Cross hiding (normal)
+import Data.VectorSpace (normalized, negateV)
+import Data.Cross (cross3)
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =

@@ -2,13 +2,18 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.Export.PolylineFormats where
 
-import Graphics.Implicit.Definitions
+import Prelude((.), ($), (-), minimum, maximum, unzip, concat, show, (++), unwords, map, mapM_, snd, compare, min, max, Ord, Num)
 
-import Graphics.Implicit.Export.TextBuilderUtils
+import Graphics.Implicit.Definitions (Polyline, ℝ2)
+
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, mempty, toLazyText, mconcat, bf, (<>), buildTruncFloat)
 
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
 import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)

@@ -3,15 +3,18 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: required. why?
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Graphics.Implicit.Definitions
-import Data.Maybe (fromMaybe)
-import Data.VectorSpace
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), Maybe(Nothing, Just), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, sqrt, (>), (&&), head, (*), (<), abs, either, error, const)
 
-import  Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
+import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), (⋯*))
+import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
+
+import Data.Maybe (fromMaybe)
+import Data.VectorSpace ((^-^), (^+^))
 
 -- test to see whether a Box3 has area.
 isEmpty :: (Eq a2, Eq a1, Eq a) =>

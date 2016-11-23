@@ -1,14 +1,19 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: why are these needed?
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- Functions to make meshes/polylines finer.
 
-module Graphics.Implicit.Export.Util {-(divideMesh2To, divideMeshTo, dividePolylineTo)-} where
+module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
-import Graphics.Implicit.Definitions
-import Data.VectorSpace
+import Prelude(Fractional, (/), (-), ($), foldl, recip, realToFrac, length)
+
+import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle, NormedTriangle)
+
+import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj (a,b,c) =

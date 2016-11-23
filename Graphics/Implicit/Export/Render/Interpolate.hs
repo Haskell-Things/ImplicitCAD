@@ -7,7 +7,9 @@
 
 module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
-import Graphics.Implicit.Definitions
+import Prelude(Integer, (*), (>), (<), (/=), (+), (-), (/), (==), (&&), abs)
+
+import Graphics.Implicit.Definitions (ℝ, ℝ2)
 
 -- Consider a function f(x):
 

@@ -5,14 +5,17 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, tryMany, variableSymb, patternMatcher) where
 
-import Text.ParserCombinators.Parsec hiding (State)
+import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
+
+import Text.ParserCombinators.Parsec (GenParser, many, oneOf, noneOf, (<|>), try, string, manyTill, anyChar, (<?>), char, many1, sepBy)
 import Text.Parsec.Prim (ParsecT, Stream)
 import Data.Functor.Identity (Identity)
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP))
 
 -- white space, including tabs, newlines and comments
 genSpace :: ParsecT [Char] u Identity [Char]

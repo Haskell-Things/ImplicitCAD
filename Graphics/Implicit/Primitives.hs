@@ -35,6 +35,8 @@ module Graphics.Implicit.Primitives (
                                      implicit
                                     ) where
 
+import Prelude(Maybe(Just, Nothing), Either, map, ($))
+
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
                                                    RectR,

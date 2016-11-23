@@ -4,9 +4,12 @@
 
 module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
 
+import Prelude(Eq, Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
+
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline)
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
+
 import Data.VectorSpace ((^-^))
 
 {- The goal of getSegs is to create polylines to separate

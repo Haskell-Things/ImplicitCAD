@@ -5,17 +5,20 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC) where
 
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Char, Monad, fmap, (.), ($), (++), return, putStrLn, show)
+
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal)
 
 import qualified Data.Map as Map
-import           Control.Monad.State (StateT, get, put, modify, liftIO)
-import           System.FilePath((</>))
-import           Control.Monad.IO.Class (MonadIO)
+import Control.Monad.State (StateT, get, put, modify, liftIO)
+import System.FilePath((</>))
+import Control.Monad.IO.Class (MonadIO)
 
 type CompState = (VarLookup, [OVal], FilePath, (), ())
 type StateC = StateT CompState IO

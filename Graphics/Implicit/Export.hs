@@ -6,10 +6,12 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- Required.
+-- FIXME: Required. why?
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeSCAD3, writeSCAD2, writePNG) where
+
+import Prelude (FilePath, IO, (.), ($))
 
 -- The types of our objects (before rendering), and the type of the resolution to render with.
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, Polyline, TriangleMesh, Triangle, NormedTriangle)
@@ -23,11 +25,11 @@ import qualified Data.ByteString.Lazy as LBS (writeFile)
 import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox)
 
 -- Object formats
-import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats
-import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats
-import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats
-import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats
-import qualified Codec.Picture as ImageFormatCodecs
+import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats (svg, hacklabLaserGCode)
+import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats (stl, binaryStl, jsTHREE)
+import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats (obj)
+import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad3, scad2)
+import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
 
 -- Write an object using the given format function.
 writeObject :: (DiscreteAproxable obj aprox)

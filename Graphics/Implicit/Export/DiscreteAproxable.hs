@@ -5,24 +5,27 @@
 -- Allow our DiscreteAproxable class to handle multiple parameters.
 {-# LANGUAGE MultiParamTypeClasses #-}
 
+-- FIXME: why is this here?
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
 module Graphics.Implicit.Export.DiscreteAproxable where
 
-import Graphics.Implicit.Definitions
+import Prelude(Int, (-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac)
 
-import Graphics.Implicit.ObjectUtil
+import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj3, SymbolicObj2, Polyline, TriangleMesh, NormedTriangleMesh)
+
+import Graphics.Implicit.ObjectUtil (getImplicit3, getImplicit2, getBox3, getBox2)
 
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.Util (normTriangle)    
     
-import Graphics.Implicit.Export.RayTrace (dynamicImage, Color, average, Camera(..), Light(..), Scene(..), traceRay, cameraRay)
+import Graphics.Implicit.Export.RayTrace (dynamicImage, Color, average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay)
 
-import Codec.Picture
+import Codec.Picture (DynamicImage, generateImage, PixelRGBA8(PixelRGBA8))
 
-import Data.VectorSpace
-import Data.AffineSpace
+import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
+import Data.AffineSpace ((.-^), (.+^))
 
 
 -- | There is a discrete way to aproximate this object.

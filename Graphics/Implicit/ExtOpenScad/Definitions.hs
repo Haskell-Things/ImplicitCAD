@@ -4,11 +4,13 @@
 
 module Graphics.Implicit.ExtOpenScad.Definitions where
 
-import Graphics.Implicit.Definitions
-import Data.Map (Map)
+import Prelude(Eq, Show, String, Maybe, Bool(True, False), Int, IO, (==), show, map, ($), (++), undefined, all, id, zipWith, foldl1)
 
-import Control.Applicative(Alternative(..))
-import Control.Monad (mzero, mplus, MonadPlus, liftM, ap)
+import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
+
+import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
+import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap)
+import Data.Map (Map)
 
 -----------------------------------------------------------------
 -- | Handles parsing arguments to modules

@@ -7,6 +7,8 @@
 
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
 
+import Prelude(Bool(False), Maybe(Just, Nothing), map, (.), filter, (==), last, reverse, ($), (++), tail, (-), (/), abs, (<=), (||), (&&), (*), (>), not, null)
+
 import Graphics.Implicit.Definitions (minℝ, Polyline, ℝ)
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
@@ -29,7 +31,6 @@ joinSegs (present:remaining) =
             (Nothing, _) -> present:(joinSegs remaining)
             (Just match, others) -> joinSegs $ (present ++ tail match): others
 
---reducePolyline :: forall t. (Fractional t, Ord t) => [(t, t)] -> [(t, t)]
 reducePolyline :: [(ℝ, ℝ)] -> [(ℝ, ℝ)]
 reducePolyline ((x1,y1):(x2,y2):(x3,y3):others) =
     if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):(x3,y3):others) else

@@ -4,6 +4,9 @@
 
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
+-- Explicitly include what we want from Prelude.
+import Prelude (Eq, head, last, tail, (==), ($), Bool(False), filter, not, (.), null, error, (++))
+
 -- The goal of getLoops is to extract loops from a list of segments.
 
 -- The input is a list of segments.

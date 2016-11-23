@@ -6,10 +6,13 @@
 
 -- This file provides primitive objects for the openscad parser.
 
+-- FIXME: why are these required?
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
+
+import Prelude(String, IO, Char, Either(Left, Right), Bool(False), Maybe(Just, Nothing), Fractional, ($), return, either, id, (-), (==), (&&), (<), fromIntegral, (*), cos, sin, pi, (/), (>), const, uncurry, realToFrac, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3)
 
@@ -19,14 +22,14 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, argument, e
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (caseOType, divideObjs, (<||>))
 
-import qualified Graphics.Implicit.Primitives as Prim
+import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
 
 import Data.Maybe (isNothing)
 
-import qualified Data.Either as Either
 import qualified Control.Monad as Monad
 
-import Data.VectorSpace
+import Data.VectorSpace (VectorSpace, Scalar, (*^))
+import GHC.Real (RealFrac)
 
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]

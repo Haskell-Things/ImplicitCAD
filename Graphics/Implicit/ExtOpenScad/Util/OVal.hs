@@ -2,6 +2,7 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: required. why?
 {-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables, TypeSynonymInstances, FlexibleInstances #-}
 
 {-# LANGUAGE CPP #-}
@@ -9,13 +10,14 @@
 {-# LANGUAGE OverlappingInstances #-}
 #endif
 
-
 module Graphics.Implicit.ExtOpenScad.Util.OVal where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), String, Char, (==), fromInteger, floor, ($), (.), map, error, (++), show, fromIntegral, head, flip, filter, not, return)
+
+import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OObj2, OObj3))
 import qualified Control.Monad as Monad
-import Data.Maybe (isJust)
+import Data.Maybe (fromJust, isJust)
 
 -- for some minimal paralellism.
 import Control.Parallel.Strategies(runEval, rpar, rseq)

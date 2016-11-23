@@ -2,12 +2,17 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: why are these required?
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
+
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Graphics.Implicit.ExtOpenScad (runOpenscad, OVal (..) ) where
+module Graphics.Implicit.ExtOpenScad (runOpenscad) where
+
+import Prelude(Char, Either(Left, Right), IO, ($), fmap)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(..))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)

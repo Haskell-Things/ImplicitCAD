@@ -2,12 +2,15 @@
 -- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: describe why we need this.
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.Export.NormedTriangleMeshFormats where
+module Graphics.Implicit.Export.NormedTriangleMeshFormats (obj) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.TextBuilderUtils
+import Prelude(($), map, (+), (.), (*), length, (-), return)
+
+import Graphics.Implicit.Definitions (NormedTriangle, ℝ3)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, mconcat, buildInt)
 
 
 obj :: [NormedTriangle] -> Text

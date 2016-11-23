@@ -1,10 +1,12 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
-
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 -- create a module that is just wrapping up these functions.
+
 module Graphics.Implicit.ObjectUtil(getImplicit3, getImplicit2, getBox3, getBox2) where
+
+import Prelude()
 
 import Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3)
 

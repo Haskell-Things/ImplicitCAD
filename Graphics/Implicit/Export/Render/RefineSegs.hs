@@ -2,7 +2,9 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.RefineSegs where
+module Graphics.Implicit.Export.Render.RefineSegs (refine) where
+
+import Prelude(Int, (<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, tail, sqrt, (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, Obj2, (⋅))
 import Graphics.Implicit.Export.Util (centroid)
@@ -11,7 +13,6 @@ import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
 
 -- The purpose of refine is to add detail to a polyline aproximating
 -- the boundary of an implicit function and to remove redundant points.
-
 
 -- We break this into two steps: detail and then simplify.
 

@@ -2,15 +2,18 @@
 -- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: describe why we need this.
 {-# LANGUAGE OverloadedStrings #-}
 
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.TextBuilderUtils
+import Prelude(Maybe(Just, Nothing), Either(Left), ($), (.), (*), map, ($!), (-), (/), pi, error, (+), init, (==))
 
-import Control.Monad.Reader
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
+import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>), mconcat, fromLazyText, bf)
+
+import Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
 
 import Data.List (intersperse)
 

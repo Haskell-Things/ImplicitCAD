@@ -4,13 +4,15 @@
 
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
-import Graphics.Implicit.Export.Render.HandlePolylines(reducePolyline)
+import Prelude(Int, Bool(True, False), ceiling, fromIntegral, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), (.), splitAt, div, unzip, length, (++), (<), (++), head, concat, not, null, (||), Eq, Int, fst, snd)
 
-import Graphics.Implicit.Definitions
+import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
+
+import Graphics.Implicit.Definitions (ℝ2, Polyline, Obj2, (⋯/), (⋯*))
 
 -- FIXME: commented out for now, parallelism is not properly implemented.
 -- import Control.Parallel.Strategies (using, parList, rdeepseq)
-import Data.VectorSpace
+import Data.VectorSpace ((^-^), (^+^))
 
 both :: (a -> b) -> (a,a) -> (b,b)
 both f (x,y) = (f x, f y)

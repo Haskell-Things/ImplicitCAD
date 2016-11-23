@@ -1,14 +1,21 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Released under the GNU GPL, see LICENSE
+-- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
 module Graphics.Implicit.ExtOpenScad.Default where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Util.OVal
-import Graphics.Implicit.ExtOpenScad.Primitives
+
+import Prelude (Char, String, Bool(True, False), Maybe(Just, Nothing), Int, ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
+
+import Graphics.Implicit.Definitions (ℝ)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
+import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
+import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
 
 defaultObjects :: VarLookup -- = Map String OVal

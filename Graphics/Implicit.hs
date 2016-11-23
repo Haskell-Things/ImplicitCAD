@@ -2,7 +2,7 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Required.
+-- FIXME: Required. why?
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 {- The purpose of this file is to pass on the functionality we want
@@ -52,6 +52,8 @@ module Graphics.Implicit(
     SymbolicObj2,
     SymbolicObj3
 ) where
+
+import Prelude(FilePath, IO)
 
 -- The primitive objects, and functions for manipulating them.
 import Graphics.Implicit.Primitives (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeRotateR, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit)

@@ -5,20 +5,26 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- FIXME: required. why?
 {-# LANGUAGE KindSignatures #-}
 
 module Graphics.Implicit.ExtOpenScad.Parser.Statement where
+
+import Prelude(Char, Either, String, Maybe(Just, Nothing), Monad, return, fmap, ($), (>>), Bool(False, True), map)
 
 import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, (<|>), (<?>))
 
 import Text.Parsec.Prim (ParsecT)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(..), Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE))
+import Data.Functor.Identity(Identity)
+
+import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI))
 import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb)
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 parseProgram :: SourceName -> [Char] -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
+    program :: forall u. ParsecT [Char] u Identity [StatementI]
     program = do
         sts <- many1 computation
         eof

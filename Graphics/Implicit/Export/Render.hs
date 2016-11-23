@@ -10,8 +10,11 @@
 
 module Graphics.Implicit.Export.Render where
 
+import Prelude(Float, Bool, ceiling, ($), (/), fromIntegral, (+), (*), fromInteger, max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Integral, Eq, Integer)
+
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Obj2, Obj3, TriangleMesh, Triangle, Polyline)
-import Data.VectorSpace
+
+import Data.VectorSpace ((^-^))
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -40,6 +43,8 @@ import Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris)
 
 -- Each step is done in parallel using Control.Parallel.Strategies
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+
+import Control.DeepSeq (NFData)
 
 -- The actual code is just a bunch of ugly argument passing.
 -- Utility functions can be found at the end.

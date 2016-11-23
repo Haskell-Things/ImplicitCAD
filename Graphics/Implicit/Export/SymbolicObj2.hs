@@ -2,6 +2,7 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: why is all of this needed?
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- This file symbolicaly renders contours and contour fillings.
@@ -10,16 +11,19 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 where
 
-import Graphics.Implicit.Definitions
+import Prelude(map, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, fromInteger, ceiling)
 
-import Graphics.Implicit.Export.MarchingSquaresFill
-import Graphics.Implicit.ObjectUtil
+import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline, (⋯*))
 
-import Graphics.Implicit.Export.Symbolic.Rebound2
+import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
+
+import Graphics.Implicit.ObjectUtil (getImplicit2, getBox2)
+
+import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
 import qualified Graphics.Implicit.Export.Render as Render (getContour)
 
-import Data.VectorSpace
+import Data.VectorSpace ((^/), magnitude)
 
 symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res symbObj

@@ -2,15 +2,21 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- FIXME: why are these needed?
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
 module Graphics.Implicit.Export.RayTrace where
 
+import Prelude(Show, RealFrac, Maybe(Just, Nothing), Int, Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, (++), not, abs, floor, fromIntegral, toRational)
+
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋅), Obj3)
-import Codec.Picture
-import Control.Monad
-import Data.VectorSpace
-import Data.Cross hiding (normal)
+import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
+import Control.Monad (guard, return)
+import Data.VectorSpace (Scalar, magnitude, (^+^), (*^), normalized, (^-^), InnerSpace)
+import Data.Cross (cross3)
 
 -- Definitions
 

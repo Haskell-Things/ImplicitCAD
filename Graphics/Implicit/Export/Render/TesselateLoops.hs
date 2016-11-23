@@ -4,11 +4,12 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.Export.Render.Definitions
+import Prelude(Int, return, ($), length, (==), concat, map, zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+))
+import Graphics.Implicit.Definitions (ℝ, Obj3, ℝ3, Triangle, (⋅))
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Graphics.Implicit.Export.Util (centroid)
-import Data.VectorSpace
-import Data.Cross hiding (normal)
+import Data.VectorSpace (normalized, (^-^), (^+^), magnitude, (^/), (^*))
+import Data.Cross (cross3)
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 
