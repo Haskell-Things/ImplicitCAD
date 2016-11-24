@@ -73,27 +73,31 @@ getMesh p1@(x1,y1,z1) p2 res obj =
         (dx,dy,dz) = p2 ^-^ p1
 
         -- How many steps will we take on each axis?
+        nx :: Integral a => a
         nx = ceiling $ dx / res
+        ny :: Integral a => a
         ny = ceiling $ dy / res
+        nz :: Integral a => a
         nz = ceiling $ dz / res
 
         -- How big are the steps?
-        rx = dx/fromIntegral nx
-        ry = dy/fromIntegral ny
-        rz = dz/fromIntegral nz
+        rx = dx / fromInteger nx
+        ry = dy / fromInteger ny
+        rz = dz / fromInteger nz
 
         -- The positions we're rendering.
-        pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
-        pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
-        pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
+        pXs = [ x1 + rx*n | n <- [0.. fromInteger nx] ]
+        pYs = [ y1 + ry*n | n <- [0.. fromInteger ny] ]
+        pZs = [ z1 + rz*n | n <- [0.. fromInteger nz] ]
 
+        par3DList :: forall t. NFData t => Integer -> Integer -> Integer -> ((Integer -> ℝ) -> Integer -> (Integer -> ℝ) -> Integer -> (Integer -> ℝ) -> Integer -> t) -> [[[t]]]
         par3DList lenx leny lenz f =
             [[[f
                 (\n -> x1 + rx*fromInteger (mx+n)) mx
                 (\n -> y1 + ry*fromInteger (my+n)) my
                 (\n -> z1 + rz*fromInteger (mz+n)) mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-                `using` (parBuffer (max 1 $ fromInteger $ div lenz 32) rdeepseq)
+                `using` (parBuffer (max 1 . fromInteger $ div lenz 32) rdeepseq)
 
         -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
@@ -104,7 +108,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0 | objY0Z1 <- objZ1
                 ]| z0 <- pZs | z1' <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
-                ] `using` (parBuffer (max 1 $ fromInteger $ div nz 32) rdeepseq)
+                ] `using` (parBuffer (max 1 . fromInteger $ div nz 32) rdeepseq)
 
         midsY = [[[
                  interpolate (y0, objX0Y0Z0) (y1', objX0Y1Z0) (appAC obj x0 z0) res
@@ -188,30 +192,34 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 cleanupTris :: TriangleMesh -> TriangleMesh
 cleanupTris tris =
     let
-        toFloat = realToFrac :: (Real a) => a -> Float
+        toFloat :: ℝ -> Float
+        toFloat = realToFrac
+        floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
         floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
+        isDegenerateTriFloat :: Eq t => (t,t,t) -> Bool
         isDegenerateTriFloat (a,b,c) = (a == b) || (b == c) || (a == c)
         isDegenerateTri :: Triangle -> Bool
         isDegenerateTri (a, b, c) = isDegenerateTriFloat (floatPoint a, floatPoint b, floatPoint c)
     in filter (not . isDegenerateTri) tris
 
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
-getContour p1@(x1, y1) p2@(_, _) res obj =
+getContour p1@(x1, y1) p2 res obj =
     let
         (dx,dy) = p2 ^-^ p1
 
         -- How many steps will we take on each axis?
+        nx :: Integral a => a
         nx = ceiling $ dx / res
+        ny :: Integral a => a
         ny = ceiling $ dy / res
 
-        rx = dx/fromIntegral nx
-        ry = dy/fromIntegral ny
+        rx = dx/fromInteger nx
+        ry = dy/fromInteger ny
 
         pYs = [ y1 + ry*n | n <- [0.. fromInteger ny] ]
         pXs = [ x1 + rx*n | n <- [0.. fromInteger nx] ]
 
-
-        {-# INLINE par2DList #-}
+        par2DList :: forall t. NFData t => Integer -> Integer -> ((Integer -> ℝ) -> Integer -> (Integer -> ℝ) -> Integer -> t) -> [[t]]
         par2DList lenx leny f =
             [[ f
                 (\n -> x1 + rx*fromIntegral (mx+n)) mx
