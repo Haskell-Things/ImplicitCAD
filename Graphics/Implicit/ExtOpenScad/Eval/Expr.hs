@@ -4,20 +4,21 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (==), (!!), const, (++), foldr)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
                                                   OVal(OList, OError, OFunc),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   VarLookup)
 
-import Graphics.Implicit.ExtOpenScad.Util.OVal
-import Graphics.Implicit.ExtOpenScad.Util.StateC
+import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
 
-import qualified Data.List as List
-import qualified Data.Map as Map
-import qualified Control.Monad as Monad
-import qualified Control.Monad.State as State
-import           Control.Monad.State (StateT, get, modify, liftIO)
+import Data.List (findIndex)
+import Data.Map (fromList, lookup)
+import Control.Monad (zipWithM, mapM, forM)
+import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
 
 patVars :: Pattern -> [String]
@@ -28,7 +29,7 @@ patVars _ = []
 patMatch :: Pattern -> OVal -> Maybe [OVal]
 patMatch (Name _) val = Just [val]
 patMatch (ListP pats) (OList vals) = do
-    matches <- Monad.zipWithM patMatch pats vals
+    matches <- zipWithM patMatch pats vals
     return $ concat matches
 patMatch Wild _ = Just []
 patMatch _ _ = Nothing
@@ -37,13 +38,13 @@ matchPat :: Pattern -> OVal -> Maybe VarLookup
 matchPat pat val = do
     let vars = patVars pat
     vals <- patMatch pat val
-    return $ Map.fromList $ zip vars vals
+    return $ fromList $ zip vars vals
 
 
 evalExpr :: Expr -> StateC OVal
 evalExpr expr = do
     varlookup  <- getVarLookup
-    (valf, _) <- liftIO $ State.runStateT (evalExpr' expr) (varlookup, [])
+    (valf, _) <- liftIO $ runStateT (evalExpr' expr) (varlookup, [])
     return $ valf []
 
 
@@ -53,7 +54,7 @@ evalExpr' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
 evalExpr' (Var   name ) = do
     (varlookup, namestack) <- get
     return $
-        case (Map.lookup name varlookup, List.findIndex (==name) namestack) of
+        case (lookup name varlookup, findIndex (==name) namestack) of
             (_, Just pos) -> \s -> s !! pos
             (Just val, _) -> const val
             _             -> const $ OError ["Variable " ++ name ++ " not in scope" ]
@@ -61,12 +62,12 @@ evalExpr' (Var   name ) = do
 evalExpr' (LitE  val  ) = return $ const val
 
 evalExpr' (ListE exprs) = do
-    valFuncs <- Monad.mapM evalExpr' exprs
+    valFuncs <- mapM evalExpr' exprs
     return $ \s -> OList $ map ($s) valFuncs
 
 evalExpr' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
-    argValFuncs <- Monad.mapM evalExpr' argExprs
+    argValFuncs <- mapM evalExpr' argExprs
     return $ \s -> app (fValFunc s) (map ($s) argValFuncs)
         where
             app f l = case (getErrors f, getErrors $ OList l) of
@@ -78,7 +79,7 @@ evalExpr' (fexpr :$ argExprs) = do
                 (_,      Just err) -> OError [err]
 
 evalExpr' (LamE pats fexpr) = do
-    fparts <- Monad.forM pats $ \pat -> do
+    fparts <- forM pats $ \pat -> do
         modify (\(vl, names) -> (vl, patVars pat ++ names))
         return $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs ++ xss)

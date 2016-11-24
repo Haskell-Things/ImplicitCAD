@@ -5,14 +5,18 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- FIXME: why is this required?
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
 
-import Graphics.Implicit.ExtOpenScad.Definitions
+import Prelude(String, Maybe(Just, Nothing), Int, ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, null, (&&))
+
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
-import qualified Data.Map   as Map
-import qualified Data.Maybe as Maybe
+
+import qualified Data.Map as Map
+import Data.Maybe (isNothing, fromJust, isJust)
 
 -- * ArgParser building functions
 
@@ -22,13 +26,14 @@ argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser
 argument name =
     AP name Nothing "" $ \oObjVal -> do
         let
-            val = fromOObj oObjVal :: Maybe desiredType
+            val :: Maybe desiredType
+            val = fromOObj oObjVal
             errmsg = case oObjVal of
                 OError errs -> "error in computing value for arugment " ++ name
                              ++ ": " ++ concat errs
                 _   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ name
         -- Using /= Nothing would require Eq desiredType
-        APFailIf (Maybe.isNothing val) errmsg $ APTerminator $ (\(Just a) -> a) val
+        APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
 
 doc :: forall a. ArgParser a -> String -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
@@ -64,8 +69,8 @@ argMap ::
     -> (Maybe a, [String])      -- ^ (result, error messages)
 
 argMap args = argMap2 unnamedArgs (Map.fromList namedArgs) where
-    unnamedArgs = map snd $ filter (Maybe.isNothing . fst) args
-    namedArgs   = map (\(a,b) -> (Maybe.fromJust a, b)) $ filter (Maybe.isJust . fst) args
+    unnamedArgs = map snd $ filter (isNothing . fst) args
+    namedArgs   = map (\(a,b) -> (fromJust a, b)) $ filter (isJust . fst) args
 
 
 argMap2 :: [OVal] -> Map.Map String OVal -> ArgParser a -> (Maybe a, [String])
@@ -73,6 +78,7 @@ argMap2 :: [OVal] -> Map.Map String OVal -> ArgParser a -> (Maybe a, [String])
 argMap2 uArgs nArgs (APBranch branches) =
     foldl1 merge solutions where
         solutions = map (argMap2 uArgs nArgs) branches
+        merge :: forall t t1. (Maybe t, [t1]) -> (Maybe t, [t1]) -> (Maybe t, [t1])
         merge a@(Just _, []) _ = a
         merge _ b@(Just _, []) = b
         merge a@(Just _, _) _ = a

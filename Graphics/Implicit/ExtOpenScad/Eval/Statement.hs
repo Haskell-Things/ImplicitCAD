@@ -6,27 +6,26 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement where
 
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, ($), show, putStrLn, concat, map, return, (++), fmap, reverse, fst, readFile)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
                                                   Pattern(Name),
                                                   Expr(LitE),
                                                   OVal(OString, OBool, OList, OModule),
                                                   VarLookup,
-                                                  StatementI(..)
+                                                  StatementI(StatementI)
                                                  )
 
-import Graphics.Implicit.ExtOpenScad.Util.OVal
-
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser
-import Graphics.Implicit.ExtOpenScad.Util.StateC
-import Graphics.Implicit.ExtOpenScad.Eval.Expr
+import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
+import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
-
 
 import qualified Data.Map as Map
 import qualified Control.Monad as Monad
-import qualified Control.Monad.State as State
-import           Control.Monad.State (get, liftIO)
+import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 import qualified System.FilePath as FilePath
 
 -- Run statements out of the OpenScad file.
@@ -146,7 +145,7 @@ runSuite stmts = Monad.mapM_ runStatementI stmts
 
 runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
-    (res, _) <- State.runStateT
+    (res, _) <- runStateT
         (runSuite suite >> getVals)
         (varlookup, [], path, (), () )
     return res
