@@ -63,9 +63,10 @@ mergedSquareTris sqTris =
         -- We don't need to do any work on triangles. They'll just be part of
         -- the list of triangles we give back. So, the triangles coming from
         -- triangles...
-        triTriangles = concat $ map (\(Tris a) -> a) $ filter isTris sqTris
+        triTriangles = [tri | Tris tris <- sqTris, tri <- tris ]
+        --concat $ map (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
-        squares = filter (not . isTris) sqTris
+        squaresFromTris = [ (Sq x y z q) | Sq x y z q <- sqTris ]
 {-
         -- Collect ones that are on the same plane.
         planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
@@ -84,13 +85,9 @@ mergedSquareTris sqTris =
         -- merge them to triangles, and combine with the original triangles.
         -- Disable square merging temporarily.
         --triTriangles ++ concat (map squareToTri finishedSquares)
-        triTriangles ++ concat (map squareToTri squares)
+        triTriangles ++ concatMap squareToTri squaresFromTris
 
 -- And now for a bunch of helper functions that do the heavy lifting...
-
-isTris :: TriSquare -> Bool
-isTris (Tris _) = True
-isTris _ = False
 
 {-
 joinXaligned :: [TriSquare] -> [TriSquare]
