@@ -1,6 +1,9 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
--- Released under the GNU GPL, see LICENSE
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
 
 {-# LANGUAGE OverloadedStrings, ViewPatterns #-}
 
@@ -22,7 +25,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
-import Graphics.Implicit.Definitions (xmlErrorOn, errorMessage, ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
@@ -30,8 +33,9 @@ import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
+import Data.String (IsString)
+import Data.Map.Strict as Map (lookup, Map)
 
-import Data.Map.Strict as Map (lookup)
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
 
@@ -67,6 +71,7 @@ renderHandler = method GET $ withCompression $ do
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
+getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 getRes (varlookup, obj2s, obj3s) =
     let
         qual = case Map.lookup "$quality" varlookup of
@@ -95,11 +100,12 @@ getRes (varlookup, obj2s, obj3s) =
             else -1
 
 
-getWidth (varlookup,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
+getWidth :: forall t. (t, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-getWidth (varlookup, obj:_,     _) = max (x2-x1) (y2-y1)
+getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 obj
-
+getWidth (_, [], []) = 0
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
@@ -129,18 +135,18 @@ executeAndExport content callback maybeFormat =
                 res = getRes   s
                 w   = getWidth s
                 is2D = case s of
-                    (_, _, x:xs)  -> False
-                    (_, x:xs, _)  -> True
+                    (_, _, _:_)  -> False
+                    (_, _:_, _)  -> True
                     _             -> False
                 highResError = "Unreasonable resolution requested: "
                             ++ "the server imps revolt! "
                             ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
                 objOrErr = case s of
-                    (_, _, x:xs)  ->
+                    (_, _, x:_)  ->
                         if res > 0
                         then Right (Nothing, x)
                         else Left highResError
-                    (_, x:xs, _) ->
+                    (_, x:_, _) ->
                         if res > 0
                         then Right (Just x, extrudeR 0 x res)
                         else Left highResError
