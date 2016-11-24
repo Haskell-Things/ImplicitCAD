@@ -69,14 +69,11 @@ module Graphics.Implicit.Definitions (
         RotateExtrude),
     Rectilinear2,
     Rectilinear3,
-    xmlErrorOn,
-    errorMessage
     )
 where
 
--- we want global IO refs.
-import Data.IORef (IORef, newIORef, readIORef)
-import System.IO.Unsafe (unsafePerformIO)
+import Prelude (Show, Double, Integer, Maybe, Either, show, (*), (/))
+
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
 -- Let's make things a bit nicer. 
@@ -240,32 +237,4 @@ type Rectilinear2 = [Box2]
 
 -- | Rectilinear 2D set
 type Rectilinear3 = [Box3]
-
--- | Now for something that makes me a bad person...
---   I promise I'll use it for good, not evil!
---   I don't want to reparse the program arguments 
---   everytime I want to know if XML errors are needed.
-
-{-# NOINLINE xmlErrorOn #-}
-
-xmlErrorOn :: IORef Bool
-xmlErrorOn = unsafePerformIO $ newIORef False
-
-errorMessage :: Int -> String -> IO()
-errorMessage line msg = do
-    useXML <- readIORef xmlErrorOn
-    let
-        msg' = "At line <line>" ++ show line ++ "</line>:" ++ msg
-        -- dropXML inTag (x:xs)
-        dropXML inQuote False ('"':xs) = '"':dropXML (not inQuote) False  xs
-        dropXML True    _     ( x :xs) = x:dropXML True    False  xs
-        dropXML False   False ('<':xs) =   dropXML False   True  xs
-        dropXML False   True  ('>':xs) =   dropXML False   False xs
-        dropXML inQuote True  ( _ :xs) =   dropXML inQuote True  xs
-        dropXML inQuote False ( x :xs) = x:dropXML inQuote False xs
-        dropXML _       _        []    = []
-    if useXML
-        then putStrLn $ "<error>" ++ msg' ++ "</error>"
-        else putStrLn $ dropXML False False $ msg'
-    return ()
 

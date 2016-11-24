@@ -18,8 +18,7 @@ import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCA
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
--- Also, a function to turn on formatting errors in XML?.
-import Graphics.Implicit.Definitions (xmlErrorOn, SymbolicObj2, SymbolicObj3, ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe)
@@ -30,9 +29,6 @@ import Data.Char (toLower)
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
 
--- FIXME: what is this XML stuff about?
-import Data.IORef (writeIORef)
-
 -- Functions and types for dealing with the types used by runOpenscad.
 -- Note that Map is different than the maps used by the prelude functions.
 import qualified Data.Map.Strict as Map (Map, lookup)
@@ -42,7 +38,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Data.AffineSpace ((.-.))
 
 -- NOTE: make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, switch,  long, short, option, metavar, execParser, Parser, optional, strOption)
+import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption)
 
 -- For handling input/output files.
 import System.FilePath (splitExtension)
@@ -58,7 +54,6 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     { outputFile :: Maybe FilePath
     , outputFormat :: Maybe OutputFormat
     , resolution :: Maybe ℝ
-    , xmlError :: Bool
     , inputFile :: FilePath
     }
 
@@ -121,10 +116,6 @@ extOpenScadOpts = ExtOpenScadOpts
         <> help "Approximation quality (smaller is better)"
         )
       )
-    <*> switch
-        (  long "xml-error"
-        <> help "Report XML errors"
-        )
     <*> argument str
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
@@ -195,7 +186,6 @@ export2 posFmt res output obj =
 -- Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO()
 run args = do
-    writeIORef xmlErrorOn (xmlError args)
 
     putStrLn $ "Loading File."
     content <- readFile (inputFile args)
