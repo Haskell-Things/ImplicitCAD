@@ -1,21 +1,27 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- define getContour, which gets a polyline describe the edge of your 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
-import Graphics.Implicit.Definitions
--- FIXME: commented out, use later.
--- import Control.Parallel (par, pseq)
+import Prelude(Bool(True, False), fromInteger, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat)
 
--- | getContour gets a polyline describe the edge of your 2D
---  object. It's really the only function in this file you need
---  to care about from an external perspective.
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2)
+
+-- FIXME: commented out, test how to apply..
+-- import Control.Parallel (par, pseq)
 
 getContourMesh :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [(ℝ2,ℝ2,ℝ2)]
 getContourMesh (x1, y1) (x2, y2) (dx, dy) obj =
     let
         -- How many steps will we take on each axis?
+        nx :: ℝ
         nx = fromInteger $ ceiling $ (x2 - x1) / dx
+        ny :: ℝ
         ny = fromInteger $ ceiling $ (y2 - y1) / dy
         -- Divide it up and compute the polylines
         trisOnGrid :: [[[(ℝ2,ℝ2,ℝ2)]]]
@@ -28,7 +34,7 @@ getContourMesh (x1, y1) (x2, y2) (dx, dy) obj =
     in
         triangles
 
--- | This function gives line segmensts to divde negative interior
+-- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on its
 --  values at its vertices.
 --  It is based on the linearly-interpolated marching squares algorithm.
@@ -66,6 +72,8 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
         midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
         midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 
+        -- decompose a square into two triangles...
+        square :: forall t t1. t -> t1 -> t1 -> t1 -> [(t, t1, t1)]
         square aa bb cc dd = [(aa,bb,cc), (aa,cc,dd)]
 
     in case (x1y2 <= 0, x2y2 <= 0,
