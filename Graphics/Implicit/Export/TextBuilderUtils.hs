@@ -47,7 +47,6 @@ toLazyText = toLazyTextWith defaultChunkSize
 bf, buildTruncFloat :: ℝ -> Builder
 
 bf = formatRealFloat Exponent Nothing
-{-# INLINE bf #-}
 
 buildTruncFloat = formatRealFloat Fixed $ Just 4
 

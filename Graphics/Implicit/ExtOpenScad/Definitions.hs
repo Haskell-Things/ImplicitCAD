@@ -35,16 +35,11 @@ instance Functor ArgParser where
     fmap = liftM
 
 instance Applicative ArgParser where
-    pure = return
+    pure a = APTerminator a
     (<*>) = ap
 
 instance Monad ArgParser where
-
-    -- return is easy: if we want an ArgParser that just gives us a, that is
-    -- ArgParserTerminator a
-    return a = APTerminator a
-
-    -- Now things get more interesting. We need to describe how (>>=) works.
+    -- We need to describe how (>>=) works.
     -- Let's get the hard ones out of the way first.
     -- ArgParser actually
     (AP str fallback d f) >>= g = AP str fallback d (\a -> (f a) >>= g)
