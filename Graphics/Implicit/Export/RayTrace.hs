@@ -44,11 +44,13 @@ dynamicImage = ImageRGBA8
 vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
 vectorDistance a b = magnitude (b-a)
 
-colorMult :: RealFrac a => a -> PixelRGBA8 -> PixelRGBA8
+colorMult :: Pixel8 -> PixelRGBA8 -> PixelRGBA8
 s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
-    where 
+    where
+        bound :: RealFrac a => a -> a
         bound = max 0 . min 254
-        mult x y = fromInteger . round . bound $ x * fromIntegral y
+        mult :: Pixel8 -> Pixel8 -> Pixel8
+        mult x y = round . bound . toRational $ x * y
 
 average :: [Color] -> Color
 average l = 
@@ -141,7 +143,7 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
     let
         (a,b) = rayBounds ray box
     in case intersection ray ((a, obj (cameraP ^+^ a*^cameraV)), b) step obj of
-        Just p  -> flip colorMult objColor $ (sum $ [0.2] ++ do
+        Just p  -> flip colorMult objColor $ floor (sum $ [0.2] ++ do
             Light lightPos lightIntensity <- lights
             let
                 ray'@(Ray _ v) = rayFromTo p lightPos
