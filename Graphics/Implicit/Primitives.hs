@@ -5,16 +5,19 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- Required.
+-- FIXME: Required. why?
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
                                      translate,
                                      scale,
+                                     outset,
                                      complement, union, intersect, difference,
                                      unionR, intersectR, differenceR,
                                      shell,
+                                     getBox,
+                                     getImplicit,
                                      extrudeR,
                                      extrudeRM,
                                      extrudeRotateR,
