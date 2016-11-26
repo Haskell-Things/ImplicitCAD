@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 where
 
-import Prelude(map, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, fromInteger, ceiling)
+import Prelude(map, ($), (-), (/), (+), (>), (*), (.), reverse, cos, pi, sin, max, fromInteger, ceiling)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline, (⋯*))
 
