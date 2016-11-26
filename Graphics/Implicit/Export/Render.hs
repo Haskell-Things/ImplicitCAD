@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.Export.Render where
 
-import Prelude(Float, Bool, ceiling, ($), (/), fromIntegral, (+), (*), fromInteger, max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Integral, Eq, Integer)
+import Prelude(Float, Bool, ceiling, ($), (/), fromIntegral, (+), (*), fromInteger, max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Integral, Eq, Integer, concatMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Obj2, Obj3, TriangleMesh, Triangle, Polyline)
 
@@ -163,7 +163,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 
         -- (3) & (4) : get and tesselate loops
         sqTris = [[[
-            concat $ map (tesselateLoop res obj) $ getLoops $ concat [
+            concatMap (tesselateLoop res obj) $ getLoops $ concat [
                         segX''',
                    mapR segX''T,
                    mapR segY''',

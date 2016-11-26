@@ -12,7 +12,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(map, zip, length, filter, (>), ($), null, concat, (++))
+import Prelude(map, zip, length, filter, (>), ($), null, concat, (++), concatMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3))
 import Graphics.Implicit.Export.Render (getMesh)
@@ -211,10 +211,9 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
         (obj, (a,b)) -> getMesh a b res obj 
     else if null dependants
-    then concat $ map (symbolicGetMesh res) independents
-    else concat $ 
-        map (symbolicGetMesh res) independents 
-        ++ [symbolicGetMesh res (UnionR3 r dependants)]
+    then concatMap (symbolicGetMesh res) independents
+    else concatMap (symbolicGetMesh res) independents
+        ++ concat [symbolicGetMesh res (UnionR3 r dependants)]
 
 -- If all that fails, coerce and apply marching cubes :(
 -- (rebound is for being safe about the bounding box --

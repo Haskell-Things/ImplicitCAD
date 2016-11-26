@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, ($), show, putStrLn, concat, map, return, (++), fmap, reverse, fst, readFile)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, ($), show, putStrLn, map, concatMap, return, (++), fmap, reverse, fst, readFile)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
@@ -45,7 +45,7 @@ runStatementI (StatementI lineN (Echo exprs)) = do
         show2 x = show x
     vals <- mapM evalExpr exprs
     case getErrors (OList vals) of
-        Nothing  -> liftIO $ putStrLn $ concat $ map show2 vals
+        Nothing  -> liftIO $ putStrLn $ concatMap show2 vals
         Just err -> errorC lineN err
 
 runStatementI (StatementI lineN (For pat expr loopContent)) = do

@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (==), (!!), const, (++), foldr)
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (==), (!!), const, (++), foldr, concatMap)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -23,7 +23,7 @@ import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
 patVars :: Pattern -> [String]
 patVars (Name  name) = [name]
-patVars (ListP pats) = concat $ map patVars pats
+patVars (ListP pats) = concatMap patVars pats
 patVars _ = []
 
 patMatch :: Pattern -> OVal -> Maybe [OVal]

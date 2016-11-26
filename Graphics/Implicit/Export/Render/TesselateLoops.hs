@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(Int, return, ($), length, (==), concat, map, zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+))
+import Prelude(Int, return, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+), concatMap)
 import Graphics.Implicit.Definitions (ℝ, Obj3, ℝ3, Triangle, (⋅))
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Graphics.Implicit.Export.Util (centroid)
@@ -27,12 +27,12 @@ tesselateLoop _ _ [[a,b],[_,c],[_,_]] = return $ Tris [(a,b,c)]
 -}
 
 tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
-    concat $ map (tesselateLoop res obj) $
+    concatMap (tesselateLoop res obj) $
         [[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
             where pairs = zip (reverse as) bs
 
 tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == length bs =
-    concat $ map (tesselateLoop res obj) $
+    concatMap (tesselateLoop res obj) $
         [[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
             where pairs = zip (reverse as) bs
 
@@ -64,7 +64,7 @@ tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj (centroid [a,c]) < res/30 
 
 tesselateLoop res obj pathSides = return $ Tris $
     let
-        path' = concat $ map init pathSides
+        path' = concatMap init pathSides
         (early_tris,path) = shrinkLoop 0 path' res obj
     in if null path
     then early_tris
