@@ -2,7 +2,17 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Definitions where
+module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample),
+                                                  Symbol,
+                                                  Pattern(Wild, Name, ListP),
+                                                  Expr(LitE, Var, ListE, LamE, (:$)),
+                                                  StatementI(StatementI),
+                                                  Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule,OError, OObj2, OObj3),
+                                                  VarLookup,
+                                                  FStack,
+                                                  TestInvariant(EulerCharacteristic),
+                                                  collector) where
 
 import Prelude(Eq, Show, String, Maybe, Bool(True, False), Int, IO, (==), show, map, ($), (++), undefined, all, id, zipWith, foldl1)
 

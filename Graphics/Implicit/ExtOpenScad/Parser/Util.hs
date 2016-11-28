@@ -71,7 +71,6 @@ tryMany = (foldl1 (<|>)) . (map try)
 variableSymb :: forall s u (m :: * -> *). Stream s m Char => ParsecT s u m [Char]
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
-
 patternMatcher :: GenParser Char st Pattern
 patternMatcher =
     (do

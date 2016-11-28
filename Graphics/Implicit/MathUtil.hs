@@ -6,7 +6,7 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmin, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
 import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++))
@@ -50,6 +50,7 @@ rmax ::
 rmax r x y =  if abs (x-y) < r
     then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
     else max x y
+
 
 -- | Rounded minimum
 rmin ::
