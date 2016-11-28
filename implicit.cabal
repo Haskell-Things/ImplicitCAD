@@ -1,5 +1,5 @@
 name:                implicit
-version:             0.0.6
+version:             0.1.0
 cabal-version:       >= 1.8
 synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 description:         A math-inspired programmatic CAD library in haskell.
@@ -9,8 +9,8 @@ description:         A math-inspired programmatic CAD library in haskell.
 license:             AGPL-3
 license-file:        LICENSE
 author:              Christopher Olah
-maintainer:          Mike MacHenry <mike.machenry@gmail.com>
-homepage:            https://github.com/colah/ImplicitCAD
+maintainer:          Julia Longtin <julial@turinglace.com>
+homepage:            http://kalli1.faikvm.com/ImplicitCAD/Stable
 build-type:          Simple
 category:            Graphics
 
@@ -43,12 +43,13 @@ library
         transformers
 
     ghc-options:
-        -threaded
-        -rtsopts
         -Wall
+-- for debugging only.
+--        -Weverything
         -O2
         -optc-O3
-        -optc-ffast-math
+-- cannot use, we use infinity in some calculations.
+--        -optc-ffast-math
 
     extensions:
     exposed-modules:
