@@ -6,10 +6,10 @@
 -- This module deliberately declares orphan instances of Show.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
--- Required.
+-- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
--- Definitions of the types (and a few functions) used in ImplicitCAD.
+-- Definitions of the types used when modeling, and a few operators.
 
 module Graphics.Implicit.Definitions (
     ℝ,
@@ -132,7 +132,7 @@ instance ComponentWiseMultable ℝ3 where
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
 
--- | A triangle (a,b,c) = a trinagle with vertices a, b and c
+-- | A triangle (a,b,c) = a triangle with vertices a, b and c
 type Triangle = (ℝ3, ℝ3, ℝ3)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
@@ -157,13 +157,16 @@ type Box2 = (ℝ2, ℝ2)
 -- | A 3D box
 type Box3 = (ℝ3, ℝ3)
 
--- | A Boxed 2D object
+-- | A Box for containing a 2D object
 type Boxed2 a = (a, Box2)
 
--- | A Boxed 3D object
+-- | A Box for containing a 3D object
 type Boxed3 a = (a, Box3)
 
+-- | A Boxed 2D object
 type BoxedObj2 = Boxed2 Obj2
+
+-- | A Boxed 3D object
 type BoxedObj3 = Boxed3 Obj3
 
 -- | A symbolic 2D object format.
@@ -192,7 +195,6 @@ data SymbolicObj2 =
     deriving Show
 
 -- | A symbolic 3D format!
-
 data SymbolicObj3 = 
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3
@@ -224,11 +226,11 @@ data SymbolicObj3 =
         SymbolicObj2      -- object to extrude
         (Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
     | RotateExtrude
-        ℝ                   -- Angle to sweep to
-        (Maybe ℝ)           -- Loop or path (rounded corner)
+        ℝ                     -- Angle to sweep to
+        (Maybe ℝ)             -- Loop or path (rounded corner)
         (Either ℝ2 (ℝ -> ℝ2)) -- translate function
         (Either ℝ  (ℝ -> ℝ )) -- rotate function
-        SymbolicObj2      -- object to extrude
+        SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
 
