@@ -2,10 +2,13 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (Eq, head, last, tail, (==), ($), Bool(False), filter, not, (.), null, error, (++))
+import Prelude (Eq, head, last, tail, (==), Bool(False), filter, not, (.), null, error, (++))
 
 -- The goal of getLoops is to extract loops from a list of segments.
 
@@ -61,8 +64,9 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 
 getLoops' segs workingLoop =
     let
-        presEnd = last $ last workingLoop
-        connects (x:_) = x == presEnd
+        presEnd :: forall c. [[c]] -> c
+        presEnd = last . last
+        connects (x:_) = x == presEnd workingLoop
         connects [] = False -- Handle the empty case.
         possibleConts = filter connects segs
         nonConts = filter (not . connects) segs
