@@ -15,8 +15,9 @@ convert=convert
 
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
 
+# FIXME: this used to be ./Setup install. what's going on?
 install: $(EXTOPENSCAD)
-	./Setup install
+	cabal install
 
 clean: Setup
 	./Setup clean
