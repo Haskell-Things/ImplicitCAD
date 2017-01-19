@@ -77,20 +77,25 @@ getBox2 (Translate2 v symbObj) =
         then ((0,0),(0,0))
         else (a^+^v, b^+^v)
 getBox2 (Scale2 s symbObj) =
-    let
+  let
         (a,b) = getBox2 symbObj
-    in
-        (s ⋯* a, s ⋯* b)
+        ((x_a,y_a),(x_b,y_b)) = (s ⋯* a, s ⋯* b)
+        a' = (min x_a x_b, min y_a y_b)
+        b' = (max x_a x_b, max y_a y_b)
+  in
+        (a',b')
+
 getBox2 (Rotate2 θ symbObj) =
-    let
+  let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
         rotate (x,y) = (cos(θ)*x - sin(θ)*y, sin(θ)*x + cos(θ)*y)
-    in
+  in
         pointsBox [ rotate (x1, y1)
                   , rotate (x1, y2)
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
+
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj
