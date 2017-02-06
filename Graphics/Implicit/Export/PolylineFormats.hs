@@ -27,7 +27,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
     where
       strokeWidth = 1.0
       (xmin, xmax, ymin, ymax) = ((minimum xs) - margin, (maximum xs) + margin, (minimum ys) - margin, (maximum ys) + margin)
-           where margin = strokeWidth / 2 + 0.1
+           where margin = strokeWidth / 2
                  (xs,ys) = unzip (concat plines)
       
       svg11 content = docTypeSvg ! A.version "1.1" 
