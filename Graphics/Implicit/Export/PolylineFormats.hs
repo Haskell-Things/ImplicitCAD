@@ -9,7 +9,7 @@
 
 module Graphics.Implicit.Export.PolylineFormats where
 
-import Prelude((.), ($), (-), minimum, maximum, unzip, concat, show, (++), unwords, map, mapM_, snd, compare, min, max, Ord, Num)
+import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, concat, show, (++), unwords, map, mapM_, snd, compare, min, max, Ord, Num)
 
 import Graphics.Implicit.Definitions (Polyline, ℝ2)
 
@@ -24,9 +24,11 @@ import qualified Data.List as List
 
 svg :: [Polyline] -> Text
 svg plines = renderSvg . svg11 . svg' $ plines
-    where  
-      (xmin, xmax, ymin, ymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
-           where (xs,ys) = unzip (concat plines)
+    where
+      strokeWidth = 1.0
+      (xmin, xmax, ymin, ymax) = ((minimum xs) - margin, (maximum xs) + margin, (minimum ys) - margin, (maximum ys) + margin)
+           where margin = strokeWidth / 2
+                 (xs,ys) = unzip (concat plines)
       
       svg11 content = docTypeSvg ! A.version "1.1" 
                                  ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
@@ -43,7 +45,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
-      thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth "1" ! A.fill "none" -- obj
+      thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth (stringValue $ show strokeWidth) ! A.fill "none" -- obj
 
 hacklabLaserGCode :: [Polyline] -> Text
 hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpretPolyline orderedPolylines) <> gcodeFooter
