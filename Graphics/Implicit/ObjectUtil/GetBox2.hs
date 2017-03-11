@@ -93,6 +93,7 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
+
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj
