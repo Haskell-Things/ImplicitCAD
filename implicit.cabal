@@ -30,6 +30,7 @@ library
         text,
         monads-tf,
         bytestring,
+        bytestring-builder,
         blaze-builder,
         blaze-markup,
         blaze-svg,
