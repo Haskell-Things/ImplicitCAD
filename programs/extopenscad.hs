@@ -37,6 +37,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
 
+import Data.Monoid (Monoid, mappend, mconcat)
+
+import Control.Applicative ((<$>), (<*>))
+
 -- NOTE: make sure we don't import (<>) in new versions.
 import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption)
 
