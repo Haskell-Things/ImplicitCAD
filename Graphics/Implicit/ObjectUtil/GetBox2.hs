@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
-import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, max, abs, head)
+import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
@@ -79,8 +79,10 @@ getBox2 (Translate2 v symbObj) =
 getBox2 (Scale2 s symbObj) =
     let
         (a,b) = getBox2 symbObj
+        (sax, say) = s ⋯* a
+        (sbx, sby) = s ⋯* b
     in
-        (s ⋯* a, s ⋯* b)
+        ((min sax sbx, min say sby), (max sax sbx, max say sby))
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
