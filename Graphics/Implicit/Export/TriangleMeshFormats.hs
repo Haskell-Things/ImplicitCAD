@@ -10,13 +10,15 @@
 
 module Graphics.Implicit.Export.TriangleMeshFormats where
 
-import Prelude (Real, Float, Int, ($), (+), map, (.), mconcat, realToFrac, toEnum, length, zip, return)
+import Prelude (Real, Float, Int, ($), (+), map, (.), realToFrac, toEnum, length, zip, return)
 
 import Graphics.Implicit.Definitions (Triangle, TriangleMesh, ℝ3)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildInt)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
 import qualified Data.ByteString.Builder.Internal as BI (Builder)
+
+import Data.Monoid(mconcat)
 
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
