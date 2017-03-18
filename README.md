@@ -239,7 +239,7 @@ Try ImplicitCAD!
 ----------------
 
  1. Install GHC and cabal.
-     * Debain/Ubuntu: `apt-get install ghc cabal-install zlibg1-dev`
+     * Debain/Ubuntu: `apt-get install ghc cabal-install zlib1g-dev`
      * Archlinux: `pacman -S ghc cabal-install`
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
