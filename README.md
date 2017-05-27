@@ -23,7 +23,7 @@ ImplicitCAD is very much a work in progress. The author considers it ready for b
 ExtOpenSCAD Examples
 --------------------
 
-Let's begin with OpenSCAD examples, since they're likely a more comfortable format that Haskell for most readers :)
+Let's begin with OpenSCAD examples, since they're likely a more comfortable format than Haskell for most readers :)
 
 ImplicitCAD supports a modified version of the OpenSCAD language, used by the popular programmatic CAD tool of the same name.
 

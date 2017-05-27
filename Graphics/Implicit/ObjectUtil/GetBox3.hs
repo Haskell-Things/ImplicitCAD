@@ -77,8 +77,10 @@ getBox3 (Translate3 v symbObj) =
 getBox3 (Scale3 s symbObj) =
     let
         (a,b) = getBox3 symbObj
+        (sax,say,saz) = s ⋯* a
+        (sbx,sby,sbz) = s ⋯* b
     in
-        (s ⋯* a, s ⋯* b)
+        ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
 getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
     where
         ((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj

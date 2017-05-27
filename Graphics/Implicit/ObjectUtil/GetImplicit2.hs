@@ -79,8 +79,9 @@ getImplicit2 (Translate2 v symbObj) =
 getImplicit2 (Scale2 s@(sx,sy) symbObj) =
     let
         obj = getImplicit2 symbObj
+        k = abs(max sx sy)
     in
-        \p -> (max sx sy) * obj (p ⋯/ s)
+        \p -> k * obj (p ⋯/ s)
 getImplicit2 (Rotate2 θ symbObj) =
     let
         obj = getImplicit2 symbObj

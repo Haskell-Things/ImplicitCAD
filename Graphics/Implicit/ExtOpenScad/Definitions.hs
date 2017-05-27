@@ -19,7 +19,7 @@ import Prelude(Eq, Show, String, Maybe, Bool(True, False), Int, IO, (==), show, 
 import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
-import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap)
+import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return)
 import Data.Map (Map)
 
 -----------------------------------------------------------------
@@ -60,6 +60,7 @@ instance Monad ArgParser where
     -- And an ArgParserTerminator happily gives away the value it contains
     (APTerminator a) >>= g = g a
     (APBranch bs) >>= g = APBranch $ map (>>= g) bs
+    return g = APTerminator g
 
 instance MonadPlus ArgParser where
     mzero = APFailIf True "" undefined
