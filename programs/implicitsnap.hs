@@ -25,10 +25,17 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
+-- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+
+-- Use default values when a Maybe is Nothing.
+import Data.Maybe (fromMaybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
+
+-- Operator to subtract two points. Used when defining the resolution of a 2d object.
+import Data.AffineSpace ((.-.))
 
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
@@ -71,7 +78,33 @@ renderHandler = method GET $ withCompression $ do
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
+-- Find the resolution to raytrace at.
 getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+
+-- First, use a resolution specified by a variable in the input file.
+getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+-- Use a resolution chosen for 3D objects.
+-- FIXME: magic numbers.
+getRes (varlookup, _, obj:_) =
+    let
+        ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+        (x,y,z) = (x2-x1, y2-y1, z2-z1)
+    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
+        _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+-- Use a resolution chosen for 2D objects.
+-- FIXME: magic numbers.
+getRes (varlookup, obj:_, _) =
+    let
+        (p1,p2) = getBox2 obj
+        (x,y) = p2 .-. p1
+    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+        ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
+        _                    -> min (min x y/2) ((x*y)**0.5 / 30)
+-- fallthrough value.
+getRes _ = 1
+
+{-
 getRes (varlookup, obj2s, obj3s) =
     let
         qual = case Map.lookup "$quality" varlookup of
@@ -98,7 +131,7 @@ getRes (varlookup, obj2s, obj3s) =
             if qual <= 30
             then qualRes
             else -1
-
+-}
 
 getWidth :: forall t. (t, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
