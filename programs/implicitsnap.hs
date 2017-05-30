@@ -5,7 +5,7 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
-{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
 
@@ -59,12 +59,12 @@ renderHandler = method GET $ withCompression $ do
     modifyResponse $ setContentType "application/x-javascript"
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
-        (Just [source], Just [callback], Nothing) -> do
+        (Just [source], Just [callback], Nothing) ->
             writeBS $ BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
                 Nothing
-        (Just [source], Just [callback], Just [format]) -> do
+        (Just [source], Just [callback], Just [format]) ->
             writeBS $ BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
@@ -83,8 +83,8 @@ getRes (varlookup, obj2s, obj3s) =
                 where
                     ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
                     (x,y,z) = (x2-x1, y2-y1, z2-z1)
-            (obj:_, _) -> ( min (min x y/2) ((x*y     )**0.5 / 30)
-                          , min (min x y/2) ((x*y/qual)**0.5 / 30) )
+            (obj:_, _) -> ( min (min x y/2) (sqrt(x*y     ) / 30)
+                          , min (min x y/2) (sqrt(x*y/qual) / 30) )
                 where
                     ((x1,y1),(x2,y2)) = getBox2 obj
                     (x,y) = (x2-x1, y2-y1)
@@ -130,7 +130,7 @@ executeAndExport content callback maybeFormat =
                 msgs = showErrorMessages' $ errorMessages err
             in callbackF False False 1 $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
         Right openscadProgram -> unsafePerformIO $ do
-            (msgs,s) <- capture $ openscadProgram
+            (msgs,s) <- capture openscadProgram
             let
                 res = getRes   s
                 w   = getWidth s
