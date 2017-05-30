@@ -18,6 +18,7 @@ import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
 import qualified Data.ByteString.Builder.Internal as BI (Builder)
 
+-- note: moved to prelude in newer version
 import Data.Monoid(mconcat)
 
 import Data.ByteString (replicate)
