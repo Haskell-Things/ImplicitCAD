@@ -55,7 +55,7 @@ buildS3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) | r == 0 = call "translate" [bf x1, bf 
 
 buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
-buildS3 (Cylinder h r1 r2) = call "cylinder" [
+buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [
                               "r1 = " <> bf r1
                              ,"r2 = " <> bf r2
                              , bf h
