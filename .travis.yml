@@ -1,0 +1,21 @@
+sudo: required
+dist: trusty
+
+language: c
+
+addons:
+  apt:
+    packages:
+    - libgmp-dev
+
+before_install:
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -sSL https://get.haskellstack.org/ | sh
+
+script:
+- stack --no-terminal --install-ghc test
+
+cache:
+  directories:
+  - $HOME/.stack
