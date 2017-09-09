@@ -98,7 +98,7 @@ type ℕ = Integer
 (⋅) = (<.>)
 
 
--- handle additional instances of Show.
+-- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where
     show _ = "<function ℝ>"
 

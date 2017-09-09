@@ -16,7 +16,7 @@ import Prelude (FilePath, IO, (.), ($))
 -- The types of our objects (before rendering), and the type of the resolution to render with.
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, Polyline, TriangleMesh, Triangle, NormedTriangle)
 
--- The functions for writing our output, as well as a type used.
+-- functions for outputing a file, and one of the types.
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy.IO as LT (writeFile)
 import qualified Data.ByteString.Lazy as LBS (writeFile)
@@ -39,7 +39,8 @@ writeObject :: (DiscreteAproxable obj aprox)
     -> obj              -- ^ Object to render
     -> IO ()            -- ^ Writing Action!
 writeObject res format filename obj =
-    let aprox = formatObject res format obj
+    let
+        aprox = formatObject res format obj
     in LT.writeFile filename aprox
 
 -- Write an object using the given format writer.
@@ -50,7 +51,9 @@ writeObject' :: (DiscreteAproxable obj aprox)
     -> obj              -- ^ Object to render
     -> IO ()            -- ^ Writing Action!
 writeObject' res formatWriter filename obj =
-    let aprox = discreteAprox res obj
+    let
+--        aprox :: (DiscreteAproxable aprox) => aprox
+        aprox = discreteAprox res obj
     in formatWriter filename aprox
 
 formatObject :: (DiscreteAproxable obj aprox)
