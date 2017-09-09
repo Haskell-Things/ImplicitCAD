@@ -3,7 +3,7 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- Functions to make meshes/polylines finer.
 

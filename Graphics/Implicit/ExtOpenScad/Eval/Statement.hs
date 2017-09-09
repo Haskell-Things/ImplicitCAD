@@ -2,7 +2,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE ViewPatterns, ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement where
 
@@ -23,8 +23,10 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLooku
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
+import Data.Maybe(fromMaybe)
+    
 import qualified Data.Map as Map
-import qualified Control.Monad as Monad
+import Control.Monad (forM_, forM, mapM_) 
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 import qualified System.FilePath as FilePath
 
@@ -52,7 +54,7 @@ runStatementI (StatementI lineN (For pat expr loopContent)) = do
     val <- evalExpr expr
     case (getErrors val, val) of
         (Just err, _)      -> errorC lineN err
-        (_, OList vals) -> Monad.forM_ vals $ \v ->
+        (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
                     modifyVarLookup $ Map.union match
@@ -69,13 +71,13 @@ runStatementI (StatementI lineN (If expr a b)) = do
         _                 -> return ()
 
 runStatementI (StatementI lineN (NewModule name argTemplate suite)) = do
-    argTemplate' <- Monad.forM argTemplate $ \(name', defexpr) -> do
+    argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
     (varlookup, _, path, _, _) <- get
 --  FIXME: \_? really?
-    runStatementI $ StatementI lineN $ (Name name :=) $ LitE $ OModule $ \_ -> do
-        newNameVals <- Monad.forM argTemplate' $ \(name', maybeDef) -> do
+    runStatementI . StatementI lineN $ (Name name :=) $ LitE $ OModule $ \_ -> do
+        newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument name' `defaultTo` def
                 Nothing  -> argument name'
@@ -105,19 +107,17 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
         maybeMod  <- lookupVar name
         (varlookup, _, path, _, _) <- get
         childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
-        argsVal   <- Monad.forM argsExpr $ \(posName, expr) -> do
+        argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
             Just (OModule mod') -> liftIO ioNewVals where
                 argparser = mod' childVals
-                ioNewVals = case fst $ argMap argsVal argparser of
-                    Just iovals -> iovals
-                    Nothing     -> return []
+                ioNewVals = fromMaybe (return []) (fst $ argMap argsVal argparser)
             Just foo            -> do
                     case getErrors foo of
                         Just err -> errorC lineN err
-                        Nothing  -> errorC lineN $ "Object called not module!"
+                        Nothing  -> errorC lineN "Object called not module!"
                     return []
             Nothing -> do
                 errorC lineN $ "Module " ++ name ++ " not in scope."
@@ -127,7 +127,7 @@ runStatementI (StatementI lineN (ModuleCall name argsExpr suite)) = do
 runStatementI (StatementI _ (Include name injectVals)) = do
     name' <- getRelPath name
     content <- liftIO $ readFile name'
-    case parseProgram name content of
+    case parseProgram content of
         Left e -> liftIO $ putStrLn $ "Error parsing " ++ name ++ ":" ++ show e
         Right sts -> withPathShiftedBy (FilePath.takeDirectory name) $ do
             vals <- getVals
@@ -136,12 +136,10 @@ runStatementI (StatementI _ (Include name injectVals)) = do
             vals' <- getVals
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
-
-runStatementI (StatementI _ DoNothing) = do
-  liftIO $ putStrLn $ "Do Nothing?"
+runStatementI (StatementI _ DoNothing) = liftIO $ putStrLn "Do Nothing?"
 
 runSuite :: [StatementI] -> StateC ()
-runSuite stmts = Monad.mapM_ runStatementI stmts
+runSuite = mapM_ runStatementI
 
 runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
