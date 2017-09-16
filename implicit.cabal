@@ -46,7 +46,8 @@ library
     ghc-options:
         -Wall
 -- for debugging only.
---        -Weverything
+        -Wextra
+        -Weverything
         -O2
         -optc-O3
 -- cannot use, we use infinity in some calculations.
@@ -121,8 +122,11 @@ executable extopenscad
                  implicit
    ghc-options:
         -threaded
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
         -rtsopts
         -Wall
+        -Weverything
         -O2
         -optc-O3
         -optc-ffast-math
@@ -191,6 +195,7 @@ executable implicitsnap
         -threaded
         -rtsopts
         -Wall
+        -Weverything
         -O2
         -optc-O3
         -optc-ffast-math
@@ -223,6 +228,7 @@ executable Benchmark
         -threaded
         -rtsopts
         -Wall
+        -Weverything
         -O2
         -optc-O3
         -optc-ffast-math
@@ -232,15 +238,21 @@ test-suite test-implicit
     build-depends: base, mtl, containers, hspec, parsec, implicit
     main-is: Main.hs
     hs-source-dirs: tests
+    ghc-options:
+        -Wall
+        -Weverything
+        -O2
+        -optc-O3
 
 benchmark parser-bench
     type: exitcode-stdio-1.0
-    hs-source-dirs: bench
-    main-is: ParserBench.hs
     build-depends: base, criterion, random, parsec, implicit
+    main-is: ParserBench.hs
     ghc-options:
         -Wall
-        -O2 -optc-O3
+        -Weverything
+        -O2
+        -optc-O3
 
 source-repository head
     type:            git
