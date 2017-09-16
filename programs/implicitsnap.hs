@@ -7,13 +7,17 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
+{-# LANGUAGE ViewPatterns #-}
+
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
 
 -- Let's be explicit about what we're getting from where :)
 
+import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, Char, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
+
 import Control.Applicative ((<|>))
 
-import Snap.Core (Snap, route, writeBS, method, Method(GET), modifyResponse, setContentType, getRequest, rqParam)
+import Snap.Core (Snap, route, writeBS, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
 import Snap.Http.Server (quickHttpServe)
 import Snap.Util.GZip (withCompression)
 
@@ -64,15 +68,16 @@ site = route
 renderHandler :: Snap ()
 renderHandler = method GET $ withCompression $ do
     modifyResponse $ setContentType "application/x-javascript"
+    setTimeout 600
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
         (Just [source], Just [callback], Nothing) ->
-            writeBS $ BS.Char.pack $ executeAndExport
+            writeBS . BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
                 Nothing
         (Just [source], Just [callback], Just [format]) ->
-            writeBS $ BS.Char.pack $ executeAndExport
+            writeBS . BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
                 (Just $ BS.Char.unpack format)
@@ -83,7 +88,8 @@ getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj
 
 -- First, use a resolution specified by a variable in the input file.
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
--- Use a resolution chosen for 3D objects.
+
+-- If there was no resolution specified, use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
 getRes (varlookup, _, obj:_) =
     let
@@ -91,7 +97,7 @@ getRes (varlookup, _, obj:_) =
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
-        _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+        _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
 -- Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
 getRes (varlookup, obj:_, _) =
@@ -99,8 +105,8 @@ getRes (varlookup, obj:_, _) =
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
-        ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
-        _                    -> min (min x y/2) ((x*y)**0.5 / 30)
+        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
+        _                    -> min (min x y/2) (sqrt(x*y     ) / 30)
 -- fallthrough value.
 getRes _ = 1
 
@@ -145,6 +151,7 @@ getWidth (_, [], []) = 0
 executeAndExport :: String -> String -> Maybe String -> String
 executeAndExport content callback maybeFormat =
     let
+        showB :: IsString t => Bool -> t
         showB True  = "true"
         showB False = "false"
         callbackF :: Bool -> Bool -> ℝ -> String -> String
@@ -152,6 +159,7 @@ executeAndExport content callback maybeFormat =
             callback ++ "([null," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w  ++ "]);"
         callbackF True  is2D w msg =
             callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
+        callbackS :: (Show a1, Show a) => a -> a1 -> [Char]
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
     in case runOpenscad content of
         Left err ->
@@ -195,6 +203,7 @@ executeAndExport content callback maybeFormat =
                     callbackS (TL.unpack (svg (discreteAprox res obj))) msgs
                 (Right (Just obj, _), Just "gcode/hacklab-laser") ->
                     callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) msgs
-
+                (Right (_ , _), _) ->
+                    callbackF False False 1 "unexpected case"
 
 
