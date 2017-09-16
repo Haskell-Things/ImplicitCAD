@@ -2,7 +2,7 @@
 
 RTSOPTS=+RTS -N
 
-RESOPTS=-r 10
+RESOPTS=-r 50
 
 #uncomment for profiling support.
 #PROFILING= --enable-library-profiling --enable-executable-profiling
@@ -26,8 +26,11 @@ clean: Setup
 	rm -f Examples/*.ps
 	rm -f Examples/*.png
 	rm -f Examples/example[0-9][0-9]
+	rm -f Examples/*.hi
+	rm -f Examples/*.o
 	rm -f tests/*.stl
 	rm -f Setup Setup.hi Setup.o
+	rm -rf dist/*
 
 distclean: clean
 	rm -f `find ./ -name *~`
@@ -57,8 +60,8 @@ dist/build/extopenscad/extopenscad: Setup dist/setup-config
 	cabal build
 
 dist/setup-config: Setup implicit.cabal
-	cabal install --only-dependencies
-	cabal configure $(PROFILING)
+	cabal install --only-dependencies --upgrade-dependencies
+	cabal configure --enable-tests $(PROFILING)
 
 Setup: Setup.*hs
 	ghc -O2 -Wall --make Setup
