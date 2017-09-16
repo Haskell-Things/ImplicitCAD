@@ -1,19 +1,34 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- statement related hspec tests.
 module ParserSpec.Statement (statementSpec) where
 
-import Test.Hspec
-import Text.ParserCombinators.Parsec hiding (State)
-import ParserSpec.Util
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Statement
-import Data.Either
+import Prelude (String, Maybe(Just), Bool(True), ($))
 
-parsesAs :: String -> [StatementI] -> Expectation
-parsesAs source stmts =
-  (parseProgram "src" source) `shouldBe` Right stmts
+import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, describe)
 
+-- import Text.ParserCombinators.Parsec ()
+
+import ParserSpec.Util (bool, num, app, app')
+
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
+
+-- Parse an ExtOpenScad program.
+import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+
+import Data.Either (Either(Left, Right), isLeft)
+
+-- an expectation that a string become a statement.
+infixr 1 -->
+(-->) :: String -> [StatementI] -> Expectation
+(-->) source stmts =
+    parseProgram source `shouldBe` Right stmts
+
+-- an expectation that a string generates an error.
 parsesAsError :: String -> Expectation
-parsesAsError source =
-  (parseProgram "src" source) `shouldSatisfy` isLeft
+parsesAsError source = parseProgram  source `shouldSatisfy` isLeft
 
 single :: Statement StatementI -> [StatementI]
 single st = [StatementI 1 st]
@@ -22,61 +37,55 @@ call :: Symbol -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
 call name args stmts = StatementI 1 (ModuleCall name args stmts)
 
 ifSpec :: Spec
-ifSpec = do
-  it "parses" $
-    "if (true) { a(); } else { b(); }" `parsesAs` (
-      single $ If (bool True) [call "a" [] []] [call "b" [] []])
+ifSpec = it "parses" $
+    "if (true) { a(); } else { b(); }" --> 
+      single ( If (bool True) [call "a" [] []] [call "b" [] []])
 
 assignmentSpec :: Spec
 assignmentSpec = do
   it "parses correctly" $
-    "y = -5;" `parsesAs` (single $ Name "y" := (num (-5)))
+    "y = -5;" --> single ( Name "y" := num (-5))
   it "handles pattern matching" $
-    "[x, y] = [1, 2];" `parsesAs`
-    (single $ ListP [Name "x", Name "y"] := (ListE [num 1, num 2]))
+    "[x, y] = [1, 2];" --> single (ListP [Name "x", Name "y"] := ListE [num 1, num 2])
   it "handles function definitions" $
-    "foo (x, y) = x * y;" `parsesAs` single fooFunction
+    "foo (x, y) = x * y;" --> single fooFunction
   it "handles the function keyword" $
-    "function foo(x, y) = x * y;" `parsesAs` single fooFunction
+    "function foo(x, y) = x * y;" --> single fooFunction
   it "nested indexing" $
-    "x = [y[0] - z * 2];" `parsesAs`
-    (single $ Name "x" := ListE [app' "-" [app' "index" [Var "y", num 0],
+    "x = [y[0] - z * 2];" -->
+    single ( Name "x" := ListE [app' "-" [app' "index" [Var "y", num 0],
                                            app "*" [Var "z", num 2]]])
   where
-    fooFunction = Name "foo" := (LamE [Name "x", Name "y"]
-                                 (app "*" [Var "x", Var "y"]))
+    fooFunction = Name "foo" := LamE [Name "x", Name "y"]
+                                (app "*" [Var "x", Var "y"])
 
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
 
 statementSpec :: Spec
 statementSpec = do
-  describe "empty file" $ do
+  describe "assignment" $ assignmentSpec
+  describe "if" $ ifSpec
+  describe "empty file" $
     it "returns an empty list" $
-      emptyFileIssue $ "" `parsesAs` []
-
-  describe "line comment" $ do
-    it "parses as empty" $ emptyFileIssue $ "// foish bar\n" `parsesAs` []
-
-  describe "module call" $ do
-    it "parses" $
-      "foo();" `parsesAs` (single $ ModuleCall "foo" [] [])
-  describe "difference of two cylinders" $ do
+      emptyFileIssue $ "" --> []
+  describe "line comment" $ 
+    it "parses as empty" $ emptyFileIssue $ "// foish bar\n" --> []
+  describe "module call" $ 
+    it "parses" $  "foo();" --> single (ModuleCall "foo" [] [])
+  describe "difference of two cylinders" $
     it "parses correctly" $
       "difference(){ cylinder(r=5,h=20); cylinder(r=2,h=20); }"
-      `parsesAs` single (
+      --> single (
         ModuleCall "difference" [] [
-           (call "cylinder" [(Just "r", num 5.0),
+           call "cylinder" [(Just "r", num 5.0),
                              (Just "h", num 20.0)]
-            []),
-           (call "cylinder" [(Just "r", num 2.0),
+            [],
+           call "cylinder" [(Just "r", num 2.0),
                              (Just "h", num 20.0)]
-            [])])
-
-  describe "empty module definition" $ do
+            []])
+  describe "empty module definition" $
     it "parses correctly" $
-      "module foo_bar() {}" `parsesAs` (single $ NewModule "foo_bar" [] [])
+      "module foo_bar() {}" --> single (NewModule "foo_bar" [] [])
 
-  describe "assignment" assignmentSpec
 
-  describe "if" ifSpec
