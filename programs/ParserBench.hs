@@ -24,7 +24,7 @@ assignments :: Int -> String
 assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
 
 intList :: Int -> String
-intList n = "[" ++ concat [(show i) ++ "," | i <- [1..n]] ++ "0]"
+intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
 
 parseExpr :: String -> Expr
 parseExpr s = case parse expr0 "src" s of
@@ -45,12 +45,12 @@ deepArithmetic n
 
 run :: String -> (String -> a) -> String -> Benchmark
 run name func input =
-  env (return $ input) $ \s ->
+  env (return input) $ \s ->
   bench name $ whnf func s
 
 main :: IO ()
 main =
-  defaultMain $
+  defaultMain
   [ bgroup "comments"
     [ run "line" parseStatements (lineComments 5000)
     , run "block" parseStatements (blockComments 10 500)
