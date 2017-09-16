@@ -65,7 +65,7 @@ exprSpec = do
       "( false )" -->  bool False
     it "handles vectors" $
       "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
-    it "handles lists" $ 
+    it "handles lists" $
       "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : 1 : b + 10 ]" -->
