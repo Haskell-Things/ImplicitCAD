@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(Int, Num, abs, (-), (/), sqrt, (*), (+), (!!), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (==), maximum, max, cos, sin, head, tail)
+import Prelude(Int, Num, abs, (-), (/), sqrt, (*), (+), (!!), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (==), maximum, max, cos, sin, head, tail, (.))
 
 import Graphics.Implicit.Definitions (SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2), Obj2, ℝ, ℝ2, (⋯/))
 import Graphics.Implicit.MathUtil (rminimum, rmaximum, distFromLineSeg)
@@ -20,84 +20,89 @@ import Data.List (nub)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 (RectR r (x1,y1) (x2,y2)) = \(x,y) -> rmaximum r
-    [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
-        where (dx, dy) = (x2-x1, y2-y1)
-getImplicit2 (Circle r ) =
+getImplicit2 (RectR r (x1,y1) (x2,y2)) =
+    \(x,y) -> let
+         (dx, dy) = (x2-x1, y2-y1)
+    in
+         if r == 0
+         then maximum [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         else rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 getImplicit2 (PolygonR _ points) =
     \p -> let
         pair :: Int -> (ℝ2,ℝ2)
-        pair n = (points !! n, points !! (mod (n + 1) (length points) ) )
-        pairs =  [ pair n | n <- [0 .. (length points) - 1] ]
+        pair n = (points !! n, points !! mod (n + 1) (length points) )
+        pairs =  [ pair n | n <- [0 .. length points - 1] ]
         relativePairs =  map (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
         crossing_points =
             [x2 ^-^ y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <-relativePairs,
                ( (y2 <= 0) && (y1 >= 0) ) || ( (y2 >= 0) && (y1 <= 0) ) ]
-        seemsInRight = odd $ length $ filter (>0) $ nub crossing_points
-        seemsInLeft = odd $ length $ filter (<0) $ nub crossing_points
+        -- FIXME: use partition instead?
+        seemsInRight = odd . length . filter (>0) $ nub crossing_points
+        seemsInLeft = odd . length . filter (<0) $ nub crossing_points
         isIn = seemsInRight && seemsInLeft
         dists = map (distFromLineSeg p) pairs :: [ℝ]
     in
         minimum dists * if isIn then -1 else 1
 -- (Rounded) CSG
 getImplicit2 (Complement2 symbObj) =
-    let
+    \p -> let
         obj = getImplicit2 symbObj
     in
-        \p -> - obj p
+        - obj p
 getImplicit2 (UnionR2 r symbObjs) =
-    let
+    \p -> let
         objs = map getImplicit2 symbObjs
     in
         if r == 0
-        then \p -> minimum $ map ($p) objs
-        else \p -> rminimum r $ map ($p) objs
+        then minimum $ map ($p) objs
+        else rminimum r $ map ($p) objs
 getImplicit2 (DifferenceR2 r symbObjs) =
     let
         objs = map getImplicit2 symbObjs
         obj = head objs
         complement :: forall a t. Num a => (t -> a) -> t -> a
-        complement obj' = \p -> - obj' p
+        complement obj' p = - obj' p
     in
         if r == 0
-        then \p -> maximum $ map ($p) $ obj:(map complement $ tail objs)
-        else \p -> rmaximum r $ map ($p) $ obj:(map complement $ tail objs)
+        then \p -> maximum . map ($p) $ obj:map complement (tail objs)
+        else \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
 getImplicit2 (IntersectR2 r symbObjs) =
-    let
+    \p -> let
         objs = map getImplicit2 symbObjs
     in
         if r == 0
-        then \p -> maximum $ map ($p) objs
-        else \p -> rmaximum r $ map ($p) objs
+        then maximum $ map ($p) objs
+        else rmaximum r $ map ($p) objs
 -- Simple transforms
 getImplicit2 (Translate2 v symbObj) =
-    let
+    \p -> let
         obj = getImplicit2 symbObj
     in
-        \p -> obj (p ^-^ v)
+        obj (p ^-^ v)
 getImplicit2 (Scale2 s@(sx,sy) symbObj) =
-    let
+    \p -> let
         obj = getImplicit2 symbObj
         k = abs(max sx sy)
     in
-        \p -> k * obj (p ⋯/ s)
+        k * obj (p ⋯/ s)
 getImplicit2 (Rotate2 θ symbObj) =
-    let
+    \(x,y) -> let
         obj = getImplicit2 symbObj
     in
-        \(x,y) -> obj ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x)
+        obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
 -- Boundary mods
 getImplicit2 (Shell2 w symbObj) =
-    let
+    \p -> let
         obj = getImplicit2 symbObj
     in
-        \p -> abs (obj p) - w/2
+        abs (obj p) - w/2
 getImplicit2 (Outset2 d symbObj) =
-    let
+    \p -> let
         obj = getImplicit2 symbObj
     in
-        \p -> obj p - d
+        obj p - d
 -- Misc
 getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
 
