@@ -2,7 +2,7 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
@@ -45,8 +45,7 @@ getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
 getBox2 (RectR _ a b) = (a,b)
 getBox2 (Circle r ) =  ((-r, -r), (r,r))
-getBox2 (PolygonR _ points) = ((minimum xs, minimum ys), (maximum xs, maximum ys))
-     where (xs, ys) = unzip points
+getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
 getBox2 (Complement2 _) =
     ((-infty, -infty), (infty, infty))
@@ -86,14 +85,13 @@ getBox2 (Scale2 s symbObj) =
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
-        rotate (x,y) = (cos(θ)*x - sin(θ)*y, sin(θ)*x + cos(θ)*y)
+        rotate (x,y) = (x*cos θ - y*sin θ, x*sin θ + y*cos θ)
     in
         pointsBox [ rotate (x1, y1)
                   , rotate (x1, y2)
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
-
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj
@@ -105,20 +103,26 @@ getBox2 (EmbedBoxedObj2 (_,box)) = box
 -- Get the maximum distance (read upper bound) an object is from a point.
 -- Sort of a circular
 getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
+-- Real implementations
+getDist2 p (Circle r) =  magnitude p + r
+getDist2 p (PolygonR r points) = r + maximum [magnitude (p ^-^ p') | p' <- points]
+-- Transform implementations
 getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
+getDist2 p (DifferenceR2 r objs) = r + (getDist2 p $ head objs)
+getDist2 p (IntersectR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
+-- FIXME: isn't this wrong? should we be returning distance inside of the object?
+getDist2 _ (Complement2 _) = 1/0
 getDist2 p (Translate2 v obj) = getDist2 (p ^+^ v) obj
-getDist2 p (Circle r) = magnitude p + r
-getDist2 p (PolygonR r points) =
-    r + maximum [magnitude (p ^-^ p') | p' <- points]
 -- FIXME: write optimized functions for the rest of the SymbObjs.
+-- Fallthrough: use getBox2 to check the distance a box is from the point.
 getDist2 (x,y) symbObj =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
     in
         sqrt (
-              (max (abs (x1 - x)) (abs (x2 - x))) *
-              (max (abs (x1 - x)) (abs (x2 - x))) +
-              (max (abs (y1 - y)) (abs (y2 - y))) *
-              (max (abs (y1 - y)) (abs (y2 - y)))
+              max (abs (x1 - x)) (abs (x2 - x)) *
+              max (abs (x1 - x)) (abs (x2 - x)) +
+              max (abs (y1 - y)) (abs (y2 - y)) *
+              max (abs (y1 - y)) (abs (y2 - y))
              )
 
