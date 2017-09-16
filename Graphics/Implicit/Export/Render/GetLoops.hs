@@ -8,8 +8,9 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (Eq, head, last, tail, (==), Bool(False), filter, not, (.), null, error, (++))
+import Prelude (Eq, head, last, tail, (==), Bool(False), (.), null, error, (++))
 
+import Data.List (partition)
 -- The goal of getLoops is to extract loops from a list of segments.
 
 -- The input is a list of segments.
@@ -51,7 +52,7 @@ getLoops' [] [] = []
 getLoops' (x:xs) [] = getLoops' xs [x]
 
 -- A loop is finished if its start and end are the same.
--- In this case, we return it and empty the building loop.
+-- In this case, we return it and start searching for another loop.
 
 getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) =
     workingLoop : getLoops' segs []
@@ -60,16 +61,14 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 -- and stick one on if we find it.
 -- Otherwise... something is really screwed up.
 
--- FIXME: connects should be used with a singleton.
-
 getLoops' segs workingLoop =
     let
         presEnd :: forall c. [[c]] -> c
         presEnd = last . last
         connects (x:_) = x == presEnd workingLoop
         connects [] = False -- Handle the empty case.
-        possibleConts = filter connects segs
-        nonConts = filter (not . connects) segs
+        -- divide our set into sequences that connect, and sequences that don't.
+        (possibleConts,nonConts) = partition connects segs
         (next, unused) = if null possibleConts
             then error "unclosed loop in paths given"
             else (head possibleConts, tail possibleConts ++ nonConts)
