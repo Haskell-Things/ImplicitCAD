@@ -6,20 +6,22 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- The purpose of this function is to symbolicaly compute triangle meshes using the symbolic system where possible.
 -- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(map, zip, length, filter, (>), ($), null, concat, (++), concatMap)
+import Prelude(map, zip, length, filter, (>), ($), null, (++), concatMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3))
 import Graphics.Implicit.Export.Render (getMesh)
 import Graphics.Implicit.ObjectUtil (getBox3, getImplicit3)
 import Graphics.Implicit.MathUtil(box3sWithin)
 import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
+
+import Control.Arrow(first, second)
 
 symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
 
@@ -203,8 +205,8 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
         sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
         sepFree ((box,obj):others) = 
             if length (filter (box3sWithin r box) boxes) > 1
-            then (\(a,b) -> (obj:a,b)) $ sepFree others
-            else (\(a,b) -> (a,obj:b)) $ sepFree others
+            then first ((:) obj) $ sepFree others
+            else second ((:) obj) $ sepFree others
         sepFree [] = ([],[])
 
         (dependants, independents) = sepFree boxedObjs
@@ -214,7 +216,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
     else if null dependants
     then concatMap (symbolicGetMesh res) independents
     else concatMap (symbolicGetMesh res) independents
-        ++ concat [symbolicGetMesh res (UnionR3 r dependants)]
+        ++ symbolicGetMesh res (UnionR3 r dependants)
 
 -- If all that fails, coerce and apply marching cubes :(
 -- (rebound is for being safe about the bounding box --
