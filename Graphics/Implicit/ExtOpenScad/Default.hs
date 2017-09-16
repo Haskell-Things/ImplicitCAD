@@ -10,13 +10,14 @@
 module Graphics.Implicit.ExtOpenScad.Default where
 
 
-import Prelude (Char, String, Bool(True, False), Maybe(Just, Nothing), Int, ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), Int, ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
 
 import Graphics.Implicit.Definitions (ℝ)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
+import Control.Arrow (second)
 
 defaultObjects :: VarLookup -- = Map String OVal
 defaultObjects = fromList $
@@ -30,11 +31,11 @@ defaultObjects = fromList $
 -- Missing standard ones:
 -- rand, lookup,
 
-defaultConstants :: [([Char], OVal)]
+defaultConstants :: [(String, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
     [("pi", pi)]
 
-defaultFunctions :: [([Char], OVal)]
+defaultFunctions :: [(String, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     [
         ("sin",   sin),
@@ -58,7 +59,7 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
         ("sqrt",  sqrt)
     ]
 
-defaultFunctions2 :: [([Char], OVal)]
+defaultFunctions2 :: [(String, OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
         ("max", max),
@@ -67,25 +68,22 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
         ("pow", (**))
     ]
 
-defaultFunctionsSpecial :: [([Char], OVal)]
+defaultFunctionsSpecial :: [(String, OVal)]
 defaultFunctionsSpecial =
     [
-        ("map", toOObj $ flip $
+        ("map", toOObj $ flip
             (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
         
     ]
 
-
 defaultModules :: [(String, OVal)]
 defaultModules =
-    map (\(a,b) -> (a, OModule b)) primitives
-
-
+    map (second OModule) primitives
 
 -- more complicated ones:
 
-defaultPolymorphicFunctions :: [([Char], OVal)]
+defaultPolymorphicFunctions :: [(String, OVal)]
 defaultPolymorphicFunctions =
     [
         ("+", sumtotal),
@@ -138,7 +136,7 @@ defaultPolymorphicFunctions =
         div' (OList a) (ONum b) = OList (map (\x -> div' x (ONum b)) a)
         div' a         b        = errorAsAppropriate "divide" a b
 
-        omod (ONum a) (ONum b) = ONum $ fromInteger $ mod (floor a) (floor b)
+        omod (ONum a) (ONum b) = ONum . fromInteger $ mod (floor a) (floor b)
         omod a        b        = errorAsAppropriate "modulo" a b
 
         append (OList   a) (OList   b) = OList   $ a++b
@@ -190,17 +188,17 @@ defaultPolymorphicFunctions =
             OList   $ splice list (floor a) (floor b)
         osplice (OString str) (ONum a) (    ONum b    ) =
             OString $ splice str  (floor a) (floor b)
-        osplice (OList  list) (OUndefined) (ONum b    ) =
+        osplice (OList  list)  OUndefined  (ONum b    ) =
             OList   $ splice list 0 (floor b)
-        osplice (OString str) (OUndefined) (ONum b    ) =
+        osplice (OString str)  OUndefined  (ONum b    ) =
             OString $ splice str  0 (floor b)
-        osplice (OList  list) (ONum a) (    OUndefined) =
+        osplice (OList  list) (ONum a)      OUndefined  =
             OList   $ splice list (floor a) (length list + 1)
-        osplice (OString str) (ONum a) (    OUndefined) =
+        osplice (OString str) (ONum a)      OUndefined  =
             OString $ splice str  (floor a) (length str  + 1)
-        osplice (OList  list) (OUndefined) (OUndefined) =
+        osplice (OList  list)  OUndefined   OUndefined  =
             OList   $ splice list 0 (length list + 1)
-        osplice (OString str) (OUndefined) (OUndefined) =
+        osplice (OString str)  OUndefined   OUndefined =
             OString $ splice str  0 (length str  + 1)
         osplice _ _ _ = OUndefined
 
@@ -210,7 +208,7 @@ defaultPolymorphicFunctions =
             |    a < 0  =    splice l   (a+n)  b
             |    b < 0  =    splice l    a    (b+n)
             |    a > 0  =    splice xs  (a-1) (b-1)
-            |    b > 0  = x:(splice xs   a    (b-1) )
+            |    b > 0  = x: splice xs   a    (b-1)
             | otherwise = []
                     where n = length l
 
@@ -237,7 +235,7 @@ defaultPolymorphicFunctions =
         ternary True a _ = a
         ternary False _ b = b
 
-        olength (OString s) = ONum $ fromIntegral $ length s
-        olength (OList s)   = ONum $ fromIntegral $ length s
+        olength (OString s) = ONum . fromIntegral $ length s
+        olength (OList s)   = ONum . fromIntegral $ length s
         olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
 
