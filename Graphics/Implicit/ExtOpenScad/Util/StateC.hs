@@ -7,11 +7,11 @@
 
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
-{-# LANGUAGE ViewPatterns, RankNTypes, ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC) where
 
-import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Char, Monad, fmap, (.), ($), (++), return, putStrLn, show)
+import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal)
 
@@ -20,6 +20,7 @@ import Control.Monad.State (StateT, get, put, modify, liftIO)
 import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
 
+-- This is the state machine. It contains the variables, their values, the path, and... ?
 type CompState = (VarLookup, [OVal], FilePath, (), ())
 type StateC = StateT CompState IO
 
@@ -50,7 +51,7 @@ putVals vals = do
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
 withPathShiftedBy pathShift s = do
     (a,b,path,d,e) <- get
-    put (a,b, path </> pathShift, d, e)
+    put (a, b, path </> pathShift, d, e)
     x <- s
     (a',b',_,d',e') <- get
     put (a', b', path, d', e')
@@ -66,7 +67,7 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
-errorC :: forall (m :: * -> *) a. (Show a, MonadIO m) => a -> [Char] -> m ()
+errorC :: forall (m :: * -> *) a. (Show a, MonadIO m) => a -> String -> m ()
 errorC lineN err = liftIO $ putStrLn $ "At " ++ show lineN ++ ": " ++ err
 
 mapMaybeM :: forall t (m :: * -> *) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)

@@ -66,7 +66,7 @@ mergedSquareTris sqTris =
         triTriangles = [tri | Tris tris <- sqTris, tri <- tris ]
         --concat $ map (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
-        squaresFromTris = [ (Sq x y z q) | Sq x y z q <- sqTris ]
+        squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]
 {-
         -- Collect ones that are on the same plane.
         planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares

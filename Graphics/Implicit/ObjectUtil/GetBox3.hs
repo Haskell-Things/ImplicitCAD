@@ -4,11 +4,11 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), Maybe(Nothing, Just), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, sqrt, (>), (&&), head, (*), (<), abs, either, error, const)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), Maybe(Nothing, Just), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, sqrt, (>), (&&), head, (*), (<), abs, either, error, const, otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), (⋯*))
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
@@ -29,7 +29,7 @@ outsetBox r (a,b) =
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Rect3R _ a b) = (a,b)
-getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
+getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
 getBox3 (Complement3 _) =
@@ -84,7 +84,7 @@ getBox3 (Scale3 s symbObj) =
 getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
     where
         ((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-        d = (sqrt 3 *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+        d = (sqrt 3 *) . maximum $ map abs [x1, x2, y1, y2, z1, z2]
 getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =
@@ -110,7 +110,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
         range = [0, 0.1 .. 1.0]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
-        (xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
+        (xrange, yrange) = (map (\s -> x1+s*dx) range, map (\s -> y1+s*dy) range )
 
         h = case eitherh of
               Left h' -> h'
@@ -118,7 +118,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-        hrange = map (h*) $ range
+        hrange = map (h*) range
         sval = case scale of
             Nothing -> 1
             Just scale' -> maximum $ map (abs . scale') hrange
@@ -143,6 +143,7 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
         r = max x2 (x2 + xshift)
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
+-- FIXME: magic numbers
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
         ((x1,y1),(x2,y2)) = getBox2 symbObj
@@ -150,7 +151,9 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
         xmax = maximum xshifts
         ymax = maximum yshifts
         ymin = minimum yshifts
-        xmax' = if xmax > 0 then xmax * 1.1 else if xmax < - x1 then 0 else xmax
+        xmax' | xmax > 0 = xmax * 1.1
+              | xmax < - x1 = 0
+              | otherwise = xmax
         ymax' = ymax + 0.1 * (ymax - ymin)
         ymin' = ymin - 0.1 * (ymax - ymin)
         (r, _, _) = if either (==0) (const False) rotate
@@ -161,4 +164,4 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     in
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 -- FIXME: add case for ExtrudeRotateR!
-getBox3(ExtrudeRotateR _ _ _ _ ) = error "ExtrudeRotateR implementation incomplete!"
+getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"

@@ -16,5 +16,5 @@ rebound3 (obj, (a,b)) =
         d :: ℝ3
         d = (b ^-^ a) ^/ 10
     in
-        (obj, ((a ^-^ d), (b ^+^ d)))
+        (obj, (a ^-^ d, b ^+^ d))
 
