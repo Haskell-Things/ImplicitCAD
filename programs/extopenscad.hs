@@ -11,6 +11,8 @@
 
 -- Let's be explicit about what we're getting from where :)
 
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, Ord, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup)
+
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
 
@@ -37,7 +39,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
 
-import Data.Monoid (Monoid, mappend, mconcat)
+import Data.Monoid (Monoid, mappend)
 
 import Control.Applicative ((<$>), (<*>))
 
@@ -88,7 +90,7 @@ formatExtensions =
 -- Lookup an output format for a given output file. Throw an error if one cannot be found.
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
-    maybe (error $ "Unrecognized output format: "<>ext) id
+    fromMaybe (error $ "Unrecognized output format: "<>ext)
     $ readOutputFormat $ tail ext
     where
         (_,ext) = splitExtension fileName
@@ -134,14 +136,16 @@ readOutputFormat ext = lookup (map toLower ext) formatExtensions
 instance Read OutputFormat where
     readsPrec _ myvalue =
         tryParse formatExtensions
-        where tryParse [] = []    -- If there is nothing left to try, fail
-              tryParse ((attempt, result):xs) =
-                  if (take (length attempt) myvalue) == attempt
-                  then [(result, drop (length attempt) myvalue)]
-                  else tryParse xs
+        where
+          tryParse :: [(String, OutputFormat)] -> [(OutputFormat, String)]
+          tryParse [] = []    -- If there is nothing left to try, fail
+          tryParse ((attempt, result):xs) =
+              if take (length attempt) myvalue == attempt
+              then [(result, drop (length attempt) myvalue)]
+              else tryParse xs
 
 -- Find the resolution to raytrace at.
-getRes :: (Map.Map [Char] OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes :: (Map.Map String OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 -- First, use a resolution specified by a variable in the input file.
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
 -- Use a resolution chosen for 3D objects.
@@ -160,8 +164,8 @@ getRes (varlookup, obj:_, _) =
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
-        ONum qual | qual > 0 -> min (min x y/2) ((x*y/qual)**0.5 / 30)
-        _                    -> min (min x y/2) ((x*y)**0.5 / 30)
+        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
+        _                    -> min (min x y/2) (sqrt(x*y) / 30)
 -- fallthrough value.
 getRes _ = 1
 
@@ -191,21 +195,21 @@ export2 posFmt res output obj =
 run :: ExtOpenScadOpts -> IO()
 run args = do
 
-    putStrLn $ "Loading File."
+    putStrLn "Loading File."
     content <- readFile (inputFile args)
 
     let format =
             case () of
-                _ | Just fmt <- outputFormat args -> Just $ fmt
+                _ | Just fmt <- outputFormat args -> Just fmt
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
-    putStrLn $ "Processing File."
+    putStrLn "Processing File."
 
     case runOpenscad content of
-        Left err -> putStrLn $ show $ err
+        Left err -> print err
         Right openscadProgram -> do
             s@(_, obj2s, obj3s) <- openscadProgram
-            let res = maybe (getRes s) id (resolution args)
+            let res = fromMaybe (getRes s) (resolution args)
             let basename = fst (splitExtension $ inputFile args)
             let posDefExt = case format of
                                 Just f  -> Prelude.lookup f (map swap formatExtensions)
@@ -218,7 +222,7 @@ run args = do
                     putStrLn $ "Rendering 3D object to " ++ output
                     putStrLn $ "With resolution " ++ show res
                     putStrLn $ "In box " ++ show (getBox3 obj)
-                    putStrLn $ show obj
+                    print obj
                     export3 format res output obj
                 ([obj], []) -> do
                     let output = fromMaybe
@@ -227,7 +231,7 @@ run args = do
                     putStrLn $ "Rendering 2D object to " ++ output
                     putStrLn $ "With resolution " ++ show res
                     putStrLn $ "In box " ++ show (getBox2 obj)
-                    putStrLn $ show obj
+                    print obj
                     export2 format res output obj
                 ([], []) -> putStrLn "No objects to render."
                 _        -> putStrLn "Multiple/No objects, what do you want to render?"
