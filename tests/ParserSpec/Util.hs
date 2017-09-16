@@ -1,3 +1,12 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Utilities
 module ParserSpec.Util
        ( num
        , bool
@@ -8,18 +17,25 @@ module ParserSpec.Util
        , parseExpr
        ) where
 
-import Graphics.Implicit.Definitions
-import Graphics.Implicit.ExtOpenScad
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Expr
-import Text.Parsec.String
-import Text.Parsec.Error
-import Text.ParserCombinators.Parsec  hiding (State)
-import Control.Applicative ((<$>), (<*>), (<*), (*>))
+-- be explicit about where we get things from.
+import Prelude (Bool, String, Either, (<), ($), (.), otherwise)
+
+-- The datatype of positions in our world.
+import Graphics.Implicit.Definitions (ℝ)
+
+-- The datatype of expressions, symbols, and values in the OpenScad language.
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE), Symbol, OVal(ONum, OBool))
+
+-- the entry point of the expression parser.
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+    
+import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
+
+import Control.Applicative ((<$>), (<*>), (<*))
 
 num :: ℝ -> Expr
 num x
-  -- note that the parser should handle negative number literals
+  -- FIXME: the parser should handle negative number literals
   -- directly, we abstract that deficiency away here
   | x < 0 = app' "negate" [LitE $ ONum (-x)]
   | otherwise = LitE $ ONum x
@@ -36,7 +52,9 @@ app' name args = Var name :$ args
 
 parseWithLeftOver :: Parser a -> String -> Either ParseError (a, String)
 parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""
-  where leftOver = manyTill anyToken eof
+  where
+    leftOver :: Parser String
+    leftOver = manyTill anyChar eof
 
 parseWithEof :: Parser a -> String -> String -> Either ParseError a
 parseWithEof p = parse (p <* eof)
