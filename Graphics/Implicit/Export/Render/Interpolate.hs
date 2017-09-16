@@ -89,38 +89,38 @@ interpolate _ (b, 0) _ _  = b
         -- The best case is that it crosses between a and a'
         if aval*a'val < 0
         then
-            interpolate_bin 0 (a,aval) (a',a'val) f
+            interpolateBin 0 (a,aval) (a',a'val) f
         -- Or between b' and b
         else if bval*b'val < 0
-        then interpolate_bin 0 (b',b'val) (b,bval) f
+        then interpolateBin 0 (b',b'val) (b,bval) f
         -- But in the worst case, we get to shrink to (a',b') :)
-        else interpolate_bin 0 (a',a'val) (b',b'val) f
+        else interpolateBin 0 (a',a'val) (b',b'val) f
     -- Otherwise, we use our friend, linear interpolation!
     else
         -- again...
         -- The best case is that it crosses between a and a'
         if aval*a'val < 0
         then
-            interpolate_lin 0 (a,aval) (a',a'val) f
+            interpolateLin 0 (a,aval) (a',a'val) f
         -- Or between b' and b
         else if bval*b'val < 0
-        then interpolate_lin 0 (b',b'val) (b,bval) f
+        then interpolateLin 0 (b',b'val) (b,bval) f
         -- But in the worst case, we get to shrink to (a',b') :)
-        else interpolate_lin 0 (a',a'val) (b',b'val) f
+        else interpolateLin 0 (a',a'val) (b',b'val) f
 -}
 
 interpolate (a,aval) (b,bval) f _ =
-    -- Make sure aval > bval, then pass to interpolate_lin
+    -- Make sure aval > bval, then pass to interpolateLin
     if aval > bval
-    then interpolate_lin 0 (a,aval) (b,bval) f
-    else interpolate_lin 0 (b,bval) (a,aval) f
+    then interpolateLin 0 (a,aval) (b,bval) f
+    else interpolateLin 0 (b,bval) (a,aval) f
 
 -- Yay, linear interpolation!
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
-interpolate_lin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
-interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
+interpolateLin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
         mid :: ℝ
@@ -144,32 +144,32 @@ interpolate_lin n (a, aval) (b, bval) obj | aval /= bval=
     -- to zero than the previous one.
     in if improveRatio < 0.3 && n < 4
     -- And we continue on.
-    then interpolate_lin (n+1) (a', a'val) (b', b'val) obj
+    then interpolateLin (n+1) (a', a'val) (b', b'val) obj
     -- But if not, we switch to binary interpolate, which is
     -- immune to this problem
-    else interpolate_bin (n+1) (a', a'val) (b', b'val) obj
+    else interpolateBin (n+1) (a', a'val) (b', b'val) obj
 
 -- And a fallback:
-interpolate_lin _ (a, _) _ _ = a
+interpolateLin _ (a, _) _ _ = a
 
 -- Now for binary searching!
-interpolate_bin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateBin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 
 -- The termination case:
 
-interpolate_bin 5 (a,aval) (b,bval) _ =
+interpolateBin 5 (a,aval) (b,bval) _ =
     if abs aval < abs bval
     then a
     else b
 
 -- Otherwise, have fun with mid!
 
-interpolate_bin n (a,aval) (b,bval) f =
+interpolateBin n (a,aval) (b,bval) f =
     let
         mid :: ℝ
         mid = (a+b)/2
         midval = f mid
     in if midval > 0
-    then interpolate_bin (n+1) (mid,midval) (b,bval) f
-    else interpolate_bin (n+1) (a,aval) (mid,midval) f
+    then interpolateBin (n+1) (mid,midval) (b,bval) f
+    else interpolateBin (n+1) (a,aval) (mid,midval) f
 
