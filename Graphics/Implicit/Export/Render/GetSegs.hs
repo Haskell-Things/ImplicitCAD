@@ -74,7 +74,7 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         midy2 = (midy2V, y + dy)
 
         notPointLine :: Eq a => [a] -> Bool
-        notPointLine (np1:np2:[]) = np1 /= np2
+        notPointLine [np1, np2] = np1 /= np2
         notPointLine [] = False
         notPointLine [_] = False
         notPointLine (_ : (_ : (_ : _))) = False
@@ -82,8 +82,8 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         -- takes straight lines between mid points and subdivides them to
         -- account for sharp corners, etc.
 
-    in map (refine res obj) . filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
-                                                            x1y1 <= 0, x2y1 <= 0) of
+    in map (refine res obj) . filter notPointLine $ case (x1y2 <= 0, x2y2 <= 0,
+                                                          x1y1 <= 0, x2y1 <= 0) of
 
         -- An important point here is orientation. If you imagine going along a
         -- generated segment, the interior should be on the left-hand side.
