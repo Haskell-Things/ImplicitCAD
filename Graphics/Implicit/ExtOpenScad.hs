@@ -9,7 +9,7 @@
 
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(Char, Either(Left, Right), IO, ($), fmap)
+import Prelude(String, Either(Left, Right), IO, ($), fmap)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal)
@@ -24,14 +24,14 @@ import qualified Control.Monad.State as State (runStateT)
 import qualified System.Directory as Dir (getCurrentDirectory)
 
 -- Small wrapper to handle parse errors, etc.
-runOpenscad :: [Char] -> Either Parsec.ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
-runOpenscad s =
+runOpenscad :: String -> Either Parsec.ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
+runOpenscad source =
     let
         initial =  defaultObjects
         rearrange :: forall t t1 t2 t3 t4. (t, (t4, [OVal], t1, t2, t3)) -> (t4, [SymbolicObj2], [SymbolicObj3])
         rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
                                   (obj2s, obj3s, _ ) = divideObjs ovals
-    in case parseProgram "" s of
+    in case parseProgram source of
         Left e -> Left e
         Right sts -> Right
             $ fmap rearrange
