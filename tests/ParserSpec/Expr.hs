@@ -1,3 +1,7 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 module ParserSpec.Expr (exprSpec) where
 
 import Test.Hspec
@@ -11,19 +15,19 @@ import Data.Either
 infixr 1 -->
 (-->) :: String -> Expr -> Expectation
 (-->) source expr =
-  (parseExpr source) `shouldBe` Right expr
+  parseExpr source `shouldBe` Right expr
 
 infixr 1 -->+
 (-->+) :: String -> (Expr, String) -> Expectation
 (-->+) source (result, leftover) =
-  (parseWithLeftOver expr0 source) `shouldBe` (Right (result, leftover))
+  parseWithLeftOver expr0 source `shouldBe` Right (result, leftover)
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 
 logicalSpec :: Spec
 logicalSpec = do
-  it "handles not" $ "!foo" --> (app' "!" [Var "foo"])
+  it "handles not" $ "!foo" --> app' "!" [Var "foo"]
   it "handles and/or" $ do
     "foo && bar" --> app' "&&" [Var "foo", Var "bar"]
     "foo || bar" --> app' "||" [Var "foo", Var "bar"]
@@ -40,9 +44,9 @@ logicalSpec = do
 
 literalSpec :: Spec
 literalSpec = do
-  it "handles integers" $ do
+  it "handles integers" $
     "12356" -->  num 12356
-  it "handles floats" $ do
+  it "handles floats" $
     "23.42" -->  num 23.42
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
@@ -51,24 +55,23 @@ literalSpec = do
 exprSpec :: Spec
 exprSpec = do
   describe "literals" literalSpec
-  describe "identifiers" $ do
+  describe "identifiers" $
     it "accepts valid variable names" $ do
       "foo" --> Var "foo"
       "foo_bar" --> Var "foo_bar"
-  describe "literals" $ literalSpec
+  describe "literals" literalSpec
   describe "grouping" $ do
-    it "allows parens" $ do
+    it "allows parens" $
       "( false )" -->  bool False
-    it "handles vectors" $ do
+    it "handles vectors" $
       "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
-    it "handles lists" $ do
+    it "handles lists" $ 
       "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : 1 : b + 10 ]" -->
-      (app "list_gen" [Var "a", num 1, app "+" [Var "b", num 10]])
+      app "list_gen" [Var "a", num 1, app "+" [Var "b", num 10]]
     it "handles indexing" $
       "foo[23]" --> Var "index" :$ [Var "foo", num 23]
-
   describe "arithmetic" $ do
     it "handles unary +/-" $ do
       "-42" --> num (-42)
@@ -97,7 +100,7 @@ exprSpec = do
     it "handles precedence" $
       parseExpr "1 + 2 / 3 * 5" `shouldBe`
       (Right $ app "+" [num 1, app "*" [app' "/" [num 2, num 3], num 5]])
-  it "handles append" $
-    parseExpr "foo ++ bar ++ baz" `shouldBe`
-    (Right $ app "++" [Var "foo", Var "bar", Var "baz"])
+    it "handles append" $
+      parseExpr "foo ++ bar ++ baz" `shouldBe`
+      (Right $ app "++" [Var "foo", Var "bar", Var "baz"])
   describe "logical operators" logicalSpec
