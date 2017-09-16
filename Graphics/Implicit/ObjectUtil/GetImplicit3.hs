@@ -59,11 +59,11 @@ getImplicit3 (DifferenceR3 r symbObjs) =
         objs = map getImplicit3 symbObjs
         obj = head objs
         complement :: forall a t. Num a => (t -> a) -> t -> a
-        complement obj' = \p -> - obj' p
+        complement obj' p = - obj' p
     in
         if r == 0
-        then \p -> maximum $ map ($p) $ obj:(map complement $ tail objs)
-        else \p -> rmaximum r $ map ($p) $ obj:(map complement $ tail objs)
+        then \p -> maximum $ map ($p) $ obj:map complement (tail objs)
+        else \p -> rmaximum r $ map ($p) $ obj:map complement (tail objs)
 -- Simple transforms
 getImplicit3 (Translate3 v symbObj) =
     let
@@ -80,13 +80,13 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
     let
         obj = getImplicit3 symbObj
         rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateYZ θ obj' = \(x,y,z) -> obj' ( x, cos(θ)*y + sin(θ)*z, cos(θ)*z - sin(θ)*y)
+        rotateYZ θ obj' (x,y,z) = obj' ( x, y*cos θ + z*sin θ, z*cos θ - y*sin θ)
         rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateZX θ obj' = \(x,y,z) -> obj' ( cos(θ)*x - sin(θ)*z, y, cos(θ)*z + sin(θ)*x)
+        rotateZX θ obj' (x,y,z) = obj' ( x*cos θ - z*sin θ, y, z*cos θ + x*sin θ)
         rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateXY θ obj' = \(x,y,z) -> obj' ( cos(θ)*x + sin(θ)*y, cos(θ)*y - sin(θ)*x, z)
+        rotateXY θ obj' (x,y,z) = obj' ( x*cos θ + y*sin θ, y*cos θ - x*sin θ, z)
     in
-        rotateYZ yz $ rotateZX zx $ rotateXY xy $ obj
+        rotateYZ yz . rotateZX zx $ rotateXY xy  obj
 getImplicit3 (Rotate3V θ axis symbObj) =
     let
         axis' = normalized axis
@@ -98,9 +98,9 @@ getImplicit3 (Rotate3V θ axis symbObj) =
                                        , ax * by - ay * bx )
     in
         \v -> obj $
-            v ^* cos(θ)
-            ^-^ (axis' `cross3` v) ^* sin(θ)
-            ^+^ (axis' ^* (axis' <.> (v ^* (1 - cos(θ)))))
+            v ^* cos θ
+            ^-^ (axis' `cross3` v) ^* sin θ
+            ^+^ (axis' ^* (axis' <.> (v ^* (1 - cos θ))))
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) =
     let
@@ -130,9 +130,9 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
             Left n -> n
             Right f -> f (x,y)
         scaleVec :: ℝ -> ℝ2 -> ℝ2
-        scaleVec  s = \(x,y) -> (x/s, y/s)
+        scaleVec  s (x,y) = (x/s, y/s)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
-        rotateVec θ (x,y) = (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ))
+        rotateVec θ (x,y) = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
         k = (pi :: ℝ)/(180:: ℝ)
     in
         \(x,y,z) -> let h = height' (x,y) in
@@ -157,12 +157,12 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         round' = Maybe.fromMaybe 0 round
         translate' :: ℝ -> ℝ2
         translate' = Either.either
-                (\(a,b) -> \θ -> (a*θ/totalRotation', b*θ/totalRotation'))
+                (\(a,b) θ -> (a*θ/totalRotation', b*θ/totalRotation'))
                 (. (/k))
                 translate
         rotate' :: ℝ -> ℝ
         rotate' = Either.either
-                (\t -> \θ -> t*θ/totalRotation' )
+                (\t θ -> t*θ/totalRotation' )
                 (. (/k))
                 rotate
         twists = case rotate of
@@ -178,9 +178,9 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 ns =
                     if capped
                     then -- we will cap a different way, but want leeway to keep the function cont
-                        [-1 .. (ceiling (totalRotation' / tau)) + 1]
+                        [-1 .. ceiling (totalRotation' / tau) + 1]
                     else
-                        [0 .. floor $ (totalRotation' - θ) /tau]
+                        [0 .. floor $ (totalRotation' - θ) / tau]
             n <- ns
             let
                 θvirt = fromIntegral n * tau + θ
@@ -201,4 +201,4 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 else obj rz_pos
 -- FIXME: implement this, or implement a fallthrough function.
 --getImplicit3 (ExtrudeRotateR) =
-getImplicit3 (ExtrudeRotateR _ _ _ _) = error "ExtrudeRotateR unimplimented!"
+getImplicit3 ExtrudeRotateR{} = error "ExtrudeRotateR unimplimented!"
