@@ -2,33 +2,35 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
-import Prelude(Int, Bool(True, False), ceiling, fromIntegral, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), (.), splitAt, div, unzip, length, (++), (<), (++), head, concat, not, null, (||), Eq, Int, fst, snd)
+import Prelude(Int, Bool(True, False), ceiling, fromIntegral, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), (.), splitAt, div, unzip, length, (++), (<), (++), head, concat, not, null, (||), Eq, Int)
 
 import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
 
-import Graphics.Implicit.Definitions (ℝ2, Polyline, Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
 
 -- FIXME: commented out for now, parallelism is not properly implemented.
 -- import Control.Parallel.Strategies (using, parList, rdeepseq)
+
 import Data.VectorSpace ((^-^), (^+^))
 
-both :: (a -> b) -> (a,a) -> (b,b)
+import Control.Arrow((***))
+
+-- we are explicit here, so GHC knows what types n is made up of in getContour.
+both :: (ℝ -> Int) ->  ℝ2 -> (Int, Int)
 both f (x,y) = (f x, f y)
 
--- | getContour gets a polyline describe the edge of your 2D
---  object. It's really the only function in this file you need
---  to care about from an external perspective.
-
+-- getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour p1 p2 d obj =
     let
         -- How many steps will we take on each axis?
         n :: (Int, Int)
-        n =  (ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
-        nx = fst n
-        ny = snd n
+        n@(nx, ny) = ceiling `both` ((p2 ^-^ p1) ⋯/ d)
         -- Divide it up and compute the polylines
         gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
         gridPos (nx',ny') (mx,my) =
@@ -39,25 +41,16 @@ getContour p1 p2 d obj =
             in
               p1 ^+^ (p2 ^-^ p1) ⋯* p
         linesOnGrid :: [[[Polyline]]]
-        linesOnGrid = [[getSquareLineSegs
-                   (gridPos n (mx,my))
-                   (gridPos n (mx+1,my+1))
-                   obj
-             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+        linesOnGrid = [[getSquareLineSegs (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) obj
+                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+    in
         -- Cleanup, cleanup, everybody cleanup!
         -- (We connect multilines, delete redundant vertices on them, etc)
-        multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
-    in
-        multilines
+        filter polylineNotNull . map reducePolyline $ orderLinesDC linesOnGrid
 
 -- FIXME: Commented out, not used?
 {-
-getContour2 :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
-    let
-        -- How many steps will we take on each axis?
-        n@(nx,ny) = (fromIntegral . ceiling) `both` ((p2 ^-^ p1) ⋯/ d)
-        -- Grid mapping funcs
+        -- alternate Grid mapping funcs
         fromGrid (mx, my) = let p = (mx/nx, my/ny)
                             in (p1 ^+^ (p2 ^-^ p1) ⋯/ p)
         toGrid (x,y) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1))
@@ -71,15 +64,10 @@ getContour2 p1@(x1, y1) p2@(x2, y2) d obj =
         linesOnGrid :: [[[Polyline]]]
         linesOnGrid = [[getSquareLineSegs (fromGrid (mx, my)) (fromGrid (mx+1, my+1)) preEvaledObj
              | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
-        -- Cleanup, cleanup, everybody cleanup!
-        -- (We connect multilines, delete redundant vertices on them, etc)
-        multilines = (filter polylineNotNull) $ (map reducePolyline) $ orderLinesDC $ linesOnGrid
-    in
-        multilines
 -}
 
 -- | This function gives line segments to divide negative interior
---  regions and positive exterior ones inside a square, based on its
+--  regions and positive exterior ones inside a square, based on the
 --  values at its vertices.
 --  It is based on the linearly-interpolated marching squares algorithm.
 
@@ -88,15 +76,14 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
     let
         (x,y) = (x1, y1)
 
-        -- Let's evlauate obj at a few points...
+        -- Let's evlauate obj at four corners...
         x1y1 = obj (x1, y1)
         x2y1 = obj (x2, y1)
         x1y2 = obj (x1, y2)
         x2y2 = obj (x2, y2)
-        c = obj ((x1+x2)/2, (y1+y2)/2)
 
-        dx = x2 - x1
-        dy = y2 - y1
+        -- And the center point..
+        c = obj ((x1+x2)/2, (y1+y2)/2)
 
         -- linearly interpolated midpoints on the relevant axis
         --             midy2
@@ -111,17 +98,22 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
         --      ---------*----------
         --             midy1
 
+
+        dx = x2 - x1
+        dy = y2 - y1
+
         midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
         midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
         midy1 = (x + dx*x1y1/(x1y1-x2y1), y )
         midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
+
         notPointLine :: Eq a => [a] -> Bool
-        notPointLine (p1:p2:[]) = p1 /= p2
-        notPointLine ([]) = False
-        notPointLine ([_]) = False
-        notPointLine (_ : (_ : (_ : _))) = False
-    in filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
-                                     x1y1 <= 0, x2y1 <= 0) of
+        notPointLine (start:stop:xs) = start /= stop || notPointLine [stop:xs]
+        notPointLine [_] = False
+        notPointLine [] = False
+
+    in filter notPointLine $ case (x1y2 <= 0, x2y2 <= 0,
+                                   x1y1 <= 0, x2y1 <= 0) of
         -- Yes, there's some symetries that could reduce the amount of code...
         -- But I don't think they're worth exploiting...
         (True,  True,
@@ -162,8 +154,7 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
             else [[midx1, midy1], [midx2, midy2]]
 
 
-
--- $ Functions for cleaning up the polylines
+-- Functions for cleaning up the polylines
 -- Many have multiple implementations as efficiency experiments.
 -- At some point, we'll get rid of the redundant ones....
 
@@ -187,10 +178,10 @@ orderLinesDC segs =
     let
         halve :: [a] -> ([a], [a])
         halve l = splitAt (div (length l) 2) l
-        splitOrder segs' = case (\(x,y) -> (halve x, halve y)) . unzip . map (halve) $ segs' of
+        splitOrder segs' = case (halve *** halve) . unzip . map halve $ segs' of
             ((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
     in
-        if (length segs < 5 || length (head segs) < 5 ) then concat $ concat segs else
+        if length segs < 5 || length (head segs) < 5 then concat $ concat segs else
                 splitOrder segs
 {-
 orderLinesP :: [[[Polyline]]] -> [Polyline]
