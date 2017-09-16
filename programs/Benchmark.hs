@@ -6,18 +6,23 @@
 
 -- Let's be explicit about where things come from :)
 
+import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Maybe(Just, Nothing), Either(Left))
+
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
-import Criterion.Main
+import Criterion.Main (Benchmark, bgroup, bench, nf, defaultMain)
 
 -- The parts of ImplicitCAD we know how to benchmark (in theory).
-import Graphics.Implicit (union, circle, writeSVG, writePNG2, writePNG3, writeSTL, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit (union, circle, SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
 
+-- The variable defining distance in our world.
+import Graphics.Implicit.Definitions (ℝ)
+
 -- Haskell representations of objects to benchmark.
 
---  FIXME: move each of these objects into seperate compilable files.
+-- FIXME: move each of these objects into seperate compilable files.
 
 obj2d_1 :: SymbolicObj2
 obj2d_1 =
@@ -31,7 +36,9 @@ obj2d_1 =
 
 object1 :: SymbolicObj3
 object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
-    where twist h = 35*cos(h*2*pi/60)
+    where
+      twist :: ℝ -> ℝ
+      twist h = 35*cos(h*2*pi/60)
 
 object2 :: SymbolicObj3
 object2 = squarePipe (10,10,10) 1 100
@@ -71,11 +78,14 @@ obj3Benchmarks name obj =
       bench "Get mesh" $ nf (symbolicGetMesh 1) obj
     ]
 
+benchmarks :: [Benchmark]
 benchmarks =
     [ obj3Benchmarks "Object 1" object1
     , obj3Benchmarks "Object 2" object2
     , obj3Benchmarks "Object 3" object3
+    , obj2Benchmarks "Object 2d 1" obj2d_1
     ]
 
+main :: IO ()
 main = defaultMain benchmarks
 
