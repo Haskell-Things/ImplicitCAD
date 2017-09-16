@@ -38,7 +38,7 @@ callToken cs name args objs  = do
 
 buildArgs :: (Text, Text) -> [Builder] -> Builder
 buildArgs _ [] = "()"
-buildArgs (c1, c2) args = "(" <> (fromLazyText c1) <> mconcat (intersperse "," args) <> (fromLazyText c2) <> ")"
+buildArgs (c1, c2) args = "(" <> fromLazyText c1 <> mconcat (intersperse "," args) <> fromLazyText c2 <> ")"
 
 call :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
 call = callToken ("[", "]")
@@ -75,8 +75,7 @@ buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 
 buildS3 (Rotate3 (x,y,z) obj) = call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
 
--- FIXME: where is Rotate3V?
-buildS3 (Rotate3V _ _ _) = error "Rotate3V not implemented."
+buildS3  Rotate3V{} = error "Rotate3V not implemented."
 
 buildS3 (Outset3 r obj) | r == 0 = call "outset" [] [buildS3 obj]
 
@@ -100,17 +99,17 @@ buildS3 (ExtrudeRM r (Just twist) Nothing Nothing obj (Left height)) | r == 0 = 
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
-buildS3(Rect3R _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 Rect3R{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(UnionR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(IntersectR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(DifferenceR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Outset3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Shell3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(ExtrudeR _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(ExtrudeRotateR _ _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(ExtrudeRM _ _ _ _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 ExtrudeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 ExtrudeRotateR {} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 ExtrudeRM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(EmbedBoxedObj3 _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(RotateExtrude _ _ _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
 -- Now the 2D objects/transforms.
@@ -126,7 +125,7 @@ buildS2 (Circle r) = call "circle" [bf r] []
 buildS2 (PolygonR r points) | r == 0 = call "polygon" [buildVector [x,y] | (x,y) <- points] []
     where buildVector comps = "[" <> mconcat (intersperse "," $ map bf comps) <> "]"
 
-buildS2 (Complement2 obj) = call "complement" [] $ [buildS2 obj]
+buildS2 (Complement2 obj) = call "complement" [] [buildS2 obj]
 
 buildS2 (UnionR2 r objs) | r == 0 = call "union" [] $ map buildS2 objs
 
@@ -134,18 +133,18 @@ buildS2 (DifferenceR2 r objs) | r == 0 = call "difference" [] $ map buildS2 objs
 
 buildS2 (IntersectR2 r objs) | r == 0 = call "intersection" [] $ map buildS2 objs
 
-buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] $ [buildS2 obj]
+buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] [buildS2 obj]
 
-buildS2 (Scale2 (x,y) obj)     = call "scale" [bf x, bf y] $ [buildS2 obj]
+buildS2 (Scale2 (x,y) obj)     = call "scale" [bf x, bf y] [buildS2 obj]
 
-buildS2 (Rotate2 (r) obj)     = call "rotate" [bf (rad2deg r)] $ [buildS2 obj]
+buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
 
-buildS2 (Outset2 r obj) | r == 0 = call "outset" [] $ [buildS2 obj]
+buildS2 (Outset2 r obj) | r == 0 = call "outset" [] [buildS2 obj]
 
-buildS2 (Shell2 r obj) | r == 0 =  call "shell" [] $ [buildS2 obj]
+buildS2 (Shell2 r obj) | r == 0 =  call "shell" [] [buildS2 obj]
 
 -- Generate errors for rounding requests. OpenSCAD does not support rounding.
-buildS2 (RectR _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 RectR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (PolygonR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (UnionR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (DifferenceR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
