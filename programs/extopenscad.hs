@@ -88,7 +88,7 @@ formatExtensions =
 -- Lookup an output format for a given output file. Throw an error if one cannot be found.
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
-    maybe (error $ "Unrecognized output format: "<>ext) id
+    maybe (error $ "Unrecognized output format: "Main.<>ext) id
     $ readOutputFormat $ tail ext
     where
         (_,ext) = splitExtension fileName
@@ -99,30 +99,30 @@ extOpenScadOpts = ExtOpenScadOpts
     <$> optional (
       strOption
         (  short 'o'
-        <> long "output"
-        <> metavar "FILE"
-        <> help "Output file name"
+        Main.<> long "output"
+        Main.<> metavar "FILE"
+        Main.<> help "Output file name"
         )
       )
     <*> optional (
       option auto
         (  short 'f'
-        <> long "format"
-        <> metavar "FORMAT"
-        <> help "Output format"
+        Main.<> long "format"
+        Main.<> metavar "FORMAT"
+        Main.<> help "Output format"
         )
       )
     <*> optional (
       option auto
         (  short 'r'
-        <> long "resolution"
-        <> metavar "RES"
-        <> help "Approximation quality (smaller is better)"
+        Main.<> long "resolution"
+        Main.<> metavar "RES"
+        Main.<> help "Approximation quality (smaller is better)"
         )
       )
     <*> argument str
         (  metavar "FILE"
-        <> help "Input extended OpenSCAD file"
+        Main.<> help "Input extended OpenSCAD file"
         )
 
 -- Try to look up an output format from a supplied extension.
@@ -174,7 +174,7 @@ export3 posFmt res output obj =
         Just OBJ  -> writeOBJ res output obj
         Just PNG  -> writePNG3 res output obj
         Nothing   -> writeBinSTL res output obj
-        Just fmt  -> putStrLn $ "Unrecognized 3D format: "<>show fmt
+        Just fmt  -> putStrLn $ "Unrecognized 3D format: "Main.<>show fmt
 
 -- Output a file containing a 2D object.
 export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
@@ -185,7 +185,7 @@ export2 posFmt res output obj =
         Just PNG   -> writePNG2 res output obj
         Just GCode -> writeGCodeHacklabLaser res output obj
         Nothing    -> writeSVG res output obj
-        Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
+        Just fmt   -> putStrLn $ "Unrecognized 2D format: "Main.<>show fmt
 
 -- Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO()
@@ -238,6 +238,6 @@ main = execParser opts >>= run
     where
         opts= info (helper <*> extOpenScadOpts)
               ( fullDesc
-              <> progDesc "ImplicitCAD: Extended OpenSCAD interpreter." 
-              <> header "extopenscad - Extended OpenSCAD"
+              Main.<> progDesc "ImplicitCAD: Extended OpenSCAD interpreter." 
+              Main.<> header "extopenscad - Extended OpenSCAD"
               )
