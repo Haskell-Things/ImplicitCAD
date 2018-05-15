@@ -10,9 +10,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(Int, Num, abs, (-), (/), sqrt, (*), (+), (!!), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (==), maximum, max, cos, sin, head, tail, (.))
+import Prelude(Num, abs, (-), (/), sqrt, (*), (+), (!!), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (==), maximum, max, cos, sin, head, tail, (.))
 
-import Graphics.Implicit.Definitions (SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2), Obj2, ℝ, ℝ2, (⋯/))
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2))
+
 import Graphics.Implicit.MathUtil (rminimum, rmaximum, distFromLineSeg)
 
 import Data.VectorSpace ((^-^))
@@ -31,7 +32,7 @@ getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 getImplicit2 (PolygonR _ points) =
     \p -> let
-        pair :: Int -> (ℝ2,ℝ2)
+        pair :: Fastℕ -> (ℝ2,ℝ2)
         pair n = (points !! n, points !! mod (n + 1) (length points) )
         pairs =  [ pair n | n <- [0 .. length points - 1] ]
         relativePairs =  map (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
