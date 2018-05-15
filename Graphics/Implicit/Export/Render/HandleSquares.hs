@@ -6,7 +6,7 @@ module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
 import Prelude(concatMap, (++))
 
-import Graphics.Implicit.Definitions (Triangle)
+import Graphics.Implicit.Definitions (TriangleMesh)
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Data.VectorSpace ((^*), (*^), (^+^))
 
@@ -57,7 +57,7 @@ import Data.VectorSpace ((^*), (*^), (^+^))
 
 -}
 
-mergedSquareTris :: [TriSquare] -> [Triangle]
+mergedSquareTris :: [TriSquare] -> TriangleMesh
 mergedSquareTris sqTris =
     let
         -- We don't need to do any work on triangles. They'll just be part of
@@ -126,7 +126,7 @@ joinYaligned [] = []
 -}
 
 -- Reconstruct a triangle
-squareToTri :: TriSquare -> [Triangle]
+squareToTri :: TriSquare -> TriangleMesh
 squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
     let
         zV = b3 ^* z
