@@ -2,11 +2,12 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude(Int, (<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, tail, sqrt, (<=))
+import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, tail, sqrt, (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, Obj2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, ℕ, Obj2, (⋅))
 import Graphics.Implicit.Export.Util (centroid)
 
 import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
@@ -30,7 +31,7 @@ detail' _ _ a = a
 
 -- detail adds new points to a polyline to add more detail.
 
-detail :: Int -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
+detail :: ℕ -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
 detail n res obj [p1, p2] | n < 2 =
     let
         mid = centroid [p1,p2]
