@@ -7,12 +7,12 @@
 
 -- We'd like to parse openscad code, with some improvements, for backwards compatability.
 
-module Graphics.Implicit.ExtOpenScad.Default where
 
+module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), Int, ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
 
-import Graphics.Implicit.Definitions (ℝ)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
@@ -173,13 +173,13 @@ defaultPolymorphicFunctions =
 
         index (OList l) (ONum ind) =
             let
-                n :: Int
+                n :: Fastℕ
                 n = floor ind
             in
               if n < length l then l !! n else OError ["List accessd out of bounds"]
         index (OString s) (ONum ind) =
             let
-                n :: Int
+                n :: Fastℕ
                 n = floor ind
             in if n < length s then OString [s !! n] else OError ["List accessd out of bounds"]
         index a b = errorAsAppropriate "index" a b
@@ -202,7 +202,7 @@ defaultPolymorphicFunctions =
             OString $ splice str  0 (length str  + 1)
         osplice _ _ _ = OUndefined
 
-        splice :: [a] -> Int -> Int -> [a]
+        splice :: [a] -> Fastℕ -> Fastℕ -> [a]
         splice [] _ _     = []
         splice (l@(x:xs)) a b
             |    a < 0  =    splice l   (a+n)  b
