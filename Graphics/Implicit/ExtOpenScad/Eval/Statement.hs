@@ -4,7 +4,7 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Eval.Statement where
+module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, putStrLn, concatMap, return, (++), fmap, reverse, fst, readFile)
 
