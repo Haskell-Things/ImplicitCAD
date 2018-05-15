@@ -7,9 +7,9 @@
 
 module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
-import Prelude(Integer, (*), (>), (<), (/=), (+), (-), (/), (==), (&&), abs)
+import Prelude((*), (>), (<), (/=), (+), (-), (/), (==), (&&), abs)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2)
 
 -- Consider a function f(x):
 
@@ -42,6 +42,8 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2)
 
 -- If it doesn't cross zero, we don't actually care what answer we give,
 -- just that it's cheap.
+
+-- FIXME: accept resolution on multiple axises.
 
 interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
 interpolate (a,aval) (_,bval) _ _ | aval*bval > 0 = a
@@ -119,7 +121,7 @@ interpolate (a,aval) (b,bval) f _ =
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
-interpolateLin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateLin :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
@@ -153,7 +155,7 @@ interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
 interpolateLin _ (a, _) _ _ = a
 
 -- Now for binary searching!
-interpolateBin :: Integer -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateBin :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 
 -- The termination case:
 
