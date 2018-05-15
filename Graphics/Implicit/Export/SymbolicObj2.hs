@@ -9,11 +9,11 @@
 -- If it can't, it passes the puck to a marching-squares-like
 -- algorithm...
 
-module Graphics.Implicit.Export.SymbolicObj2 where
+module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbolicGetContour, symbolicGetContourMesh) where
 
 import Prelude(map, ($), (-), (/), (+), (>), (*), (.), reverse, cos, pi, sin, max, fromInteger, ceiling)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline, (⋯*))
+import Graphics.Implicit.Definitions (ℝ, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline, Polytri, (⋯*))
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
@@ -52,7 +52,7 @@ symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> Render.getContour a b res obj'
 
 
-symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [(ℝ2,ℝ2,ℝ2)]
+symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [Polytri]
 symbolicGetContourMesh res (Translate2 v obj) = map (\(a,b,c) -> (a + v, b + v, c + v) )  $
     symbolicGetContourMesh res obj
 symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(c,d,e) -> (c ⋯* s, d ⋯* s, e ⋯* s) )  $
@@ -68,5 +68,3 @@ symbolicGetContourMesh res (Circle r) =
       n = max 5 (fromInteger . ceiling $ 2*pi*r/res)
 symbolicGetContourMesh res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> getContourMesh a b (res,res) obj'
-
-
