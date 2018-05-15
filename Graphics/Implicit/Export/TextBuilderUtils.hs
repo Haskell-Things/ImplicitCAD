@@ -5,8 +5,7 @@
 -- This module exists to re-export a coherent set of functions to define
 -- Data.Text.Lazy builders with.
 
-module Graphics.Implicit.Export.TextBuilderUtils  
-    (
+module Graphics.Implicit.Export.TextBuilderUtils (
      -- Values from Data.Text.Lazy
      Text,
      pack,
@@ -25,8 +24,9 @@ module Graphics.Implicit.Export.TextBuilderUtils
      mempty
     ) where
 
-import Prelude (Int, Maybe(Nothing, Just), ($))
+import Prelude (Maybe(Nothing, Just), ($))
 
+import Graphics.Implicit.Definitions(Fastℕ)
 import Data.Text.Lazy (Text, pack)
 -- We manually redefine this operator to avoid a dependency on base >= 4.5
 -- This will become unnecessary later.
@@ -50,7 +50,7 @@ bf = formatRealFloat Exponent Nothing
 
 buildTruncFloat = formatRealFloat Fixed $ Just 4
 
-buildInt :: Int -> Builder
+buildInt :: Fastℕ -> Builder
 buildInt = decimal
 
 -- This is directly copied from base 4.5.1.0
