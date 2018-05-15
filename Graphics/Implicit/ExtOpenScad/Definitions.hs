@@ -14,9 +14,10 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   TestInvariant(EulerCharacteristic),
                                                   collector) where
 
-import Prelude(Eq, Show, String, Maybe, Bool(True, False), Int, IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
-import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
+-- Resolution of the world, Integer operator, and symbolic languages for 2D and 3D objects.
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
@@ -89,7 +90,7 @@ data Expr = Var Symbol
     deriving (Show, Eq)
 
 -- a statement, along with the line number it is found on.
-data StatementI = StatementI Int (Statement StatementI)
+data StatementI = StatementI Fastℕ (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool
@@ -142,6 +143,6 @@ collector :: Symbol -> [Expr] -> Expr
 collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
 
-newtype TestInvariant = EulerCharacteristic Int
+newtype TestInvariant = EulerCharacteristic ℕ
     deriving (Show)
 
