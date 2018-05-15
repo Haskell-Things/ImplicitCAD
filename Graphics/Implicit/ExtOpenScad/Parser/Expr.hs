@@ -2,7 +2,8 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Expr where
+-- a parser for a numeric expression.
+module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
 import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3)
 
