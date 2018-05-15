@@ -8,12 +8,14 @@
 -- FIXME: why is this required?
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.ArgParser where
+module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
-import Prelude(String, Maybe(Just, Nothing), Int, ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, null, (&&))
+import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, null, (&&))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
+
+import Graphics.Implicit.Definitions(ℕ)
 
 import qualified Data.Map as Map
 import Data.Maybe (isNothing, fromJust, isJust)
@@ -56,7 +58,7 @@ example str = APExample str (return ())
 test :: String -> ArgParser ()
 test str = APTest str [] (return ())
 
-eulerCharacteristic :: ArgParser a -> Int -> ArgParser a
+eulerCharacteristic :: ArgParser a -> ℕ -> ArgParser a
 eulerCharacteristic (APTest str tests child) χ =
     APTest str (EulerCharacteristic χ : tests) child
 eulerCharacteristic _ _ = error "Impossible!"
