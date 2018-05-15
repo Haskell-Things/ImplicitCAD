@@ -1,25 +1,20 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- We want a type that can represent squares/quads and triangles.
 module Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq)) where
 
 import Prelude()
 
-import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, Triangle)
+import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, TriangleMesh)
 
 import Control.DeepSeq (NFData, rnf)
 
--- We want a format that can represent squares/quads and triangles.
--- So that we can merge squares and thereby reduces triangles.
-
--- Regarding Sq: Sq Basis@(b1,b2,b3) (Height on b3)
---                  (b1 pos 1, b2 pos 1) (b1 pos 2, b2 pos 2)
-
 data TriSquare =
       Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2
-    | Tris [Triangle]
+    | Tris TriangleMesh
 
--- For use with Parallel.Strategies later
+-- FIXME: For use with Parallel.Strategies later
 
 instance NFData TriSquare where
     rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
