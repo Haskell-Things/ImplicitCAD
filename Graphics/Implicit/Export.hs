@@ -14,7 +14,7 @@ module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, 
 import Prelude (FilePath, IO, (.), ($))
 
 -- The types of our objects (before rendering), and the type of the resolution to render with.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, Polyline, TriangleMesh, Triangle, NormedTriangle)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, Polyline, TriangleMesh, NormedTriangleMesh)
 
 -- functions for outputing a file, and one of the types.
 import Data.Text.Lazy (Text)
@@ -28,7 +28,7 @@ import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAp
 import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats (svg, hacklabLaserGCode)
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats (stl, binaryStl, jsTHREE)
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats (obj)
-import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad3, scad2)
+import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
 import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
 
 -- Write an object using the given format function.
@@ -51,10 +51,7 @@ writeObject' :: (DiscreteAproxable obj aprox)
     -> obj              -- ^ Object to render
     -> IO ()            -- ^ Writing Action!
 writeObject' res formatWriter filename obj =
-    let
---        aprox :: (DiscreteAproxable aprox) => aprox
-        aprox = discreteAprox res obj
-    in formatWriter filename aprox
+    formatWriter filename (discreteAprox res obj)
 
 formatObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
@@ -66,13 +63,13 @@ formatObject res format = format . discreteAprox res
 writeSVG :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
 writeSVG res = writeObject res PolylineFormats.svg
 
-writeSTL :: forall obj. DiscreteAproxable obj [Triangle] => ℝ -> FilePath -> obj -> IO ()
+writeSTL :: forall obj. DiscreteAproxable obj TriangleMesh => ℝ -> FilePath -> obj -> IO ()
 writeSTL res = writeObject res TriangleMeshFormats.stl
 
-writeBinSTL :: forall obj. DiscreteAproxable obj [Triangle] => ℝ -> FilePath -> obj -> IO ()
+writeBinSTL :: forall obj. DiscreteAproxable obj TriangleMesh => ℝ -> FilePath -> obj -> IO ()
 writeBinSTL res file obj = LBS.writeFile file $ TriangleMeshFormats.binaryStl $ discreteAprox res obj
 
-writeOBJ :: forall obj. DiscreteAproxable obj [NormedTriangle] => ℝ -> FilePath -> obj -> IO ()
+writeOBJ :: forall obj. DiscreteAproxable obj NormedTriangleMesh => ℝ -> FilePath -> obj -> IO ()
 writeOBJ res = writeObject res NormedTriangleMeshFormats.obj
 
 writeTHREEJS :: forall obj. DiscreteAproxable obj TriangleMesh => ℝ -> FilePath -> obj -> IO ()
