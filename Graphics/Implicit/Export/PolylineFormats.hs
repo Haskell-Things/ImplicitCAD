@@ -7,7 +7,7 @@
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.Export.PolylineFormats where
+module Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode) where
 
 import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, concat, show, (++), unwords, map, mapM_, snd, compare, min, max)
 
