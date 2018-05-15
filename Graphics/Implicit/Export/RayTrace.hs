@@ -8,11 +8,11 @@
 -- FIXME: why are these needed?
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Graphics.Implicit.Export.RayTrace where
+module Graphics.Implicit.Export.RayTrace( dynamicImage, Color, average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
 
-import Prelude(Show, RealFrac, Maybe(Just, Nothing), Int, Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, fromIntegral, toRational, otherwise)
+import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, fromIntegral, toRational, otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋅), Obj3)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋅), Obj3)
 import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
 import Control.Monad (guard, return)
 import Control.Arrow ((***))
@@ -118,7 +118,7 @@ refine (a, b) obj =
     then refine' 10 (a, b) (aval, bval) obj
     else refine' 10 (b, a) (aval, bval) obj
 
-refine' :: Int -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+refine' :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 refine' 0 (a, _) _ _ = a
 refine' n (a, b) (aval, bval) obj = 
     let
