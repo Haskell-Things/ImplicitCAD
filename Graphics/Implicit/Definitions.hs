@@ -1,5 +1,5 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Copyright 2014 2015 2016, 2017, 2018, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
@@ -17,10 +17,12 @@ module Graphics.Implicit.Definitions (
     ℝ3,
     minℝ,
     ℕ,
+    Fastℕ,
     (⋅),
     (⋯*),
     (⋯/),
     Polyline,
+    Polytri,
     Triangle,
     NormedTriangle,
     TriangleMesh,
@@ -72,7 +74,7 @@ module Graphics.Implicit.Definitions (
     )
 where
 
-import Prelude (Show, Double, Integer, Maybe, Either, show, (*), (/))
+import Prelude (Show, Double, Integer, Int, Maybe, Either, show, (*), (/))
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
@@ -91,12 +93,15 @@ minℝ :: ℝ
 -- for Doubles.
 minℝ = 0.0000000000000002
 
+-- Arbitrary precision integers.
 type ℕ = Integer
+
+-- System integers.
+type Fastℕ = Int
 
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
-
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where
@@ -132,17 +137,20 @@ instance ComponentWiseMultable ℝ3 where
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
 type Polyline = [ℝ2]
 
--- | A triangle (a,b,c) = a triangle with vertices a, b and c
+-- | A triangle in 2D space (a,b,c).
+type Polytri = (ℝ2, ℝ2, ℝ2)
+
+-- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
 type Triangle = (ℝ3, ℝ3, ℝ3)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
 type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
--- | A triangle mesh is a bunch of triangles :)
+-- | A triangle mesh is a bunch of triangles, attempting to be a surface.
 type TriangleMesh = [Triangle]
 
--- | A normed triangle mesh is a bunch of normed trianlges!!
+-- | A normed triangle mesh is a mesh of normed trianlges.
 type NormedTriangleMesh = [NormedTriangle]
 
 -- | A 2D object
@@ -237,6 +245,6 @@ data SymbolicObj3 =
 -- | Rectilinear 2D set
 type Rectilinear2 = [Box2]
 
--- | Rectilinear 2D set
+-- | Rectilinear 3D set
 type Rectilinear3 = [Box3]
 
