@@ -8,11 +8,12 @@
 -- Make string litearls more polymorphic, so we can use them with Builder.
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.Export.TriangleMeshFormats where
+-- This module exposes three functions, which convert a triangle mesh to an output file.
+module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) where
 
-import Prelude (Real, Float, Int, ($), (+), map, (.), realToFrac, toEnum, length, zip, return)
+import Prelude (Real, Float, ($), (+), map, (.), realToFrac, toEnum, length, zip, return)
 
-import Graphics.Implicit.Definitions (Triangle, TriangleMesh, ℝ3)
+import Graphics.Implicit.Definitions (Triangle, TriangleMesh, Fastℕ, ℝ3)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildInt)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
@@ -32,7 +33,7 @@ normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
     normalized $ (b + negateV a) `cross3` (c + negateV a)
 
-stl :: [Triangle] -> Text
+stl :: TriangleMesh -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
     where
         stlHeader :: Builder
@@ -62,7 +63,7 @@ toFloat = realToFrac :: (Real a) => a -> Float
 float32LE :: Float -> Write
 float32LE = writeStorable . LE
 
-binaryStl :: [Triangle] -> ByteString
+binaryStl :: TriangleMesh -> ByteString
 binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map triangle triangles)
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length triangles
@@ -95,7 +96,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 v :: ℝ3 -> Builder
                 v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
-                f :: Int -> Int -> Int -> Builder
+                f :: Fastℕ -> Fastℕ -> Fastℕ -> Builder
                 f posa posb posc = 
                         "f(" <> buildInt posa <> "," <> buildInt posb <> "," <> buildInt posc <> ");"
                 verts = do
@@ -108,5 +109,5 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 facecode = mconcat $ do
                         (n,_) <- zip [0, 3 ..] triangles
                         let
-                            (posa, posb, posc) = (n, n+1, n+2) :: (Int, Int, Int)
+                            (posa, posb, posc) = (n, n+1, n+2) :: (Fastℕ, Fastℕ, Fastℕ)
                         return $ f posa posb posc
