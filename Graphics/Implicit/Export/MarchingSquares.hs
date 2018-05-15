@@ -5,49 +5,53 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- export getContour, which returns as array of polylines describing the edge of a 2D object.
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
-import Prelude(Int, Bool(True, False), ceiling, fromIntegral, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), (.), splitAt, div, unzip, length, (++), (<), (++), head, concat, not, null, (||), Eq, Int)
+import Prelude(Bool(True, False), ceiling, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), splitAt, div, unzip, length, (++), (<), (++), head, ceiling, concat, div, max, not, null, (||), Eq, fromIntegral)
 
-import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
-
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
-
--- FIXME: commented out for now, parallelism is not properly implemented.
--- import Control.Parallel.Strategies (using, parList, rdeepseq)
+import Graphics.Implicit.Definitions (ℕ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Control.Arrow((***))
 
--- we are explicit here, so GHC knows what types n is made up of in getContour.
-both :: (ℝ -> Int) ->  ℝ2 -> (Int, Int)
+-- import a helper, to clean up the result we return.
+import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
+
+-- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+
+-- apply a function to both items in the provided tuple.
+both :: forall t b. (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
 
 -- getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour p1 p2 d obj =
+getContour p1 p2 res obj =
     let
+        -- How much space are we rendering?
+        d = p2 ^-^ p1
+
         -- How many steps will we take on each axis?
-        n :: (Int, Int)
-        n@(nx, ny) = ceiling `both` ((p2 ^-^ p1) ⋯/ d)
-        -- Divide it up and compute the polylines
-        gridPos :: (Int,Int) -> (Int,Int) -> ℝ2
-        gridPos (nx',ny') (mx,my) =
-            let
-                p :: ℝ2
-                p = ( fromIntegral mx / fromIntegral nx'
-                    , fromIntegral my / fromIntegral ny')
-            in
-              p1 ^+^ (p2 ^-^ p1) ⋯* p
+        nx :: ℕ
+        ny :: ℕ
+        n@(nx,ny) = (ceiling) `both` (d ⋯/ res)
+
+        -- a helper for calculating a position inside of the space.
+        gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2
+        gridPos n' m = p1 ^+^ d ⋯* ((fromIntegral `both` m) ⋯/ (fromIntegral `both` n'))
+
+        -- compute the polylines
         linesOnGrid :: [[[Polyline]]]
         linesOnGrid = [[getSquareLineSegs (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) obj
-                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
-    in
+                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1  $ fromIntegral $ div ny 32) rdeepseq
+
         -- Cleanup, cleanup, everybody cleanup!
         -- (We connect multilines, delete redundant vertices on them, etc)
-        filter polylineNotNull . map reducePolyline $ orderLinesDC linesOnGrid
-
+        lines = filter polylineNotNull $ map reducePolyline $ orderLinesDC linesOnGrid
+    in
+      lines
 -- FIXME: Commented out, not used?
 {-
         -- alternate Grid mapping funcs
@@ -85,6 +89,9 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
         -- And the center point..
         c = obj ((x1+x2)/2, (y1+y2)/2)
 
+        dx = x2 - x1
+        dy = y2 - y1
+
         -- linearly interpolated midpoints on the relevant axis
         --             midy2
         --      _________*__________
@@ -98,9 +105,6 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
         --      ---------*----------
         --             midy1
 
-
-        dx = x2 - x1
-        dy = y2 - y1
 
         midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
         midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
@@ -178,7 +182,7 @@ orderLinesDC segs =
     let
         halve :: [a] -> ([a], [a])
         halve l = splitAt (div (length l) 2) l
-        splitOrder segs' = case (halve *** halve) . unzip . map halve $ segs' of
+        splitOrder segs' = case (halve *** halve) $ unzip $ map halve $ segs' of
             ((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
     in
         if length segs < 5 || length (head segs) < 5 then concat $ concat segs else
