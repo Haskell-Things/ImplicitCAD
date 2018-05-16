@@ -34,9 +34,7 @@ assignmentSpec = do
   it "handles pattern matching" $
     "[x, y] = [1, 2];" `parsesAs`
     (single $ ListP [Name "x", Name "y"] := (ListE [num 1, num 2]))
-  it "handles function definitions" $
-    "foo (x, y) = x * y;" `parsesAs` single fooFunction
-  it "handles the function keyword" $
+  it "handles the function keyword and definitions" $
     "function foo(x, y) = x * y;" `parsesAs` single fooFunction
   it "nested indexing" $
     "x = [y[0] - z * 2];" `parsesAs`
