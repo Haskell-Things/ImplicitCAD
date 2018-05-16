@@ -20,7 +20,6 @@ library
         base >= 3 && < 5,
         filepath,
         directory,
-        download,
         parsec,
         unordered-containers,
         parallel,
