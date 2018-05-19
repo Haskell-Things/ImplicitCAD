@@ -18,7 +18,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol
 -- Parse an ExtOpenScad program.
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
-import Data.Either (Either(Left, Right), isLeft)
+import Data.Either (Either(Right), isLeft)
 
 -- an expectation that a string become a statement.
 infixr 1 -->

@@ -35,14 +35,11 @@ import Prelude (Bool, String, Either, (<), ($), (.), otherwise)
 import Graphics.Implicit.Definitions (ℝ)
 
 -- The datatype of expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE), Symbol, OVal(ONum, OBool))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE), OVal(ONum, OBool))
 
--- the entry point of the expression parser.
-import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
-    
 import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
 
-import Control.Applicative ((<$>), (<*>), (<*))
+import Control.Applicative ((<$>), (<*>))
 
 num :: ℝ -> Expr
 num x
