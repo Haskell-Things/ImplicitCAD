@@ -20,7 +20,6 @@ library
         base >= 3 && < 5,
         filepath,
         directory,
-        download,
         parsec,
         unordered-containers,
         parallel,
@@ -41,7 +40,8 @@ library
         snap-core,
         snap-server,
         silently,
-        transformers
+        transformers,
+        hspec
 
     ghc-options:
         -Wall
@@ -165,7 +165,6 @@ executable extopenscad
 --       -fspec-constr-count=10
                
 executable implicitsnap
-
    main-is: implicitsnap.hs
    hs-source-dirs: programs
    build-depends:
@@ -201,7 +200,6 @@ executable implicitsnap
         -optc-ffast-math
 
 executable Benchmark
-
    main-is: Benchmark.hs
    hs-source-dirs: programs
    build-depends:
@@ -253,6 +251,7 @@ benchmark parser-bench
         -Weverything
         -O2
         -optc-O3
+        -optc-ffast-math
 
 source-repository head
     type:            git
