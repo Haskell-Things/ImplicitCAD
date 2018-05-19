@@ -20,7 +20,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Data.Either (Either(Right), isLeft)
 
--- an expectation that a string become a statement.
+-- an expectation that a string is equivalent to a statement.
 infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
@@ -62,7 +62,6 @@ assignmentSpec = do
 
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
-
 
 statementSpec :: Spec
 statementSpec = do
