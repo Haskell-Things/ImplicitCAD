@@ -1,5 +1,5 @@
 name:                implicit
-version:             0.1.1
+version:             0.2.0
 cabal-version:       >= 1.8
 synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
 description:         A math-inspired programmatic CAD library in haskell.
