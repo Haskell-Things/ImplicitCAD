@@ -57,11 +57,11 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
             . sortBy (\(a,_) (b, _) -> compare a b)
             . map (\x -> (polylineRadius x, x))
             $ polylines
-      polylineRadius :: [(ℝ, ℝ)] -> ℝ
+      polylineRadius :: [ℝ2] -> ℝ
       polylineRadius [] = 0
       polylineRadius polyline' = max (xmax' - xmin') (ymax' - ymin') where
            ((xmin', xmax'), (ymin', ymax')) = polylineRadius' polyline'
-           polylineRadius' :: [(ℝ, ℝ)] -> ((ℝ, ℝ), (ℝ, ℝ))
+           polylineRadius' :: [ℝ2] -> (ℝ2, ℝ2)
            polylineRadius' [] = ((0,0),(0,0))
            polylineRadius' [(x,y)] = ((x,x),(y,y))
            polylineRadius' ((x,y):ps) = ((min x xmin,max x xmax),(min y ymin, max y ymax))

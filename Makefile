@@ -52,7 +52,7 @@ dist: $(TARGETS)
 #	./Setup test
 
 examples: $(TARGETS)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind  --cachegrind-out-file=$$each.cachegrind ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind  --cachegrind-out-file=$$each.cachegrind.`date +%s` ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; ghc $$filename.hs -o $$filename; $$filename; } done
 
 images:
