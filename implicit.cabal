@@ -48,7 +48,6 @@ library
 -- for debugging only.
         -Wextra
         -Weverything
-        -O2
         -optc-O3
 -- cannot use, we use infinity in some calculations.
 --        -optc-ffast-math
@@ -127,7 +126,6 @@ executable extopenscad
         -rtsopts
         -Wall
         -Weverything
-        -O2
         -optc-O3
         -optc-ffast-math
 
@@ -195,7 +193,6 @@ executable implicitsnap
         -rtsopts
         -Wall
         -Weverything
-        -O2
         -optc-O3
         -optc-ffast-math
 
@@ -227,7 +224,6 @@ executable Benchmark
         -rtsopts
         -Wall
         -Weverything
-        -O2
         -optc-O3
         -optc-ffast-math
 
@@ -239,7 +235,6 @@ test-suite test-implicit
     ghc-options:
         -Wall
         -Weverything
-        -O2
         -optc-O3
 
 benchmark parser-bench
@@ -249,7 +244,6 @@ benchmark parser-bench
     ghc-options:
         -Wall
         -Weverything
-        -O2
         -optc-O3
         -optc-ffast-math
 
