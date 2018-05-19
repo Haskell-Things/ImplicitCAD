@@ -11,7 +11,7 @@ import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, 
 
 -- import Text.ParserCombinators.Parsec ()
 
-import ParserSpec.Util (bool, num, app, app')
+import ParserSpec.Util (bool, num, minus, mult, index)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
 
@@ -36,31 +36,33 @@ single st = [StatementI 1 st]
 call :: Symbol -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
 call name args stmts = StatementI 1 (ModuleCall name args stmts)
 
+-- test a simple if block.
 ifSpec :: Spec
 ifSpec = it "parses" $
     "if (true) { a(); } else { b(); }" --> 
       single ( If (bool True) [call "a" [] []] [call "b" [] []])
 
+-- test assignments.
 assignmentSpec :: Spec
 assignmentSpec = do
   it "parses correctly" $
     "y = -5;" --> single ( Name "y" := num (-5))
   it "handles pattern matching" $
     "[x, y] = [1, 2];" --> single (ListP [Name "x", Name "y"] := ListE [num 1, num 2])
-  it "handles function definitions" $
-    "foo (x, y) = x * y;" --> single fooFunction
-  it "handles the function keyword" $
+  it "handles the function keyword and definitions" $
     "function foo(x, y) = x * y;" --> single fooFunction
   it "nested indexing" $
     "x = [y[0] - z * 2];" -->
-    single ( Name "x" := ListE [app' "-" [app' "index" [Var "y", num 0],
-                                           app "*" [Var "z", num 2]]])
+    single ( Name "x" := ListE [minus [index [Var "y", num 0],
+                                           mult [Var "z", num 2]]])
   where
+    fooFunction :: Statement st
     fooFunction = Name "foo" := LamE [Name "x", Name "y"]
-                                (app "*" [Var "x", Var "y"])
+                                (mult [Var "x", Var "y"])
 
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
+
 
 statementSpec :: Spec
 statementSpec = do

@@ -10,11 +10,22 @@
 module ParserSpec.Util
        ( num
        , bool
-       , app
-       , app'
-       , parseWithEof
+       , fapp
+       , plus
+       , minus
+       , mult
+       , modulo
+       , power
+       , divide
+       , negate
+       , and
+       , or
+       , gt
+       , lt
+       , ternary
+       , append
+       , index
        , parseWithLeftOver
-       , parseExpr
        ) where
 
 -- be explicit about where we get things from.
@@ -37,27 +48,35 @@ num :: ℝ -> Expr
 num x
   -- FIXME: the parser should handle negative number literals
   -- directly, we abstract that deficiency away here
-  | x < 0 = app' "negate" [LitE $ ONum (-x)]
+  | x < 0 = oapp "negate" [LitE $ ONum (-x)]
   | otherwise = LitE $ ONum x
 
 bool :: Bool -> Expr
 bool = LitE . OBool
 
--- Operators and functions need two different kinds of applications
-app :: String -> [Expr] -> Expr
-app name args = Var name :$ [ListE args]
+plus,minus,mult,modulo,power,divide,negate,and,or,gt,lt,ternary,append,index :: [Expr] -> Expr
+minus = oapp "-"
+modulo = oapp "%"
+power = oapp "^"
+divide = oapp "/"
+and = oapp "&&"
+or = oapp "||"
+gt = oapp ">"
+lt = oapp "<"
+ternary = oapp "?"
+negate = oapp "!"
+index = oapp "index"
+plus = fapp "+"
+mult = fapp "*"
+append = fapp "++"
 
-app' :: Symbol -> [Expr] -> Expr
-app' name args = Var name :$ args
+-- we need two different kinds of application functions
+oapp,fapp :: String -> [Expr] -> Expr
+oapp name args = Var name :$ args
+fapp name args = Var name :$ [ListE args]
 
 parseWithLeftOver :: Parser a -> String -> Either ParseError (a, String)
 parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""
   where
     leftOver :: Parser String
     leftOver = manyTill anyChar eof
-
-parseWithEof :: Parser a -> String -> String -> Either ParseError a
-parseWithEof p = parse (p <* eof)
-
-parseExpr :: String -> Either ParseError Expr
-parseExpr = parseWithEof expr0 "expr"
