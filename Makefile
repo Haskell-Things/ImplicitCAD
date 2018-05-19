@@ -14,9 +14,11 @@ stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
 convert=convert
 
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
+TESTSUITE=dist/build/test-implicit/test-implicit
+TARGETS=$(EXTOPENSCAD) $(TESTSUITE)
 
 # FIXME: this used to be ./Setup install. what's going on?
-install: $(EXTOPENSCAD)
+install: $(TARGETS)
 	cabal install
 
 clean: Setup
@@ -36,30 +38,38 @@ distclean: clean
 	rm -f `find ./ -name *~`
 	rm -f `find ./ -name \#*\#`
 
+nukeclean: distclean
+	rm -rf ~/.cabal/ ~/.ghc/
 
-docs: $(EXTOPENSCAD)
+
+docs: $(TARGETS)
 	./Setup haddock
 
-dist: $(EXTOPENSCAD)
+dist: $(TARGETS)
 	./Setup sdist
 
-test: $(EXTOPENSCAD)
-	./Setup test
+#test: $(TARGETS)
+#	./Setup test
 
-examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
+examples: $(TARGETS)
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind  --cachegrind-out-file=$$each.cachegrind ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; ghc $$filename.hs -o $$filename; $$filename; } done
 
 images:
 	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
 
-tests: $(EXTOPENSCAD)
-	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { time ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
+tests: $(TARGETS)
+#	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
+	./dist/build/test-implicit/test-implicit
 
 dist/build/extopenscad/extopenscad: Setup dist/setup-config
 	cabal build
 
+dist/build/test-implicit/test-implicit: Setup dist/setup-config
+	cabal build
+
 dist/setup-config: Setup implicit.cabal
+	cabal update
 	cabal install --only-dependencies --upgrade-dependencies
 	cabal configure --enable-tests $(PROFILING)
 
