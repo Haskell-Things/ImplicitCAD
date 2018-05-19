@@ -8,14 +8,16 @@
 -- export getContourMesh, which returns an array of triangles describing the interior of a 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
-import Prelude(Bool(True, False), fromIntegral, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat, max, div)
+import Prelude(Bool(True, False), fromIntegral, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat, max, div, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ2, Polytri, Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri, Obj2, (⋯/), (⋯*))
 
 import Data.VectorSpace ((^-^),(^+^))
 
+import Data.List(genericIndex)
+
 -- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
-import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
 
 -- apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
@@ -36,9 +38,20 @@ getContourMesh p1 p2 res obj =
         gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2
         gridPos n' m = p1 ^+^ d ⋯* ((fromIntegral `both` m) ⋯/ (fromIntegral `both` n'))
 
+        -- alternate Grid mapping funcs
+        toGrid :: ℝ2 -> (ℕ,ℕ)
+        toGrid f = floor `both` ((fromIntegral `both` n) ⋯* (f ^-^ p1) ⋯/ d)
+
+        -- Evaluate obj on a grid, in parallel.
+        valsOnGrid :: [[ℝ]]
+        valsOnGrid = [[ obj $ gridPos n (mx, my) | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parList rdeepseq
+
+        -- A faster version of the obj. Sort of like memoization, but done in advance, in parallel.
+        preEvaledObj p = valsOnGrid `genericIndex` my `genericIndex` mx where (mx,my) = toGrid p
+
         -- compute the triangles.
         trisOnGrid :: [[[Polytri]]]
-        trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) obj
+        trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) preEvaledObj
              | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
         triangles = concat $ concat trisOnGrid
     in

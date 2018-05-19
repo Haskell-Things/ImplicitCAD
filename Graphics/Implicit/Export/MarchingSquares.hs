@@ -8,11 +8,13 @@
 -- export getContour, which returns as array of polylines describing the edge of a 2D object.
 module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
-import Prelude(Bool(True, False), ceiling, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), splitAt, div, unzip, length, (++), (<), (++), head, ceiling, concat, div, max, not, null, (||), Eq, fromIntegral)
+import Prelude(Bool(True, False), ceiling, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), splitAt, div, unzip, length, (++), (<), (++), head, ceiling, concat, div, max, not, null, (||), Eq, fromIntegral, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
 
 import Data.VectorSpace ((^-^), (^+^))
+
+import Data.List(genericIndex)
 
 import Control.Arrow((***))
 
@@ -20,7 +22,7 @@ import Control.Arrow((***))
 import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
 
 -- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
-import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
 
 -- apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
@@ -42,10 +44,26 @@ getContour p1 p2 res obj =
         gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2
         gridPos n' m = p1 ^+^ d ⋯* ((fromIntegral `both` m) ⋯/ (fromIntegral `both` n'))
 
+        -- alternate Grid mapping funcs
+        toGrid :: ℝ2 -> (ℕ,ℕ)
+        toGrid f = floor `both` ((fromIntegral `both` n) ⋯* (f ^-^ p1) ⋯/ d)
+
+        -- Evaluate obj on a grid, in parallel.
+        valsOnGrid :: [[ℝ]]
+        valsOnGrid = [[ obj $ gridPos n (mx, my) | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parList rdeepseq
+
+        -- A faster version of the obj. Sort of like memoization, but done in advance, in parallel.
+        preEvaledObj p = valsOnGrid `genericIndex` my `genericIndex` mx where (mx,my) = toGrid p
+
         -- compute the polylines
         linesOnGrid :: [[[Polyline]]]
-        linesOnGrid = [[getSquareLineSegs (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) obj
-                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1  $ fromIntegral $ div ny 32) rdeepseq
+        linesOnGrid = [[getSquareLineSegs (gridPos n (mx, my)) (gridPos n (mx+1, my+1)) preEvaledObj
+             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
+
+{-
+        linesOnGrid = [[getSquareLineSegs (gridPos n (mx, my)) (gridPos n (mx+1, my+1)) obj
+                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
+-}
 
         -- Cleanup, cleanup, everybody cleanup!
         -- (We connect multilines, delete redundant vertices on them, etc)
@@ -53,22 +71,6 @@ getContour p1 p2 res obj =
     in
       lines
 -- FIXME: Commented out, not used?
-{-
-        -- alternate Grid mapping funcs
-        fromGrid (mx, my) = let p = (mx/nx, my/ny)
-                            in (p1 ^+^ (p2 ^-^ p1) ⋯/ p)
-        toGrid (x,y) = (floor $ nx*(x-x1)/(x2-x1), floor $ ny*(y-y1)/(y2-y1))
-        -- Evaluate obj on a grid, in parallel.
-        valsOnGrid :: [[ℝ]]
-        valsOnGrid = [[ obj (fromGrid (mx, my)) | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
-                      `using` parList rdeepseq
-        -- A faster version of the obj. Sort of like memoization, but done in advance, in parallel.
-        preEvaledObj p = valsOnGrid !! my !! mx where (mx,my) = toGrid p
-        -- Divide it up and compute the polylines
-        linesOnGrid :: [[[Polyline]]]
-        linesOnGrid = [[getSquareLineSegs (fromGrid (mx, my)) (fromGrid (mx+1, my+1)) preEvaledObj
-             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
--}
 
 -- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on the
