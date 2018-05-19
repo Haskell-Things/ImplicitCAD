@@ -150,7 +150,7 @@ type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
 type TriangleMesh = [Triangle]
 
--- | A normed triangle mesh is a mesh of normed trianlges.
+-- | A normed triangle mesh is a mesh of normed triangles.
 type NormedTriangleMesh = [NormedTriangle]
 
 -- | A 2D object
