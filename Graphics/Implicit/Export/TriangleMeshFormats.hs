@@ -13,8 +13,8 @@ module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) wh
 
 import Prelude (Real, Float, ($), (+), map, (.), realToFrac, toEnum, length, zip, return)
 
-import Graphics.Implicit.Definitions (Triangle, TriangleMesh, Fastℕ, ℝ3)
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildInt)
+import Graphics.Implicit.Definitions (TriangleMesh, ℕ, ℝ3)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildℕ)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
 import qualified Data.ByteString.Builder.Internal as BI (Builder)
@@ -96,9 +96,9 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 v :: ℝ3 -> Builder
                 v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
-                f :: Fastℕ -> Fastℕ -> Fastℕ -> Builder
+                f :: ℕ -> ℕ -> ℕ -> Builder
                 f posa posb posc = 
-                        "f(" <> buildInt posa <> "," <> buildInt posb <> "," <> buildInt posc <> ");"
+                        "f(" <> buildℕ posa <> "," <> buildℕ posb <> "," <> buildℕ posc <> ");"
                 verts = do
                         -- extract the vertices for each triangle
                         -- recall that a normed triangle is of the form ((vert, norm), ...)
@@ -109,5 +109,5 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 facecode = mconcat $ do
                         (n,_) <- zip [0, 3 ..] triangles
                         let
-                            (posa, posb, posc) = (n, n+1, n+2) :: (Fastℕ, Fastℕ, Fastℕ)
+                            (posa, posb, posc) = (n, n+1, n+2) :: (ℕ, ℕ, ℕ)
                         return $ f posa posb posc

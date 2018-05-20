@@ -10,7 +10,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
 import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, (==), minimum, ($), maximum, (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, fromIntegral, return, error, head, tail, Num)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋯/), Obj3,
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR))
@@ -176,7 +176,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
             let
                 r = sqrt (x*x + y*y)
                 θ = atan2 y x
-                ns :: [Fastℕ]
+                ns :: [ℕ]
                 ns =
                     if capped
                     then -- we will cap a different way, but want leeway to keep the function cont

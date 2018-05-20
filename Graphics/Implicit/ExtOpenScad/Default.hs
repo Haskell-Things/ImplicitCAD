@@ -10,13 +10,14 @@
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), (!!), length, otherwise, fromIntegral)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
+import Data.List (genericIndex, genericLength)
 import Control.Arrow (second)
 
 defaultObjects :: VarLookup -- = Map String OVal
@@ -173,15 +174,15 @@ defaultPolymorphicFunctions =
 
         index (OList l) (ONum ind) =
             let
-                n :: Fastℕ
+                n :: ℕ
                 n = floor ind
             in
-              if n < length l then l !! n else OError ["List accessd out of bounds"]
+              if n < genericLength l then l `genericIndex` n else OError ["List accessd out of bounds"]
         index (OString s) (ONum ind) =
             let
-                n :: Fastℕ
+                n :: ℕ
                 n = floor ind
-            in if n < length s then OString [s !! n] else OError ["List accessd out of bounds"]
+            in if n < genericLength s then OString [s `genericIndex` n] else OError ["List accessd out of bounds"]
         index a b = errorAsAppropriate "index" a b
 
         osplice (OList  list) (ONum a) (    ONum b    ) =
@@ -193,16 +194,16 @@ defaultPolymorphicFunctions =
         osplice (OString str)  OUndefined  (ONum b    ) =
             OString $ splice str  0 (floor b)
         osplice (OList  list) (ONum a)      OUndefined  =
-            OList   $ splice list (floor a) (length list + 1)
+            OList   $ splice list (floor a) (genericLength list + 1)
         osplice (OString str) (ONum a)      OUndefined  =
-            OString $ splice str  (floor a) (length str  + 1)
+            OString $ splice str  (floor a) (genericLength str  + 1)
         osplice (OList  list)  OUndefined   OUndefined  =
-            OList   $ splice list 0 (length list + 1)
+            OList   $ splice list 0 (genericLength list + 1)
         osplice (OString str)  OUndefined   OUndefined =
-            OString $ splice str  0 (length str  + 1)
+            OString $ splice str  0 (genericLength str  + 1)
         osplice _ _ _ = OUndefined
 
-        splice :: [a] -> Fastℕ -> Fastℕ -> [a]
+        splice :: [a] -> ℕ -> ℕ -> [a]
         splice [] _ _     = []
         splice (l@(x:xs)) a b
             |    a < 0  =    splice l   (a+n)  b
@@ -210,7 +211,9 @@ defaultPolymorphicFunctions =
             |    a > 0  =    splice xs  (a-1) (b-1)
             |    b > 0  = x: splice xs   a    (b-1)
             | otherwise = []
-                    where n = length l
+                    where
+                      n :: ℕ
+                      n = genericLength l
 
         errorAsAppropriate _   err@(OError _)   _ = err
         errorAsAppropriate _   _   err@(OError _) = err
@@ -235,7 +238,7 @@ defaultPolymorphicFunctions =
         ternary True a _ = a
         ternary False _ b = b
 
-        olength (OString s) = ONum . fromIntegral $ length s
-        olength (OList s)   = ONum . fromIntegral $ length s
+        olength (OString s) = ONum $ genericLength s
+        olength (OList s)   = ONum $ genericLength s
         olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
 

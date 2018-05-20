@@ -6,7 +6,7 @@ module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
 import Prelude(return, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, Obj3, ℝ3, TriangleMesh, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh, (⋅))
 
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 
@@ -14,6 +14,8 @@ import Graphics.Implicit.Export.Util (centroid)
 
 import Data.VectorSpace (normalized, (^-^), (^+^), magnitude, (^/), (^*))
 
+import Data.List (genericLength)
+    
 import Data.Cross (cross3)
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
@@ -88,7 +90,7 @@ tesselateLoop res obj pathSides = return $ Tris $
         else early_tris ++ [(a,b,mid) | (a,b) <- zip path (tail path ++ [head path]) ]
 
 
-shrinkLoop :: Fastℕ -> [ℝ3] -> ℝ -> Obj3 -> (TriangleMesh, [ℝ3])
+shrinkLoop :: ℕ -> [ℝ3] -> ℝ -> Obj3 -> (TriangleMesh, [ℝ3])
 
 shrinkLoop _ path@[a,b,c] res obj =
     if   abs (obj $ centroid [a,b,c]) < res/50
@@ -97,7 +99,7 @@ shrinkLoop _ path@[a,b,c] res obj =
     else
         ([], path)
 
-shrinkLoop n path@(a:b:c:xs) res obj | n < length path =
+shrinkLoop n path@(a:b:c:xs) res obj | n < genericLength path =
     if abs (obj (centroid [a,c])) < res/50
     then
         let (tris,remainder) = shrinkLoop 0 (a:c:xs) res obj

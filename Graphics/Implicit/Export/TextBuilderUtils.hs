@@ -14,6 +14,7 @@ module Graphics.Implicit.Export.TextBuilderUtils (
      toLazyText,
      fromLazyText,
      buildInt,
+     buildℕ,
      -- Serialize a float in full precision
      bf,
      -- Serialize a float with four decimal places
@@ -37,7 +38,7 @@ import Data.Text.Lazy.Builder (Builder, toLazyTextWith, fromLazyText)
 import Data.Text.Lazy.Builder.RealFloat (formatRealFloat, FPFormat(Exponent, Fixed))
 import Data.Text.Lazy.Builder.Int (decimal)
 
-import Graphics.Implicit.Definitions (ℝ)
+import Graphics.Implicit.Definitions (ℝ, ℕ)
 
 -- The chunk size for toLazyText is very small (128 bytes), so we export
 -- a version with a much larger size (~16 K)
@@ -49,6 +50,9 @@ bf, buildTruncFloat :: ℝ -> Builder
 bf = formatRealFloat Exponent Nothing
 
 buildTruncFloat = formatRealFloat Fixed $ Just 4
+
+buildℕ :: ℕ -> Builder
+buildℕ = decimal
 
 buildInt :: Fastℕ -> Builder
 buildInt = decimal
