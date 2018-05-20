@@ -89,8 +89,8 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
--- a statement, along with the line number it is found on.
-data StatementI = StatementI Fastℕ (Statement StatementI)
+-- a statement, along with the line and column number it is found on.
+data StatementI = StatementI Fastℕ Fastℕ (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool

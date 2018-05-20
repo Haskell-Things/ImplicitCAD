@@ -324,7 +324,6 @@ scale = moduleWithSuite "scale" $ \children -> do
     example "scale(2) square(5);"
     example "scale([2,3]) square(5);"
     example "scale([2,3,4]) cube(5);"
-
     v <- argument "v"
         `doc` "vector or scalar to scale by"
     

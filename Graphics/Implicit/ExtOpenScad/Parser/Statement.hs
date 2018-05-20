@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
 import Prelude(Char, Either, String, Maybe(Just, Nothing), Monad, return, fmap, ($), (>>), Bool(False, True), map)
 
-import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, (<|>), (<?>))
+import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -92,22 +92,24 @@ suite = (fmap return computation <|> do
 throwAway :: GenParser Char st StatementI
 throwAway = do
     line <- lineNumber
+    column <- columnNumber
     _ <- genSpace
     _ <- oneOf "%*"
     _ <- genSpace
     _ <- computation
-    return $ StatementI line DoNothing
+    return $ StatementI line column DoNothing
 
 -- An include! Basically, inject another openscad file here...
 include :: GenParser Char st StatementI
 include = (do
     line <- lineNumber
+    column <- columnNumber
     injectVals <-  (string "include" >> return True )
                <|> (string "use"     >> return False)
     _ <- stringGS " < "
     filename <- many (noneOf "<> ")
     _ <- stringGS " > "
-    return $ StatementI line $ Include filename injectVals
+    return $ StatementI line column $ Include filename injectVals
     ) <?> "include "
 
 -- | An assignment (parser)
@@ -115,48 +117,53 @@ assignment :: GenParser Char st StatementI
 assignment = ("assignment " ?:) $
     do
         line <- lineNumber
+        column <- columnNumber
         lvalue <- patternMatcher
         _ <- stringGS " = "
         valExpr <- expr0
-        return $ StatementI line $ lvalue := valExpr
+        return $ StatementI line column $ lvalue := valExpr
 
 -- | A function declaration (parser)
 function :: GenParser Char st StatementI
 function = ("function " ?:) $
     do
         line <- lineNumber
+        column <- columnNumber
         varSymb <- string "function" >> space >> genSpace >> variableSymb
         _ <- stringGS " ( "
         argVars <- sepBy patternMatcher (stringGS " , ")
         _ <- stringGS " ) = "
         valExpr <- expr0
-        return $ StatementI line $ Name varSymb := LamE argVars valExpr
+        return $ StatementI line column $ Name varSymb := LamE argVars valExpr
 
 -- | An echo (parser)
 echo :: GenParser Char st StatementI
 echo = do
     line <- lineNumber
+    column <- columnNumber
     _ <- stringGS "echo ( "
     exprs <- expr0 `sepBy` stringGS " , "
     _ <- stringGS " ) "
-    return $ StatementI line $ Echo exprs
+    return $ StatementI line column $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI =
     "if " ?: do
         line <- lineNumber
+        column <- columnNumber
         _ <- stringGS "if ( "
         bexpr <- expr0
         _ <- stringGS " ) "
         sTrueCase <- suite
         _ <- genSpace
         sFalseCase <- (stringGS "else " >> suite ) *<|> return []
-        return $ StatementI line $ If bexpr sTrueCase sFalseCase
+        return $ StatementI line column $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
 forStatementI =
     "for " ?: do
         line <- lineNumber
+        column <- columnNumber
         -- a for loop is of the form:
         --      for ( vsymb = vexpr   ) loops
         -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
@@ -167,30 +174,32 @@ forStatementI =
         vexpr <- expr0
         _ <- stringGS " ) "
         loopContent <- suite
-        return $ StatementI line $ For lvalue vexpr loopContent
+        return $ StatementI line column $ For lvalue vexpr loopContent
 
 -- parse a call to a module.
 userModule :: GenParser Char st StatementI
 userModule = do
     line <- lineNumber
+    column <- columnNumber
     name <- variableSymb
     _ <- genSpace
     args <- moduleArgsUnit
     _ <- genSpace
     s <- suite *<|> (stringGS " ; " >> return [])
-    return $ StatementI line $ ModuleCall name args s
+    return $ StatementI line column $ ModuleCall name args s
 
 -- declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
     line <- lineNumber
+    column <- columnNumber
     _ <- stringGS "module "
     newModuleName <- variableSymb
     _ <- genSpace
     args <- moduleArgsUnitDecl
     _ <- genSpace
     s <- suite
-    return $ StatementI line $ NewModule newModuleName args s
+    return $ StatementI line column $ NewModule newModuleName args s
 
 -- parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe String, Expr)]
@@ -250,9 +259,9 @@ lineNumber :: forall s u (m :: * -> *).
 lineNumber = fmap sourceLine getPosition
 
 --FIXME: use the below function to improve error reporting.
-{-
+
 -- find the column number. SHOULD be used when generating errors.
 columnNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Column
 columnNumber = fmap sourceColumn getPosition
--}
+
