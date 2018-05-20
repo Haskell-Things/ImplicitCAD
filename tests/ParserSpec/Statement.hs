@@ -31,10 +31,10 @@ parsesAsError :: String -> Expectation
 parsesAsError source = parseProgram  source `shouldSatisfy` isLeft
 
 single :: Statement StatementI -> [StatementI]
-single st = [StatementI 1 st]
+single st = [StatementI 1 1 st]
 
 call :: Symbol -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
-call name args stmts = StatementI 1 (ModuleCall name args stmts)
+call name args stmts = StatementI 1 1 (ModuleCall name args stmts)
 
 -- test a simple if block.
 ifSpec :: Spec
