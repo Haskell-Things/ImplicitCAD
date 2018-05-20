@@ -60,17 +60,11 @@ getContour p1 p2 res obj =
         linesOnGrid = [[getSquareLineSegs (gridPos n (mx, my)) (gridPos n (mx+1, my+1)) preEvaledObj
              | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
 
-{-
-        linesOnGrid = [[getSquareLineSegs (gridPos n (mx, my)) (gridPos n (mx+1, my+1)) obj
-                       | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
--}
-
         -- Cleanup, cleanup, everybody cleanup!
         -- (We connect multilines, delete redundant vertices on them, etc)
         lines = filter polylineNotNull $ map reducePolyline $ orderLinesDC linesOnGrid
     in
       lines
--- FIXME: Commented out, not used?
 
 -- | This function gives line segments to divide negative interior
 --  regions and positive exterior ones inside a square, based on the

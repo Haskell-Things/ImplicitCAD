@@ -29,7 +29,7 @@ import Data.AffineSpace ((.-^), (.+^))
 
 
 -- | There is a discrete way to aproximate this object.
---   eg. Aproximating a 3D object with a tirangle mesh
+--   eg. Aproximating a 3D object with a triangle mesh
 --       would be DiscreteApproxable Obj3 TriangleMesh
 class DiscreteAproxable obj aprox where
     discreteAprox :: ℝ -> obj -> aprox
@@ -40,7 +40,7 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
     discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
 
--- FIXME: magic numbers.
+-- FIXME: way too many magic numbers.
 instance DiscreteAproxable SymbolicObj3 DynamicImage where
     discreteAprox _ symbObj = dynamicImage $ generateImage pixelRenderer (round w) (round h)
         where
@@ -68,7 +68,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
                             (cameraRay camera ((a,b) ^+^ (-0.25/w, 0.25/h)))
                             0.5 box scene,
                         traceRay 
-                            (cameraRay camera ((a,b) ^+^ (0.25/w, -0.25/h)))
+                            (cameraRay camera ((a,b) ^+^ ( 0.25/w,-0.25/h)))
                             0.5 box scene,
                         traceRay 
                             (cameraRay camera ((a,b) ^+^ (-0.25/w,-0.25/h)))
