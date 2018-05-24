@@ -42,7 +42,7 @@ instance OTypeMirror ℝ where
 instance OTypeMirror ℕ where
     fromOObj (ONum n) = if n == fromInteger (floor n) then Just (floor n) else Nothing
     fromOObj _ = Nothing
-    toOObj a = ONum $ fromIntegral a
+    toOObj = ONum . fromIntegral
 
 instance OTypeMirror Bool where
     fromOObj (OBool b) = Just b
