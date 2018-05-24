@@ -13,8 +13,8 @@ module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
 import Prelude(Char, Either, String, Maybe(Just, Nothing), Monad, return, fmap, ($), (>>), Bool(False, True), map)
 
+-- We use parsec to parse.
 import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
-
 import Text.Parsec.Prim (ParsecT)
 
 import Data.Functor.Identity(Identity)
