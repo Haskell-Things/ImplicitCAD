@@ -24,26 +24,26 @@ import qualified Data.ByteString.Lazy as LBS (writeFile)
 -- Import instances of DiscreteApproxable...
 import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox)
 
--- Object formats
+-- Output file formats.
 import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats (svg, hacklabLaserGCode)
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats (stl, binaryStl, jsTHREE)
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats (obj)
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
 import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
 
--- Write an object using the given format function.
+-- Write an object to a file with LazyText IO, using the given format writer function.
 writeObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
-    -> (aprox -> Text)  -- ^ File Format (Function that formats)
+    -> (aprox -> Text)  -- ^ File Format Writer (Function that formats)
     -> FilePath         -- ^ File Name
     -> obj              -- ^ Object to render
     -> IO ()            -- ^ Writing Action!
-writeObject res format filename obj =
+writeObject res formatWriter filename obj =
     let
-        aprox = formatObject res format obj
+        aprox = formatObject res formatWriter obj
     in LT.writeFile filename aprox
 
--- Write an object using the given format writer.
+-- Serialize an object using the given format writer, which takes the filename and writes to it..
 writeObject' :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
     -> (FilePath -> aprox -> IO ())  -- ^ File Format writer
@@ -53,12 +53,13 @@ writeObject' :: (DiscreteAproxable obj aprox)
 writeObject' res formatWriter filename obj =
     formatWriter filename (discreteAprox res obj)
 
+-- Serialize an object using the given format writer. no file target implied.
 formatObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
-    -> (aprox -> Text)  -- ^ File Format (Function that formats)
+    -> (aprox -> Text)  -- ^ File Format Writer (Function that formats)
     -> obj              -- ^ Object to render
     -> Text             -- ^ Resulting lazy ByteString
-formatObject res format = format . discreteAprox res
+formatObject res formatWriter = formatWriter . discreteAprox res
 
 writeSVG :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
 writeSVG res = writeObject res PolylineFormats.svg

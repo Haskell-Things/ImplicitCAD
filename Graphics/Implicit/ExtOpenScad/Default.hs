@@ -5,11 +5,11 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- We'd like to parse openscad code, with some improvements, for backwards compatability.
-
+-- We'd like to parse openscad-ish code, with some improvements, for backwards compatability.
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
+-- be explicit about where we pull things in from.
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)

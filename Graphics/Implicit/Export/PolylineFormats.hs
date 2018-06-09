@@ -18,7 +18,7 @@ import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, mempty, toLazyT
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
 import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
 import Text.Blaze.Internal (stringValue)
-import qualified Text.Blaze.Svg11.Attributes as A
+import qualified Text.Blaze.Svg11.Attributes as A (version, width, height, viewbox, points, stroke, strokeWidth, fill)
 
 import Data.List (sortBy)
 

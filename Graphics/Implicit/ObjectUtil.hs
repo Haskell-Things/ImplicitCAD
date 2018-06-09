@@ -2,10 +2,11 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- create a module that is just wrapping up these functions.
+-- create a module that just wraps the functions in the ObjectUtil directory.
 
 module Graphics.Implicit.ObjectUtil(getImplicit3, getImplicit2, getBox3, getBox2) where
 
+-- as there is no real content here, we need no content from the prelude.
 import Prelude()
 
 import Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3)

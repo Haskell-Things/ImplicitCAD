@@ -15,7 +15,7 @@ import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal)
 
-import qualified Data.Map as Map
+import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
 import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
@@ -33,7 +33,7 @@ modifyVarLookup = modify . (\f (a,b,c,d,e) -> (f a, b, c, d, e))
 lookupVar :: String -> StateC (Maybe OVal)
 lookupVar name = do
     varlookup <- getVarLookup
-    return $ Map.lookup name varlookup
+    return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
 pushVals vals = modify (\(a,b,c,d,e) -> (a, vals ++ b,c,d,e))

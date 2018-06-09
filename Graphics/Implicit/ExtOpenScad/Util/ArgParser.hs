@@ -10,14 +10,19 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
-import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, null, (&&))
+import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, (&&))
 
+import qualified Prelude as Prelude (null)
+    
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
 import Graphics.Implicit.Definitions(ℕ)
 
-import qualified Data.Map as Map
+-- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
+import Data.Map (fromList, Map, lookup, delete)
+import qualified Data.Map as Map (null)
+
 import Data.Maybe (isNothing, fromJust, isJust)
 
 import Control.Arrow(first)
@@ -72,12 +77,12 @@ argMap ::
     -> ArgParser a              -- ^ ArgParser to apply them to
     -> (Maybe a, [String])      -- ^ (result, error messages)
 
-argMap args = argMap2 unnamedArgs (Map.fromList namedArgs) where
+argMap args = argMap2 unnamedArgs (fromList namedArgs) where
     unnamedArgs = map snd $ filter (isNothing . fst) args
     namedArgs   = map (first fromJust) $ filter (isJust . fst) args
 
 
-argMap2 :: [OVal] -> Map.Map String OVal -> ArgParser a -> (Maybe a, [String])
+argMap2 :: [OVal] -> Map String OVal -> ArgParser a -> (Maybe a, [String])
 
 argMap2 uArgs nArgs (APBranch branches) =
     foldl1 merge solutions where
@@ -89,10 +94,10 @@ argMap2 uArgs nArgs (APBranch branches) =
         merge (Nothing, _)  a = a
 
 argMap2 unnamedArgs namedArgs (AP name fallback _ f) =
-    case Map.lookup name namedArgs of
+    case lookup name namedArgs of
         Just a -> argMap2
             unnamedArgs
-            (Map.delete name namedArgs)
+            (delete name namedArgs)
             (f a)
         Nothing -> case unnamedArgs of
             x:xs -> argMap2 xs namedArgs (f x)
@@ -101,7 +106,7 @@ argMap2 unnamedArgs namedArgs (AP name fallback _ f) =
                 Nothing -> (Nothing, ["No value and no default for argument " ++ name])
 
 argMap2 a b (APTerminator val) =
-    (Just val, ["unused arguments" | not (null a && Map.null b)])
+    (Just val, ["unused arguments" | not (Prelude.null a && Map.null b)])
 
 argMap2 a b (APFailIf testval err child) =
     if testval

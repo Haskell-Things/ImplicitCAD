@@ -22,15 +22,17 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, argument, e
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (caseOType, divideObjs, (<||>))
 
+-- note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
 
 import Data.Maybe (isNothing)
 
-import qualified Control.Monad as Monad
+import Control.Monad (mplus)
 
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
 import GHC.Real (RealFrac)
 
+-- The only thing exported here. basically, an array of ... ?
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
@@ -406,16 +408,20 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
 
 
 
-{-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
-    h <- realArgument "h"
-    center <- boolArgumentWithDefault "center" False
-    twist <- realArgumentWithDefault 0.0
-    r <- realArgumentWithDefault "r" 0.0
+{-
+rotateExtrudeStatement :: (String, [OVal] -> ArgParser (IO [OVal]))
+rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
+    -- arguments
+    h :: ℝ <- realArgument "h"
+    center :: Bool <- boolArgumentWithDefault "center" False
+    twist :: ℝ <- realArgumentWithDefault 0.0
+    r :: ℝ <- realArgumentWithDefault "r" 0.0
+
     getAndModUpObj2s suite (\obj -> extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h)
 -}
 
 shell :: (String, [OVal] -> ArgParser (IO [OVal]))
-shell = moduleWithSuite "shell" $ \children-> do
+shell = moduleWithSuite "shell" $ \children -> do
     w :: ℝ <- argument "w"
             `doc` "width of the shell..."
 
@@ -487,7 +493,7 @@ unit = moduleWithSuite "unit" $ \children -> do
 ---------------
 
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
-(<|>) = Monad.mplus
+(<|>) = mplus
 
 moduleWithSuite :: t -> t1 -> (t, t1)
 moduleWithSuite name modArgMapper = (name, modArgMapper)

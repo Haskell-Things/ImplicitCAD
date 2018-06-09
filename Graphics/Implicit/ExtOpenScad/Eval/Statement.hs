@@ -2,6 +2,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- FIXME: why is this required?
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
@@ -25,10 +26,13 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Data.Maybe(fromMaybe)
     
-import qualified Data.Map as Map
+import Data.Map (union, fromList)
+
 import Control.Monad (forM_, forM, mapM_) 
+
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
-import qualified System.FilePath as FilePath
+
+import System.FilePath (takeDirectory)
 
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
@@ -38,7 +42,7 @@ runStatementI (StatementI lineN columnN (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC lineN columnN err
-        (_, Just match) -> modifyVarLookup $ Map.union match
+        (_, Just match) -> modifyVarLookup $ union match
         (_,   Nothing ) -> errorC lineN columnN "pattern match failed in assignment"
 
 runStatementI (StatementI lineN columnN (Echo exprs)) = do
@@ -57,7 +61,7 @@ runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
         (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
-                    modifyVarLookup $ Map.union match
+                    modifyVarLookup $ union match
                     runSuite loopContent
                 Nothing -> return ()
         _ -> return ()
@@ -99,7 +103,7 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
                 _ -> OUndefined
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
-            varlookup' = Map.union (Map.fromList newNameVals) varlookup
+            varlookup' = union (fromList newNameVals) varlookup
             suiteVals  = runSuiteCapture varlookup' path suite
         return suiteVals
 
@@ -129,7 +133,7 @@ runStatementI (StatementI _ _ (Include name injectVals)) = do
     content <- liftIO $ readFile name'
     case parseProgram content of
         Left e -> liftIO $ putStrLn $ "Error parsing " ++ name ++ ":" ++ show e
-        Right sts -> withPathShiftedBy (FilePath.takeDirectory name) $ do
+        Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
             putVals []
             runSuite sts

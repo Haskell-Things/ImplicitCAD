@@ -15,8 +15,8 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR))
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
-import qualified Data.Maybe as Maybe
-import qualified Data.Either as Either
+import Data.Maybe (fromMaybe, isJust)
+import qualified Data.Either as Either (either)
 import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
@@ -125,9 +125,9 @@ getImplicit3 (ExtrudeR r symbObj h) =
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
     let
         obj = getImplicit2 symbObj
-        twist' = Maybe.fromMaybe (const 0) twist
-        scale' = Maybe.fromMaybe (const 1) scale
-        translate' = Maybe.fromMaybe (const (0,0)) translate
+        twist' = fromMaybe (const 0) twist
+        scale' = fromMaybe (const 1) scale
+        translate' = fromMaybe (const (0,0)) translate
         height' (x,y) = case height of
             Left n -> n
             Right f -> f (x,y)
@@ -155,8 +155,8 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         k   = tau / 360
         totalRotation' = totalRotation*k
         obj = getImplicit2 symbObj
-        capped = Maybe.isJust round
-        round' = Maybe.fromMaybe 0 round
+        capped = isJust round
+        round' = fromMaybe 0 round
         translate' :: ℝ -> ℝ2
         translate' = Either.either
                 (\(a,b) θ -> (a*θ/totalRotation', b*θ/totalRotation'))

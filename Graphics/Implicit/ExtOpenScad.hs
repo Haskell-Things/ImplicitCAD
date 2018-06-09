@@ -5,8 +5,7 @@
 -- FIXME: why are these required?
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
--- We'd like to parse openscad code, with some improvements, for backwards compatability.
-
+-- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
 import Prelude(String, Either(Left, Right), IO, ($), fmap)
@@ -18,13 +17,13 @@ import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
-import qualified Text.Parsec.Error as Parsec (ParseError)
-import qualified Control.Monad as Monad (mapM_)
-import qualified Control.Monad.State as State (runStateT)
-import qualified System.Directory as Dir (getCurrentDirectory)
+import Text.Parsec.Error (ParseError)
+import Control.Monad (mapM_)
+import Control.Monad.State (runStateT)
+import System.Directory (getCurrentDirectory)
 
 -- Small wrapper to handle parse errors, etc.
-runOpenscad :: String -> Either Parsec.ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
+runOpenscad :: String -> Either ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
 runOpenscad source =
     let
         initial =  defaultObjects
@@ -36,7 +35,7 @@ runOpenscad source =
         Right sts -> Right
             $ fmap rearrange
             $ (\sts' -> do
-                path <- Dir.getCurrentDirectory
-                State.runStateT sts' (initial, [], path, (), () )
+                path <- getCurrentDirectory
+                runStateT sts' (initial, [], path, (), () )
             )
-            $ Monad.mapM_ runStatementI sts
+            $ mapM_ runStatementI sts
