@@ -1,22 +1,23 @@
-name:                implicit
-version:             0.2.0
-cabal-version:       >= 1.8
-synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
-description:         A math-inspired programmatic CAD library in haskell.
+Name:                implicit
+Version:             0.2.0
+Cabal-version:       >= 1.8
+Tested-with:         GHC >= 8.2
+Build-type:          Simple
+Synopsis:            A Math-inspired programmatic 2&3D CAD system: CSG, bevels, and shells; gcode export..
+Description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
                      shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
-license:             AGPL-3
-license-file:        LICENSE
-author:              Christopher Olah
-maintainer:          Julia Longtin <julial@turinglace.com>
-homepage:            http://kalli1.faikvm.com/ImplicitCAD/Stable
-build-type:          Simple
-category:            Graphics
+License:             AGPL-3
+License-file:        LICENSE
+Author:              Julia Longtin <julial@turinglace.com>
+Maintainer:          Julia Longtin <julial@turinglace.com>
+Homepage:            http://implicitcad.org/
+Category:            Graphics
 
-library
+Library
 
-    build-depends:
+    Build-depends:
         base >= 3 && < 5,
         filepath,
         directory,
@@ -43,17 +44,17 @@ library
         transformers,
         hspec
 
-    ghc-options:
+    Ghc-options:
         -Wall
--- for debugging only.
+        -optc-O3
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
+        -- for debugging.
         -Wextra
         -Weverything
-        -optc-O3
--- cannot use, we use infinity in some calculations.
---        -optc-ffast-math
 
-    extensions:
-    exposed-modules:
+    Extensions:
+    Exposed-modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions
         Graphics.Implicit.Primitives
@@ -61,21 +62,19 @@ library
         Graphics.Implicit.MathUtil
         Graphics.Implicit.ExtOpenScad
         Graphics.Implicit.ObjectUtil
-        -- Note that these modules are only temporarily exposed, to
-        -- allow coding the unit tests against the current parser
-        -- interface.
+        -- these modules are exposed for the unit tests against the parser interface.
         Graphics.Implicit.ExtOpenScad.Parser.Statement
         Graphics.Implicit.ExtOpenScad.Parser.Expr
         Graphics.Implicit.ExtOpenScad.Definitions
-        -- these are exported for Benchmark.
+        -- these are exposed for Benchmark.
         Graphics.Implicit.Export.SymbolicObj2
         Graphics.Implicit.Export.SymbolicObj3
-        -- these are exported for implicitsnap.
+        -- these are exposed for implicitsnap.
         Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.DiscreteAproxable
 
-    other-modules:
+    Other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
         Graphics.Implicit.ObjectUtil.GetBox3
         Graphics.Implicit.ObjectUtil.GetImplicit2
@@ -107,11 +106,11 @@ library
         Graphics.Implicit.Export.Render.TesselateLoops
         Graphics.Implicit.Export.Render.HandlePolylines
 
-executable extopenscad
+Executable extopenscad
 
-   main-is: extopenscad.hs
-   hs-source-dirs: programs
-   build-depends:
+   Main-is: extopenscad.hs
+   Hs-source-dirs: programs
+   Build-depends:
                  base,
                  containers,
                  vector-space,
@@ -119,15 +118,16 @@ executable extopenscad
                  parallel,
                  optparse-applicative >= 0.10.0,
                  implicit
-   ghc-options:
+   Ghc-options:
         -threaded
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
         -rtsopts
         -Wall
-        -Weverything
         -optc-O3
-        -optc-ffast-math
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
+        -- for debugging.
+        -Wextra
+        -Weverything
 
 -- FIXME: does not compile.
 --Executable docgen
@@ -161,11 +161,11 @@ executable extopenscad
 --        -rtsopts
 --        -funfolding-use-threshold=16
 --       -fspec-constr-count=10
-               
-executable implicitsnap
-   main-is: implicitsnap.hs
-   hs-source-dirs: programs
-   build-depends:
+
+Executable implicitsnap
+   Main-is: implicitsnap.hs
+   Hs-source-dirs: programs
+   Build-depends:
                  base,
                  vector-space,
                  text,
@@ -188,18 +188,21 @@ executable implicitsnap
                  silently,
                  transformers,
                  implicit
-   ghc-options:
+   Ghc-options:
         -threaded
         -rtsopts
         -Wall
-        -Weverything
         -optc-O3
-        -optc-ffast-math
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
+        -- for debugging.
+        -Wextra
+        -Weverything
 
-executable Benchmark
-   main-is: Benchmark.hs
-   hs-source-dirs: programs
-   build-depends:
+Executable Benchmark
+   Main-is: Benchmark.hs
+   Hs-source-dirs: programs
+   Build-depends:
                  base,
                  text,
                  JuicyPixels,
@@ -219,34 +222,44 @@ executable Benchmark
                  criterion,
                  transformers,
                  implicit
-   ghc-options:
+   Ghc-options:
         -threaded
         -rtsopts
         -Wall
-        -Weverything
         -optc-O3
-        -optc-ffast-math
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
+-- for debugging.
+        -Wextra
+        -Weverything
 
-test-suite test-implicit
-    type: exitcode-stdio-1.0
-    build-depends: base, mtl, containers, hspec, parsec, implicit
-    main-is: Main.hs
-    hs-source-dirs: tests
-    ghc-options:
+Test-suite test-implicit
+    Type: exitcode-stdio-1.0
+    Build-depends: base, mtl, containers, hspec, parsec, implicit
+    Main-is: Main.hs
+    Hs-source-dirs: tests
+    Ghc-options:
         -Wall
-        -Weverything
         -optc-O3
+        -- for debugging.
+        -Wextra
+        -Weverything
 
-benchmark parser-bench
-    type: exitcode-stdio-1.0
-    build-depends: base, criterion, random, parsec, implicit
-    main-is: ParserBench.hs
-    ghc-options:
+Benchmark parser-bench
+    Type: exitcode-stdio-1.0
+    Build-depends: base, criterion, random, parsec, implicit
+    Main-is: ParserBench.hs
+    Ghc-options:
+        -threaded
+        -rtsopts
         -Wall
-        -Weverything
         -optc-O3
-        -optc-ffast-math
+        -- see GHC manual 8.2.1 section 6.5.1.
+        -feager-blackholing
+        -- for debugging.
+        -Wextra
+        -Weverything
 
-source-repository head
-    type:            git
-    location:        https://github.com/colah/ImplicitCAD.git
+Source-repository head
+    Type:            git
+    Location:        https://github.com/colah/ImplicitCAD.git
