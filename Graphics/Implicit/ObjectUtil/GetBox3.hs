@@ -10,7 +10,7 @@ module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), Maybe(Nothing, Just), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, sqrt, (>), (&&), head, (*), (<), abs, either, error, const, otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), (⋯*))
+import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*))
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
 import Data.Maybe (fromMaybe)
@@ -81,10 +81,17 @@ getBox3 (Scale3 s symbObj) =
         (sbx,sby,sbz) = s ⋯* b
     in
         ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
-getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
-    where
-        ((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-        d = (sqrt 3 *) . maximum $ map abs [x1, x2, y1, y2, z1, z2]
+getBox3 (Rotate3 (a, b, c) symbObj) =
+    let
+        ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
+        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ RectR 0 (v1, w1) (v2, w2))
+        ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
+        ((z1'', x1'), (z2'', x2')) = rotate z1' x1 z2' x2 b
+        ((x1'', y1''), (x2'', y2'')) = rotate x1' y1' x2' y2' c
+        (xs, ys, zs) = ([x1'', x2''], [y1'', y2''], [z1'', z2''])
+    in
+        ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
+
 getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =
