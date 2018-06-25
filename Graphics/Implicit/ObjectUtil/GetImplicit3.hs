@@ -88,7 +88,7 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
         rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
         rotateXY θ obj' (x,y,z) = obj' ( x*cos θ + y*sin θ, y*cos θ - x*sin θ, z)
     in
-        rotateYZ yz . rotateZX zx $ rotateXY xy obj
+        rotateXY xy $ rotateZX zx  $ rotateYZ yz obj
 getImplicit3 (Rotate3V θ axis symbObj) =
     let
         axis' = normalized axis
