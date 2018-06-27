@@ -130,37 +130,40 @@ Executable extopenscad
         -Weverything
 
 -- FIXME: does not compile.
---Executable docgen
+Executable docgen
 
---   main-is: docgen.hs
---   build-depends:
---                 base,
---                 vector-space,
---                 text,
---                 JuicyPixels,
---                 blaze-builder,
---                 blaze-svg,
---                 blaze-markup,
---                 parallel,
---                 deepseq,
---                 vector-space,
---                 monads-tf,
---                 bytestring,
---                 storable-endian,
---                 parsec,
---                 directory,
---                 containers,
---                 filepath,
---                 snap-core,
---                 snap-server,
---                 silently,
---                 transformers
---   ghc-options:
---        -optc-O3
---        -threaded
---        -rtsopts
---        -funfolding-use-threshold=16
---       -fspec-constr-count=10
+   main-is: docgen.hs
+   build-depends:
+                 base,
+                 vector-space,
+                 text,
+                 JuicyPixels,
+                 blaze-builder,
+                 blaze-svg,
+                 blaze-markup,
+                 parallel,
+                 deepseq,
+                 vector-space,
+                 monads-tf,
+                 bytestring,
+                 storable-endian,
+                 parsec,
+                 directory,
+                 containers,
+                 filepath,
+                 snap-core,
+                 snap-server,
+                 silently,
+                 transformers
+   ghc-options:
+               -Wall
+               -Weverything
+               -Wextra
+        -optc-O3
+        -threaded
+        -rtsopts
+        -funfolding-use-threshold=16
+        -fspec-constr-count=10
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
@@ -229,7 +232,7 @@ Executable Benchmark
         -optc-O3
         -- see GHC manual 8.2.1 section 6.5.1.
         -feager-blackholing
--- for debugging.
+        -- for debugging.
         -Wextra
         -Weverything
 

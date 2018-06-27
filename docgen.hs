@@ -6,8 +6,10 @@
 -- FIXME: this doesn't work. looks like it broke badly when ArgParser became a Monad.
 
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser
+-- import Graphics.Implicit.ExtOpenScad.Util.ArgParser()
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch))
 
+import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad
 
 isExample (ExampleDoc _ ) = True
@@ -67,12 +69,14 @@ getArgParserDocs ::
     (ArgParser a)    -- ^ ArgParser
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
-getArgParserDocs (ArgParser name fallback doc fnext) =
+getArgParserDocs (AP name fallback doc fnext) =
     do
         otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
         return $ (ArgumentDoc name (fmap show fallback) doc):otherDocs
 
-getArgParserDocs (ArgParserExample str child) =
+getArgParserDocs (APFailIf _ _ child) = getArgParserDocs child
+
+getArgParserDocs (APExample str child) =
     do
         childResults <- getArgParserDocs child
         return $ (ExampleDoc str) : childResults
@@ -80,9 +84,9 @@ getArgParserDocs (ArgParserExample str child) =
 -- We try to look at as little as possible, to avoid the risk of triggering an error.
 -- Yay laziness!
 
-getArgParserDocs (ArgParserTest   _ _ child ) = getArgParserDocs child
-getArgParserDocs (ArgParserFailIf _ _ child ) = getArgParserDocs child
+getArgParserDocs (APTest   _ _ child) = getArgParserDocs child
 
 -- To look at this one would almost certainly be death (exception)
-getArgParserDocs (ArgParserTerminator _ ) = return []
+getArgParserDocs (APTerminator _) = return []
 
+getArgParserDocs (APBranch children) = return []-- mapM getArgParserDocs children
