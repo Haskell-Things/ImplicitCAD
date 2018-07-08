@@ -32,7 +32,7 @@ import Control.Monad (mplus)
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
 import GHC.Real (RealFrac)
 
--- The only thing exported here. basically, an array of ... ?
+-- The only thing exported here. basically, a list of ... ?
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]) )]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
@@ -61,7 +61,12 @@ cube = moduleWithoutSuite "cube" $ do
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
 
-    -- arguments
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
+
+    -- arguments (two forms)
     ((x1,x2), (y1,y2), (z1,z2)) <-
         do
             x :: Either ℝ ℝ2 <- argument "x"
@@ -88,10 +93,6 @@ cube = moduleWithoutSuite "cube" $ do
             let (x,y, z) = either (\w -> (w,w,w)) id size
             return (toInterval center x, toInterval center y, toInterval center z)
 
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
-
     -- Tests
     test "cube(4);"
         `eulerCharacteristic` 2
@@ -108,7 +109,12 @@ square = moduleWithoutSuite "square" $ do
     example "square(size = [3,4], center = true, r = 0.5);"
     example "square(4);"
 
-    -- arguments
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
+
+    -- arguments (two forms)
     ((x1,x2), (y1,y2)) <-
         do
             x :: Either ℝ ℝ2 <- argument "x"
@@ -131,10 +137,6 @@ square = moduleWithoutSuite "square" $ do
                 `defaultTo` False
             let (x,y) = either (\w -> (w,w)) id size
             return (toInterval center x, toInterval center y)
-
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
 
     -- Tests
     test "square(2);"
@@ -427,7 +429,7 @@ shell = moduleWithSuite "shell" $ \children -> do
 
     return $ return $ objMap (Prim.shell w) (Prim.shell w) children
 
--- Not a perenant solution! Breaks if can't pack.
+-- Not a permanent solution! Breaks if can't pack.
 pack :: (String, [OVal] -> ArgParser (IO [OVal]))
 pack = moduleWithSuite "pack" $ \children -> do
 
