@@ -76,8 +76,8 @@ instance Alternative ArgParser where
 
 type Symbol = String
 
-data Pattern = Name  Symbol
-             | ListP  [Pattern]
+data Pattern = Name Symbol
+             | ListP [Pattern]
              | Wild
              | Symbol :@ Pattern
     deriving (Show, Eq)
