@@ -28,15 +28,15 @@ main = do
                 putStrLn (map (const '-') moduleName)
                 putStrLn ""
                 if not $ null examples then putStrLn "**Examples:**\n" else return ()
-                forM_ examples $ \(ExampleDoc example) -> do
+                forM_ examples $ \(ExampleDoc example) ->
                         putStrLn $ "   * `" ++ example ++ "`"
                 putStrLn ""
                 putStrLn "**Arguments:**\n"
                 forM_ arguments $ \(ArgumentDoc name posfallback description) ->
                         case (posfallback, description) of
-                                (Nothing, "") -> do
+                                (Nothing, "") ->
                                         putStrLn $ "   * `" ++ name  ++ "`"
-                                (Just fallback, "") -> do
+                                (Just fallback, "") ->
                                         putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
                                 (Nothing, _) -> do
                                         putStrLn $ "   * `" ++ name ++ "`"
