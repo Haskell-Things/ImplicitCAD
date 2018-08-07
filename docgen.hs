@@ -1,7 +1,9 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU GPL, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances, ScopedTypeVariables  #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances,
+  FlexibleContexts, TypeSynonymInstances, UndecidableInstances,
+  ScopedTypeVariables #-}
 
 -- FIXME: this doesn't work. looks like it broke badly when ArgParser became a Monad.
 
