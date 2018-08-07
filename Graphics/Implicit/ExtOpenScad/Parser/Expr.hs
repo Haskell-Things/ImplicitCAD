@@ -32,14 +32,14 @@ literal = ("literal" ?:) $
             a <- many1 digit
             _ <- char 'e'
             b <- many1 digit
-            return . LitE $ ONum (((read a) * (10 ** (read b))) :: ℝ)
+            return . LitE $ ONum ((read a * (10 ** read b)) :: ℝ)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
             b <- many digit
             _ <- char 'e'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** (read c))) :: ℝ)
+            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** read c)) :: ℝ)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -47,7 +47,7 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '+'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** (read c))) :: ℝ)
+            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** read c)) :: ℝ)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -55,13 +55,13 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '-'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) / (10 ** (read c))) :: ℝ)
+            return . LitE $ ONum ((read (a ++ "." ++ b) / (10 ** read c)) :: ℝ)
         *<|>  do
             a <- many1 digit
             _ <- char 'e'
             _ <- char '-'
             b <- many1 digit
-            return . LitE $ ONum (((read a) / (10 ** (read b))) :: ℝ)
+            return . LitE $ ONum ((read a / (10 ** read b)) :: ℝ)
         *<|>  do
             a <- many1 digit
             _ <- char '.'

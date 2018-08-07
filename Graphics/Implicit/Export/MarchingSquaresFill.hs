@@ -30,7 +30,7 @@ getContourMesh p1 p2 res obj =
         -- How many steps will we take on each axis?
         nx :: ℕ
         ny :: ℕ
-        n@(nx,ny) = (ceiling) `both` (d ⋯/ res)
+        n@(nx,ny) = ceiling `both` (d ⋯/ res)
 
         -- a helper for calculating a position inside of the space.
         gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2

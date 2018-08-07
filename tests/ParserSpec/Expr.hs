@@ -126,4 +126,4 @@ exprSpec = do
     specify "multiple" $
       "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
     specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> ((index [(Var "foo" :$ [Var "x"]), num 0]) :$ [Var "y"])
+      "foo(x)[0](y)" --> (index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"])
