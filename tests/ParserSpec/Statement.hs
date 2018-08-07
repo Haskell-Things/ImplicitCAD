@@ -66,8 +66,8 @@ emptyFileIssue _ = pendingWith "parser should probably allow empty files"
 
 statementSpec :: Spec
 statementSpec = do
-  describe "assignment" $ assignmentSpec
-  describe "if" $ ifSpec
+  describe "assignment" assignmentSpec
+  describe "if" ifSpec
   describe "empty file" $
     it "returns an empty list" $
       emptyFileIssue $ "" --> []
