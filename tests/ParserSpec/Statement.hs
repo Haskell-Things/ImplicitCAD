@@ -39,7 +39,7 @@ call name args stmts = StatementI 1 (ModuleCall name args stmts)
 -- test a simple if block.
 ifSpec :: Spec
 ifSpec = it "parses" $
-    "if (true) { a(); } else { b(); }" --> 
+    "if (true) { a(); } else { b(); }" -->
       single ( If (bool True) [call "a" [] []] [call "b" [] []])
 
 -- test assignments.
@@ -71,9 +71,9 @@ statementSpec = do
   describe "empty file" $
     it "returns an empty list" $
       emptyFileIssue $ "" --> []
-  describe "line comment" $ 
+  describe "line comment" $
     it "parses as empty" $ emptyFileIssue $ "// foish bar\n" --> []
-  describe "module call" $ 
+  describe "module call" $
     it "parses" $  "foo();" --> single (ModuleCall "foo" [] [])
   describe "difference of two cylinders" $
     it "parses correctly" $

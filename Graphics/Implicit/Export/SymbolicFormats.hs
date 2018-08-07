@@ -17,10 +17,10 @@ import Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
 
 import Data.List (intersperse)
 
-scad2 :: ℝ -> SymbolicObj2 -> Text 
+scad2 :: ℝ -> SymbolicObj2 -> Text
 scad2 res obj = toLazyText $ runReader (buildS2 obj) res
 
-scad3 :: ℝ -> SymbolicObj3 -> Text 
+scad3 :: ℝ -> SymbolicObj3 -> Text
 scad3 res obj = toLazyText $ runReader (buildS3 obj) res
 
 -- used by rotate2 and rotate3
@@ -93,7 +93,7 @@ buildS3 (ExtrudeRM r (Just twist) Nothing Nothing obj (Left height)) | r == 0 = 
              call "rotate" ["0","0", bf $ twist h] [
                         callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
                                    buildS2 obj
-                                  ]                         
+                                  ]
                        ] |  h <- init [0, res .. height]
             ]
 

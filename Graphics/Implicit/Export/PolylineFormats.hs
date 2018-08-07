@@ -30,7 +30,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       (xmin, xmax, ymin, ymax) = (minimum xs - margin, maximum xs + margin, minimum ys - margin, maximum ys + margin)
            where margin = strokeWidth / 2
                  (xs,ys) = unzip (concat plines)
-      
+
       svg11 = docTypeSvg ! A.version "1.1"
                          ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
                          ! A.height (stringValue $ show (ymax-ymin) ++ "mm")
@@ -38,11 +38,11 @@ svg plines = renderSvg . svg11 . svg' $ plines
 
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.
-      svg' [] = mempty 
+      svg' [] = mempty
       -- When we have a known point, we can compute said transformation:
       svg' polylines = thinBlueGroup $ mapM_ poly polylines
 
-      poly line = polyline ! A.points pointList 
+      poly line = polyline ! A.points pointList
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
@@ -87,4 +87,4 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
                                          ,mconcat [ "G01 " <> gcodeXY point <> "\n" | point <- others]
                                          ,"M63 P0 (laser off)\n\n"
                                          ]
-      interpretPolyline [] = mempty 
+      interpretPolyline [] = mempty

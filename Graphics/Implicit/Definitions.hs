@@ -203,7 +203,7 @@ data SymbolicObj2 =
     deriving Show
 
 -- | A symbolic 3D format!
-data SymbolicObj3 = 
+data SymbolicObj3 =
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3
     | Sphere ℝ

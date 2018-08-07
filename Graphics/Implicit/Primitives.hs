@@ -138,12 +138,12 @@ polygonR = PolygonR
 -- $ Shared Operations
 
 class Object obj vec | obj -> vec where
-    
+
     -- | Complement an Object
     complement ::
         obj     -- ^ Object to complement
         -> obj  -- ^ Result
-    
+
     -- | Rounded union
     unionR ::
         ℝ        -- ^ The radius of rounding
@@ -161,7 +161,7 @@ class Object obj vec | obj -> vec where
         ℝ        -- ^ The radius of rounding
         -> [obj] -- ^ Objects to intersect
         -> obj   -- ^ Resulting object
-    
+
     -- | Translate an object by a vector of appropriate dimension.
     translate ::
         vec      -- ^ Vector to translate by (Also: a is a vector, blah, blah)
@@ -200,7 +200,7 @@ class Object obj vec | obj -> vec where
         (vec -> ℝ)     -- ^ Implicit function
         -> (vec, vec)  -- ^ Bounding box
         -> obj         -- ^ Resulting object
-    
+
 
 instance Object SymbolicObj2 ℝ2 where
     translate   = Translate2

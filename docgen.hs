@@ -17,34 +17,34 @@ isArgument (ArgumentDoc _ _ _) = True
 isArgument _ = False
 
 main = do
-	let names = map fst primitives
-	docs <- sequence $ map (getArgParserDocs.($ []).snd) primitives
+        let names = map fst primitives
+        docs <- sequence $ map (getArgParserDocs.($ []).snd) primitives
 
-	forM_ (zip names docs) $ \(moduleName, moduleDocList) -> do
-		let
-			examples = filter isExample moduleDocList
-			arguments = filter isArgument moduleDocList
-		putStrLn moduleName
-		putStrLn (map (const '-') moduleName)
-		putStrLn ""
-		if not $ null examples then putStrLn "**Examples:**\n" else return ()
-		forM_ examples $ \(ExampleDoc example) -> do
-			putStrLn $ "   * `" ++ example ++ "`"
-		putStrLn ""
-		putStrLn "**Arguments:**\n"
-		forM_ arguments $ \(ArgumentDoc name posfallback description) ->
-			case (posfallback, description) of
-				(Nothing, "") -> do
-					putStrLn $ "   * `" ++ name  ++ "`"
-				(Just fallback, "") -> do
-					putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
-				(Nothing, _) -> do
-					putStrLn $ "   * `" ++ name ++ "`"
-					putStrLn $ "     " ++ description
-				(Just fallback, _) -> do
-					putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
-					putStrLn $ "     " ++ description
-		putStrLn ""
+        forM_ (zip names docs) $ \(moduleName, moduleDocList) -> do
+                let
+                        examples = filter isExample moduleDocList
+                        arguments = filter isArgument moduleDocList
+                putStrLn moduleName
+                putStrLn (map (const '-') moduleName)
+                putStrLn ""
+                if not $ null examples then putStrLn "**Examples:**\n" else return ()
+                forM_ examples $ \(ExampleDoc example) -> do
+                        putStrLn $ "   * `" ++ example ++ "`"
+                putStrLn ""
+                putStrLn "**Arguments:**\n"
+                forM_ arguments $ \(ArgumentDoc name posfallback description) ->
+                        case (posfallback, description) of
+                                (Nothing, "") -> do
+                                        putStrLn $ "   * `" ++ name  ++ "`"
+                                (Just fallback, "") -> do
+                                        putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
+                                (Nothing, _) -> do
+                                        putStrLn $ "   * `" ++ name ++ "`"
+                                        putStrLn $ "     " ++ description
+                                (Just fallback, _) -> do
+                                        putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
+                                        putStrLn $ "     " ++ description
+                putStrLn ""
 
 -- | We need a format to extract documentation into
 data Doc = Doc String [DocPart]

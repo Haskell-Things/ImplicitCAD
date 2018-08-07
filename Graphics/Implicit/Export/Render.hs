@@ -189,7 +189,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 
     in
       -- (5) merge squares, etc
-      cleanupTris . mergedSquareTris . concat . concat $ concat sqTris 
+      cleanupTris . mergedSquareTris . concat . concat $ concat sqTris
 
 -- Removes triangles that are empty, when converting their positions to Float resolution.
 -- NOTE: this will need to be disabled for AMF, and other triangle formats that can handle Double.

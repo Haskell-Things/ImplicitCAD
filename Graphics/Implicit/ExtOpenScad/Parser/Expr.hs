@@ -13,7 +13,7 @@ import Graphics.Implicit.Definitions (ℝ)
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector) 
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString)
 
