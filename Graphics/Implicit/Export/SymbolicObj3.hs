@@ -197,13 +197,13 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
         map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
 -}
 
-symbolicGetMesh res inputObj@(UnionR3 r objs) = 
+symbolicGetMesh res inputObj@(UnionR3 r objs) =
     let
         boxes = map getBox3 objs
         boxedObjs = zip boxes objs
-        
+
         sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
-        sepFree ((box,obj):others) = 
+        sepFree ((box,obj):others) =
             if length (filter (box3sWithin r box) boxes) > 1
             then first ((:) obj) $ sepFree others
             else second ((:) obj) $ sepFree others
@@ -212,7 +212,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
         (dependants, independents) = sepFree boxedObjs
     in if null independents
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
-        (obj, (a,b)) -> getMesh a b res obj 
+        (obj, (a,b)) -> getMesh a b res obj
     else if null dependants
     then concatMap (symbolicGetMesh res) independents
     else concatMap (symbolicGetMesh res) independents

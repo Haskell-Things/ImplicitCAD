@@ -108,7 +108,7 @@ getDist2 p (Circle r) =  magnitude p + r
 getDist2 p (PolygonR r points) = r + maximum [magnitude (p ^-^ p') | p' <- points]
 -- Transform implementations
 getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
-getDist2 p (DifferenceR2 r objs) = r + (getDist2 p $ head objs)
+getDist2 p (DifferenceR2 r objs) = r + getDist2 p (head objs)
 getDist2 p (IntersectR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
 -- FIXME: isn't this wrong? should we be returning distance inside of the object?
 getDist2 _ (Complement2 _) = 1/0

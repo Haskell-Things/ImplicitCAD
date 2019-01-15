@@ -189,7 +189,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 
     in
       -- (5) merge squares, etc
-      cleanupTris . mergedSquareTris . concat . concat $ concat sqTris 
+      cleanupTris . mergedSquareTris . concat . concat $ concat sqTris
 
 -- Removes triangles that are empty, when converting their positions to Float resolution.
 -- NOTE: this will need to be disabled for AMF, and other triangle formats that can handle Double.
@@ -220,14 +220,14 @@ getContour p1@(x1, y1) p2 res obj =
         -- How many steps will we take on each axis?
         nx :: ℕ
         ny :: ℕ
-        (nx,ny) = (ceiling) `both` (d ⋯/ (res,res))
+        (nx,ny) = ceiling `both` (d ⋯/ (res,res))
 
         -- How big are the steps?
         (rx,ry) = d ⋯/ (fromIntegral `both` (nx,ny))
 
         -- the points inside of the region.
-        pYs = [ y1 + ry*(fromIntegral p) | p <- [0.. ny] ]
-        pXs = [ x1 + rx*(fromIntegral p) | p <- [0.. nx] ]
+        pYs = [ y1 + ry*fromIntegral p | p <- [0.. ny] ]
+        pXs = [ x1 + rx*fromIntegral p | p <- [0.. nx] ]
 
         par2DList :: forall t. NFData t => ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[t]]
         par2DList lenx leny f =

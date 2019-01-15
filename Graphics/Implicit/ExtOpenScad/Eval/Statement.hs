@@ -24,9 +24,8 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Data.Maybe(fromMaybe)
-    
 import qualified Data.Map as Map
-import Control.Monad (forM_, forM, mapM_) 
+import Control.Monad (forM_, forM, mapM_)
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 import qualified System.FilePath as FilePath
 
