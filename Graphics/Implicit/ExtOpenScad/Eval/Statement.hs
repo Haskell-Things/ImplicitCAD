@@ -25,10 +25,10 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Data.Maybe(fromMaybe)
-    
+
 import Data.Map (union, fromList)
 
-import Control.Monad (forM_, forM, mapM_) 
+import Control.Monad (forM_, forM, mapM_)
 
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 

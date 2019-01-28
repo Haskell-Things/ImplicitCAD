@@ -97,7 +97,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
                 f :: ℕ -> ℕ -> ℕ -> Builder
-                f posa posb posc = 
+                f posa posb posc =
                         "f(" <> buildℕ posa <> "," <> buildℕ posb <> "," <> buildℕ posc <> ");"
                 verts = do
                         -- extract the vertices for each triangle

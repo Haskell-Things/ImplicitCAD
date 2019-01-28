@@ -18,8 +18,8 @@ import Graphics.Implicit.ObjectUtil (getImplicit3, getImplicit2, getBox3, getBox
 
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
-import Graphics.Implicit.Export.Util (normTriangle)    
-    
+import Graphics.Implicit.Export.Util (normTriangle)
+
 import Graphics.Implicit.Export.RayTrace (dynamicImage, Color, average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay)
 
 import Codec.Picture (DynamicImage, generateImage, PixelRGBA8(PixelRGBA8))
@@ -56,21 +56,21 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             lights = [Light (x1-deviation*(1.5::ℝ), y1 - (0.4::ℝ)*(y2-y1), avZ) ((0.03::ℝ)*deviation) ]
             scene = Scene obj (PixelRGBA8 200 200 230 255) lights (PixelRGBA8 255 255 255 0)
             pixelRenderer :: Fastℕ -> Fastℕ -> Color
-            pixelRenderer a b = renderScreen 
+            pixelRenderer a b = renderScreen
                 ((fromIntegral a :: ℝ)/w - (0.5::ℝ)) ((fromIntegral b :: ℝ)/h - (0.5 ::ℝ))
             renderScreen :: ℝ -> ℝ -> Color
             renderScreen a b =
                     average [
-                        traceRay 
+                        traceRay
                             (cameraRay camera ((a,b) ^+^ ( 0.25/w, 0.25/h)))
                             2 box scene,
-                        traceRay 
+                        traceRay
                             (cameraRay camera ((a,b) ^+^ (-0.25/w, 0.25/h)))
                             0.5 box scene,
-                        traceRay 
-                            (cameraRay camera ((a,b) ^+^ ( 0.25/w,-0.25/h)))
+                        traceRay
+                            (cameraRay camera ((a,b) ^+^ (0.25/w, -0.25/h)))
                             0.5 box scene,
-                        traceRay 
+                        traceRay
                             (cameraRay camera ((a,b) ^+^ (-0.25/w,-0.25/h)))
                             0.5 box scene
                         ]
@@ -99,7 +99,3 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
                         objColor $ xy (a'-s) (b'-s)]
             objColor p = if obj p < 0 then PixelRGBA8 150 150 160 255 else PixelRGBA8 255 255 255 0
 
-
-
-
-                            

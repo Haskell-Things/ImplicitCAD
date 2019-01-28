@@ -6,4 +6,4 @@ out = union [
        translate (40,40) (circle 30) ]
 
 main = writeSVG 2 "example11.svg" out
-             
+

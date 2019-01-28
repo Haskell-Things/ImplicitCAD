@@ -27,7 +27,7 @@ module Graphics.Implicit.Export.TextBuilderUtils (
 
 import Prelude (Maybe(Nothing, Just), ($))
 
-import Graphics.Implicit.Definitions(Fastℕ)
+import Graphics.Implicit.Definitions (Fastℕ, ℝ, ℕ)
 import Data.Text.Lazy (Text, pack)
 -- We manually redefine this operator to avoid a dependency on base >= 4.5
 -- This will become unnecessary later.
@@ -37,8 +37,6 @@ import Data.Text.Internal.Lazy (defaultChunkSize)
 import Data.Text.Lazy.Builder (Builder, toLazyTextWith, fromLazyText)
 import Data.Text.Lazy.Builder.RealFloat (formatRealFloat, FPFormat(Exponent, Fixed))
 import Data.Text.Lazy.Builder.Int (decimal)
-
-import Graphics.Implicit.Definitions (ℝ, ℕ)
 
 -- The chunk size for toLazyText is very small (128 bytes), so we export
 -- a version with a much larger size (~16 K)

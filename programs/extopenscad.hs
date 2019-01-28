@@ -242,6 +242,6 @@ main = execParser opts >>= run
     where
         opts= info (helper <*> extOpenScadOpts)
               ( fullDesc
-              <> progDesc "ImplicitCAD: Extended OpenSCAD interpreter." 
+              <> progDesc "ImplicitCAD: Extended OpenSCAD interpreter."
               <> header "extopenscad - Extended OpenSCAD"
               )

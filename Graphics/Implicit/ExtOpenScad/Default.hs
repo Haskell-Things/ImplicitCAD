@@ -75,7 +75,6 @@ defaultFunctionsSpecial =
         ("map", toOObj $ flip
             (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
-        
     ]
 
 defaultModules :: [(String, OVal)]

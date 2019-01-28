@@ -129,7 +129,6 @@ Executable extopenscad
         -Wextra
         -Weverything
 
--- FIXME: does not compile.
 Executable docgen
 
    main-is: docgen.hs

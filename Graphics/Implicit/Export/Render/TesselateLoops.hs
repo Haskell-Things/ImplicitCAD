@@ -15,7 +15,7 @@ import Graphics.Implicit.Export.Util (centroid)
 import Data.VectorSpace (normalized, (^-^), (^+^), magnitude, (^/), (^*))
 
 import Data.List (genericLength)
-    
+
 import Data.Cross (cross3)
 
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
