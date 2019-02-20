@@ -73,6 +73,8 @@ Library
         Graphics.Implicit.Export.TriangleMeshFormats
         Graphics.Implicit.Export.PolylineFormats
         Graphics.Implicit.Export.DiscreteAproxable
+        -- These are exposed for docgen.
+        Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
         Graphics.Implicit.ObjectUtil.GetBox2
@@ -81,7 +83,6 @@ Library
         Graphics.Implicit.ObjectUtil.GetImplicit3
         Graphics.Implicit.ExtOpenScad.Default
         Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Primitives
         Graphics.Implicit.ExtOpenScad.Eval.Statement
         Graphics.Implicit.ExtOpenScad.Eval.Expr
         Graphics.Implicit.ExtOpenScad.Util.StateC
@@ -154,7 +155,8 @@ Executable docgen
                  snap-core,
                  snap-server,
                  silently,
-                 transformers
+                 transformers,
+                 implicit
    ghc-options:
                -Wall
                -Weverything
