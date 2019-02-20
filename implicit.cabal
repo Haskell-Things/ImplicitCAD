@@ -132,6 +132,7 @@ Executable extopenscad
 Executable docgen
 
    main-is: docgen.hs
+   Hs-source-dirs: programs
    build-depends:
                  base,
                  vector-space,
