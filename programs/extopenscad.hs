@@ -14,7 +14,7 @@
 import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, Ord, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
-import Graphics.Implicit (runOpenscad, writeSVG, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
+import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -71,7 +71,8 @@ data OutputFormat
     | GCode
     | STL
     | OBJ
---  | AMF
+--  | 3MF
+    | DXF
     deriving (Show, Eq, Ord)
 
 -- A list mapping file extensions to output formats.
@@ -84,7 +85,8 @@ formatExtensions =
     , ("gcode", GCode)
     , ("stl", STL)
     , ("obj", OBJ)
---  , ("amf", AMF)
+--  , ("3mf", 3MF)
+    , ("dxf", DXF)
     ]
 
 -- Lookup an output format for a given output file. Throw an error if one cannot be found.
@@ -185,6 +187,7 @@ export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
 export2 posFmt res output obj =
     case posFmt of
         Just SVG   -> writeSVG res output obj
+        Just DXF   -> writeDXF2 res output obj
         Just SCAD  -> writeSCAD2 res output obj
         Just PNG   -> writePNG2 res output obj
         Just GCode -> writeGCodeHacklabLaser res output obj

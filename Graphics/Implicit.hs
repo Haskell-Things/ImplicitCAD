@@ -38,6 +38,7 @@ module Graphics.Implicit(
     pack2,
     -- Export
     writeSVG,
+    writeDXF2,
     writeSTL,
     writeBinSTL,
     writeOBJ,
@@ -62,7 +63,7 @@ import Graphics.Implicit.Primitives (translate, scale, complement, union, inters
 import Graphics.Implicit.ExtOpenScad (runOpenscad)
 
 -- Functions for writing files based on the result of operations on primitives.
-import qualified Graphics.Implicit.Export as Export (writeSVG, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
+import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
 
 -- Datatypes/classes defining the world, or part of the world.
 import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
@@ -72,6 +73,9 @@ import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
 
 writeSVG :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
 writeSVG = Export.writeSVG
+
+writeDXF2 :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeDXF2 = Export.writeDXF2
 
 writeSTL :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
 writeSTL = Export.writeSTL

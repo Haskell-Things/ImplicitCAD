@@ -70,11 +70,13 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude),
     Rectilinear2,
-    Rectilinear3,
+    Rectilinear3
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Maybe, Either, show, (*), (/))
+import Prelude (Show, Double, Integer, Int, Either, show, (*), (/))
+
+import Data.Maybe (Maybe)
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 

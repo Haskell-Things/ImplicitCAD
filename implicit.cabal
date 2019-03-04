@@ -1,5 +1,5 @@
 Name:                implicit
-Version:             0.2.0
+Version:             0.2.1
 Cabal-version:       >= 1.8
 Tested-with:         GHC >= 8.2
 Build-type:          Simple
@@ -53,7 +53,6 @@ Library
         -Wextra
         -Weverything
 
-    Extensions:
     Exposed-modules:
         Graphics.Implicit
         Graphics.Implicit.Definitions

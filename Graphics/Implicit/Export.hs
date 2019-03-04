@@ -9,7 +9,7 @@
 -- FIXME: Required. why?
 {-# LANGUAGE FlexibleContexts #-}
 
-module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeSCAD3, writeSCAD2, writePNG) where
+module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeDXF2, writeSCAD2, writeSCAD3, writePNG) where
 
 import Prelude (FilePath, IO, (.), ($))
 
@@ -25,7 +25,7 @@ import qualified Data.ByteString.Lazy as LBS (writeFile)
 import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox)
 
 -- Output file formats.
-import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats (svg, hacklabLaserGCode)
+import qualified Graphics.Implicit.Export.PolylineFormats as PolylineFormats (svg, hacklabLaserGCode, dxf2)
 import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFormats (stl, binaryStl, jsTHREE)
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats (obj)
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
@@ -63,6 +63,9 @@ formatObject res formatWriter = formatWriter . discreteAprox res
 
 writeSVG :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
 writeSVG res = writeObject res PolylineFormats.svg
+
+writeDXF2 :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
+writeDXF2 res = writeObject res PolylineFormats.dxf2
 
 writeSTL :: forall obj. DiscreteAproxable obj TriangleMesh => ℝ -> FilePath -> obj -> IO ()
 writeSTL res = writeObject res TriangleMeshFormats.stl
