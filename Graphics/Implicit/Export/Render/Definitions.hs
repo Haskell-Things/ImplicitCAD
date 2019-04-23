@@ -14,8 +14,6 @@ data TriSquare =
       Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2
     | Tris TriangleMesh
 
--- FIXME: For use with Parallel.Strategies later
-
 instance NFData TriSquare where
     rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
     rnf (Tris tris) = rnf tris
