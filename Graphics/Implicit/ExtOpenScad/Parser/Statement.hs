@@ -90,7 +90,7 @@ suite = (fmap return computation <|> do
     return stmts
     ) <?> " suite"
 
--- commenting out a comuptation: use % or * before the statement, and it will not be run.
+-- | commenting out a comuptation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
 throwAway = do
     line <- lineNumber
@@ -101,7 +101,7 @@ throwAway = do
     _ <- computation
     return $ StatementI line column DoNothing
 
--- An include! Basically, inject another openscad file here...
+-- | An include! Basically, inject another extopenscad file here...
 include :: GenParser Char st StatementI
 include = (do
     line <- lineNumber
@@ -178,7 +178,7 @@ forStatementI =
         loopContent <- suite
         return $ StatementI line column $ For lvalue vexpr loopContent
 
--- parse a call to a module.
+-- | parse a call to a module.
 userModule :: GenParser Char st StatementI
 userModule = do
     line <- lineNumber
@@ -190,7 +190,7 @@ userModule = do
     s <- suite *<|> (stringGS " ; " >> return [])
     return $ StatementI line column $ ModuleCall name args s
 
--- declare a module.
+-- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
     line <- lineNumber
@@ -203,7 +203,7 @@ userModuleDeclaration = do
     s <- suite
     return $ StatementI line column $ NewModule newModuleName args s
 
--- parse the arguments passed to a module.
+-- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe String, Expr)]
 moduleArgsUnit = do
     _ <- stringGS " ( "
@@ -230,7 +230,7 @@ moduleArgsUnit = do
     _ <- stringGS " ) "
     return args
 
--- parse the arguments in the module declaration.
+-- | parse the arguments in the module declaration.
 moduleArgsUnitDecl ::  GenParser Char st [(String, Maybe Expr)]
 moduleArgsUnitDecl = do
     _ <- stringGS " ( "
@@ -255,14 +255,12 @@ moduleArgsUnitDecl = do
     _ <- stringGS " ) "
     return argTemplate
 
--- find the line number. used when generating errors.
+-- | Find the line number. Used when generating errors.
 lineNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 
---FIXME: use the below function to improve error reporting.
-
--- find the column number. SHOULD be used when generating errors.
+-- | Find the column number. Used when generating errors.
 columnNumber :: forall s u (m :: * -> *).
               Monad m => ParsecT s u m Column
 columnNumber = fmap sourceColumn getPosition
