@@ -8,25 +8,27 @@
 -- FIXME: why is this here?
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 
+-- | A module for retrieving approximate represententations of objects.
 module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox) where
 
 import Prelude((-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac)
 
+-- Definitions for our number system, objects, and the things we can use to approximately represent objects.
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, TriangleMesh, NormedTriangleMesh)
 
-import Graphics.Implicit.ObjectUtil (getImplicit3, getImplicit2, getBox3, getBox2)
+import Graphics.Implicit.ObjectUtil (getImplicit2, getImplicit3, getBox2, getBox3)
 
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.Util (normTriangle)
 
+-- We are the only ones that use this.
 import Graphics.Implicit.Export.RayTrace (dynamicImage, Color, average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay)
 
 import Codec.Picture (DynamicImage, generateImage, PixelRGBA8(PixelRGBA8))
 
 import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
 import Data.AffineSpace ((.-^), (.+^))
-
 
 -- | There is a discrete way to aproximate this object.
 --   eg. Aproximating a 3D object with a triangle mesh
