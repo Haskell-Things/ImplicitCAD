@@ -22,7 +22,7 @@ import Control.Monad (mapM_)
 import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
 
--- Small wrapper to handle parse errors, etc.
+-- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: String -> Either ParseError (IO (VarLookup, [SymbolicObj2], [SymbolicObj3]))
 runOpenscad source =
     let
