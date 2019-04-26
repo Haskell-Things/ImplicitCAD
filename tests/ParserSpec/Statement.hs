@@ -2,7 +2,7 @@
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- statement related hspec tests.
+-- | Statement related hspec tests.
 module ParserSpec.Statement (statementSpec) where
 
 import Prelude (String, Maybe(Just), Bool(True), ($))
@@ -36,13 +36,13 @@ single st = [StatementI 1 1 st]
 call :: Symbol -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
 call name args stmts = StatementI 1 1 (ModuleCall name args stmts)
 
--- test a simple if block.
+-- | Test a simple if block.
 ifSpec :: Spec
 ifSpec = it "parses" $
     "if (true) { a(); } else { b(); }" -->
       single ( If (bool True) [call "a" [] []] [call "b" [] []])
 
--- test assignments.
+-- | Test assignments.
 assignmentSpec :: Spec
 assignmentSpec = do
   it "parses correctly" $
@@ -51,7 +51,7 @@ assignmentSpec = do
     "[x, y] = [1, 2];" --> single (ListP [Name "x", Name "y"] := ListE [num 1, num 2])
   it "handles the function keyword and definitions" $
     "function foo(x, y) = x * y;" --> single fooFunction
-  it "nested indexing" $
+  it "handles nested indexing" $
     "x = [y[0] - z * 2];" -->
     single ( Name "x" := ListE [minus [index [Var "y", num 0],
                                            mult [Var "z", num 2]]])
@@ -60,20 +60,22 @@ assignmentSpec = do
     fooFunction = Name "foo" := LamE [Name "x", Name "y"]
                                 (mult [Var "x", Var "y"])
 
+-- | the parser fails on as empty file. This can't be right.
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
 
+-- | Our entry points. Test all of the statements.
 statementSpec :: Spec
 statementSpec = do
-  describe "assignment" assignmentSpec
-  describe "if" ifSpec
   describe "empty file" $
     it "returns an empty list" $
       emptyFileIssue $ "" --> []
+  describe "assignment" assignmentSpec
+  describe "if" ifSpec
   describe "line comment" $
     it "parses as empty" $ emptyFileIssue $ "// foish bar\n" --> []
   describe "module call" $
-    it "parses" $  "foo();" --> single (ModuleCall "foo" [] [])
+    it "parses" $ "foo();" --> single (ModuleCall "foo" [] [])
   describe "difference of two cylinders" $
     it "parses correctly" $
       "difference(){ cylinder(r=5,h=20); cylinder(r=2,h=20); }"
