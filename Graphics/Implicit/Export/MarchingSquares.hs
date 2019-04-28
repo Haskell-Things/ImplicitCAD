@@ -154,9 +154,21 @@ getSquareLineSegs (x1, y1) (x2, y2) obj =
             else [[midx1, midy1], [midx2, midy2]]
 
 
--- Functions for cleaning up the polylines
+-- Functions for cleaning up the polylines.
 -- Many have multiple implementations as efficiency experiments.
 -- At some point, we'll get rid of the redundant ones....
+
+-- FIXME: document the algorithm this uses better.
+orderLinesDC :: [[[Polyline]]] -> [Polyline]
+orderLinesDC segs =
+    let
+        halve :: [a] -> ([a], [a])
+        halve l = splitAt (div (length l) 2) l
+        splitOrder segs' = case (halve *** halve) $ unzip $ map halve $ segs' of
+            ((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
+    in
+        if length segs < 5 || length (head segs) < 5 then concat $ concat segs else
+                splitOrder segs
 
 {-
 orderLines :: [Polyline] -> [Polyline]
@@ -173,16 +185,6 @@ orderLines (present:remaining) =
             (Just match, others) -> orderLines $ (present ++ tail match): others
 -}
 
-orderLinesDC :: [[[Polyline]]] -> [Polyline]
-orderLinesDC segs =
-    let
-        halve :: [a] -> ([a], [a])
-        halve l = splitAt (div (length l) 2) l
-        splitOrder segs' = case (halve *** halve) $ unzip $ map halve $ segs' of
-            ((a,b),(c,d)) -> orderLinesDC a ++ orderLinesDC b ++ orderLinesDC c ++ orderLinesDC d
-    in
-        if length segs < 5 || length (head segs) < 5 then concat $ concat segs else
-                splitOrder segs
 {-
 orderLinesP :: [[[Polyline]]] -> [Polyline]
 orderLinesP segs =
