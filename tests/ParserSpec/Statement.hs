@@ -9,8 +9,6 @@ import Prelude (String, Maybe(Just), Bool(True), ($))
 
 import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, describe)
 
--- import Text.ParserCombinators.Parsec ()
-
 import ParserSpec.Util (bool, num, minus, mult, index)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
@@ -20,27 +18,31 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Data.Either (Either(Right), isLeft)
 
--- an expectation that a string is equivalent to a statement.
+import Text.ParserCombinators.Parsec (Line, Column)
+
+-- | an expectation that a string is equivalent to a statement.
 infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
     parseProgram source `shouldBe` Right stmts
 
--- an expectation that a string generates an error.
+-- | an expectation that a string generates an error.
 parsesAsError :: String -> Expectation
 parsesAsError source = parseProgram  source `shouldSatisfy` isLeft
 
+-- | A single statement.
 single :: Statement StatementI -> [StatementI]
 single st = [StatementI 1 1 st]
 
-call :: Symbol -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
-call name args stmts = StatementI 1 1 (ModuleCall name args stmts)
+-- | A function call.
+call :: Symbol -> Column -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
+call name position args stmts = StatementI 1 position (ModuleCall name args stmts)
 
 -- test a simple if block.
 ifSpec :: Spec
 ifSpec = it "parses" $
     "if (true) { a(); } else { b(); }" -->
-      single ( If (bool True) [call "a" [] []] [call "b" [] []])
+      single ( If (bool True) [call "a" 13 [] []] [call "b" 27 [] []])
 
 -- test assignments.
 assignmentSpec :: Spec
@@ -79,10 +81,10 @@ statementSpec = do
       "difference(){ cylinder(r=5,h=20); cylinder(r=2,h=20); }"
       --> single (
         ModuleCall "difference" [] [
-           call "cylinder" [(Just "r", num 5.0),
+           call "cylinder" 15 [(Just "r", num 5.0),
                              (Just "h", num 20.0)]
             [],
-           call "cylinder" [(Just "r", num 2.0),
+           call "cylinder" 35 [(Just "r", num 2.0),
                              (Just "h", num 20.0)]
             []])
   describe "empty module definition" $
