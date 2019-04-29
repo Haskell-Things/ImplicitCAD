@@ -13,7 +13,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), both, allthree)
 
 import Data.VectorSpace ((^-^))
 
@@ -66,10 +66,6 @@ import Control.DeepSeq (NFData)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-
--- apply a function to all three items in the provided tuple.
-allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
-allthree f (x,y,z) = (f x, f y, f z)
 
 -- FIXME: res should be ℝ3, not ℝ.
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
@@ -205,10 +201,6 @@ cleanupTris tris =
         isDegenerateTri :: Triangle -> Bool
         isDegenerateTri (a, b, c) = isDegenerateTriFloat (floatPoint a, floatPoint b, floatPoint c)
     in filter (not . isDegenerateTri) tris
-
--- apply a function to both items in the provided tuple.
-both :: forall t b. (t -> b) -> (t, t) -> (b, b)
-both f (x,y) = (f x, f y)
 
 -- getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
