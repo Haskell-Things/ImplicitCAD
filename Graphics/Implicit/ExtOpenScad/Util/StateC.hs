@@ -69,6 +69,7 @@ getRelPath relPath = do
 
 errorC :: forall (m :: * -> *) a. (Show a, MonadIO m) => a -> a -> String -> m ()
 errorC lineN columnN err = liftIO $ putStrLn $ "On line " ++ show lineN ++ ", column " ++ show columnN ++ ": " ++ err
+{-# INLINABLE errorC #-}
 
 mapMaybeM :: forall t (m :: * -> *) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do

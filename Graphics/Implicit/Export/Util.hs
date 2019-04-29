@@ -46,6 +46,7 @@ centroid pts =
     where
       norm :: Fractional a => a
       norm = recip $ realToFrac $ length pts
+{-# INLINABLE centroid #-}
 
 {--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]

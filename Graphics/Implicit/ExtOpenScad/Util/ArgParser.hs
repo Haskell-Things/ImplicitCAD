@@ -43,6 +43,7 @@ argument name =
                 _   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ name
         -- Using /= Nothing would require Eq desiredType
         APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
+{-# INLINABLE argument #-}
 
 doc :: forall a. ArgParser a -> String -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
