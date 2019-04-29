@@ -2,9 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- FIXME: why are these needed?
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
@@ -58,7 +55,7 @@ average l =
     let
         ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ map
             (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
-            l :: (([ℝ], [ℝ]), ([ℝ],[ℝ]))
+            l :: (([ℝ], [ℝ]), ([ℝ], [ℝ]))
         n = fromIntegral $ length l :: ℝ
         (r', g', b', a') = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
     in PixelRGBA8
@@ -156,7 +153,7 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                 deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
                 normal = normalized deriv
                 unitV = normalized v'
-                proj :: forall v. InnerSpace v => v -> v -> v
+                proj :: InnerSpace v => v -> v -> v
                 proj a' b' = (a'⋅b')*^b'
                 dist  = vectorDistance p lightPos
                 illumination = max 0 (normal ⋅ unitV) * lightIntensity * (25 /dist)
