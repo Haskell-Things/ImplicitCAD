@@ -6,6 +6,9 @@
 -- This module deliberately declares orphan instances of Show.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -18,6 +21,8 @@ module Graphics.Implicit.Definitions (
     minℝ,
     ℕ,
     Fastℕ,
+    both,
+    allthree,
     (⋅),
     (⋯*),
     (⋯/),
@@ -100,6 +105,15 @@ type ℕ = Integer
 
 -- System integers.
 type Fastℕ = Int
+
+-- | apply a function to both items in the provided tuple.
+both :: forall t b. (t -> b) -> (t, t) -> (b, b)
+both f (x,y) = (f x, f y)
+
+-- | apply a function to all three items in the provided tuple.
+allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
+allthree f (x,y,z) = (f x, f y, f z)
+
 
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
