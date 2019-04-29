@@ -11,10 +11,10 @@
 -- | A module for retrieving approximate represententations of objects.
 module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox) where
 
-import Prelude((-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac)
+import Prelude((-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
 
 -- Definitions for our number system, objects, and the things we can use to approximately represent objects.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, TriangleMesh, NormedTriangleMesh)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, TriangleMesh, NormedTriangleMesh)
 
 import Graphics.Implicit.ObjectUtil (getImplicit2, getImplicit3, getBox2, getBox3)
 
@@ -57,7 +57,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             camera = Camera (x1-deviation*(2.2::ℝ), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
             lights = [Light (x1-deviation*(1.5::ℝ), y1 - (0.4::ℝ)*(y2-y1), avZ) ((0.03::ℝ)*deviation) ]
             scene = Scene obj (PixelRGBA8 200 200 230 255) lights (PixelRGBA8 255 255 255 0)
-            pixelRenderer :: Fastℕ -> Fastℕ -> Color
+            pixelRenderer :: Int -> Int -> Color
             pixelRenderer a b = renderScreen
                 ((fromIntegral a :: ℝ)/w - (0.5::ℝ)) ((fromIntegral b :: ℝ)/h - (0.5 ::ℝ))
             renderScreen :: ℝ -> ℝ -> Color
@@ -88,7 +88,7 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
             (p1@(x1,_), p2@(_,y2)) = getBox2 symbObj
             (dx, dy) = p2 ^-^ p1
             dxy = max dx dy
-            pixelRenderer :: Fastℕ -> Fastℕ -> Color
+            pixelRenderer :: Int -> Int -> Color
             pixelRenderer mya myb = mycolor
                 where
                     xy a b = ((x1,y2) .-^ (dxy-dx, dy-dxy)^/2) .+^ dxy*^(a/w, -b/h)
