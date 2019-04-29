@@ -12,7 +12,7 @@
 module Graphics.Implicit (
   module P,
   module E,
-  module D,
+  module W,
   writeSVG,
   writeDXF2,
   writeSTL,
@@ -36,7 +36,7 @@ import Graphics.Implicit.Primitives as P (translate, scale, complement, union, i
 import Graphics.Implicit.ExtOpenScad as E (runOpenscad)
 
 -- typesclasses and types defining the world, or part of the world.
-import Graphics.Implicit.Definitions as D (ℝ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions as W (ℝ, SymbolicObj2, SymbolicObj3)
 
 -- Functions for writing files based on the result of operations on primitives.
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
