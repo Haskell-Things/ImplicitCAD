@@ -10,7 +10,10 @@ convert=convert
 GHC=ghc
 # the location of the created extopenscad binary, for running shell based test cases.
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
+# the location of the benchmark binary, for benchmarking some implicitcad internals.
+BENCHMARK=dist/build/Benchmark/Benchmark
 # the location of the created test binary, for running haskell test cases.
+TESTFILES=$(shell find tests/ParserSpec -name '*.hs')
 TESTSUITE=dist/build/test-implicit/test-implicit
 # the location of the documentation generator. for documenting (some of) the extopenscad languagi.
 DOCGEN=dist/build/docgen/docgen
@@ -24,7 +27,11 @@ RESOPTS=-r 50
 #uncomment for profiling support. Note that you will need to recompile all of the libraries, as well.
 #PROFILING= --enable-library-profiling --enable-executable-profiling
 
-TARGETS=$(EXTOPENSCAD) $(TESTSUITE) $(DOCGEN)
+LIBFILES=$(shell find Graphics -name '*.hs')
+LIBTARGET=dist/build/Graphics/Implicit.o
+
+EXECTARGETS=$(EXTOPENSCAD) $(BENCHMARK) $(TESTSUITE) $(DOCGEN)
+TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
 # mark the below fake targets as unrean, so make will not get choked up if a file with one of these names is created.
 .PHONY: build install clean distclean nukeclean docs dist examples tests
@@ -47,12 +54,15 @@ clean: Setup
 	rm -f Examples/*.hi
 	rm -f Examples/*.o
 	rm -f tests/*.stl
-	rm -f Setup Setup.hi Setup.o
-	rm -rf dist/*
 	rm -rf docs/parser.md
+	rm -f $(TARGETS)
+	rm -rf dist/build/Graphics
+	rm -f dist/build/libHS*
 
 # clean up before making a release.
 distclean: clean
+	rm -f Setup Setup.hi Setup.o
+	rm -rf dist/
 	rm -f `find ./ -name *~`
 	rm -f `find ./ -name \#*\#`
 
@@ -63,9 +73,9 @@ nukeclean: distclean
 # Generate documentation.
 docs: $(DOCGEN)
 	./Setup haddock
-	$(DOCGEN) > docs/iscad.md
+	$(DOCGEN) > docs/escad.md
 
-# 
+# Upload to hackage?
 dist: $(TARGETS)
 	./Setup sdist
 
@@ -74,22 +84,30 @@ examples: $(EXTOPENSCAD)
 	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind  --cachegrind-out-file=$$each.cachegrind.`date +%s` ../$(EXTOPENSCAD) $$each ${RTSOPTS}; } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; $(GHC) $$filename.hs -o $$filename; $$filename; } done
 
+# generate images from the examples, so we can upload the images to our website.
 images: examples
 	cd Examples && for each in `find ./ -name '*.stl' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; if [ -e $$filename.transform ] ; then echo ${stl2ps} $$each $$filename.ps `cat $$filename.transform`; else ${stl2ps} $$each $$filename.ps; fi; ${convert} $$filename.ps $$filename.png; } done
 
-tests: $(TESTSUITE)
+# hspec parser tests.
+tests: $(TESTSUITE) $(TESTFILES)
 #	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
-	./dist/build/test-implicit/test-implicit
+	$(TESTSUITE)
 
-# actually build a given binary.
-dist/build/%: Setup dist/setup-config
+# The ImplicitCAD library.
+$(LIBTARGET): $(LIBFILES)
+	cabal build implicit
+
+# build a binary target with cabal.
+dist/build/%: Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal build $(word 2,$(subst /, ,$*))
 
+# prepare to build.
 dist/setup-config: Setup implicit.cabal
 	cabal update
 	cabal install --only-dependencies --upgrade-dependencies
-	cabal configure --enable-tests $(PROFILING)
+	cabal configure --enable-tests --enable-benchmarks $(PROFILING)
 
+# the setup command, used to perform administrative tasks (haddock, upload to hackage, clean, etc...).
 Setup: Setup.*hs
 	ghc -O2 -Wall --make Setup
 
