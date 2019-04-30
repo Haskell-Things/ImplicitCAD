@@ -5,11 +5,13 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- FIXME: what are these for?
 {-# LANGUAGE OverloadedStrings #-}
-
 {-# LANGUAGE ViewPatterns #-}
 
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
+
+-- FIXME: we need AuthN/AuthZ for https://github.com/kliment/explicitcad to be useful.
 
 -- Let's be explicit about what we're getting from where :)
 

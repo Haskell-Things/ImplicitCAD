@@ -3,11 +3,11 @@
 -- Copyright (C) 2014 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU GPL, see LICENSE
 
--- FIXME: add support for AMF.
--- An interpreter to run extended OpenScad code, outputing STL, OBJ, SVG, SCAD, PNG, or GCODE.
+-- An interpreter to run extended OpenScad code. outputs STL, OBJ, SVG, SCAD, PNG, DXF, or GCODE.
 
 -- Enable additional syntax to make our code more readable.
-{-# LANGUAGE ViewPatterns , PatternGuards #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE PatternGuards #-}
 
 -- Let's be explicit about what we're getting from where :)
 
@@ -49,13 +49,13 @@ import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help
 -- For handling input/output files.
 import System.FilePath (splitExtension)
 
--- The following is needed to ensure backwards/forwards compatibility
--- Backwards compatibility with old versions of Data.Monoid:
+-- | The following is needed to ensure backwards/forwards compatibility
+-- | with old versions of Data.Monoid:
 infixr 6 <>
 (<>) :: Monoid a => a -> a -> a
 (<>) = mappend
 
--- A datatype for containing our command line options.
+-- | Our command line options.
 data ExtOpenScadOpts = ExtOpenScadOpts
     { outputFile :: Maybe FilePath
     , outputFormat :: Maybe OutputFormat
@@ -63,7 +63,7 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , inputFile :: FilePath
     }
 
--- A datatype enumerating our output file formats types.
+-- | An enumeration of our output file formats types.
 data OutputFormat
     = SVG
     | SCAD
@@ -75,7 +75,7 @@ data OutputFormat
     | DXF
     deriving (Show, Eq, Ord)
 
--- A list mapping file extensions to output formats.
+-- | A list mapping file extensions to output formats.
 formatExtensions :: [(String, OutputFormat)]
 formatExtensions =
     [ ("svg", SVG)
@@ -89,15 +89,15 @@ formatExtensions =
     , ("dxf", DXF)
     ]
 
--- Lookup an output format for a given output file. Throw an error if one cannot be found.
+-- | Lookup an output format for a given output file. Throw an error if one cannot be found.
 guessOutputFormat :: FilePath -> OutputFormat
 guessOutputFormat fileName =
-    fromMaybe (error $ "Unrecognized output format: "<>ext)
+    fromMaybe (error $ "Unrecognized output format: " <> ext)
     $ readOutputFormat $ tail ext
     where
         (_,ext) = splitExtension fileName
 
--- The parser for our command line arguments.
+-- | The parser for our command line arguments.
 extOpenScadOpts :: Parser ExtOpenScadOpts
 extOpenScadOpts = ExtOpenScadOpts
     <$> optional (
@@ -129,12 +129,12 @@ extOpenScadOpts = ExtOpenScadOpts
         <> help "Input extended OpenSCAD file"
         )
 
--- Try to look up an output format from a supplied extension.
+-- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
 readOutputFormat ext = lookup (map toLower ext) formatExtensions
 
--- A Read instance for our output format. Used by 'auto' in our command line parser.
--- Reads a string, and evaluates to the appropriate OutputFormat.
+-- | A Read instance for our output format. Used by 'auto' in our command line parser.
+--   Reads a string, and evaluates to the appropriate OutputFormat.
 instance Read OutputFormat where
     readsPrec _ myvalue =
         tryParse formatExtensions
@@ -146,11 +146,11 @@ instance Read OutputFormat where
               then [(result, drop (length attempt) myvalue)]
               else tryParse xs
 
--- Find the resolution to raytrace at.
+-- | Find the resolution to raytrace at.
 getRes :: (Map.Map String OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
--- First, use a resolution specified by a variable in the input file.
+-- | First, use a resolution specified by a variable in the input file.
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
--- Use a resolution chosen for 3D objects.
+-- | Use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
 getRes (varlookup, _, obj:_) =
     let
@@ -159,7 +159,7 @@ getRes (varlookup, _, obj:_) =
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
--- Use a resolution chosen for 2D objects.
+-- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
 getRes (varlookup, obj:_, _) =
     let
@@ -168,10 +168,10 @@ getRes (varlookup, obj:_, _) =
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y) / 30)
--- fallthrough value.
+-- | fallthrough value.
 getRes _ = 1
 
--- Output a file containing a 3D object.
+-- | Output a file containing a 3D object.
 export3 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj3 -> IO ()
 export3 posFmt res output obj =
     case posFmt of
@@ -182,7 +182,7 @@ export3 posFmt res output obj =
         Nothing   -> writeBinSTL res output obj
         Just fmt  -> putStrLn $ "Unrecognized 3D format: "<>show fmt
 
--- Output a file containing a 2D object.
+-- | Output a file containing a 2D object.
 export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
 export2 posFmt res output obj =
     case posFmt of
@@ -194,8 +194,8 @@ export2 posFmt res output obj =
         Nothing    -> writeSVG res output obj
         Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
 
--- Interpret arguments, and render the object defined in the supplied input file.
-run :: ExtOpenScadOpts -> IO()
+-- | Interpret arguments, and render the object defined in the supplied input file.
+run :: ExtOpenScadOpts -> IO ()
 run args = do
 
     putStrLn "Loading File."
@@ -237,10 +237,10 @@ run args = do
                     print obj
                     export2 format res output obj
                 ([], []) -> putStrLn "No objects to render."
-                _        -> putStrLn "Multiple/No objects, what do you want to render?"
+                _        -> putStrLn "A mixture of 2D and 3d objects, what do you want to render?"
 
--- The entry point. Use the option parser then run the extended OpenScad code.
-main :: IO()
+-- | The entry point. Use the option parser then run the extended OpenScad code.
+main :: IO ()
 main = execParser opts >>= run
     where
         opts= info (helper <*> extOpenScadOpts)
