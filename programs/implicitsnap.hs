@@ -56,15 +56,18 @@ import System.IO.Silently (capture)
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import qualified Data.Text.Lazy as TL (unpack)
 
+-- | The entry point. uses snap to serve a website.
 main :: IO ()
 main = quickHttpServe site
 
+-- | Our site definition. Renders requests to "render/", discards all else.
 site :: Snap ()
 site = route
     [
         ("render/", renderHandler)
     ] <|> writeBS "fall through"
 
+-- | Our render/ handler. Uses source, callback, and opitional format to render an object.
 renderHandler :: Snap ()
 renderHandler = method GET $ withCompression $ do
     modifyResponse $ setContentType "application/x-javascript"
@@ -83,14 +86,12 @@ renderHandler = method GET $ withCompression $ do
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
--- Find the resolution to raytrace at.
+-- | Find the resolution to raytrace at.
 getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
-
--- First, use a resolution specified by a variable in the input file.
+-- | If a resolution was specified in the input file, just use it.
 getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
-
--- If there was no resolution specified, use a resolution chosen for 3D objects.
--- FIXME: magic numbers.
+-- | If there was no resolution specified, use a resolution chosen for 3D objects.
+--   FIXME: magic numbers.
 getRes (varlookup, _, obj:_) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
@@ -98,8 +99,8 @@ getRes (varlookup, _, obj:_) =
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
--- Use a resolution chosen for 2D objects.
--- FIXME: magic numbers.
+-- | ... Or use a resolution chosen for 2D objects.
+--   FIXME: magic numbers.
 getRes (varlookup, obj:_, _) =
     let
         (p1,p2) = getBox2 obj
@@ -107,7 +108,7 @@ getRes (varlookup, obj:_, _) =
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y     ) / 30)
--- fallthrough value.
+-- | fallthrough value.
 getRes _ = 1
 
 {-
@@ -139,12 +140,14 @@ getRes (varlookup, obj2s, obj3s) =
             else -1
 -}
 
-getWidth :: forall t. (t, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+-- | get the maximum dimension of the object being rendered.
+--   FIXME: shouldn't this get the diagonal across the box?
+getWidth :: (String, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 obj
-getWidth (_, [], []) = 0
+getWidth (_,    [],    []) = 0
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
