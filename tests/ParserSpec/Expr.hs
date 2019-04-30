@@ -5,13 +5,13 @@
 module ParserSpec.Expr (exprSpec) where
 
 -- Be explicit about what we import.
-import Prelude (String, Bool(True, False), ($), (<*), )
+import Prelude (String, Bool(True, False), ($), (<*))
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, shouldBe, pendingWith, specify)
 
 -- parsed expression components.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)) )
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)))
 
 -- the expression parser entry point.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
