@@ -24,6 +24,7 @@ import Graphics.Implicit.Definitions (ℝ)
 
 -- FIXME: move each of these objects into seperate compilable files.
 
+-- | A 2D object, for benchmarking.
 obj2d_1 :: SymbolicObj2
 obj2d_1 =
     union
@@ -34,12 +35,14 @@ obj2d_1 =
         , translate (0,-22) $ circle 10
         ]
 
+-- | a 3D object, for benchmarking. extruded from our 2D object.
 object1 :: SymbolicObj3
 object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
     where
       twist :: ℝ -> ℝ
       twist h = 35*cos(h*2*pi/60)
 
+-- | another 3D object, for benchmarking.
 object2 :: SymbolicObj3
 object2 = squarePipe (10,10,10) 1 100
     where squarePipe (x,y,z) diameter precision =
@@ -51,6 +54,7 @@ object2 = squarePipe (10,10,10) 1 100
                    (map (\n->(n/precision)*y) [0..precision])
                    (map (\n->(n/precision)*z) [0..precision])
 
+-- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
 object3 =
     difference
@@ -58,6 +62,7 @@ object3 =
         , rect3R 1 (0,0,0) (2,2,2)
         ]
 
+-- | Benchmark a 2D object.
 obj2Benchmarks :: String -> SymbolicObj2 -> Benchmark
 obj2Benchmarks name obj =
     bgroup name
@@ -68,6 +73,7 @@ obj2Benchmarks name obj =
           bench "Get contour" $ nf (symbolicGetContour 1) obj
     ]
 
+-- | Benchmark a 3D object.
 obj3Benchmarks :: String -> SymbolicObj3 -> Benchmark
 obj3Benchmarks name obj =
     bgroup name
@@ -78,6 +84,7 @@ obj3Benchmarks name obj =
       bench "Get mesh" $ nf (symbolicGetMesh 1) obj
     ]
 
+-- | Benchmark all of our objects.
 benchmarks :: [Benchmark]
 benchmarks =
     [ obj3Benchmarks "Object 1" object1
@@ -86,6 +93,7 @@ benchmarks =
     , obj2Benchmarks "Object 2d 1" obj2d_1
     ]
 
+-- | Our entrypoint. Runs all benchmarks.
 main :: IO ()
 main = defaultMain benchmarks
 
