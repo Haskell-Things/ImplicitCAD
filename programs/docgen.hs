@@ -92,6 +92,7 @@ dumpPrimitive moduleName moduleDocList level = do
       forM_ syntaxes $ \(Branch syntax) -> do
         dumpPrimitive ("Syntax " ++ (show $ level+1)) syntax (level+1)
 
+-- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
 main = do
         docs <- mapM (getArgParserDocs.($ []).snd) primitives
