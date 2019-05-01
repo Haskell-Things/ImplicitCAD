@@ -108,8 +108,8 @@ getRes (varlookup, obj:_, _) =
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
-        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
-        _                    -> min (min x y/2) (sqrt(x*y     ) / 30)
+        ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
+        _                    -> min ((min x y)/2) (sqrt(x*y     ) / 30)
 -- | fallthrough value.
 getRes _ = 1
 
