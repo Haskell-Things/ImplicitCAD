@@ -18,7 +18,7 @@ PARSERBENCH=dist/build/parser-bench/parser-bench
 TESTSUITE=dist/build/test-implicit/test-implicit
 # the location of it's source.
 TESTFILES=$(shell find tests/ParserSpec -name '*.hs')
-# the location of the documentation generator. for documenting (some of) the extopenscad languagi.
+# the location of the documentation generator. for documenting (some of) the extopenscad language.
 DOCGEN=dist/build/docgen/docgen
 
 ## options used when calling ImplicitCAD. for testing, and for image generation.

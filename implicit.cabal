@@ -18,31 +18,24 @@ Category:            Graphics
 Library
 
     Build-depends:
-        base >= 3 && < 5,
-        filepath,
-        directory,
-        parsec,
-        unordered-containers,
-        parallel,
-        containers,
-        deepseq,
-        vector-space,
-        text,
-        monads-tf,
-        bytestring,
-        bytestring-builder,
-        blaze-builder,
-        blaze-markup,
-        blaze-svg,
-        storable-endian,
-        JuicyPixels,
-        NumInstances,
-        criterion,
-        snap-core,
-        snap-server,
-        silently,
-        transformers,
-        hspec
+                  base >= 3 && < 5,
+                  filepath,
+                  directory,
+                  parsec,
+                  parallel,
+                  containers,
+                  deepseq,
+                  hspec,
+                  vector-space,
+                  text,
+                  monads-tf,
+                  bytestring,
+                  blaze-builder,
+                  blaze-markup,
+                  blaze-svg,
+                  storable-endian,
+                  JuicyPixels,
+                  transformers
 
     Ghc-options:
         -Wall
@@ -87,7 +80,6 @@ Library
         Graphics.Implicit.ExtOpenScad.Util.StateC
         Graphics.Implicit.ExtOpenScad.Util.ArgParser
         Graphics.Implicit.ExtOpenScad.Util.OVal
-        Graphics.Implicit.Export.MarchingSquares
         Graphics.Implicit.Export.MarchingSquaresFill
         Graphics.Implicit.Export.RayTrace
         Graphics.Implicit.Export.NormedTriangleMeshFormats
@@ -135,63 +127,32 @@ Executable docgen
    Hs-source-dirs: programs
    build-depends:
                  base,
-                 vector-space,
-                 text,
-                 JuicyPixels,
-                 blaze-builder,
-                 blaze-svg,
-                 blaze-markup,
-                 parallel,
-                 deepseq,
-                 vector-space,
-                 monads-tf,
-                 bytestring,
-                 storable-endian,
-                 parsec,
-                 directory,
-                 containers,
-                 filepath,
-                 snap-core,
-                 snap-server,
-                 silently,
-                 transformers,
                  implicit
    ghc-options:
                -Wall
                -Weverything
                -Wextra
-        -optc-O3
-        -threaded
-        -rtsopts
-        -funfolding-use-threshold=16
-        -fspec-constr-count=10
+               -optc-O3
+               -threaded
+               -rtsopts
+               -funfolding-use-threshold=16
+               -fspec-constr-count=10
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 vector-space,
-                 text,
-                 JuicyPixels,
-                 blaze-builder,
-                 blaze-svg,
-                 blaze-markup,
-                 parallel,
-                 deepseq,
-                 vector-space,
-                 monads-tf,
                  bytestring,
-                 storable-endian,
-                 parsec,
-                 directory,
                  containers,
-                 filepath,
+                 implicit,
+                 parallel,
+                 parsec,
+                 silently,
                  snap-core,
                  snap-server,
-                 silently,
-                 transformers,
-                 implicit
+                 text,
+                 vector-space
    Ghc-options:
         -threaded
         -rtsopts
@@ -208,38 +169,26 @@ Executable Benchmark
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 text,
-                 JuicyPixels,
-                 blaze-svg,
-                 blaze-markup,
-                 parallel,
-                 deepseq,
-                 vector-space,
-                 monads-tf,
-                 blaze-builder,
-                 bytestring,
-                 storable-endian,
-                 parsec,
-                 directory,
-                 containers,
-                 filepath,
                  criterion,
-                 transformers,
                  implicit
    Ghc-options:
         -threaded
         -rtsopts
         -Wall
         -optc-O3
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
         -- for debugging.
         -Wextra
         -Weverything
 
 Test-suite test-implicit
     Type: exitcode-stdio-1.0
-    Build-depends: base, mtl, containers, hspec, parsec, implicit
+    Build-depends:
+                  base,
+                  containers,
+                  hspec,
+                  implicit,
+                  mtl,
+                  parsec
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
