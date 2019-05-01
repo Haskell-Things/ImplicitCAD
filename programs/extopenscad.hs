@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, Ord, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup)
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, print, (>>=), lookup)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -63,7 +63,7 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , inputFile :: FilePath
     }
 
--- | An enumeration of our output file formats types.
+-- | A type serving to enumerate our output formats.
 data OutputFormat
     = SVG
     | SCAD
@@ -73,7 +73,7 @@ data OutputFormat
     | OBJ
 --  | 3MF
     | DXF
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq)
 
 -- | A list mapping file extensions to output formats.
 formatExtensions :: [(String, OutputFormat)]
