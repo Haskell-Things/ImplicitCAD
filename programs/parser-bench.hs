@@ -32,7 +32,7 @@ parseExpr s = case parse expr0 "src" s of
                Right e -> e
 
 parseStatements :: String -> [StatementI]
-parseStatements s = case parseProgram "src" s of
+parseStatements s = case parseProgram s of
                      Left err -> error (show err)
                      Right e -> e
 

@@ -12,9 +12,12 @@ GHC=ghc
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
 # the location of the benchmark binary, for benchmarking some implicitcad internals.
 BENCHMARK=dist/build/Benchmark/Benchmark
+# the location of the parser benchmark binary, specifically for benchmarking implicitcad's parser.
+PARSERBENCH=dist/build/parser-bench/parser-bench
 # the location of the created test binary, for running haskell test cases.
-TESTFILES=$(shell find tests/ParserSpec -name '*.hs')
 TESTSUITE=dist/build/test-implicit/test-implicit
+# the location of it's source.
+TESTFILES=$(shell find tests/ParserSpec -name '*.hs')
 # the location of the documentation generator. for documenting (some of) the extopenscad languagi.
 DOCGEN=dist/build/docgen/docgen
 
@@ -30,11 +33,20 @@ RESOPTS=-r 50
 LIBFILES=$(shell find Graphics -name '*.hs')
 LIBTARGET=dist/build/Graphics/Implicit.o
 
-EXECTARGETS=$(EXTOPENSCAD) $(BENCHMARK) $(TESTSUITE) $(DOCGEN)
+EXECTARGETS=$(EXTOPENSCAD) $(BENCHMARK) $(TESTSUITE) $(PARSERBENCH) $(DOCGEN)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
 # mark the below fake targets as unrean, so make will not get choked up if a file with one of these names is created.
 .PHONY: build install clean distclean nukeclean docs dist examples tests
+
+# empty out the default suffix list, to make debugging output cleaner.
+.SUFFIXES:
+
+# allow for us to (ab)use $$* in dependencies of rules.
+.SECONDEXPANSION:
+
+# disable make's default builtin rules, to make debugging output cleaner.
+MAKEFLAGS += --no-builtin-rules
 
 # build implicitcad binaries.
 build: $(TARGETS)
@@ -45,7 +57,6 @@ install: build
 
 # cleanup from using the rules in this file.
 clean: Setup
-	./Setup clean
 	rm -f Examples/*.stl
 	rm -f Examples/*.svg
 	rm -f Examples/*.ps
@@ -60,7 +71,8 @@ clean: Setup
 	rm -f dist/build/libHS*
 
 # clean up before making a release.
-distclean: clean
+distclean: clean Setup
+	./Setup clean
 	rm -f Setup Setup.hi Setup.o
 	rm -rf dist/
 	rm -f `find ./ -name *~`
@@ -97,8 +109,13 @@ tests: $(TESTSUITE) $(TESTFILES)
 $(LIBTARGET): $(LIBFILES)
 	cabal build implicit
 
+# the test suite, since it's source is stored in a different location than the other binaries we build:
+dist/build/test-implicit/test-implicit: $(TESTFILES) Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
+	cabal build test-implicit
+
+
 # build a binary target with cabal.
-dist/build/%: Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
+dist/build/%: programs/$$(word 2,$$(subst /, ,%)).hs Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal build $(word 2,$(subst /, ,$*))
 
 # prepare to build.
