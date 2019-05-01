@@ -252,7 +252,8 @@ Test-suite test-implicit
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
     Build-depends: base, criterion, random, parsec, implicit
-    Main-is: ParserBench.hs
+    Main-is: parser-bench.hs
+    Hs-source-dirs: programs
     Ghc-options:
         -threaded
         -rtsopts
