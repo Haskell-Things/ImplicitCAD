@@ -237,7 +237,7 @@ run args = do
                     print obj
                     export2 format res output obj
                 ([], []) -> putStrLn "No objects to render."
-                _        -> putStrLn "A mixture of 2D and 3d objects, what do you want to render?"
+                _        -> putStrLn "A mixture of 2D and 3D objects, what do you want to render?"
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()
