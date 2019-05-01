@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Maybe(Just, Nothing), Either(Left))
+import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Maybe(Just, Nothing), Either(Left), fromIntegral)
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, defaultMain)
@@ -17,8 +17,8 @@ import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
 
--- The variable defining distance in our world.
-import Graphics.Implicit.Definitions (ℝ)
+-- The variables defining distance and counting in our world.
+import Graphics.Implicit.Definitions (ℝ, Fastℕ)
 
 -- Haskell representations of objects to benchmark.
 
@@ -45,14 +45,16 @@ object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
 -- | another 3D object, for benchmarking.
 object2 :: SymbolicObj3
 object2 = squarePipe (10,10,10) 1 100
-    where squarePipe (x,y,z) diameter precision =
+    where
+      squarePipe :: (ℝ,ℝ,ℝ) -> ℝ -> ℝ -> SymbolicObj3
+      squarePipe (x,y,z) diameter precision =
             union
             $ map (\start-> translate start
                    $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
                   )
-            $ zip3 (map (\n->(n/precision)*x) [0..precision])
-                   (map (\n->(n/precision)*y) [0..precision])
-                   (map (\n->(n/precision)*z) [0..precision])
+            $ zip3 (map (\n->((fromIntegral n)/precision)*x) [0..100::Fastℕ])
+                   (map (\n->((fromIntegral n)/precision)*y) [0..100::Fastℕ])
+                   (map (\n->((fromIntegral n)/precision)*z) [0..100::Fastℕ])
 
 -- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
