@@ -38,13 +38,14 @@ Library
                   transformers
 
     Ghc-options:
-        -Wall
-        -optc-O3
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
-        -- for debugging.
-        -Wextra
-        -Weverything
+                -O2
+                -optc-O3
+                -- see GHC manual 8.2.1 section 6.5.1.
+                -feager-blackholing
+                -- for debugging.
+                -Wextra
+                -Weverything
+                -Wall
 
     Exposed-modules:
         Graphics.Implicit
@@ -111,15 +112,16 @@ Executable extopenscad
                  optparse-applicative >= 0.10.0,
                  implicit
    Ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -optc-O3
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
-        -- for debugging.
-        -Wextra
-        -Weverything
+               -O2
+               -optc-O3
+               -threaded
+               -rtsopts
+               -- see GHC manual 8.2.1 section 6.5.1.
+               -feager-blackholing
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
 
 Executable docgen
 
@@ -129,14 +131,10 @@ Executable docgen
                  base,
                  implicit
    ghc-options:
+               -- for debugging.
                -Wall
-               -Weverything
                -Wextra
-               -optc-O3
-               -threaded
-               -rtsopts
-               -funfolding-use-threshold=16
-               -fspec-constr-count=10
+               -Weverything
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
@@ -154,15 +152,16 @@ Executable implicitsnap
                  text,
                  vector-space
    Ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -optc-O3
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
-        -- for debugging.
-        -Wextra
-        -Weverything
+               -threaded
+               -rtsopts
+               -O2
+               -optc-O3
+               -- see GHC manual 8.2.1 section 6.5.1.
+               -feager-blackholing
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
 
 Executable Benchmark
    Main-is: Benchmark.hs
@@ -172,13 +171,12 @@ Executable Benchmark
                  criterion,
                  implicit
    Ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -optc-O3
-        -- for debugging.
-        -Wextra
-        -Weverything
+               -O2
+               -optc-O3
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
 
 Test-suite test-implicit
     Type: exitcode-stdio-1.0
@@ -192,11 +190,12 @@ Test-suite test-implicit
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
-        -Wall
-        -optc-O3
-        -- for debugging.
-        -Wextra
-        -Weverything
+               -O2
+                -optc-O3
+                -- for debugging.
+                -Wall
+                -Wextra
+                -Weverything
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
@@ -204,15 +203,12 @@ Benchmark parser-bench
     Main-is: parser-bench.hs
     Hs-source-dirs: programs
     Ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -optc-O3
-        -- see GHC manual 8.2.1 section 6.5.1.
-        -feager-blackholing
-        -- for debugging.
-        -Wextra
-        -Weverything
+               -O2
+                -optc-O3
+                -- for debugging.
+                -Wall
+                -Wextra
+                -Weverything
 
 Source-repository head
     Type:            git
