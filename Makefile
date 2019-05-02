@@ -8,7 +8,7 @@ stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
 convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
-# the location of the created extopenscad binary, for running shell based test cases.
+# The location of the created extopenscad binary, for running shell based test cases.
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
 # The location of the benchmark binary, for benchmarking some implicitcad internals.
 BENCHMARK=dist/build/Benchmark/Benchmark
@@ -36,7 +36,7 @@ LIBTARGET=dist/build/Graphics/Implicit.o
 EXECTARGETS=$(EXTOPENSCAD) $(BENCHMARK) $(TESTSUITE) $(PARSERBENCH) $(DOCGEN)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
-# Mark the below fake targets as unrean, so make will not get choked up if a file with one of these names is created.
+# Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
 .PHONY: build install clean distclean nukeclean docs dist examples tests
 
 # Empty out the default suffix list, to make debugging output cleaner.
