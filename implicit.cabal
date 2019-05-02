@@ -48,26 +48,26 @@ Library
                 -Wall
 
     Exposed-modules:
-        Graphics.Implicit
-        Graphics.Implicit.Definitions
-        Graphics.Implicit.Primitives
-        Graphics.Implicit.Export
-        Graphics.Implicit.MathUtil
-        Graphics.Implicit.ExtOpenScad
-        Graphics.Implicit.ObjectUtil
-        -- these modules are exposed for the unit tests against the parser interface.
-        Graphics.Implicit.ExtOpenScad.Parser.Statement
-        Graphics.Implicit.ExtOpenScad.Parser.Expr
-        Graphics.Implicit.ExtOpenScad.Definitions
-        -- these are exposed for Benchmark.
-        Graphics.Implicit.Export.SymbolicObj2
-        Graphics.Implicit.Export.SymbolicObj3
-        -- these are exposed for implicitsnap.
-        Graphics.Implicit.Export.TriangleMeshFormats
-        Graphics.Implicit.Export.PolylineFormats
-        Graphics.Implicit.Export.DiscreteAproxable
-        -- These are exposed for docgen.
-        Graphics.Implicit.ExtOpenScad.Primitives            
+                    Graphics.Implicit
+                    Graphics.Implicit.Definitions
+                    Graphics.Implicit.Primitives
+                    Graphics.Implicit.Export
+                    Graphics.Implicit.MathUtil
+                    Graphics.Implicit.ExtOpenScad
+                    Graphics.Implicit.ObjectUtil
+                    -- These modules are exposed for the unit tests against the parser interface.
+                    Graphics.Implicit.ExtOpenScad.Parser.Statement
+                    Graphics.Implicit.ExtOpenScad.Parser.Expr
+                    Graphics.Implicit.ExtOpenScad.Definitions
+                    -- These are exposed for Benchmark.
+                    Graphics.Implicit.Export.SymbolicObj2
+                    Graphics.Implicit.Export.SymbolicObj3
+                    -- These are exposed for implicitsnap.
+                    Graphics.Implicit.Export.TriangleMeshFormats
+                    Graphics.Implicit.Export.PolylineFormats
+                    Graphics.Implicit.Export.DiscreteAproxable
+                    -- These are exposed for docgen.
+                    Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
                   Graphics.Implicit.ObjectUtil.GetBox2
