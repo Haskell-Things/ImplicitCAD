@@ -157,11 +157,11 @@ Executable implicitsnap
                  text,
                  vector-space
    Ghc-options:
-               -dynamic
                -threaded
                -rtsopts
                -O2
                -optc-O3
+               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.
@@ -204,6 +204,10 @@ Test-suite test-implicit
                 -Wall
                 -Wextra
                 -Weverything
+    Other-Modules:
+                  ParserSpec.Expr
+                  ParserSpec.Statement
+                  ParserSpec.Util
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
