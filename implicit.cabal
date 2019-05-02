@@ -70,34 +70,36 @@ Library
         Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
-        Graphics.Implicit.ObjectUtil.GetBox2
-        Graphics.Implicit.ObjectUtil.GetBox3
-        Graphics.Implicit.ObjectUtil.GetImplicit2
-        Graphics.Implicit.ObjectUtil.GetImplicit3
-        Graphics.Implicit.ExtOpenScad.Default
-        Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Eval.Statement
-        Graphics.Implicit.ExtOpenScad.Eval.Expr
-        Graphics.Implicit.ExtOpenScad.Util.StateC
-        Graphics.Implicit.ExtOpenScad.Util.ArgParser
-        Graphics.Implicit.ExtOpenScad.Util.OVal
-        Graphics.Implicit.Export.MarchingSquaresFill
-        Graphics.Implicit.Export.RayTrace
-        Graphics.Implicit.Export.NormedTriangleMeshFormats
-        Graphics.Implicit.Export.SymbolicFormats
-        Graphics.Implicit.Export.Util
-        Graphics.Implicit.Export.TextBuilderUtils
-        Graphics.Implicit.Export.Symbolic.Rebound2
-        Graphics.Implicit.Export.Symbolic.Rebound3
-        Graphics.Implicit.Export.Render
-        Graphics.Implicit.Export.Render.Definitions
-        Graphics.Implicit.Export.Render.GetLoops
-        Graphics.Implicit.Export.Render.GetSegs
-        Graphics.Implicit.Export.Render.HandleSquares
-        Graphics.Implicit.Export.Render.Interpolate
-        Graphics.Implicit.Export.Render.RefineSegs
-        Graphics.Implicit.Export.Render.TesselateLoops
-        Graphics.Implicit.Export.Render.HandlePolylines
+                  Graphics.Implicit.ObjectUtil.GetBox2
+                  Graphics.Implicit.ObjectUtil.GetBox3
+                  Graphics.Implicit.ObjectUtil.GetImplicit2
+                  Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.ExtOpenScad.Default
+                  Graphics.Implicit.ExtOpenScad.Parser.Util
+                  Graphics.Implicit.ExtOpenScad.Eval.Statement
+                  Graphics.Implicit.ExtOpenScad.Eval.Expr
+                  Graphics.Implicit.ExtOpenScad.Util.StateC
+                  Graphics.Implicit.ExtOpenScad.Util.ArgParser
+                  Graphics.Implicit.ExtOpenScad.Util.OVal
+                  -- Historic, but functional. Should be merged into MarchingSquaresFill.
+                  -- Graphics.Implicit.Export.MarchingSquares
+                  Graphics.Implicit.Export.MarchingSquaresFill
+                  Graphics.Implicit.Export.RayTrace
+                  Graphics.Implicit.Export.NormedTriangleMeshFormats
+                  Graphics.Implicit.Export.SymbolicFormats
+                  Graphics.Implicit.Export.Util
+                  Graphics.Implicit.Export.TextBuilderUtils
+                  Graphics.Implicit.Export.Symbolic.Rebound2
+                  Graphics.Implicit.Export.Symbolic.Rebound3
+                  Graphics.Implicit.Export.Render
+                  Graphics.Implicit.Export.Render.Definitions
+                  Graphics.Implicit.Export.Render.GetLoops
+                  Graphics.Implicit.Export.Render.GetSegs
+                  Graphics.Implicit.Export.Render.HandleSquares
+                  Graphics.Implicit.Export.Render.Interpolate
+                  Graphics.Implicit.Export.Render.RefineSegs
+                  Graphics.Implicit.Export.Render.TesselateLoops
+                  Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
 
