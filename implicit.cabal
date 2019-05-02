@@ -40,6 +40,7 @@ Library
     Ghc-options:
                 -O2
                 -optc-O3
+                -dynamic
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
                 -- for debugging.
@@ -48,56 +49,58 @@ Library
                 -Wall
 
     Exposed-modules:
-        Graphics.Implicit
-        Graphics.Implicit.Definitions
-        Graphics.Implicit.Primitives
-        Graphics.Implicit.Export
-        Graphics.Implicit.MathUtil
-        Graphics.Implicit.ExtOpenScad
-        Graphics.Implicit.ObjectUtil
-        -- these modules are exposed for the unit tests against the parser interface.
-        Graphics.Implicit.ExtOpenScad.Parser.Statement
-        Graphics.Implicit.ExtOpenScad.Parser.Expr
-        Graphics.Implicit.ExtOpenScad.Definitions
-        -- these are exposed for Benchmark.
-        Graphics.Implicit.Export.SymbolicObj2
-        Graphics.Implicit.Export.SymbolicObj3
-        -- these are exposed for implicitsnap.
-        Graphics.Implicit.Export.TriangleMeshFormats
-        Graphics.Implicit.Export.PolylineFormats
-        Graphics.Implicit.Export.DiscreteAproxable
-        -- These are exposed for docgen.
-        Graphics.Implicit.ExtOpenScad.Primitives            
+                    Graphics.Implicit
+                    Graphics.Implicit.Definitions
+                    Graphics.Implicit.Primitives
+                    Graphics.Implicit.Export
+                    Graphics.Implicit.MathUtil
+                    Graphics.Implicit.ExtOpenScad
+                    Graphics.Implicit.ObjectUtil
+                    -- These modules are exposed for the unit tests against the parser interface.
+                    Graphics.Implicit.ExtOpenScad.Parser.Statement
+                    Graphics.Implicit.ExtOpenScad.Parser.Expr
+                    Graphics.Implicit.ExtOpenScad.Definitions
+                    -- These are exposed for Benchmark.
+                    Graphics.Implicit.Export.SymbolicObj2
+                    Graphics.Implicit.Export.SymbolicObj3
+                    -- These are exposed for implicitsnap.
+                    Graphics.Implicit.Export.TriangleMeshFormats
+                    Graphics.Implicit.Export.PolylineFormats
+                    Graphics.Implicit.Export.DiscreteAproxable
+                    -- These are exposed for docgen.
+                    Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
-        Graphics.Implicit.ObjectUtil.GetBox2
-        Graphics.Implicit.ObjectUtil.GetBox3
-        Graphics.Implicit.ObjectUtil.GetImplicit2
-        Graphics.Implicit.ObjectUtil.GetImplicit3
-        Graphics.Implicit.ExtOpenScad.Default
-        Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Eval.Statement
-        Graphics.Implicit.ExtOpenScad.Eval.Expr
-        Graphics.Implicit.ExtOpenScad.Util.StateC
-        Graphics.Implicit.ExtOpenScad.Util.ArgParser
-        Graphics.Implicit.ExtOpenScad.Util.OVal
-        Graphics.Implicit.Export.MarchingSquaresFill
-        Graphics.Implicit.Export.RayTrace
-        Graphics.Implicit.Export.NormedTriangleMeshFormats
-        Graphics.Implicit.Export.SymbolicFormats
-        Graphics.Implicit.Export.Util
-        Graphics.Implicit.Export.TextBuilderUtils
-        Graphics.Implicit.Export.Symbolic.Rebound2
-        Graphics.Implicit.Export.Symbolic.Rebound3
-        Graphics.Implicit.Export.Render
-        Graphics.Implicit.Export.Render.Definitions
-        Graphics.Implicit.Export.Render.GetLoops
-        Graphics.Implicit.Export.Render.GetSegs
-        Graphics.Implicit.Export.Render.HandleSquares
-        Graphics.Implicit.Export.Render.Interpolate
-        Graphics.Implicit.Export.Render.RefineSegs
-        Graphics.Implicit.Export.Render.TesselateLoops
-        Graphics.Implicit.Export.Render.HandlePolylines
+                  Graphics.Implicit.ObjectUtil.GetBox2
+                  Graphics.Implicit.ObjectUtil.GetBox3
+                  Graphics.Implicit.ObjectUtil.GetImplicit2
+                  Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.ExtOpenScad.Default
+                  Graphics.Implicit.ExtOpenScad.Parser.Util
+                  Graphics.Implicit.ExtOpenScad.Eval.Statement
+                  Graphics.Implicit.ExtOpenScad.Eval.Expr
+                  Graphics.Implicit.ExtOpenScad.Util.StateC
+                  Graphics.Implicit.ExtOpenScad.Util.ArgParser
+                  Graphics.Implicit.ExtOpenScad.Util.OVal
+                  -- Historic, but functional. Should be merged into MarchingSquaresFill.
+                  -- Graphics.Implicit.Export.MarchingSquares
+                  Graphics.Implicit.Export.MarchingSquaresFill
+                  Graphics.Implicit.Export.RayTrace
+                  Graphics.Implicit.Export.NormedTriangleMeshFormats
+                  Graphics.Implicit.Export.SymbolicFormats
+                  Graphics.Implicit.Export.Util
+                  Graphics.Implicit.Export.TextBuilderUtils
+                  Graphics.Implicit.Export.Symbolic.Rebound2
+                  Graphics.Implicit.Export.Symbolic.Rebound3
+                  Graphics.Implicit.Export.Render
+                  Graphics.Implicit.Export.Render.Definitions
+                  Graphics.Implicit.Export.Render.GetLoops
+                  Graphics.Implicit.Export.Render.GetSegs
+                  Graphics.Implicit.Export.Render.HandleSquares
+                  Graphics.Implicit.Export.Render.Interpolate
+                  Graphics.Implicit.Export.Render.RefineSegs
+                  Graphics.Implicit.Export.Render.TesselateLoops
+                  Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
 
@@ -116,6 +119,7 @@ Executable extopenscad
                -optc-O3
                -threaded
                -rtsopts
+               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.
@@ -131,6 +135,7 @@ Executable docgen
                  base,
                  implicit
    ghc-options:
+               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -152,6 +157,7 @@ Executable implicitsnap
                  text,
                  vector-space
    Ghc-options:
+               -dynamic
                -threaded
                -rtsopts
                -O2
@@ -173,6 +179,7 @@ Executable Benchmark
    Ghc-options:
                -O2
                -optc-O3
+               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -190,8 +197,9 @@ Test-suite test-implicit
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
-               -O2
+                -O2
                 -optc-O3
+                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
@@ -203,8 +211,9 @@ Benchmark parser-bench
     Main-is: parser-bench.hs
     Hs-source-dirs: programs
     Ghc-options:
-               -O2
+                -O2
                 -optc-O3
+                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
