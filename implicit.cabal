@@ -40,6 +40,7 @@ Library
     Ghc-options:
                 -O2
                 -optc-O3
+                -dynamic
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
                 -- for debugging.
@@ -118,6 +119,7 @@ Executable extopenscad
                -optc-O3
                -threaded
                -rtsopts
+               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.
@@ -133,6 +135,7 @@ Executable docgen
                  base,
                  implicit
    ghc-options:
+               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -154,6 +157,7 @@ Executable implicitsnap
                  text,
                  vector-space
    Ghc-options:
+               -dynamic
                -threaded
                -rtsopts
                -O2
@@ -175,6 +179,7 @@ Executable Benchmark
    Ghc-options:
                -O2
                -optc-O3
+               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -192,8 +197,9 @@ Test-suite test-implicit
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
-               -O2
+                -O2
                 -optc-O3
+                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
@@ -205,8 +211,9 @@ Benchmark parser-bench
     Main-is: parser-bench.hs
     Hs-source-dirs: programs
     Ghc-options:
-               -O2
+                -O2
                 -optc-O3
+                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
