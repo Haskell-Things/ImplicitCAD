@@ -14,9 +14,13 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR))
+
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
+
 import Data.Maybe (fromMaybe, isJust)
+
 import qualified Data.Either as Either (either)
+
 import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
@@ -27,15 +31,15 @@ getImplicit3 :: SymbolicObj3 -> Obj3
 getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) =
     \(x,y,z) -> let (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
                 in
-                  rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
+                  rmaximum r [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2, (abs $ z-dz/2-z1) - dz/2]
 getImplicit3 (Sphere r ) =
-    \(x,y,z) -> sqrt (x*x + y*y + z*z) - r
+    \(x,y,z) -> (sqrt $ x*x + y*y + z*z) - r
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     let
-        d = sqrt(x*x + y*y) - ((r2-r1)/h*z+r1)
+        d = (sqrt $ x*x + y*y) - ((r2-r1)/h*z+r1)
         θ = atan2 (r2-r1) h
     in
-        max (d * cos θ) (abs(z-h/(2::ℝ)) - h/(2::ℝ))
+        max (d * cos θ) ((abs $ z-h/2) - (h/2))
 -- (Rounded) CSG
 getImplicit3 (Complement3 symbObj) =
     let
@@ -75,7 +79,7 @@ getImplicit3 (Translate3 v symbObj) =
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     let
         obj = getImplicit3 symbObj
-        k = abs(sx*sy*sz)**(1/3)
+        k = (abs $ sx*sy*sz)**(1/3)
     in
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
@@ -108,7 +112,7 @@ getImplicit3 (Shell3 w symbObj) =
     let
         obj = getImplicit3 symbObj
     in
-        \p -> abs (obj p) - w/2
+        \p -> (abs $ obj p) - w/2
 getImplicit3 (Outset3 d symbObj) =
     let
         obj = getImplicit3 symbObj
@@ -121,7 +125,7 @@ getImplicit3 (ExtrudeR r symbObj h) =
     let
         obj = getImplicit2 symbObj
     in
-        \(x,y,z) -> rmax r (obj (x,y)) (abs (z - h/2) - h/2)
+        \(x,y,z) -> rmax r (obj (x,y)) ((abs $ z - h/2) - h/2)
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
     let
         obj = getImplicit2 symbObj
@@ -135,12 +139,13 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
         scaleVec  s (x,y) = (x/s, y/s)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
         rotateVec θ (x,y) = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
-        k = (pi :: ℝ)/(180:: ℝ)
+        k :: ℝ
+        k = pi/180
     in
         \(x,y,z) -> let h = height' (x,y) in
             rmax r
                 (obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a ^-^ translate' z) $ (x,y))
-                (abs (z - h/2) - h/2)
+                ((abs $ z - h/2) - h/2)
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
     let
         obj1 = getImplicit2 symbObj1
@@ -174,7 +179,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         \(x,y,z) -> minimum $ do
 
             let
-                r = sqrt (x*x + y*y)
+                r = sqrt $ x*x + y*y
                 θ = atan2 y x
                 ns :: [ℕ]
                 ns =
@@ -190,7 +195,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 twist = rotate' θvirt
                 rz_pos = if twists
                         then let
-                            (c,s) = (cos(twist*k), sin(twist*k))
+                            (c,s) = ((cos $ twist*k), (sin $ twist*k))
                             (r',z') = (r-rshift, z-zshift)
                         in
                             (c*r' - s*z', c*z' + s*r')
@@ -198,7 +203,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
             return $
                 if capped
                 then rmax round'
-                    (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
+                    ((abs $ θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
                     (obj rz_pos)
                 else obj rz_pos
 -- FIXME: implement this, or implement a fallthrough function.
