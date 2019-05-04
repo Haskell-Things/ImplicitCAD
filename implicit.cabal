@@ -103,7 +103,6 @@ Library
                   Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
-
    Main-is: extopenscad.hs
    Hs-source-dirs: programs
    Build-depends:
@@ -128,7 +127,6 @@ Executable extopenscad
                -Weverything
 
 Executable docgen
-
    main-is: docgen.hs
    Hs-source-dirs: programs
    build-depends:
