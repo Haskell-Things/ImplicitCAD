@@ -26,14 +26,15 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) =
          (dx, dy) = (x2-x1, y2-y1)
     in
          if r == 0
-         then maximum [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
-         else rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         then maximum [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2]
+         else rmaximum r [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2]
 getImplicit2 (Circle r) =
-    \(x,y) -> sqrt (x * x + y * y) - r
+    \(x,y) -> (sqrt $ x * x + y * y) - r
 getImplicit2 (PolygonR _ points) =
     \p -> let
         pair :: ℕ -> (ℝ2,ℝ2)
         pair n = (points `genericIndex` n, points `genericIndex` mod (n + 1) (genericLength points) )
+        pairs :: [(ℝ2,ℝ2)]
         pairs =  [ pair n | n <- [0 .. genericLength points - 1] ]
         relativePairs =  map (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
         crossing_points =
@@ -43,7 +44,8 @@ getImplicit2 (PolygonR _ points) =
         seemsInRight = odd . length . filter (>0) $ nub crossing_points
         seemsInLeft = odd . length . filter (<0) $ nub crossing_points
         isIn = seemsInRight && seemsInLeft
-        dists = map (distFromLineSeg p) pairs :: [ℝ]
+        dists :: [ℝ]
+        dists = map (distFromLineSeg p) pairs
     in
         minimum dists * if isIn then -1 else 1
 -- (Rounded) CSG
@@ -85,7 +87,7 @@ getImplicit2 (Translate2 v symbObj) =
 getImplicit2 (Scale2 s@(sx,sy) symbObj) =
     \p -> let
         obj = getImplicit2 symbObj
-        k = abs(max sx sy)
+        k = abs $ max sx sy
     in
         k * obj (p ⋯/ s)
 getImplicit2 (Rotate2 θ symbObj) =
@@ -98,7 +100,7 @@ getImplicit2 (Shell2 w symbObj) =
     \p -> let
         obj = getImplicit2 symbObj
     in
-        abs (obj p) - w/2
+        (abs $ obj p) - w/2
 getImplicit2 (Outset2 d symbObj) =
     \p -> let
         obj = getImplicit2 symbObj
