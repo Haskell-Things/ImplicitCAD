@@ -41,7 +41,7 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
         d = (sqrt $ x*x + y*y) - ((r2-r1)/h*z+r1)
         θ = atan2 (r2-r1) h
     in
-        max (d * cos θ) ((abs $ z-h/2) - (h/2))
+        max (d * (cos θ)) ((abs $ z-h/2) - (h/2))
 -- (Rounded) CSG
 getImplicit3 (Complement3 symbObj) =
     let
@@ -88,11 +88,11 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
     let
         obj = getImplicit3 symbObj
         rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateYZ θ obj' (x,y,z) = obj' ( x, y*cos θ + z*sin θ, z*cos θ - y*sin θ)
+        rotateYZ θ obj' (x,y,z) = obj' ( x, y*(cos θ) + z*(sin θ), z*(cos θ) - y*(sin θ))
         rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateZX θ obj' (x,y,z) = obj' ( x*cos θ - z*sin θ, y, z*cos θ + x*sin θ)
+        rotateZX θ obj' (x,y,z) = obj' ( x*(cos θ) - z*(sin θ), y, z*(cos θ) + x*(sin θ))
         rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateXY θ obj' (x,y,z) = obj' ( x*cos θ + y*sin θ, y*cos θ - x*sin θ, z)
+        rotateXY θ obj' (x,y,z) = obj' ( x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ), z)
     in
         rotateXY xy $ rotateZX zx $ rotateYZ yz obj
 getImplicit3 (Rotate3V θ axis symbObj) =
@@ -135,7 +135,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
         scaleVec :: ℝ -> ℝ2 -> ℝ2
         scaleVec  s (x,y) = (x/s, y/s)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
-        rotateVec θ (x,y) = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
+        rotateVec θ (x,y) = (x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ))
         k :: ℝ
         k = pi/180
     in
