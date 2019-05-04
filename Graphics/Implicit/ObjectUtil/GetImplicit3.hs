@@ -23,6 +23,8 @@ import qualified Data.Either as Either (either)
 
 import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
 
+import Data.Cross (cross3)
+
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 
@@ -97,16 +99,11 @@ getImplicit3 (Rotate3V θ axis symbObj) =
     let
         axis' = normalized axis
         obj = getImplicit3 symbObj
-        -- Note: this is ripped from data.cross.
-        cross3 :: forall t. Num t => (t, t, t) -> (t, t, t) -> (t, t, t)
-        cross3 (ax,ay,az) (bx,by,bz) = ( ay * bz - az * by
-                                       , az * bx - ax * bz
-                                       , ax * by - ay * bx )
     in
         \v -> obj $
-            v ^* cos θ
-            ^-^ (axis' `cross3` v) ^* sin θ
-            ^+^ (axis' ^* (axis' <.> (v ^* (1 - cos θ))))
+            v ^* (cos θ)
+            ^-^ (axis' `cross3` v) ^* (sin θ)
+            ^+^ (axis' ^* (axis' <.> (v ^* (1 - (cos θ)))))
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) =
     let
