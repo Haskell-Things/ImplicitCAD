@@ -76,7 +76,9 @@ module Graphics.Implicit.Definitions (
         RotateExtrude),
     Rectilinear2,
     Rectilinear3,
-    fromℕtoℝ
+    fromℕtoℝ,
+    fromFastℕtoℝ,
+    fromFastℕ,
     )
 where
 
@@ -123,6 +125,12 @@ allthree f (x,y,z) = (f x, f y, f z)
 
 fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
+
+fromFastℕtoℝ :: Fastℕ -> ℝ
+fromFastℕtoℝ = fromIntegral
+
+fromFastℕ :: Fastℕ -> Int
+fromFastℕ a = a
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where
