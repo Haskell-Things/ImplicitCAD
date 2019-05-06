@@ -115,19 +115,22 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 -- FIXME: magic numbers.
 getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     let
-        range :: [ℝ]
-        range = [0, 0.1 .. 1.0]
+        samples :: Fastℕ
+        samples=11
+        hfuzz :: ℝ
+        hfuzz = 0.2
+        range :: [Fastℕ]
+        range = [0, 1 .. (samples-1)]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
-        (xrange, yrange) = (map (\s -> x1+s*dx) range, map (\s -> y1+s*dy) range )
-
+        (xrange, yrange) = ( map (\s -> x1+s*dx/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range, map (\s -> y1+s*dy/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range )
         h = case eitherh of
               Left h' -> h'
-              Right hf -> hmax + 0.2*(hmax-hmin)
+              Right hf -> hmax + hfuzz*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-        hrange = map (h*) range
+        hrange = map (/(fromFastℕtoℝ $ samples-1)) $ map (h*) $ map fromFastℕtoℝ range
         sval = case scale of
             Nothing -> 1
             Just scale' -> maximum $ map (abs . scale') hrange
@@ -156,9 +159,9 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
         samples :: Fastℕ
-        samples=11
+        samples = 11
         xfuzz :: ℝ
-        xfuzz=1.1
+        xfuzz = 1.1
         yfuzz :: ℝ
         yfuzz=0.1
         range :: [Fastℕ]
