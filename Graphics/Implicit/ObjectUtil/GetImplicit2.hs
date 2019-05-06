@@ -94,7 +94,7 @@ getImplicit2 (Rotate2 θ symbObj) =
     \(x,y) -> let
         obj = getImplicit2 symbObj
     in
-        obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
+        obj ( x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ))
 -- Boundary mods
 getImplicit2 (Shell2 w symbObj) =
     \p -> let

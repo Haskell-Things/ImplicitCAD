@@ -8,11 +8,11 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take)
 
 import Data.Maybe(Maybe(Nothing, Just))
 
-import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*))
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
 import Data.Maybe (fromMaybe)
@@ -112,7 +112,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         ((bx1,by1),(bx2,by2)) = getBox2 symbObj2
     in
         ((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
--- FIXME: magic numbers in range.
+-- FIXME: magic numbers.
 getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     let
         range :: [ℝ]
@@ -152,19 +152,28 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
         r = max x2 (x2 + xshift)
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
--- FIXME: magic numbers
+-- FIXME: magic numbers.
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
+        samples :: Fastℕ
+        samples=11
+        xfuzz :: ℝ
+        xfuzz=1.1
+        yfuzz :: ℝ
+        yfuzz=0.1
+        range :: [Fastℕ]
+        range = [0, 1 .. (samples-1)]
+        step = rot/(fromFastℕtoℝ $ samples-1)
         ((x1,y1),(x2,y2)) = getBox2 symbObj
-        (xshifts, yshifts) = unzip [f θ | θ <- [0 , rot / 10 .. rot] ]
-        xmax = maximum xshifts
-        ymax = maximum yshifts
-        ymin = minimum yshifts
-        xmax' | xmax > 0 = xmax * 1.1
+        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ map f $ map (step*) $ map fromFastℕtoℝ range
+        xmax = maximum xrange
+        ymax = maximum yrange
+        ymin = minimum yrange
+        xmax' | xmax > 0 = xmax * xfuzz
               | xmax < - x1 = 0
               | otherwise = xmax
-        ymax' = ymax + 0.1 * (ymax - ymin)
-        ymin' = ymin - 0.1 * (ymax - ymin)
+        ymax' = ymax + yfuzz * (ymax - ymin)
+        ymin' = ymin - yfuzz * (ymax - ymin)
         (r, _, _) = if either (==0) (const False) rotate
             then let
                 s = maximum $ map abs [x2, y1, y2]
