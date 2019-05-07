@@ -26,8 +26,10 @@ distFromLineSeg p (a,b) = distance p closest
     where
         ab = b ^-^ a
         ap = p ^-^ a
+        d :: ℝ
         d  = normalized ab ⋅ ap
         -- the closest point to p on the line segment.
+        closest :: ℝ2
         closest
             | d < 0 = a
             | d > magnitude ab = b
