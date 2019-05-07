@@ -9,10 +9,13 @@
 -- FIXME: why are these required?
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
+-- For the type arithmatic involved in calling VectorSpace.
+{-# LANGUAGE TypeFamilies #-}
+
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), Fractional, ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, realToFrac, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
+import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -30,7 +33,6 @@ import Data.Maybe (isNothing)
 import Control.Monad (mplus)
 
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
-import GHC.Real (RealFrac)
 
 -- | The only thing exported here. basically, a list of functions, which accept OVal arguments and retrun an ArgParser ?
 primitives :: [(String, [OVal] -> ArgParser (IO [OVal]))]
@@ -333,8 +335,8 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
             if center
             then Prim.translate (0,0,-heightn/2.0)
             else id
-        funcify :: (VectorSpace a, Fractional (Scalar a)) => Either a (ℝ -> a) -> ℝ -> a
-        funcify (Left val) h = realToFrac (h/heightn) *^ val
+        funcify :: (VectorSpace a, s ~ (Scalar a), s ~ ℝ) => Either a (ℝ -> a) -> ℝ -> a
+        funcify (Left val) h = (h/heightn) *^ val
         funcify (Right f ) h = f h
         twist' = fmap funcify twist
         scale' = fmap funcify scaleArg
@@ -356,7 +358,7 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
     translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
     let
-        is360m :: RealFrac a => a -> Bool
+        is360m :: ℝ -> Bool
         is360m n = 360 * fromInteger (round $ n / 360) /= n
         cap = is360m totalRot
             || either ( /= (0,0)) (\f -> f 0 /= f totalRot) translateArg
@@ -413,7 +415,7 @@ unit = moduleWithSuite "unit" $ \children -> do
     name :: String <- argument "unit"
         `doc` "the unit you wish to work in"
     let
-        mmRatio :: Fractional a => String -> Maybe a
+        mmRatio :: String -> Maybe ℝ
         mmRatio "inch" = Just 25.4
         mmRatio "in"   = mmRatio "inch"
         mmRatio "foot" = Just 304.8
@@ -473,7 +475,7 @@ obj2UpMap obj2upmod (x:xs) = case x of
     a          -> a                      : obj2UpMap obj2upmod xs
 obj2UpMap _ [] = []
 
-toInterval :: Fractional t => Bool -> t -> (t, t)
+toInterval :: Bool -> ℝ -> (ℝ, ℝ)
 toInterval center h =
     if center
     then (-h/2, h/2)
