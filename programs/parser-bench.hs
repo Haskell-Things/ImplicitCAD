@@ -1,9 +1,10 @@
-import Criterion.Main
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Expr
-import Graphics.Implicit.ExtOpenScad.Parser.Statement
-import Text.ParserCombinators.Parsec hiding (State)
-import Text.Printf
+import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
+import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+import Text.ParserCombinators.Parsec (parse)
+import Text.Printf (printf)
 
 lineComment :: Int -> String
 lineComment width = "//" ++ ['x' | _ <- [1..width]] ++ "\n"
