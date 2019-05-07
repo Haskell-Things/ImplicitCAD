@@ -9,9 +9,9 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, toOObj, divideObjs, caseOType, oTypeStr, getErrors) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char, String, (==), fromInteger, floor, ($), (.), map, error, (++), show, fromIntegral, head, flip, filter, not, return, head)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char, String, (==), fromInteger, floor, ($), (.), map, error, (++), show, head, flip, filter, not, return, head)
 
-import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OObj2, OObj3))
 
@@ -45,7 +45,7 @@ instance OTypeMirror ℕ where
     fromOObj (ONum n) = if n == fromInteger (floor n) then Just (floor n) else Nothing
     fromOObj _ = Nothing
     {-# INLINABLE fromOObj #-}
-    toOObj = ONum . fromIntegral
+    toOObj = ONum . fromℕtoℝ
 
 instance OTypeMirror Bool where
     fromOObj (OBool b) = Just b
