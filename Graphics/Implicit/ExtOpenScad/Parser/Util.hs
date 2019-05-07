@@ -20,6 +20,8 @@ import Data.Functor.Identity (Identity)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP))
 
+import Data.Kind (Type)
+
 -- white space, including tabs, newlines and comments
 genSpace :: ParsecT String u Identity String
 genSpace = many $
@@ -47,7 +49,7 @@ infixr 1 *<|>
 a *<|> b = try a <|> b
 
 infixr 2 ?:
-(?:) :: forall s u (m :: * -> *) a. String -> ParsecT s u m a -> ParsecT s u m a
+(?:) :: forall s u (m :: Type -> Type) a. String -> ParsecT s u m a -> ParsecT s u m a
 l ?: p = p <?> l
 
 stringGS :: String -> ParsecT String u Identity String
@@ -72,7 +74,7 @@ padString s = do
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . map try
 
-variableSymb :: forall s u (m :: * -> *). Stream s m Char => ParsecT s u m String
+variableSymb :: forall s u (m :: Type -> Type). Stream s m Char => ParsecT s u m String
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
 
 patternMatcher :: GenParser Char st Pattern

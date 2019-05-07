@@ -17,6 +17,8 @@ import Data.Maybe(Maybe(Just, Nothing))
 
 import Data.Functor.Identity(Identity)
 
+import Data.Kind (Type)
+
 -- We use parsec to parse.
 import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
 import Text.Parsec.Prim (ParsecT)
@@ -256,12 +258,12 @@ moduleArgsUnitDecl = do
     return argTemplate
 
 -- | Find the line number. Used when generating errors.
-lineNumber :: forall s u (m :: * -> *).
+lineNumber :: forall s u (m :: Type -> Type).
               Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 
 -- | Find the column number. Used when generating errors.
-columnNumber :: forall s u (m :: * -> *).
+columnNumber :: forall s u (m :: Type -> Type).
               Monad m => ParsecT s u m Column
 columnNumber = fmap sourceColumn getPosition
 

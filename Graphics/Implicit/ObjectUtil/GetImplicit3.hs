@@ -28,6 +28,7 @@ import Data.Cross (cross3)
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 
+-- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
 getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) =
