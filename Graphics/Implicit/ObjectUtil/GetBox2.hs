@@ -45,7 +45,7 @@ outsetBox r (a,b) =
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
 getBox2 (RectR _ a b) = (a,b)
-getBox2 (Circle r) =  ((-r, -r), (r,r))
+getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
 getBox2 (Complement2 _) =
