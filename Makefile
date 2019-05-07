@@ -1,6 +1,5 @@
 # ImplicitCAD Makefile. Build and test Implicitcad.
 
-
 ## Locations of binaries used when running tests, or generating the images to go along with our README.md.
 # The location of stl2ps, from stltools, available from https://github.com/rsmith-nl/stltools/tree/develop
 stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py

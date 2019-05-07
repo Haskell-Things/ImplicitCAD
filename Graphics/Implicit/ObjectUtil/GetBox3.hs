@@ -18,7 +18,9 @@ import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 import Data.Maybe (fromMaybe)
 import Data.VectorSpace ((^-^), (^+^))
 
--- test to see whether a Box3 has area.
+-- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
+
+-- Test to see whether a Box3 has area.
 isEmpty :: (Eq a2, Eq a1, Eq a) =>
            ((a, a1, a2), (a, a1, a2)) -> Bool
 isEmpty ((a,b,c),(d,e,f)) = a==d || b==e || c==f
@@ -142,7 +144,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
             Just _  -> (-d, -d, d, d)
                 where d = sval * getDist2 (0,0) symbObj
         translate' = fromMaybe (const (0,0)) translate
-        (tvalsx, tvalsy) = unzip . map (translate' . (h*)) $ hrange
+        (tvalsx, tvalsy) = unzip $ map (translate' . (h*)) hrange
         (tminx, tminy) = (minimum tvalsx, minimum tvalsy)
         (tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
     in
