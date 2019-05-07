@@ -19,6 +19,7 @@ import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
 import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
+import Data.Kind (Type)
 
 -- This is the state machine. It contains the variables, their values, the path, and... ?
 type CompState = (VarLookup, [OVal], FilePath, (), ())
@@ -67,11 +68,11 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
-errorC :: forall (m :: * -> *) a. (Show a, MonadIO m) => a -> a -> String -> m ()
+errorC :: forall (m :: Type -> Type) a. (Show a, MonadIO m) => a -> a -> String -> m ()
 errorC lineN columnN err = liftIO $ putStrLn $ "On line " ++ show lineN ++ ", column " ++ show columnN ++ ": " ++ err
 {-# INLINABLE errorC #-}
 
-mapMaybeM :: forall t (m :: * -> *) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
+mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do
     b <- f a
     return (Just b)
