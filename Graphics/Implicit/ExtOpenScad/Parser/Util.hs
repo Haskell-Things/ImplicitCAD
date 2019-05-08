@@ -76,6 +76,7 @@ tryMany = foldl1 (<|>) . map try
 
 variableSymb :: forall s u (m :: Type -> Type). Stream s m Char => ParsecT s u m String
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
+{-# INLINABLE variableSymb #-}
 
 patternMatcher :: GenParser Char st Pattern
 patternMatcher =
