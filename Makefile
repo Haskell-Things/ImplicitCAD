@@ -1,6 +1,5 @@
 # ImplicitCAD Makefile. Build and test Implicitcad.
 
-
 ## Locations of binaries used when running tests, or generating the images to go along with our README.md.
 # The location of stl2ps, from stltools, available from https://github.com/rsmith-nl/stltools/tree/develop
 stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
@@ -69,6 +68,7 @@ clean: Setup
 	rm -f $(TARGETS)
 	rm -rf dist/build/Graphics
 	rm -f dist/build/libHS*
+	rm -f Examples/example*.cachegrind.*
 
 # Clean up before making a release.
 distclean: clean Setup
@@ -112,7 +112,6 @@ $(LIBTARGET): $(LIBFILES)
 # The parser test suite, since it's source is stored in a different location than the other binaries we build:
 dist/build/test-implicit/test-implicit: $(TESTFILES) Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal build test-implicit
-
 
 # Build a binary target with cabal.
 dist/build/%: programs/$$(word 2,$$(subst /, ,%)).hs Setup dist/setup-config $(LIBTARGET) $(LIBFILES)
