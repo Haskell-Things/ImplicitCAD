@@ -16,12 +16,15 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
 
 import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
--- Resolution of the world, Integer operator, and symbolic languages for 2D and 3D objects.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℕ, SymbolicObj2, SymbolicObj3)
+-- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
+import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
 import Data.Map (Map)
+
+-- for keeping track of the line and column number we are on in our extopenscad file.
+import Text.ParserCombinators.Parsec (Line, Column)
 
 -----------------------------------------------------------------
 -- | Handles parsing arguments to modules
@@ -90,7 +93,7 @@ data Expr = Var Symbol
     deriving (Show, Eq)
 
 -- a statement, along with the line and column number it is found on.
-data StatementI = StatementI Fastℕ Fastℕ (Statement StatementI)
+data StatementI = StatementI Line Column (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool
