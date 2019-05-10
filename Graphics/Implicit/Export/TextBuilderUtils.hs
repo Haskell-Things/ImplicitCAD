@@ -6,35 +6,32 @@
 -- Data.Text.Lazy builders with.
 
 module Graphics.Implicit.Export.TextBuilderUtils (
-     -- Values from Data.Text.Lazy
-     Text,
-     pack,
-     -- Values from Data.Text.Lazy.Builder, as well as some special builders
-     Builder,
+     -- From Data.Text.Lazy
+     module DTL,
+     -- From Data.Text.Lazy.Builder
+     module DTLB,
      toLazyText,
-     fromLazyText,
-     buildInt,
-     buildℕ,
-     -- Serialize a float in full precision
+     -- some special case Builders.
      bf,
-     -- Serialize a float with four decimal places
      buildTruncFloat,
+     buildℕ,
+     buildInt,
      -- Values from Data.Monoid
      (<>),
      mconcat,
      mempty
     ) where
 
-import Prelude (Maybe(Nothing, Just), ($))
+import Prelude (Maybe(Nothing, Just), Int, ($))
 
-import Graphics.Implicit.Definitions (Fastℕ, ℝ, ℕ)
-import Data.Text.Lazy (Text, pack)
+import Graphics.Implicit.Definitions (ℝ, ℕ)
+import Data.Text.Lazy as DTL (Text, pack)
 -- We manually redefine this operator to avoid a dependency on base >= 4.5
 -- This will become unnecessary later.
 import Data.Monoid (Monoid, mappend, mconcat, mempty)
 
 import Data.Text.Internal.Lazy (defaultChunkSize)
-import Data.Text.Lazy.Builder (Builder, toLazyTextWith, fromLazyText)
+import Data.Text.Lazy.Builder as DTLB (Builder, toLazyTextWith, fromLazyText)
 import Data.Text.Lazy.Builder.RealFloat (formatRealFloat, FPFormat(Exponent, Fixed))
 import Data.Text.Lazy.Builder.Int (decimal)
 
@@ -43,16 +40,18 @@ import Data.Text.Lazy.Builder.Int (decimal)
 toLazyText :: Builder -> Text
 toLazyText = toLazyTextWith defaultChunkSize
 
-bf, buildTruncFloat :: ℝ -> Builder
-
+-- | Serialize a float in full precision
+bf :: ℝ -> Builder
 bf = formatRealFloat Exponent Nothing
 
+-- | Serialize a float with four decimal places
+buildTruncFloat :: ℝ -> Builder
 buildTruncFloat = formatRealFloat Fixed $ Just 4
 
 buildℕ :: ℕ -> Builder
 buildℕ = decimal
 
-buildInt :: Fastℕ -> Builder
+buildInt :: Int -> Builder
 buildInt = decimal
 
 -- This is directly copied from base 4.5.1.0
