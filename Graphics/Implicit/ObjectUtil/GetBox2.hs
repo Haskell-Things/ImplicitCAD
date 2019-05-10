@@ -5,19 +5,22 @@
 -- FIXME: Document what these are for.
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
-import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head)
+import Prelude(Bool, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), min, max, abs, head)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
+-- | our number model, and all of the 2D object types.
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*), sqrt, cos, sin, infty, neginfty,
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2))
 
-import Data.VectorSpace (magnitude, (^-^), (^+^))
+import Data.VectorSpace (magnitudeSq ,(^-^), (^+^), InnerSpace, Scalar)
 
 -- | Is a Box2 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
@@ -54,10 +57,7 @@ getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
 getBox2 (Complement2 _) =
-    ((-infty, -infty), (infty, infty))
-        where
-          infty :: (Fractional t) => t
-          infty = 1/0
+    ((neginfty, neginfty), (infty, infty))
 getBox2 (UnionR2 r symbObjs) =
     outsetBox r $ unionBoxes (map getBox2 symbObjs)
 getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
@@ -110,8 +110,11 @@ getBox2 (EmbedBoxedObj2 (_,box)) = box
 -- Sort of a circular
 getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
 -- Real implementations
-getDist2 p (Circle r) =  magnitude p + r
-getDist2 p (PolygonR r points) = r + maximum [magnitude (p ^-^ p') | p' <- points]
+getDist2 p (Circle radius) = radius + (distance p)
+  where
+    distance :: (InnerSpace v, ℝ ~ Scalar v) => v -> ℝ
+    distance point = sqrt $ magnitudeSq point
+getDist2 p (PolygonR r points) = r + maximum [ sqrt $ magnitudeSq (p ^-^ p') | p' <- points]
 -- Transform implementations
 getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
 getDist2 p (DifferenceR2 r objs) = r + getDist2 p (head objs)

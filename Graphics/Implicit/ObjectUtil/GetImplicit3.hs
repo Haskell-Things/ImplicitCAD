@@ -8,12 +8,12 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, (==), minimum, ($), maximum, (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, Num)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), (+), max, map, (==), minimum, ($), maximum, const, (.), Bool(True, False), ceiling, floor, return, error, head, tail, Num)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), sqrt, cbrt, cos, sin, π, atan2, Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ)
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), normalizeℝ3, fromℕtoℝ)
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
 
@@ -21,7 +21,7 @@ import Data.Maybe (fromMaybe, isJust)
 
 import qualified Data.Either as Either (either)
 
-import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
+import Data.VectorSpace ((^-^), (^+^), (^*), (<.>))
 
 import Data.Cross (cross3)
 
@@ -82,7 +82,7 @@ getImplicit3 (Translate3 v symbObj) =
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     let
         obj = getImplicit3 symbObj
-        k = (abs $ sx*sy*sz)**(1/3)
+        k = cbrt $ abs $ sx*sy*sz
     in
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
@@ -98,7 +98,7 @@ getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
         rotateXY xy $ rotateZX zx $ rotateYZ yz obj
 getImplicit3 (Rotate3V θ axis symbObj) =
     let
-        axis' = normalized axis
+        axis' = normalizeℝ3 axis
         obj = getImplicit3 symbObj
     in
         \v -> obj $
@@ -138,7 +138,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
         rotateVec :: ℝ -> ℝ2 -> ℝ2
         rotateVec θ (x,y) = (x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ))
         k :: ℝ
-        k = pi/180
+        k = π/180
     in
         \(x,y,z) -> let h = height' (x,y) in
             rmax r
@@ -153,7 +153,7 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
     let
         tau :: ℝ
-        tau = 2 * pi
+        tau = 2 * π
         k :: ℝ
         k   = tau / 360
         totalRotation' = totalRotation*k

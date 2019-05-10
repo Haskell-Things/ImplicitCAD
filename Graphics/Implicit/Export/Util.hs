@@ -5,15 +5,17 @@
 -- FIXME: why are these needed?
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
--- Functions to make meshes/polylines finer.
 
+{-# LANGUAGE TypeFamilies #-}
+
+-- |  Functions to make meshes/polylines finer.
 module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
-import Prelude(Fractional, (/), (-), ($), foldl, recip, realToFrac, length)
+import Prelude((/), (-), ($), foldl, recip, length, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle, NormedTriangle)
+import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle, NormedTriangle, normalizeℝ3, fromℕtoℝ, toℕ)
 
-import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
+import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), zeroV)
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj (a,b,c) =
@@ -38,14 +40,14 @@ normVertex res obj p =
         dx = d (1, 0, 0)
         dy = d (0, 1, 0)
         dz = d (0, 0, 1)
-    in (p, normalized (dx,dy,dz))
+    in (p, normalizeℝ3 (dx,dy,dz))
 
-centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
+centroid :: (VectorSpace v, s ~ (Scalar v), s ~ ℝ) => [v] -> v
 centroid pts =
     (norm *^) $ foldl (^+^) zeroV pts
     where
-      norm :: Fractional a => a
-      norm = recip $ realToFrac $ length pts
+      norm :: ℝ
+      norm = recip . fromℕtoℝ . toℕ $ length pts
 {-# INLINABLE centroid #-}
 
 {--- If we need to make a 2D mesh finer...

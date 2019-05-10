@@ -35,7 +35,8 @@ Library
                   blaze-svg,
                   storable-endian,
                   JuicyPixels,
-                  transformers
+                  transformers,
+                  integer-gmp
 
     Ghc-options:
                 -O2
@@ -71,6 +72,9 @@ Library
                     Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
+                  Graphics.Implicit.RationalFunctions
+                  Graphics.Implicit.IntegralUtil
+                  Graphics.Implicit.RationalUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
                   Graphics.Implicit.ObjectUtil.GetImplicit2

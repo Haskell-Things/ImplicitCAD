@@ -9,31 +9,32 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip)
+import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), max, min, compare, (<=), fst, snd, (++), head, flip)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, toℝ, ℝ2, ℝ3, π, sqrt, sin, asin, Box2, (⋅), normalizeℝ, normalizeℝ2)
 
 import Data.List (sort, sortBy, (!!))
 
-import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
+import Data.VectorSpace (magnitudeSq, (^-^), (^+^), (*^))
 
 -- get the distance between two points.
-import Data.AffineSpace (distance)
+import Data.AffineSpace (distanceSq)
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
-distFromLineSeg p (a,b) = distance p closest
+-- FIXME: distanceSq is stripping off ℝs. why?
+distFromLineSeg p (a,b) = sqrt $ toℝ $ distanceSq p closest
     where
         ab = b ^-^ a
         ap = p ^-^ a
         d :: ℝ
-        d  = normalized ab ⋅ ap
+        d  = normalizeℝ $ ab ⋅ ap
         -- the closest point to p on the line segment.
         closest :: ℝ2
         closest
             | d < 0 = a
-            | d > magnitude ab = b
-            | otherwise = a ^+^ d *^ normalized ab
+            | d > sqrt (magnitudeSq ab) = b
+            | otherwise = a ^+^ d *^ (normalizeℝ2 ab)
 
 box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3, ℝ3) -> Bool
 box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)) =
@@ -54,9 +55,8 @@ rmax ::
     -> ℝ  -- ^ second number to round maximum
     -> ℝ  -- ^ resulting number
 rmax r x y =  if abs (x-y) < r
-    then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
+    then y - r*(sin (π/4-(asin((x-y)/r/sqrt(2))))) + r
     else max x y
-
 
 -- | Rounded minimum
 rmin ::
@@ -65,7 +65,7 @@ rmin ::
     -> ℝ  -- ^ second number to round minimum
     -> ℝ  -- ^ resulting number
 rmin r x y = if abs (x-y) < r
-    then y + r*sin(pi/4+asin((x-y)/r/sqrt 2)) - r
+    then y + r*(sin (π/4+(asin((x-y)/r/sqrt(2))))) - r
     else min x y
 
 -- | Like rmax, but on a list instead of two.

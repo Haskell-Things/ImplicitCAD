@@ -15,9 +15,9 @@
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
+import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, cos, sin, π, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3), ArgParser)
 
@@ -180,7 +180,7 @@ cylinder = moduleWithoutSuite "cylinder" $ do
     addObj3 $ if r1 == 1 && r2 == 1
         then let
             obj2 = if sides < 0 then Prim.circle r else Prim.polygonR 0 $
-                [(r*cos θ, r*sin θ )| θ <- [2*pi*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
+                [(r*cos θ, r*sin θ )| θ <- [2*π*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
             obj3 = Prim.extrudeR 0 obj2 dh
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
@@ -200,7 +200,7 @@ circle = moduleWithoutSuite "circle" $ do
     addObj2 $ if sides < 3
         then Prim.circle r
         else Prim.polygonR 0 $
-            [(r*cos θ, r*sin θ )| θ <- [2*pi*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
+            [(r*cos θ, r*sin θ )| θ <- [2*π*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
 
 polygon :: (String, [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
@@ -269,7 +269,7 @@ translate = moduleWithSuite "translate" $ \children -> do
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
 deg2rad :: ℝ -> ℝ
-deg2rad x = x / 180.0 * pi
+deg2rad x = x / 180.0 * π
 
 -- This is mostly insane
 rotate :: (String, [OVal] -> ArgParser (IO [OVal]))
@@ -446,6 +446,7 @@ unit = moduleWithSuite "unit" $ \children -> do
 
 moduleWithSuite :: t -> t1 -> (t, t1)
 moduleWithSuite name modArgMapper = (name, modArgMapper)
+
 moduleWithoutSuite :: t -> a -> (t, b -> a)
 moduleWithoutSuite name modArgMapper = (name, const modArgMapper)
 

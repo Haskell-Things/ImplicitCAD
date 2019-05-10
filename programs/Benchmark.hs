@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Maybe(Just, Nothing), Either(Left), fromIntegral)
+import Prelude (($), (*), (/), String, IO, map, zip3, Maybe(Just, Nothing), Either(Left), fromIntegral)
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, defaultMain)
@@ -17,8 +17,8 @@ import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
 
--- The variables defining distance and counting in our world.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ)
+-- The types for distance and counting in our world, along with some trig functions/values.
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, cos, π)
 
 -- Haskell representations of objects to benchmark.
 
@@ -40,7 +40,7 @@ object1 :: SymbolicObj3
 object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
     where
       twist :: ℝ -> ℝ
-      twist h = 35*cos(h*2*pi/60)
+      twist h = 35*cos(h*2*π/60)
 
 -- | another 3D object, for benchmarking.
 object2 :: SymbolicObj3

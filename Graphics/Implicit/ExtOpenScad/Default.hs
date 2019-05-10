@@ -10,9 +10,10 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, 
+                abs, signum, fromInteger, (.), floor, ceiling, round, max, min, flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, π, sqrt, exp, powℝℝ, atan2, log)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
@@ -31,10 +32,12 @@ defaultObjects = fromList $
 
 -- Missing standard ones:
 -- rand, lookup,
+-- FIXME: what standard?
+
 
 defaultConstants :: [(String, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [("pi", pi)]
+    [("pi", π)]
 
 defaultFunctions :: [(String, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
@@ -66,7 +69,7 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
         ("max", max),
         ("min", min),
         ("atan2", atan2),
-        ("pow", (**))
+        ("pow", powℝℝ)
     ]
 
 defaultFunctionsSpecial :: [(String, OVal)]
@@ -93,7 +96,7 @@ defaultPolymorphicFunctions =
         ("/", divide),
         ("-", toOObj sub),
         ("%", toOObj omod),
-        ("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)),
+        ("^", toOObj (powℝℝ :: ℝ -> ℝ -> ℝ)),
         ("negate", toOObj negatefun),
         ("index", toOObj index),
         ("splice", toOObj osplice),

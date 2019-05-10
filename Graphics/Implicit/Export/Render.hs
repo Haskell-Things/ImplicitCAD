@@ -11,9 +11,9 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
+import Prelude(Float, Bool, ceiling, ($), (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), both, allthree)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, both, ℝ3, allthree, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), fromℕtoℝ, fromℕ, fromFastℕ, Fastℕ)
 
 import Data.VectorSpace ((^-^))
 
@@ -81,21 +81,21 @@ getMesh p1@(x1,y1,z1) p2 res obj =
         (nx,ny,nz) = ceiling `allthree` ( d ⋯/ (res,res,res))
 
         -- How big are the steps?
-        (rx,ry,rz) = d ⋯/ (fromIntegral `allthree` (nx,ny,nz))
+        (rx,ry,rz) = d ⋯/ (fromℕtoℝ `allthree` (nx,ny,nz))
 
         -- The positions we're rendering.
-        pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
-        pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
-        pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
+        pXs = [ x1 + rx*(fromℕtoℝ n) | n <- [0.. nx] ]
+        pYs = [ y1 + ry*(fromℕtoℝ n) | n <- [0.. ny] ]
+        pZs = [ z1 + rz*(fromℕtoℝ n) | n <- [0.. nz] ]
 
         par3DList :: forall t. NFData t => ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[[t]]]
         par3DList lenx leny lenz f =
             [[[f
-                (\n -> x1 + rx*fromIntegral (mx+n)) mx
-                (\n -> y1 + ry*fromIntegral (my+n)) my
-                (\n -> z1 + rz*fromIntegral (mz+n)) mz
+                (\n -> x1 + rx*(fromℕtoℝ (mx+n))) mx
+                (\n -> y1 + ry*(fromℕtoℝ (my+n))) my
+                (\n -> z1 + rz*(fromℕtoℝ (mz+n))) mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-                `using` parBuffer (max 1 . fromIntegral $ div lenz 32) rdeepseq
+                `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ lenz) (32::Fastℕ)) rdeepseq
 
         -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
@@ -106,21 +106,21 @@ getMesh p1@(x1,y1,z1) p2 res obj =
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0 | objY0Z1 <- objZ1
                 ]| z0 <- pZs | z1' <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
-                ] `using` parBuffer (max 1 . fromIntegral $ div nz 32) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
 
         midsY = [[[
                  interpolate (y0, objX0Y0Z0) (y1', objX0Y1Z0) (appAC obj x0 z0) res
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
                 ]| y0 <- pYs | y1' <- tail pYs | objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
 
         midsX = [[[
                  interpolate (x0, objX0Y0Z0) (x1', objX1Y0Z0) (appBC obj y0 z0) res
                  | x0 <- pXs | x1' <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` parBuffer (max 1 $ fromIntegral $ div nx 32) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
 
         -- Calculate segments for each side
         segsZ = [[[
@@ -133,7 +133,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
             ]|z0<-pZs             |mX'  <-midsX|                mY'  <-midsY
              |objZ0 <- objV
-            ] `using` parBuffer (max 1 $ fromIntegral $ div nz 32) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
 
         segsY = [[[
             map2  (inj2 y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0)
@@ -145,7 +145,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0 <- objZ0 | objY0Z1 <- objZ1
             ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsX|mBT  <-tail midsX|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
 
         segsX = [[[
             map2  (inj1 x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0)
@@ -157,7 +157,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0  <-objZ0  |objY1Z0  <-tail objZ0  |objY0Z1  <-objZ1  |objY1Z1  <-tail objZ1
             ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsY|mBT  <-tail midsY|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ]  `using` parBuffer (max 1 $ fromIntegral $ div nx 32) rdeepseq
+            ]  `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
 
         -- (3) & (4) : get and tesselate loops
         sqTris = [[[
@@ -181,8 +181,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
             ]| segZ'  <- segsZ | segZT  <- tail segsZ
              | segY' <- segsY
              | segX' <- segsX
-            ]   `using` parBuffer (max 1 $ fromIntegral $ div nz 32) rdeepseq
-
+            ]   `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
     in
       -- (5) merge squares, etc
       cleanupTris . mergedSquareTris . concat . concat $ concat sqTris
@@ -202,54 +201,51 @@ cleanupTris tris =
         isDegenerateTri (a, b, c) = isDegenerateTriFloat (floatPoint a, floatPoint b, floatPoint c)
     in filter (not . isDegenerateTri) tris
 
--- getContour gets a polyline describing the edge of a 2D object.
+-- | getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
 getContour p1@(x1, y1) p2 res obj =
     let
-        -- the size of the region we're being asked to search.
+        -- | the size of the region we're being asked to search.
         d = p2 ^-^ p1
 
-        -- How many steps will we take on each axis?
+        -- | How many steps will we take on each axis?
         nx :: ℕ
         ny :: ℕ
         (nx,ny) = ceiling `both` (d ⋯/ (res,res))
 
-        -- How big are the steps?
-        (rx,ry) = d ⋯/ (fromIntegral `both` (nx,ny))
+        -- | How big are the steps?
+        (rx,ry) = d ⋯/ (fromℕtoℝ `both` (nx,ny))
 
-        -- the points inside of the region.
-        pYs = [ y1 + ry*fromIntegral p | p <- [0.. ny] ]
-        pXs = [ x1 + rx*fromIntegral p | p <- [0.. nx] ]
+        -- | the points inside of the region.
+        pYs = [ y1 + ry*(fromℕtoℝ p) | p <- [0.. ny] ]
+        pXs = [ x1 + rx*(fromℕtoℝ p) | p <- [0.. nx] ]
 
         par2DList :: forall t. NFData t => ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[t]]
         par2DList lenx leny f =
             [[ f
-                (\n -> x1 + rx*fromIntegral (mx+n)) mx
-                (\n -> y1 + ry*fromIntegral (my+n)) my
+                (\n -> x1 + rx*(fromℕtoℝ (mx+n))) mx
+                (\n -> y1 + ry*(fromℕtoℝ (my+n))) my
             | mx <- [0..lenx] ] | my <- [0..leny] ]
-                `using` parBuffer (max 1 . fromIntegral $ div leny 32) rdeepseq
+            `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ leny) (32::Fastℕ)) rdeepseq
 
-
-        -- Evaluate obj to avoid waste in mids, segs, later.
-
+        -- | fully evaluate obj to avoid waste in mids, segs, later.
         objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
 
-        -- (1) Calculate mid points on X, and Y axis in 2D space.
-
+        -- | Calculate mid points on X, and Y axis in 2D space.
         midsY = [[
                  interpolate (y0, objX0Y0) (y1', objX0Y1) (obj $* x0) res
                  | x0 <- pXs |                  objX0Y0 <- objY0   | objX0Y1 <- objY1
                 ]| y0 <- pYs | y1' <- tail pYs | objY0   <- objV    | objY1   <- tail objV
-                ] `using` parBuffer (max 1 . fromIntegral $ div ny 32) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
+
 
         midsX = [[
                  interpolate (x0, objX0Y0) (x1', objX1Y0) (obj *$ y0) res
                  | x0 <- pXs | x1' <- tail pXs | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
                 ]| y0 <- pYs |                  objY0   <- objV
-                ] `using` parBuffer (max 1 . fromIntegral $ div nx 32) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
 
-        -- Calculate segments for each side
-
+        -- | Calculate segments for each side
         segs = [[
             getSegs (x0,y0) (x1',y1') obj
                 (objX0Y0, objX1Y0, objX0Y1, objX1Y1)
@@ -258,10 +254,11 @@ getContour p1@(x1, y1) p2 res obj =
              |objX0Y0<-objY0|objX1Y0<-tail objY0|objX0Y1<-objY1|objX1Y1<-tail objY1
             ]|y0<-pYs|y1'<-tail pYs|mX'' <-midsX|mX'T <-tail midsX|mY'' <-midsY
              |objY0 <- objV  | objY1 <- tail objV
-            ] `using` parBuffer (max 1 . fromIntegral $ div ny 32) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
 
     in
-      cleanLoopsFromSegs . concat $ concat segs -- (5) merge squares, etc
+      -- | merge squares, etc
+      cleanLoopsFromSegs . concat $ concat segs 
 
 -- utility functions
 

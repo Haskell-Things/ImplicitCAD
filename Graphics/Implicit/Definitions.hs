@@ -15,13 +15,11 @@
 -- Definitions of the types used when modeling, and a few operators.
 
 module Graphics.Implicit.Definitions (
-    ℝ,
+    module R,
+    module N,
     ℝ2,
-    ℝ3,
-    minℝ,
-    ℕ,
-    Fastℕ,
     both,
+    ℝ3,
     allthree,
     (⋅),
     (⋯*),
@@ -75,39 +73,23 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude),
     Rectilinear2,
-    Rectilinear3,
-    fromℕtoℝ,
-    fromFastℕtoℝ,
-    fromFastℕ,
+    Rectilinear3
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral)
+import Prelude (Show, Either, show, (*), (/))
 
 import Data.Maybe (Maybe)
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
--- Let's make things a bit nicer. 
+import Graphics.Implicit.RationalUtil as R (ℚ(minℝ, π, sqrt, cbrt, powℝ, powℝℝ, exp, log, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, fromℝ, toℝ, normalizeℝ, normalizeℝ2, normalizeℝ3, powℝ, (%), infty, neginfty), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat)
+
+import Graphics.Implicit.IntegralUtil as N (ℕ, Fastℕ, fromℕ, toℕ, fromFastℕ, toFastℕ)
+
 -- Following the math notation ℝ, ℝ², ℝ³...
--- Supports changing Float to Double for more precision!
--- FIXME: what about using rationals instead of Float/Double?
-type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
-
-minℝ :: ℝ
--- for Floats.
---minℝ = 0.00000011920928955078125 * 2
-
--- for Doubles.
-minℝ = 0.0000000000000002
-
--- Arbitrary precision integers.
-type ℕ = Integer
-
--- System integers.
-type Fastℕ = Int
 
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
@@ -120,17 +102,6 @@ allthree f (x,y,z) = (f x, f y, f z)
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
-
--- Wrap the functions that convert datatypes.
-
-fromℕtoℝ :: ℕ -> ℝ
-fromℕtoℝ = fromIntegral
-
-fromFastℕtoℝ :: Fastℕ -> ℝ
-fromFastℕtoℝ = fromIntegral
-
-fromFastℕ :: Fastℕ -> Int
-fromFastℕ a = a
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where

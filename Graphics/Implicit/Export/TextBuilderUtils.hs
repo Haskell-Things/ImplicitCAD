@@ -24,7 +24,7 @@ module Graphics.Implicit.Export.TextBuilderUtils (
 
 import Prelude (Maybe(Nothing, Just), Int, ($))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, fromℝtoFloat)
 import Data.Text.Lazy as DTL (Text, pack)
 -- We manually redefine this operator to avoid a dependency on base >= 4.5
 -- This will become unnecessary later.
@@ -42,11 +42,11 @@ toLazyText = toLazyTextWith defaultChunkSize
 
 -- | Serialize a float in full precision
 bf :: ℝ -> Builder
-bf = formatRealFloat Exponent Nothing
+bf value = formatRealFloat Exponent Nothing $ (fromℝtoFloat value)
 
 -- | Serialize a float with four decimal places
 buildTruncFloat :: ℝ -> Builder
-buildTruncFloat = formatRealFloat Fixed $ Just 4
+buildTruncFloat value = formatRealFloat Fixed (Just 4) (fromℝtoFloat value)
 
 buildℕ :: ℕ -> Builder
 buildℕ = decimal

@@ -13,7 +13,8 @@ module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) wh
 
 import Prelude (Real, Float, ($), (+), map, (.), realToFrac, toEnum, length, zip, return)
 
-import Graphics.Implicit.Definitions (TriangleMesh, ℕ, ℝ3)
+import Graphics.Implicit.Definitions (TriangleMesh, ℕ, ℝ3, normalizeℝ3)
+
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildℕ)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
@@ -26,12 +27,12 @@ import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian (LittleEndian(LE))
 
-import Data.VectorSpace (normalized, negateV)
+import Data.VectorSpace (negateV)
 import Data.Cross (cross3)
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
-    normalized $ (b + negateV a) `cross3` (c + negateV a)
+    normalizeℝ3 $ (b + negateV a) `cross3` (c + negateV a)
 
 stl :: TriangleMesh -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter

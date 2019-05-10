@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
+import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), min, max, minimum, maximum, show, return)
 
 import Control.Applicative ((<|>))
 
@@ -32,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, cbrt, sqrt)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe)
@@ -99,8 +99,8 @@ getRes (varlookup, _, obj:_) =
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
-        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
-        _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
+        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((cbrt (x*y*z/qual)) / 22)
+        _                     -> min (minimum [x,y,z]/2) ((cbrt (x*y*z     )) / 22)
 -- | ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
 getRes (varlookup, obj:_, _) =

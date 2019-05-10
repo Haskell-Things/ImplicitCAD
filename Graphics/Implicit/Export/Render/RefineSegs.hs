@@ -5,12 +5,13 @@
 -- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, tail, sqrt, (<=))
+import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, tail, (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, ℕ, Obj2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, minℝ, ℕ, Obj2, (⋅), normalizeℝ2, sqrt)
+
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
+import Data.VectorSpace (magnitudeSq, (^-^), (^*), (^+^))
 
 -- The purpose of refine is to add detail to a polyline aproximating
 -- the boundary of an implicit function and to remove redundant points.
@@ -30,7 +31,7 @@ detail' res obj [p1@(x1,y1), p2@(x2,y2)] | (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) > r
 detail' _ _ a = a
 
 -- detail adds new points to a polyline to add more detail.
-
+-- FIXME: all of the magic numbers.
 detail :: ℕ -> ℝ -> (ℝ2 -> ℝ) -> [ℝ2] -> [ℝ2]
 detail n res obj [p1, p2] | n < 2 =
     let
@@ -39,7 +40,7 @@ detail n res obj [p1, p2] | n < 2 =
     in if abs midval < res / 40
     then [p1, p2]
     else let
-        normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^-^ p1)
+        normal = (\(a,b) -> (b, -a)) $ normalizeℝ2 (p2 ^-^ p1)
         derivN = -(obj (mid ^-^ (normal ^* (midval/2))) - midval) * (2/midval)
     in if abs derivN > 0.5 && abs derivN < 2 && abs (midval/derivN) < 3*res
     then let
@@ -50,7 +51,7 @@ detail n res obj [p1, p2] | n < 2 =
         derivX = (obj (mid ^+^ (res/100, 0)) - midval)*100/res
         derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
         derivNormSq = derivX*derivX + derivY*derivY
-    in if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/sqrt derivNormSq) < 3*res
+    in if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/(sqrt derivNormSq)) < 3*res
     then let
         (dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
         mid' = mid ^+^ (dX, dY)
@@ -68,7 +69,7 @@ simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: [ℝ2] -> [ℝ2]
 simplify1 (a:b:c:xs) =
-    if abs ( ((b ^-^ a) ⋅ (c ^-^ a)) - magnitude (b ^-^ a) * magnitude (c ^-^ a) ) <= minℝ
+    if abs ( ((b ^-^ a) ⋅ (c ^-^ a)) - (sqrt $ magnitudeSq (b ^-^ a)) * (sqrt $ magnitudeSq (c ^-^ a)) ) <= minℝ
     then simplify1 (a:c:xs)
     else a : simplify1 (b:c:xs)
 simplify1 a = a
