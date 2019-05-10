@@ -449,11 +449,11 @@ moduleWithSuite name modArgMapper = (name, modArgMapper)
 moduleWithoutSuite :: t -> a -> (t, b -> a)
 moduleWithoutSuite name modArgMapper = (name, const modArgMapper)
 
-addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
-addObj3 x = return $ return [OObj3 x]
-
 addObj2 :: SymbolicObj2 -> ArgParser (IO [OVal])
 addObj2 x = return $ return [OObj2 x]
+
+addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
+addObj3 x = return $ return [OObj3 x]
 
 objMap :: (SymbolicObj2 -> SymbolicObj2) -> (SymbolicObj3 -> SymbolicObj3) -> [OVal] -> [OVal]
 objMap obj2mod obj3mod (x:xs) = case x of
