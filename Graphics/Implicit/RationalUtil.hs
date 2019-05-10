@@ -198,8 +198,8 @@ fromℕtoℝ a = ℝ $ realToFrac a
 fromFastℕtoℝ :: Fastℕ -> ℝ
 fromFastℕtoℝ a = ℝ $ realToFrac a
 
-fromInttoℝ :: Int -> ℝ
-fromInttoℝ a = ℝ $ realToFrac a
+--fromInttoℝ :: Int -> ℝ
+--fromInttoℝ a = ℝ $ realToFrac a
 
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat a = (realToFrac a :: Float)
