@@ -75,11 +75,14 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude),
     Rectilinear2,
-    Rectilinear3
+    Rectilinear3,
+    fromℕtoℝ,
+    fromFastℕtoℝ,
+    fromFastℕ,
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Either, show, (*), (/))
+import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral)
 
 import Data.Maybe (Maybe)
 
@@ -114,10 +117,20 @@ both f (x,y) = (f x, f y)
 allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
 allthree f (x,y,z) = (f x, f y, f z)
 
-
 -- TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
+
+-- Wrap the functions that convert datatypes.
+
+fromℕtoℝ :: ℕ -> ℝ
+fromℕtoℝ = fromIntegral
+
+fromFastℕtoℝ :: Fastℕ -> ℝ
+fromFastℕtoℝ = fromIntegral
+
+fromFastℕ :: Fastℕ -> Int
+fromFastℕ a = a
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where

@@ -15,6 +15,7 @@ import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, ret
 import qualified Prelude as Prelude (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic))
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
 import Graphics.Implicit.Definitions(ℕ)
@@ -31,6 +32,7 @@ import Control.Arrow(first)
 
 -- ** argument and combinators
 
+-- | Builds an argparser for the type that is expected from it.
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument name =
     AP name Nothing "" $ \oObjVal -> do
@@ -74,7 +76,7 @@ eulerCharacteristic _ _ = error "Impossible!"
 -- | Apply arguments to an ArgParser
 
 argMap ::
-    [(Maybe String,  OVal)]      -- ^ arguments
+    [(Maybe String, OVal)]      -- ^ arguments
     -> ArgParser a              -- ^ ArgParser to apply them to
     -> (Maybe a, [String])      -- ^ (result, error messages)
 

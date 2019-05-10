@@ -220,17 +220,17 @@ defaultPolymorphicFunctions =
             ["Can't " ++ name ++ " objects of types " ++ oTypeStr a ++ " and " ++ oTypeStr b ++ "."]
 
         list_gen :: [ℝ] -> Maybe [ℝ]
-        list_gen [a,b] = Just [fromInteger (ceiling a).. fromInteger (floor b)]
+        list_gen [a, b] = Just $ map fromInteger $ [(ceiling a).. (floor b)]
         list_gen [a, b, c] =
             let
                 nr = (c-a)/b
                 n :: ℝ
                 n  = fromInteger (floor nr)
             in if nr - n > 0
-            then Just
-                [fromInteger (ceiling a), fromInteger (ceiling (a+b)).. fromInteger (floor (c - b*(nr -n)))]
-            else Just
-                [fromInteger (ceiling a), fromInteger (ceiling (a+b)).. fromInteger (floor c)]
+            then Just $ map fromInteger $
+                [(ceiling a), (ceiling (a+b)).. (floor (c - b*(nr -n)))]
+            else Just $ map fromInteger $
+                [(ceiling a), (ceiling (a+b)).. (floor c)]
         list_gen _ = Nothing
 
         ternary :: forall t. Bool -> t -> t -> t

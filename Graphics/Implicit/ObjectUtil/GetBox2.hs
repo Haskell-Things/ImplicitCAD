@@ -2,7 +2,12 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+-- FIXME: Document what these are for.
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
 
@@ -14,12 +19,12 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
 
 import Data.VectorSpace (magnitude, (^-^), (^+^))
 
--- Is a Box2 empty?
--- Really, this checks if it is one dimensional, which is good enough.
+-- | Is a Box2 empty?
+-- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: Box2 -> Bool
 isEmpty ((a, b), (c, d)) = a==c || b==d
 
--- Define a Box2 around all of the given points.
+-- | Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
 pointsBox points =
     let
@@ -27,6 +32,7 @@ pointsBox points =
     in
         ((minimum xs, minimum ys), (maximum xs, maximum ys))
 
+-- | Define a box that fits around the given boxes.
 unionBoxes :: [Box2] -> Box2
 unionBoxes boxes =
     let
@@ -44,7 +50,7 @@ outsetBox r (a,b) =
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
 getBox2 (RectR _ a b) = (a,b)
-getBox2 (Circle r ) =  ((-r, -r), (r,r))
+getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
 getBox2 (Complement2 _) =
@@ -85,7 +91,7 @@ getBox2 (Scale2 s symbObj) =
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
-        rotate (x,y) = (x*cos θ - y*sin θ, x*sin θ + y*cos θ)
+        rotate (x,y) = (x*(cos θ) - y*(sin θ), x*(sin θ) + y*(cos θ))
     in
         pointsBox [ rotate (x1, y1)
                   , rotate (x1, y2)

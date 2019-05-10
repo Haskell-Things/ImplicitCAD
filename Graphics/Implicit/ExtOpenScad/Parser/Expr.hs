@@ -7,9 +7,6 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
 import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3)
 
--- the datatype representing the graininess of our world.
-import Graphics.Implicit.Definitions (ℝ)
-
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
 
@@ -32,14 +29,14 @@ literal = ("literal" ?:) $
             a <- many1 digit
             _ <- char 'e'
             b <- many1 digit
-            return . LitE $ ONum ((read a * (10 ** read b)) :: ℝ)
+            return . LitE $ ONum $ read a * (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
             b <- many digit
             _ <- char 'e'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** read c)) :: ℝ)
+            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -47,7 +44,7 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '+'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) * (10 ** read c)) :: ℝ)
+            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -55,21 +52,21 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '-'
             c <- many1 digit
-            return . LitE $ ONum ((read (a ++ "." ++ b) / (10 ** read c)) :: ℝ)
+            return . LitE $ ONum $ read (a ++ "." ++ b) / (10 ** read c)
         *<|>  do
             a <- many1 digit
             _ <- char 'e'
             _ <- char '-'
             b <- many1 digit
-            return . LitE $ ONum ((read a / (10 ** read b)) :: ℝ)
+            return . LitE $ ONum $ read a / (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
             b <- many digit
-            return . LitE $ ONum (read (a ++ "." ++ b) :: ℝ)
+            return . LitE $ ONum $ read (a ++ "." ++ b)
         *<|>  do
             a <- many1 digit
-            return . LitE $ ONum (read a :: ℝ)
+            return . LitE $ ONum $ read a
         )
      *<|> "string" ?: do
         _ <- string "\""
