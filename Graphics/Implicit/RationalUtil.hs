@@ -178,8 +178,8 @@ instance ℚ Double where
 
 newtype ℝ = ℝ Double
 --  deriving (Read, Show, Ord, Eq, RealFrac, Fractional, Generic, ℚ, AdditiveGroup, Real)
-  deriving stock (Read, Show, Ord, Eq)
-  deriving newtype (RealFrac, Fractional, ℚ, AdditiveGroup, Real)
+  deriving stock (Show, Ord, Eq)
+  deriving newtype (Read, RealFrac, Fractional, ℚ, AdditiveGroup, Real)
 
 instance NFData ℝ where
   rnf (ℝ a) = rnf a `seq` ()
