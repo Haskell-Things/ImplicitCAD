@@ -79,10 +79,11 @@ module Graphics.Implicit.Definitions (
     fromℕtoℝ,
     fromFastℕtoℝ,
     fromFastℕ,
+    fromℝtoFloat
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral)
+import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -131,6 +132,9 @@ fromFastℕtoℝ = fromIntegral
 
 fromFastℕ :: Fastℕ -> Int
 fromFastℕ a = a
+
+fromℝtoFloat :: ℝ -> Float
+fromℝtoFloat = realToFrac
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where

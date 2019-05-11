@@ -11,9 +11,9 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
+import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), both, allthree)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), both, allthree, fromℝtoFloat)
 
 import Data.VectorSpace ((^-^))
 
@@ -193,7 +193,7 @@ cleanupTris :: TriangleMesh -> TriangleMesh
 cleanupTris tris =
     let
         toFloat :: ℝ -> Float
-        toFloat = realToFrac
+        toFloat = fromℝtoFloat
         floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
         floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
         isDegenerateTriFloat :: Eq t => (t,t,t) -> Bool
