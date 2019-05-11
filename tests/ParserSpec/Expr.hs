@@ -10,10 +10,17 @@ import Prelude (Bool(True, False), ($))
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
 
--- parsed expression components.
+-- Parsed expression components.
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)))
 
+-- The type used for variables, in ImplicitCAD.
+import Graphics.Implicit.Definitions (ℝ)
+
+-- Our utility library, for making these tests easier to read.
 import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, parseWithLeftOver)
+
+-- Default all numbers in this file to being of the type ImplicitCAD uses for values.
+default (ℝ)
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
