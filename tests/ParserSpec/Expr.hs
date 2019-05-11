@@ -5,34 +5,22 @@
 module ParserSpec.Expr (exprSpec) where
 
 -- Be explicit about what we import.
-import Prelude (String, Bool(True, False), ($), (<*))
+import Prelude (Bool(True, False), ($))
 
 -- Hspec, for writing specs.
-import Test.Hspec (describe, Expectation, Spec, it, shouldBe, pendingWith, specify)
+import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
 
--- parsed expression components.
+-- Parsed expression components.
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)))
 
--- the expression parser entry point.
-import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+-- The type used for variables, in ImplicitCAD.
+import Graphics.Implicit.Definitions (ℝ)
 
-import ParserSpec.Util (fapp, num, bool, plus, minus, mult, modulo, power, divide, negate, and, or, gt, lt, ternary, append, index, parseWithLeftOver)
+-- Our utility library, for making these tests easier to read.
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, parseWithLeftOver)
 
-import Data.Either (Either(Right))
-
-import Text.ParserCombinators.Parsec (parse, eof)
-
--- An operator for expressions for "the left side should parse to the right side."
-infixr 1 -->
-(-->) :: String -> Expr -> Expectation
-(-->) source expr =
-  parse (expr0 <* eof) "<expr>" source `shouldBe` Right expr
-
--- An operator for expressions for "the left side should parse to the right side, and some should be left over.
-infixr 1 -->+
-(-->+) :: String -> (Expr, String) -> Expectation
-(-->+) source (result, leftover) =
-  parseWithLeftOver expr0 source `shouldBe` Right (result, leftover)
+-- Default all numbers in this file to being of the type ImplicitCAD uses for values.
+default (ℝ)
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
@@ -43,9 +31,9 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 logicalSpec :: Spec
 logicalSpec = do
   describe "not" $ do
-    specify "single" $ "!foo" --> negate [Var "foo"]
+    specify "single" $ "!foo" --> not [Var "foo"]
     specify "multiple" $
-      negationIssue $ "!!!foo" --> negate [negate [negate [Var "foo"]]]
+      negationIssue $ "!!!foo" --> not [not [not [Var "foo"]]]
   it "handles and/or" $ do
     "foo && bar" --> and [Var "foo", Var "bar"]
     "foo || bar" --> or [Var "foo", Var "bar"]
@@ -64,6 +52,12 @@ literalSpec :: Spec
 literalSpec = do
   it "handles integers" $
     "12356" -->  num 12356
+  it "handles positive leading zero integers" $ do
+    "000012356" -->  num 12356
+  it "handles zero integer" $ do
+    "0" -->  num 0
+  it "handles leading zero integer" $ do
+    "0000" -->  num 0
   it "handles floats" $
     "23.42" -->  num 23.42
   describe "booleans" $ do
@@ -82,17 +76,54 @@ exprSpec = do
       "( false )" -->  bool False
     it "handles vectors" $
       "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
+    it "handles empty vectors" $ do
+      "[]" -->  ListE []
+    it "handles single element vectors" $ do
+      "[a]" -->  ListE [Var "a"]
+    it "handles nested vectors" $ do
+      "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
       "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
     it "handles generators" $
-      "[ a : 1 : b + 10 ]" -->
-      fapp "list_gen" [Var "a", num 1, plus [Var "b", num 10]]
+      "[ a : b ]" -->
+      fapp "list_gen" [Var "a", Var "b"]
+    it "handles generators with expression" $
+      "[ a : b + 10 ]" -->
+      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
+    it "handles increment generators" $
+      "[ a : 3 : b + 10 ]" -->
+      fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
     it "handles indexing" $
       "foo[23]" --> index [Var "foo", num 23]
+    it "handles multiple indexes" $
+      "foo[23][12]" --> Var "index" :$ [Var "index" :$ [Var "foo", num 23], num 12]
+    it "handles single function call with single argument" $
+      "foo(1)" --> Var "foo" :$ [num 1]
+    it "handles single function call with multiple arguments" $
+      "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
+    it "handles multiple function calls" $
+      "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
+
   describe "arithmetic" $ do
     it "handles unary +/-" $ do
       "-42" --> num (-42)
       "+42" -->  num 42
+    it "handles unary - with extra spaces" $ do
+      "-  42" --> num (-42)
+    it "handles unary + with extra spaces" $ do
+      "+  42" -->  num 42
+    it "handles unary - with parentheses" $ do
+      "-(4 - 3)" -->  negate [ minus [num 4, num 3]]
+    it "handles unary + with parentheses" $ do
+      "+(4 - 1)" -->  minus [num 4, num 1]
+    it "handles unary - with identifier" $ do
+      "-foo" --> negate [Var "foo"]
+    it "handles unary + with identifier" $ do
+      "+foo" -->  Var "foo"
+    it "handles unary - with string literal" $ do
+      "-\"foo\"" --> negate [stringLiteral "foo"]
+    it "handles unary + with string literal" $ do
+      "+\"foo\"" -->  stringLiteral "foo"
     it "handles +" $ do
       "1 + 2" --> plus [num 1, num 2]
       "1 + 2 + 3" --> plus [num 1, num 2, num 3]
@@ -109,6 +140,8 @@ exprSpec = do
                                                      num 6]]
     it "handles exponentiation" $
       "x ^ y" -->  power [Var "x", Var "y"]
+    it "handles multiple exponentiations" $
+      "x ^ y ^ z" -->  power [Var "x", power [Var "y", Var "z"]]
     it "handles *" $ do
       "3 * 4" -->  mult [num 3, num 4]
       "3 * 4 * 5" -->  mult [num 3, num 4, num 5]

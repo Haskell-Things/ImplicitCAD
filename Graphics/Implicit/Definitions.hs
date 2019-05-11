@@ -73,11 +73,15 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude),
     Rectilinear2,
-    Rectilinear3
+    Rectilinear3,
+    fromℕtoℝ,
+    fromFastℕtoℝ,
+    fromFastℕ,
+    fromℝtoFloat
     )
 where
 
-import Prelude (Show, Either, show, (*), (/))
+import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -153,22 +157,22 @@ type TriangleMesh = [Triangle]
 -- | A normed triangle mesh is a mesh of normed triangles.
 type NormedTriangleMesh = [NormedTriangle]
 
--- | A 2D object
+-- | A 2D object.
 type Obj2 = (ℝ2 -> ℝ)
 
--- | A 3D object
+-- | A 3D object.
 type Obj3 = (ℝ3 -> ℝ)
 
--- | A 2D box
+-- | A 2D box.
 type Box2 = (ℝ2, ℝ2)
 
--- | A 3D box
+-- | A 3D box.
 type Box3 = (ℝ3, ℝ3)
 
--- | A Box for containing a 2D object
+-- | A Box containing a 2D object.
 type Boxed2 a = (a, Box2)
 
--- | A Box for containing a 3D object
+-- | A Box containing a 3D object.
 type Boxed3 a = (a, Box3)
 
 -- | A Boxed 2D object
@@ -178,7 +182,7 @@ type BoxedObj2 = Boxed2 Obj2
 type BoxedObj3 = Boxed3 Obj3
 
 -- | A symbolic 2D object format.
---   We want to have a symbolic object so that we can
+--   We want to have symbolic objects so that we can
 --   accelerate rendering & give ideal meshes for simple
 --   cases.
 data SymbolicObj2 =
@@ -205,9 +209,9 @@ data SymbolicObj2 =
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      Rect3R ℝ ℝ3 ℝ3
-    | Sphere ℝ
-    | Cylinder ℝ ℝ ℝ
+      Rect3R ℝ ℝ3 ℝ3 -- rounding, start, stop.
+    | Sphere ℝ -- radius
+    | Cylinder ℝ ℝ ℝ -- 
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
@@ -227,7 +231,7 @@ data SymbolicObj3 =
     | ExtrudeR ℝ SymbolicObj2 ℝ
     | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
     | ExtrudeRM
-        ℝ                 -- rounding radius
+        ℝ                 -- rounding radius (ignored)
         (Maybe (ℝ -> ℝ))  -- twist
         (Maybe (ℝ -> ℝ))  -- scale
         (Maybe (ℝ -> ℝ2)) -- translate
@@ -235,7 +239,7 @@ data SymbolicObj3 =
         (Either ℝ (ℝ2 -> ℝ)) -- height to extrude to
     | RotateExtrude
         ℝ                     -- Angle to sweep to
-        (Maybe ℝ)             -- Loop or path (rounded corner)
+        (Maybe ℝ)             -- Loop or path (rounded corner) (ignored)
         (Either ℝ2 (ℝ -> ℝ2)) -- translate function
         (Either ℝ  (ℝ -> ℝ )) -- rotate function
         SymbolicObj2          -- object to extrude

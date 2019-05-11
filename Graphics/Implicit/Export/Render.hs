@@ -13,7 +13,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(Float, Bool, ceiling, ($), (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, both, ℝ3, allthree, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), fromℕtoℝ, fromℕ, fromFastℕ, Fastℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, both, ℝ3, allthree, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), fromℕtoℝ, fromℕ, fromFastℕ, fromℝtoFloat, Fastℕ)
 
 import Data.VectorSpace ((^-^))
 
@@ -192,7 +192,7 @@ cleanupTris :: TriangleMesh -> TriangleMesh
 cleanupTris tris =
     let
         toFloat :: ℝ -> Float
-        toFloat = realToFrac
+        toFloat = fromℝtoFloat
         floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
         floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
         isDegenerateTriFloat :: Eq t => (t,t,t) -> Bool
