@@ -9,9 +9,9 @@ import Prelude (String, Maybe(Just), Bool(True), ($))
 
 import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, describe)
 
-import ParserSpec.Util (bool, num, minus, mult, index)
+import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol, Expr(ListE, LamE, Var, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(Name, ListP))
 
 -- Parse an ExtOpenScad program.
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
@@ -53,6 +53,9 @@ assignmentSpec = do
     "[x, y] = [1, 2];" --> single (ListP [Name "x", Name "y"] := ListE [num 1, num 2])
   it "handles the function keyword and definitions" $
     "function foo(x, y) = x * y;" --> single fooFunction
+  it "handles function with let expression" $
+    "function withlet(b) = let (c = 5) b + c;" -->
+    (single $ (Name "withlet" := LamE [Name "b"] (LamE [Name "c"] (plus [Var "b", Var "c"]) :$ [num 5])))
   it "handles nested indexing" $
     "x = [y[0] - z * 2];" -->
     single ( Name "x" := ListE [minus [index [Var "y", num 0],
@@ -92,5 +95,3 @@ statementSpec = do
   describe "empty module definition" $
     it "parses correctly" $
       "module foo_bar() {}" --> single (NewModule "foo_bar" [] [])
-
-

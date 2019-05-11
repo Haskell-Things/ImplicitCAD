@@ -29,6 +29,7 @@ module ParserSpec.Util
        , ternary
        , append
        , index
+       , lambda
        , parseWithLeftOver
        ) where
 
@@ -39,7 +40,7 @@ import Prelude (Bool, String, Either, (<), ($), (.), (<*), otherwise)
 import Graphics.Implicit.Definitions (ℝ)
 
 -- The datatype of expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE), OVal(ONum, OBool, OString))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), OVal(ONum, OBool, OString), Pattern)
 
 import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
 
@@ -64,6 +65,8 @@ infixr 1 -->+
 (-->+) source (result, leftover) =
   parseWithLeftOver expr0 source `shouldBe` Right (result, leftover)
 
+-- | Types
+
 num :: ℝ -> Expr
 num x
   -- FIXME: the parser should handle negative number literals
@@ -76,6 +79,8 @@ bool = LitE . OBool
 
 stringLiteral :: String -> Expr
 stringLiteral = LitE . OString
+
+-- | Operators
 
 plus,minus,mult,modulo,power,divide,negate,and,or,not,gt,lt,ternary,append,index :: [Expr] -> Expr
 minus = oapp "-"
@@ -94,10 +99,13 @@ plus = fapp "+"
 mult = fapp "*"
 append = fapp "++"
 
--- we need two different kinds of application functions
+-- | we need two different kinds of application functions
 oapp,fapp :: String -> [Expr] -> Expr
 oapp name args = Var name :$ args
 fapp name args = Var name :$ [ListE args]
+
+lambda :: [Pattern] -> Expr -> [Expr] -> Expr
+lambda params expr args = LamE params expr :$ args
 
 parseWithLeftOver :: Parser a -> String -> Either ParseError (a, String)
 parseWithLeftOver p = parse ((,) <$> p <*> leftOver) ""

@@ -5,12 +5,12 @@
 -- a parser for a numeric expression.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3)
+import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector)
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Pattern(Name))
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString)
 
@@ -80,6 +80,27 @@ literal = ("literal" ?:) $
         _ <- string "\""
         return . LitE $ OString strlit
 
+letExpr :: GenParser Char st Expr
+letExpr = "let expression" ?: do
+  _ <- string "let"
+  _ <- genSpace
+  _ <- string "("
+  _ <- genSpace
+  bindingPairs <- sepBy ( do
+    _ <- genSpace
+    boundName <- variableSymb
+    _ <- genSpace
+    _ <- string "="
+    _ <- genSpace
+    boundExpr <- expr0
+    return $ ListE [Var boundName, boundExpr])
+    (char ',')
+  _ <- string ")"
+  expr <- expr0
+  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+      bindLets _ e = e
+  return $ foldr bindLets expr bindingPairs
+
 -- We represent the priority or 'fixity' of different types of expressions
 -- by the ExprIdx argument, with A0 as the highest.
 
@@ -93,6 +114,7 @@ exprN :: ExprIdx -> GenParser Char st Expr
 
 exprN A12 =
          literal
+    *<|> letExpr
     *<|> variable
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )

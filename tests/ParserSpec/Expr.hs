@@ -11,13 +11,13 @@ import Prelude (Bool(True, False), ($))
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
 
 -- Parsed expression components.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)), Pattern(Name))
 
 -- The type used for variables, in ImplicitCAD.
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, parseWithLeftOver)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
@@ -63,6 +63,17 @@ literalSpec = do
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
+
+letBindingSpec :: Spec
+letBindingSpec = do
+  it "handles let with integer binding and spaces" $ do
+    "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
+  it "handles multiple variable let" $ do
+    "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles empty let" $ do
+    "let () a" --> (Var "a")
+  it "handles nested let" $ do
+    "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
 
 exprSpec :: Spec
 exprSpec = do
@@ -152,6 +163,7 @@ exprSpec = do
     it "handles append" $
       "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]
   describe "logical operators" logicalSpec
+  describe "let expressions" letBindingSpec
   describe "application" $ do
     specify "base case" $ "foo(x)" --> Var "foo" :$ [Var "x"]
     specify "multiple arguments" $
