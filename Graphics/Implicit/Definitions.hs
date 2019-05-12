@@ -74,14 +74,10 @@ module Graphics.Implicit.Definitions (
         RotateExtrude),
     Rectilinear2,
     Rectilinear3,
-    fromℕtoℝ,
-    fromFastℕtoℝ,
-    fromFastℕ,
-    fromℝtoFloat
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Show, Either, show, (*), (/))
 
 import Data.Maybe (Maybe)
 
