@@ -1,25 +1,29 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright 2014 2015 2016, 2017, 2018, Julia Longtin (julial@turinglace.com)
--- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
+-- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
 --{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DerivingStrategies #-}
+
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Allow us to derive N when declaring ℕ.
 {-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE UnboxedTuples #-}
 
-module Graphics.Implicit.IntegralUtil (ℕ, Fastℕ, toℕ, fromℕ, toFastℕ, fromFastℕ) where
 
-import Prelude (Integral(quotRem, toInteger), Num((*),(+),abs,negate,signum,fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int)
+module Graphics.Implicit.IntegralUtil (ℕ, toℕ, fromℕ) where
 
-import GHC.Integer (timesInteger, plusInteger, absInteger, negateInteger, signumInteger, quotRemInteger, Integer)
+import Prelude (Integral(toInteger), Num, Eq, Ord, Enum(fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int, Integer)
+
+import qualified Prelude as P ((+), (*), abs, negate, signum, fromInteger, succ, pred, toEnum, fromEnum, quot, rem, toInteger)
 
 import GHC.Real (Ratio((:%)))
 
-default ()
+-- So we can produce an instance of Fastℕ  for ℕ.
+import Graphics.Implicit.FastIntUtil (Fastℕ(Fastℕ))
 
 -- the N typeclass. only used to define the ℕ type, with a few extensions.
 class (Integral n) => N n where
@@ -44,26 +48,24 @@ newtype ℕ = ℕ Integer
 --  deriving stock (Show, Read, Eq, Ord)
 --  deriving newtype (N, Real, Enum) 
 
--- manual derivations of Integral and Num, so that we do not define unneeded functions.
 instance Integral ℕ where
-  quotRem (ℕ a) (ℕ b) =
-    let (# q, r #) = quotRemInteger a b
-    in (ℕ q , ℕ r)
-  toInteger (ℕ a) = a
+  toInteger (ℕ a)  = a
+  quot (ℕ a) (ℕ b) = ℕ $ P.quot a b
+  rem (ℕ a) (ℕ b)  = ℕ $ P.rem a b
 
 instance Num ℕ where
-  (*) a b = ℕ $ timesInteger (fromℕ a) (fromℕ b)
-  (+) a b = ℕ $ plusInteger (fromℕ a) (fromℕ b)
-  abs a = ℕ $ absInteger (fromℕ a)
-  negate a = ℕ $ negateInteger (fromℕ a)
-  signum a = ℕ $ signumInteger (fromℕ a)
+  (+) (ℕ a) (ℕ b) = ℕ $ a P.+ b
+  (*) (ℕ a) (ℕ b) = ℕ $ a P.* b
+  abs (ℕ a) = ℕ $ P.abs a
+  negate (ℕ a) = ℕ $ P.negate a
+  signum (ℕ a) = ℕ $ P.signum a
   fromInteger a = ℕ a
 
 instance Enum ℕ where
-  succ (ℕ x) = ℕ $ succ x
-  pred (ℕ x) = ℕ $ pred x
-  toEnum n = ℕ $ toEnum n
-  fromEnum (ℕ n) = fromEnum n
+  succ (ℕ x) = ℕ $ P.succ x
+  pred (ℕ x) = ℕ $ P.pred x
+  toEnum n = ℕ $ P.toEnum n
+  fromEnum (ℕ n) = P.fromEnum n
   
 --  {-# INLINE enumFrom #-}
 --  {-# INLINE enumFromThen #-}
@@ -77,30 +79,6 @@ instance Enum ℕ where
 instance Real ℕ where
   toRational (ℕ a) = a :% 1
 
-class FastN n where
-  fromFastℕ :: Fastℕ -> n
-  toFastℕ :: n -> Fastℕ
 
-instance FastN Int where
-  fromFastℕ (Fastℕ a) = a
-  toFastℕ a = Fastℕ a
 
--- System integers, meant to go fast, and have no chance of wrapping 2^31.
-newtype Fastℕ = Fastℕ Int
-  deriving (Show, Read, Eq, Ord, FastN, Real, Integral)
---  deriving stock (Show, Read, Eq, Ord)
---  deriving newtype (FastN, Enum, Real, Integral)
 
-instance Num Fastℕ where
-  (+) (Fastℕ a) (Fastℕ b) = Fastℕ $ a + b
-  (*) (Fastℕ a) (Fastℕ b) = Fastℕ $ a * b
-  abs (Fastℕ a) = Fastℕ $ abs a
-  negate (Fastℕ a) = Fastℕ $ negate a
-  signum (Fastℕ a) = Fastℕ $ signum a
-  fromInteger a = Fastℕ $ fromInteger a
-
-instance Enum Fastℕ where
-  succ (Fastℕ x) = Fastℕ $ succ x
-  pred (Fastℕ x) = Fastℕ $ pred x
-  toEnum n = Fastℕ $ toEnum n
-  fromEnum (Fastℕ n) = n

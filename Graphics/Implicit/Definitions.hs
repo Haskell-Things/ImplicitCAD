@@ -17,6 +17,7 @@
 module Graphics.Implicit.Definitions (
     module R,
     module N,
+    module F,
     ℝ2,
     both,
     ℝ3,
@@ -85,7 +86,9 @@ import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
 import Graphics.Implicit.RationalUtil as R (ℚ(minℝ, π, sqrt, cbrt, powℝ, powℝℝ, exp, log, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, fromℝ, toℝ, normalizeℝ, normalizeℝ2, normalizeℝ3, powℝ, (%), infty, neginfty), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat)
 
-import Graphics.Implicit.IntegralUtil as N (ℕ, Fastℕ, fromℕ, toℕ, fromFastℕ, toFastℕ)
+import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
+
+import Graphics.Implicit.FastIntUtil as F (Fastℕ, fromFastℕ, toFastℕ)
 
 -- Following the math notation ℝ, ℝ², ℝ³...
 type ℝ2 = (ℝ,ℝ)

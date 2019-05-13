@@ -29,7 +29,9 @@ import Data.AffineSpace (AffineSpace(Diff, (.-.), (.+^)))
 
 import Data.Maybe (Maybe(Just, Nothing))
 
-import Graphics.Implicit.IntegralUtil (ℕ, Fastℕ)
+import Graphics.Implicit.IntegralUtil (ℕ)
+
+import Graphics.Implicit.FastIntUtil (Fastℕ)
 
 import Data.VectorSpace (InnerSpace((<.>)), AdditiveGroup, VectorSpace(Scalar,(*^)), (^/), magnitude)
 

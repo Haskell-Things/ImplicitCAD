@@ -14,7 +14,9 @@ import Data.Maybe(Maybe(Nothing), fromJust)
 
 import Data.List(find, iterate)
 
-import Graphics.Implicit.IntegralUtil (Fastℕ, ℕ, toℕ, fromℕ)
+import Graphics.Implicit.IntegralUtil (ℕ, toℕ, fromℕ)
+
+import Graphics.Implicit.FastIntUtil (Fastℕ)
 
 import Data.VectorSpace (InnerSpace, Scalar, (^/), magnitudeSq)
 
