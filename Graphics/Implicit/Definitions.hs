@@ -74,7 +74,7 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude),
     Rectilinear2,
-    Rectilinear3,
+    Rectilinear3
     )
 where
 
