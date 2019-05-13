@@ -2,12 +2,6 @@
 -- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to derive FastN when declaring fastℕ.
-{-# LANGUAGE DeriveAnyClass #-}
-
-{-# LANGUAGE StandaloneDeriving #-}
-
-
 module Graphics.Implicit.FastIntUtil (Fastℕ(Fastℕ), toFastℕ, fromFastℕ) where
 
 import Prelude (Integral, Num, Eq, Ord, Enum, Real, Show, ($), Read, Int)
