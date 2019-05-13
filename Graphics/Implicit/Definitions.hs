@@ -18,9 +18,9 @@ module Graphics.Implicit.Definitions (
     ℝ,
     ℝ2,
     ℝ3,
+    module F,
     minℝ,
     ℕ,
-    Fastℕ,
     both,
     allthree,
     (⋅),
@@ -78,16 +78,17 @@ module Graphics.Implicit.Definitions (
     Rectilinear3,
     fromℕtoℝ,
     fromFastℕtoℝ,
-    fromFastℕ,
     fromℝtoFloat
     )
 where
 
-import Prelude (Show, Double, Integer, Int, Either, show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Show, Double, Integer, Either, show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
+
+import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
 -- Let's make things a bit nicer. 
 -- Following the math notation ℝ, ℝ², ℝ³...
@@ -107,9 +108,6 @@ minℝ = 0.0000000000000002
 -- Arbitrary precision integers.
 type ℕ = Integer
 
--- System integers.
-type Fastℕ = Int
-
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
@@ -128,10 +126,7 @@ fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
 
 fromFastℕtoℝ :: Fastℕ -> ℝ
-fromFastℕtoℝ = fromIntegral
-
-fromFastℕ :: Fastℕ -> Int
-fromFastℕ a = a
+fromFastℕtoℝ (Fastℕ a) = fromIntegral a
 
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac

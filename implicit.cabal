@@ -53,6 +53,7 @@ Library
                     Graphics.Implicit.Definitions
                     Graphics.Implicit.Primitives
                     Graphics.Implicit.Export
+                    Graphics.Implicit.FastIntUtil
                     Graphics.Implicit.MathUtil
                     Graphics.Implicit.ExtOpenScad
                     Graphics.Implicit.ObjectUtil
