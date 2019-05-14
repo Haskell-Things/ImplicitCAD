@@ -2,30 +2,21 @@
 -- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
---{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DerivingStrategies #-}
-
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- Allow us to derive N when declaring ℕ.
-{-# LANGUAGE DeriveAnyClass #-}
-
-
 module Graphics.Implicit.IntegralUtil (ℕ, toℕ, fromℕ) where
 
-import Prelude (Integral(toInteger), Num, Eq, Ord, Enum(fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int, Integer)
+import Prelude (Integral, Num, Eq, Ord, Enum, Real(toRational), Show, ($), Read, fromIntegral, Int, Integer)
 
-import qualified Prelude as P ((+), (*), abs, negate, signum, fromInteger, succ, pred, toEnum, fromEnum, quot, rem, toInteger)
+import qualified Prelude as P ((+), (*), abs, negate, signum, fromInteger, succ, pred, toEnum, fromEnum, quot, rem, toInteger, quotRem)
 
 import GHC.Real (Ratio((:%)))
 
--- So we can produce an instance of Fastℕ  for ℕ.
+-- So we can produce an instance of Fastℕ for ℕ.
 import Graphics.Implicit.FastIntUtil (Fastℕ(Fastℕ))
 
--- the N typeclass. only used to define the ℕ type, with a few extensions.
+-- the N typeclass. only used to define the ℕ type.
 class (Integral n) => N n where
   fromℕ :: ℕ -> n
   toℕ :: n -> ℕ
@@ -44,22 +35,27 @@ instance N Int where
 
 -- Arbitrary precision integers. To be used for anything countable, or in ratios.
 newtype ℕ = ℕ Integer
-  deriving (Show, Read, Eq, Ord, N)
---  deriving stock (Show, Read, Eq, Ord)
---  deriving newtype (N, Real, Enum) 
+  deriving (Show, Read, Eq, Ord)
+
+instance Real ℕ where
+  toRational (ℕ a) = a :% 1
+
+bothℕ :: (Integer, Integer) -> (ℕ, ℕ)
+bothℕ (a, b) = (ℕ a , ℕ b)
 
 instance Integral ℕ where
-  toInteger (ℕ a)  = a
-  quot (ℕ a) (ℕ b) = ℕ $ P.quot a b
-  rem (ℕ a) (ℕ b)  = ℕ $ P.rem a b
+  toInteger (ℕ a)     = a
+  quotRem (ℕ a) (ℕ b) = bothℕ $ P.quotRem a b 
+  quot (ℕ a) (ℕ b)    = ℕ $ P.quot a b
+  rem (ℕ a) (ℕ b)     = ℕ $ P.rem a b
 
 instance Num ℕ where
   (+) (ℕ a) (ℕ b) = ℕ $ a P.+ b
   (*) (ℕ a) (ℕ b) = ℕ $ a P.* b
-  abs (ℕ a) = ℕ $ P.abs a
-  negate (ℕ a) = ℕ $ P.negate a
-  signum (ℕ a) = ℕ $ P.signum a
-  fromInteger a = ℕ a
+  abs (ℕ a)       = ℕ $ P.abs a
+  negate (ℕ a)    = ℕ $ P.negate a
+  signum (ℕ a)    = ℕ $ P.signum a
+  fromInteger a   = ℕ a
 
 instance Enum ℕ where
   succ (ℕ x) = ℕ $ P.succ x
@@ -76,8 +72,6 @@ instance Enum ℕ where
 --  enumFromTo x lim       = enumDeltaToInteger x 1     lim
 --  enumFromThenTo x y lim = enumDeltaToInteger x (y-x) lim
 
-instance Real ℕ where
-  toRational (ℕ a) = a :% 1
 
 
 
