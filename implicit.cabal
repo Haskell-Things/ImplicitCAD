@@ -53,7 +53,6 @@ Library
                     Graphics.Implicit.Definitions
                     Graphics.Implicit.Primitives
                     Graphics.Implicit.Export
-                    Graphics.Implicit.FastIntUtil
                     Graphics.Implicit.MathUtil
                     Graphics.Implicit.ExtOpenScad
                     Graphics.Implicit.ObjectUtil
@@ -72,14 +71,14 @@ Library
                     Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
-                  Graphics.Implicit.RationalFunctions
-                  Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.FastIntUtil
-                  Graphics.Implicit.RationalUtil
+                  Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
                   Graphics.Implicit.ObjectUtil.GetImplicit2
                   Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.RationalFunctions
+                  Graphics.Implicit.RationalUtil
                   Graphics.Implicit.ExtOpenScad.Default
                   Graphics.Implicit.ExtOpenScad.Parser.Util
                   Graphics.Implicit.ExtOpenScad.Eval.Statement

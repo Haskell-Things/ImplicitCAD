@@ -21,7 +21,7 @@ module Graphics.Implicit.RationalUtil (ℚ(..), ℝ, fromFastℕtoℝ, fromℕto
 
 import Prelude ( (/), (-), fromIntegral, abs, realToFrac, RealFrac, Fractional, Ord, Double, (**), Show, Eq, Num((+), (*), negate, signum, fromInteger), Real, Read, ($), seq, (==), floor, Float)
 
-import qualified Prelude as P (sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log)
+import qualified Prelude as P ((/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral)
 
 import Data.Coerce (coerce)
 
@@ -155,8 +155,8 @@ instance ℚ Double where
   -- yes, these are nonsense. never meant to be evaluated.
   infty = 1/0
   neginfty = -1/0
-  powℝ a b = a ** (fromIntegral b)
-  powℝℝ a b = a ** b
+  powℝ a b = a P.** (P.fromIntegral b)
+  powℝℝ a b = a P.** b
   sin = P.sin
   cos = P.cos
   tan = P.tan
@@ -174,9 +174,9 @@ instance ℚ Double where
   normalizeℝ v = v ^/ magnitude v 
   normalizeℝ2 v = v ^/ magnitude v 
   normalizeℝ3 v = v ^/ magnitude v 
-  fromℝ = realToFrac
+  fromℝ = P.realToFrac
   toℝ a = ℝ a
-  (%) a b = (/) (fromIntegral a) (fromIntegral b)
+  (%) a b = (P./) (P.fromIntegral a) (P.fromIntegral b)
 
 newtype ℝ = ℝ Double
 --  deriving (Read, Show, Ord, Eq, RealFrac, Fractional, Generic, ℚ, AdditiveGroup, Real)

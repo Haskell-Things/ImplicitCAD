@@ -15,13 +15,16 @@
 -- Definitions of the types used when modeling, and a few operators.
 
 module Graphics.Implicit.Definitions (
-    module R,
-    module N,
     module F,
+    module N,
+    module R,
+    module F,
+    module N,
     ℝ2,
     both,
     ℝ3,
     allthree,
+    minℝ,
     (⋅),
     (⋯*),
     (⋯/),

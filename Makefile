@@ -9,6 +9,8 @@ convert=convert
 GHC=ghc
 # The location of the created extopenscad binary, for running shell based test cases.
 EXTOPENSCAD=dist/build/extopenscad/extopenscad
+# The location of the implicitsnap binary, which listens for requests via http. The backend of the website.
+IMPLICITSNAP=dist/build/implicitsnap/implicitsnap
 # The location of the benchmark binary, for benchmarking some implicitcad internals.
 BENCHMARK=dist/build/Benchmark/Benchmark
 # The location of the parser benchmark binary, specifically for benchmarking implicitcad's parser.
@@ -27,12 +29,12 @@ RTSOPTS=+RTS -N
 RESOPTS=-r 50
 
 # Uncomment for profiling support. Note that you will need to recompile all of the libraries, as well.
-#PROFILING= --enable-library-profiling --enable-executable-profiling
+#PROFILING= --enable-profiling
 
 LIBFILES=$(shell find Graphics -name '*.hs')
 LIBTARGET=dist/build/Graphics/Implicit.o
 
-EXECTARGETS=$(EXTOPENSCAD) $(BENCHMARK) $(TESTSUITE) $(PARSERBENCH) $(DOCGEN)
+EXECTARGETS=$(EXTOPENSCAD) $(IMPLICITSNAP) $(BENCHMARK) $(TESTSUITE) $(PARSERBENCH) $(DOCGEN)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
 # Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
@@ -93,7 +95,7 @@ dist: $(TARGETS)
 
 # Generate examples.
 examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind  --cachegrind-out-file=$$each.cachegrind.`date +%s` ../$(EXTOPENSCAD) $$each $(RTSOPTS); } done
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind --cachegrind-out-file=$$each.cachegrind.`date +%s` ../$(EXTOPENSCAD) $$each $(RTSOPTS); } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; $(GHC) $$filename.hs -o $$filename; $$filename; } done
 
 # Generate images from the examples, so we can upload the images to our website.
@@ -120,7 +122,7 @@ dist/build/%: programs/$$(word 2,$$(subst /, ,%)).hs Setup dist/setup-config $(L
 # Prepare to build.
 dist/setup-config: Setup implicit.cabal
 	cabal update
-	cabal install --only-dependencies --upgrade-dependencies
+	cabal install --only-dependencies --upgrade-dependencies $(PROFILING)
 	cabal configure --enable-tests --enable-benchmarks $(PROFILING)
 
 # The setup command, used to perform administrative tasks (haddock, upload to hackage, clean, etc...).
