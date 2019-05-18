@@ -26,7 +26,7 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -144,7 +144,7 @@ getRes (varlookup, obj2s, obj3s) =
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?
-getWidth :: (String, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
