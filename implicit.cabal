@@ -40,7 +40,7 @@ Library
     Ghc-options:
                 -O2
                 -optc-O3
-                -dynamic
+--                -dynamic
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
                 -- for debugging.
@@ -53,7 +53,6 @@ Library
                     Graphics.Implicit.Definitions
                     Graphics.Implicit.Primitives
                     Graphics.Implicit.Export
-                    Graphics.Implicit.FastIntUtil
                     Graphics.Implicit.MathUtil
                     Graphics.Implicit.ExtOpenScad
                     Graphics.Implicit.ObjectUtil
@@ -72,6 +71,8 @@ Library
                     Graphics.Implicit.ExtOpenScad.Primitives            
 
     Other-modules:
+                  Graphics.Implicit.FastIntUtil
+                  Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
                   Graphics.Implicit.ObjectUtil.GetImplicit2
@@ -119,7 +120,7 @@ Executable extopenscad
                -optc-O3
                -threaded
                -rtsopts
-               -dynamic
+--               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.
@@ -134,7 +135,7 @@ Executable docgen
                  base,
                  implicit
    ghc-options:
-               -dynamic
+--               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -160,7 +161,7 @@ Executable implicitsnap
                -rtsopts
                -O2
                -optc-O3
-               -dynamic
+--               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.
@@ -178,7 +179,7 @@ Executable Benchmark
    Ghc-options:
                -O2
                -optc-O3
-               -dynamic
+--               -dynamic
                -- for debugging.
                -Wall
                -Wextra
@@ -198,7 +199,7 @@ Test-suite test-implicit
     Ghc-options:
                 -O2
                 -optc-O3
-                -dynamic
+--                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
@@ -216,7 +217,7 @@ Benchmark parser-bench
     Ghc-options:
                 -O2
                 -optc-O3
-                -dynamic
+--                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
