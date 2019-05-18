@@ -15,14 +15,14 @@
 -- Definitions of the types used when modeling, and a few operators.
 
 module Graphics.Implicit.Definitions (
+    module F,
+    module N,
     ℝ,
     ℝ2,
-    ℝ3,
-    module F,
-    minℝ,
-    ℕ,
     both,
+    ℝ3,
     allthree,
+    minℝ,
     (⋅),
     (⋯*),
     (⋯/),
@@ -82,13 +82,14 @@ module Graphics.Implicit.Definitions (
     )
 where
 
-import Prelude (Show, Double, Integer, Either, show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Show, Double, Either, show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
+import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 -- Let's make things a bit nicer. 
 -- Following the math notation ℝ, ℝ², ℝ³...
@@ -104,9 +105,6 @@ minℝ :: ℝ
 
 -- for Doubles.
 minℝ = 0.0000000000000002
-
--- Arbitrary precision integers.
-type ℕ = Integer
 
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)

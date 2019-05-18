@@ -72,6 +72,7 @@ Library
 
     Other-modules:
                   Graphics.Implicit.FastIntUtil
+                  Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
                   Graphics.Implicit.ObjectUtil.GetImplicit2
