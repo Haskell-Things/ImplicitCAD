@@ -24,12 +24,12 @@ DOCGEN=dist/build/docgen/docgen
 
 ## Options used when calling ImplicitCAD. for testing, and for image generation.
 # Enable multiple CPU usage.
-RTSOPTS=+RTS -N
+RTSOPTS=+RTS -N -xc
 # The resolution to generate objects at. FIXME: what does this mean in human terms? 
 RESOPTS=-r 50
 
 # Uncomment for profiling support. Note that you will need to recompile all of the libraries, as well.
-#PROFILING= --enable-profiling
+PROFILING= --enable-library-profiling
 
 LIBFILES=$(shell find Graphics -name '*.hs')
 LIBTARGET=dist/build/Graphics/Implicit.o

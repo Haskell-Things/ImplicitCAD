@@ -6,9 +6,11 @@ module Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3) where
 
 import Prelude()
 
-import Graphics.Implicit.Definitions(BoxedObj3, ℝ3)
+import Graphics.Implicit.Definitions(BoxedObj3, ℝ, ℝ3)
 
 import Data.VectorSpace((^-^), (^+^), (^/))
+
+default (ℝ)
 
 rebound3 :: BoxedObj3 -> BoxedObj3
 rebound3 (obj, (a,b)) =

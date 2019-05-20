@@ -11,7 +11,7 @@ module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pa
 -- Explicitly include what we need from Prelude.
 import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), max, min, compare, (<=), fst, snd, (++), head, flip)
 
-import Graphics.Implicit.Definitions (ℝ, toℝ, ℝ2, ℝ3, π, sqrt, sin, asin, Box2, (⋅), normalizeℝ, normalizeℝ2)
+import Graphics.Implicit.Definitions (ℝ, toℝ, ℝ2, ℝ3, π, sqrt, sin, asin, Box2, (⋅), normalizeℝ2)
 
 import Data.List (sort, sortBy, (!!))
 
@@ -28,7 +28,7 @@ distFromLineSeg p (a,b) = sqrt $ toℝ $ distanceSq p closest
         ab = b ^-^ a
         ap = p ^-^ a
         d :: ℝ
-        d  = normalizeℝ $ ab ⋅ ap
+        d  = (normalizeℝ2 ab) ⋅ ap
         -- the closest point to p on the line segment.
         closest :: ℝ2
         closest

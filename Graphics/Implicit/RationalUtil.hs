@@ -5,23 +5,15 @@
 -- Rational, arbitrary precision trig functions.
 
 -- Required. FIXME: why?
-{-# LANGUAGE FlexibleInstances #-}
-
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 {-# LANGUAGE TypeApplications #-}
 
--- {-# LANGUAGE DeriveGeneric #-}
-
 module Graphics.Implicit.RationalUtil (ℚ(..), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat) where
 
-import Prelude ( (/), (-), fromIntegral, abs, realToFrac, RealFrac, Fractional, Ord, Double, (**), Show, Eq, Num((+), (*), negate, signum, fromInteger), Real, Read, ($), seq, (==), floor, Float)
+import Prelude (RealFrac(properFraction), Fractional(fromRational, (/)), Ord, Double, Show(show), Eq, Num((+), (*), abs, negate, signum, fromInteger), Real(toRational), Read(readsPrec), ($), seq, (==), floor, Float, map)
 
-import qualified Prelude as P ((/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral)
+import qualified Prelude as P ((+), (-), (*), abs, signum, negate, (/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral, toRational, properFraction, show, fromRational, readsPrec)
 
 import Data.Coerce (coerce)
 
@@ -33,9 +25,12 @@ import Graphics.Implicit.IntegralUtil (ℕ)
 
 import Graphics.Implicit.FastIntUtil (Fastℕ)
 
-import Data.VectorSpace (InnerSpace((<.>)), AdditiveGroup, VectorSpace(Scalar,(*^)), (^/), magnitude)
+import Data.VectorSpace (InnerSpace((<.>)), AdditiveGroup((^+^), (^-^), zeroV, negateV), VectorSpace(Scalar,(*^)), (^/), magnitude)
 
 import Control.DeepSeq(NFData(rnf))
+
+import qualified Control.DeepSeq as CDS (rnf)
+
 
 -- import GHC.Generics (Generic)
 
@@ -69,7 +64,6 @@ class (RealFrac v) => ℚ v where
   sqrt :: v -> v
   cbrt :: v -> v
   atan2 :: v -> v -> v
-  normalizeℝ :: v -> v
   normalizeℝ2 :: (v,v) -> (v,v)
   normalizeℝ3 :: (v,v,v) -> (v,v,v)
   toℝ :: v -> ℝ
@@ -112,7 +106,6 @@ instance ℚ (Ratio ℕ) where
   sqrt = sqrtℝp sqrtPrecision
   cbrt = cbrtℝp sqrtPrecision
 --  atan2 = atan2ℝp sqrtPrecision
-  normalizeℝ = normalizeℝp sqrtPrecision
   normalizeℝ2 = normalizeℝ2p sqrtPrecision
   normalizeℝ3 = normalizeℝ3p sqrtPrecision
 --  fromℝ (ℝ (a :% b)) = (fromIntegral (fromℕ a :: Integer)) :% (fromIntegral (fromℕ b :: Integer))
@@ -146,8 +139,6 @@ fromℕtoℝ a = ℝ $ a % (1::ℕ)
 acosℝp :: Fastℕ -> Ratio ℕ -> Ratio ℕ
 acosℝp precision x = (π/2)-(asinℝp precision (abs x))
 
--}
--- CUT HERE --
 
 instance ℚ Double where
   π = P.pi
@@ -170,41 +161,103 @@ instance ℚ Double where
   exp = P.exp
   log = P.log
   sqrt = P.sqrt
-  cbrt = (**(1/3))
-  normalizeℝ v = v ^/ magnitude v 
+  cbrt = (P.**(1/3))
   normalizeℝ2 v = v ^/ magnitude v 
   normalizeℝ3 v = v ^/ magnitude v 
   fromℝ = P.realToFrac
   toℝ a = ℝ a
   (%) a b = (P./) (P.fromIntegral a) (P.fromIntegral b)
+-}
+-- CUT HERE --
 
 newtype ℝ = ℝ Double
---  deriving (Read, Show, Ord, Eq, RealFrac, Fractional, Generic, ℚ, AdditiveGroup, Real)
-  deriving stock (Show, Ord, Eq)
-  deriving newtype (Read, RealFrac, Fractional, ℚ, AdditiveGroup, Real)
+  deriving (Ord, Eq)
+
+
+instance ℚ ℝ where
+  π = ℝ $ P.pi
+  minℝ = ℝ $ 0.000000000000002
+  -- yes, these are nonsense. never meant to be evaluated.
+  infty = ℝ $ 1/0
+  neginfty = ℝ $ -1/0
+  powℝ (ℝ a) b = ℝ $ a P.** (P.fromIntegral b)
+  powℝℝ (ℝ a) (ℝ b) = ℝ $ a P.** b
+  sin (ℝ x) = ℝ $ P.sin x
+  cos (ℝ x) = ℝ $ P.cos x
+  tan (ℝ x) = ℝ $ P.tan x
+  asin (ℝ x) = ℝ $ P.asin x
+  acos (ℝ x) = ℝ $ P.acos x
+  atan (ℝ x) = ℝ $ P.atan x
+  sinh (ℝ x) = ℝ $ P.sinh x
+  cosh (ℝ x) = ℝ $ P.cosh x
+  tanh (ℝ x) = ℝ $ P.tanh x
+  atan2 (ℝ x) (ℝ y) = ℝ $ P.atan2 x y
+  exp (ℝ x) = ℝ $ P.exp x
+  log (ℝ x) = ℝ $ P.log x
+  sqrt (ℝ x) = ℝ $ P.sqrt x
+  cbrt (ℝ x) = ℝ $ (P.**(1/3)) x
+  normalizeℝ2 (ℝ x, ℝ y) = bothℝ $ (x, y) ^/ magnitude (x, y)
+    where bothℝ (a, b) = (ℝ a, ℝ b)
+  normalizeℝ3 (ℝ x, ℝ y, ℝ z) = allThreeℝ $ (x, y, z) ^/ magnitude (x, y, z)
+    where allThreeℝ (a, b, c) = (ℝ a, ℝ b, ℝ c)
+  fromℝ (ℝ x) = P.realToFrac x
+  toℝ a = a
+  (%) a b = (P./) (P.fromIntegral a) (P.fromIntegral b)
+
+instance Read ℝ where
+  readsPrec prec input = map promoteFst $ (P.readsPrec prec input)
+    where
+      promoteFst :: (Double, a) -> (ℝ, a)
+      promoteFst (q, r) = (ℝ q, r)
+--  readsListPrec
+--  readsList
+  
+instance Show ℝ where
+    show (ℝ a) = P.show a
+
+instance RealFrac ℝ where
+  properFraction (ℝ a) = promoteSnd $ P.properFraction a
+    where
+      promoteSnd :: (a, Double) -> (a, ℝ)
+      promoteSnd (q, r) = (q, ℝ r)
+  -- ceiling, floor, truncate, round.
+
+instance Fractional ℝ where
+  fromRational x  = ℝ $ P.fromRational x
+  (/) (ℝ x) (ℝ y) = ℝ $ (P./) x y
+  
+instance AdditiveGroup ℝ where
+  zeroV             = ℝ $ 0
+  (^-^) (ℝ a) (ℝ b) = ℝ $ (P.-) a b
+  (^+^) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
+  negateV (ℝ a)     = ℝ $ P.negate a
+
+instance Real ℝ where
+  toRational (ℝ a) = P.toRational a
+  {-# INLINABLE toRational #-}
 
 instance NFData ℝ where
-  rnf (ℝ a) = rnf a `seq` ()
+  rnf (ℝ a) = CDS.rnf a `seq` ()
 
 instance Num ℝ where
-  (+) (ℝ a) (ℝ b) = ℝ $ a + b
-  (*) (ℝ a) (ℝ b) = ℝ $ a * b
-  abs (ℝ a) = ℝ $ abs a
-  negate (ℝ a) = ℝ $ negate a
-  signum (ℝ a) = ℝ $ signum a
-  fromInteger a = ℝ $ realToFrac a
+  (+) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
+  (*) (ℝ a) (ℝ b) = ℝ $ (P.*) a b
+  abs (ℝ a)       = ℝ $ P.abs a
+  negate (ℝ a)    = ℝ $ P.negate a
+  signum (ℝ a)    = ℝ $ P.signum a
+  fromInteger a   = ℝ $ P.realToFrac a
 
 fromℕtoℝ :: ℕ -> ℝ
-fromℕtoℝ a = ℝ $ realToFrac a
+fromℕtoℝ a = ℝ $ P.realToFrac a
 
 fromFastℕtoℝ :: Fastℕ -> ℝ
-fromFastℕtoℝ a = ℝ $ realToFrac a
+fromFastℕtoℝ a = ℝ $ P.realToFrac a
 
 --fromInttoℝ :: Int -> ℝ
---fromInttoℝ a = ℝ $ realToFrac a
+--fromInttoℝ a = ℝ $ P.realToFrac a
 
 fromℝtoFloat :: ℝ -> Float
-fromℝtoFloat a = (realToFrac a :: Float)
+fromℝtoFloat a = (P.realToFrac a :: Float)
 
 -- CUT HERE --
 
@@ -232,17 +285,16 @@ newtype ℝ = ℝ Float
 -- Thanks, Solonarv and #haskell
 -- copied from the VectorSpace (Ratio a) instance
 instance VectorSpace ℝ where
-  type Scalar ℝ = ℝ 
+  type Scalar ℝ = ℝ
   (*^) = coerce ((*^) @(ℝ))
 
 instance InnerSpace ℝ where
-  (<.>) = (*)
+  (<.>) = (P.*)
 
 instance AffineSpace ℝ where
   type Diff ℝ = ℝ
-  (.-.) = (-)
-  (.+^) = (+)
-
+  (.-.) = (P.-)
+  (.+^) = (P.+)
 
 fromℝtoℕ :: ℝ -> Maybe ℕ
 fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
