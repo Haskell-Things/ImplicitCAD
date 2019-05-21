@@ -173,7 +173,7 @@ instance ℚ Double where
 newtype ℝ = ℝ Double
   deriving (Ord, Eq)
 
-
+-- Use this instance when ℝ ~ Double
 instance ℚ ℝ where
   π = ℝ $ P.pi
   minℝ = ℝ $ 0.000000000000002
@@ -202,7 +202,7 @@ instance ℚ ℝ where
     where allThreeℝ (a, b, c) = (ℝ a, ℝ b, ℝ c)
   fromℝ (ℝ x) = P.realToFrac x
   toℝ a = a
-  (%) a b = (P./) (P.fromIntegral a) (P.fromIntegral b)
+  (%) a b = ℝ $ (P./) (P.fromIntegral a) (P.fromIntegral b)
 
 instance Read ℝ where
   readsPrec prec input = map promoteFst $ (P.readsPrec prec input)
@@ -211,7 +211,7 @@ instance Read ℝ where
       promoteFst (q, r) = (ℝ q, r)
 --  readsListPrec
 --  readsList
-  
+
 instance Show ℝ where
     show (ℝ a) = P.show a
 
@@ -286,7 +286,7 @@ newtype ℝ = ℝ Float
 -- copied from the VectorSpace (Ratio a) instance
 instance VectorSpace ℝ where
   type Scalar ℝ = ℝ
-  (*^) = coerce ((*^) @(ℝ))
+  (*^) (ℝ a) (ℝ b) = ℝ $ (P.*) a b
 
 instance InnerSpace ℝ where
   (<.>) = (P.*)
