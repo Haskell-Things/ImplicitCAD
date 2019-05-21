@@ -2,9 +2,10 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- for the type arithmatic in the types of normalizedℝ(2,3).
 {-# LANGUAGE TypeFamilies #-}
 
-module Graphics.Implicit.RationalFunctions (cosℝp, sinℝp, asinℝp, normalizeℝp, normalizeℝ2p, normalizeℝ3p, sqrtℝp, cbrtℝp) where
+module Graphics.Implicit.RationalFunctions (cosℝp, sinℝp, asinℝp, normalizeℝ2p, normalizeℝ3p, sqrtℝp, cbrtℝp) where
 
 import Prelude (Double, (+), (*), (<), (^), (>), (-), ($), (/=), abs, otherwise, fromIntegral, sum, realToFrac, Integer, (/), negate, (**))
 
@@ -24,7 +25,7 @@ import Data.Ratio ((%))
 
 import GHC.Real (Ratio((:%)))
 
--- FIXME: since the taylor series is acurate only in a certain range, rollover in that range.
+-- FIXME: since the taylor series for asin is acurate only in a certain range, rollover in that range.
 asinℝp :: Fastℕ -> Ratio ℕ -> Ratio ℕ
 asinℝp precision x
   | x > 0 = res
@@ -68,14 +69,6 @@ sinTerm x i = (x^oddTerm / ((factorial oddTerm)%1))*(-1)^(i-1)
 factorial :: ℕ -> ℕ
 factorial 1 = 1
 factorial n = n * factorial (n-1)
-
--- | normalize a rational.
-normalizeℝp :: (InnerSpace v, s ~ Scalar v, s ~ Ratio ℕ) =>  Fastℕ -> v -> v
-normalizeℝp precision v = v ^/ magnitudeForced
-  where
-    magnitudeForced :: (Ratio ℕ)
-    magnitudeForced = sqrtℝp precision $ magnitudeSq v
-{-# INLINABLE normalizeℝp #-}
 
 -- | normalize a tuple of two rationals.
 normalizeℝ2p :: (InnerSpace s, v ~ Scalar (s,s), s ~ Ratio ℕ) =>  Fastℕ -> (s, s) -> (v, v)
