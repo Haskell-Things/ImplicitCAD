@@ -31,6 +31,10 @@ RESOPTS=-r 50
 # Uncomment for profiling support. Note that you will need to recompile all of the libraries, as well.
 #PROFILING= --enable-library-profiling
 
+## FIXME: escape this right
+# Uncomment for valgrind on the examples.
+#VALGRIND=valgrind --tool=cachegrind --cachegrind-out-file=$$each.cachegrind.`date +%s`
+
 LIBFILES=$(shell find Graphics -name '*.hs')
 LIBTARGET=dist/build/Graphics/Implicit.o
 
@@ -95,7 +99,7 @@ dist: $(TARGETS)
 
 # Generate examples.
 examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { valgrind --tool=cachegrind --cachegrind-out-file=$$each.cachegrind.`date +%s` ../$(EXTOPENSCAD) $$each $(RTSOPTS); } done
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $$each $(RTSOPTS); } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; $(GHC) $$filename.hs -o $$filename; $$filename; } done
 
 # Generate images from the examples, so we can upload the images to our website.

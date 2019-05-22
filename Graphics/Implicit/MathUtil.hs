@@ -28,7 +28,7 @@ distFromLineSeg p (a,b) = sqrt $ toℝ $ distanceSq p closest
         ab = b ^-^ a
         ap = p ^-^ a
         d :: ℝ
-        d  = (normalizeℝ2 ab) ⋅ ap
+        d  = normalizeℝ2 $ ab ⋅ ap
         -- the closest point to p on the line segment.
         closest :: ℝ2
         closest
