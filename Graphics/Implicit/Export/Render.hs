@@ -11,7 +11,7 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(Float, Bool, ceiling, ($), (+), (*), max, div, tail, map, concat, realToFrac, (==), (||), filter, not, reverse, (.), Eq, concatMap)
+import Prelude(Float, Bool, ceiling, ($), (+), (*), max, div, tail, map, concat, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, both, ℝ3, allthree, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), fromℕtoℝ, fromℕ, fromFastℕ, fromℝtoFloat, Fastℕ)
 
@@ -67,6 +67,9 @@ import Control.DeepSeq (NFData)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 
+-- Set the default types for the numbers in this file.
+default (ℕ, Fastℕ, ℝ)
+
 -- FIXME: res should be ℝ3, not ℝ.
 getMesh :: ℝ3 -> ℝ3 -> ℝ -> Obj3 -> TriangleMesh
 getMesh p1@(x1,y1,z1) p2 res obj =
@@ -95,7 +98,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
                 (\n -> y1 + ry*(fromℕtoℝ (my+n))) my
                 (\n -> z1 + rz*(fromℕtoℝ (mz+n))) mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-                `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ lenz) (32::Fastℕ)) rdeepseq
+                `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ lenz) 32) rdeepseq
 
         -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj (x 0, y 0, z 0)
@@ -106,21 +109,21 @@ getMesh p1@(x1,y1,z1) p2 res obj =
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0 | objY0Z1 <- objZ1
                 ]| z0 <- pZs | z1' <- tail pZs | objZ0   <- objV  | objZ1   <- tail objV
-                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) 32) rdeepseq
 
         midsY = [[[
                  interpolate (y0, objX0Y0Z0) (y1', objX0Y1Z0) (appAC obj x0 z0) res
                  | x0 <- pXs |                  objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
                 ]| y0 <- pYs | y1' <- tail pYs | objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) 32) rdeepseq
 
         midsX = [[[
                  interpolate (x0, objX0Y0Z0) (x1', objX1Y0Z0) (appBC obj y0 z0) res
                  | x0 <- pXs | x1' <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
                 ]| y0 <- pYs |                  objY0Z0 <- objZ0
                 ]| z0 <- pZs |                  objZ0   <- objV
-                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) 32) rdeepseq
 
         -- Calculate segments for each side
         segsZ = [[[
@@ -133,7 +136,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0 <- objZ0 | objY1Z0 <- tail objZ0
             ]|z0<-pZs             |mX'  <-midsX|                mY'  <-midsY
              |objZ0 <- objV
-            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) 32) rdeepseq
 
         segsY = [[[
             map2  (inj2 y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0)
@@ -145,7 +148,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0 <- objZ0 | objY0Z1 <- objZ1
             ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsX|mBT  <-tail midsX|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) 32) rdeepseq
 
         segsX = [[[
             map2  (inj1 x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0)
@@ -157,7 +160,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
              |objY0Z0  <-objZ0  |objY1Z0  <-tail objZ0  |objY0Z1  <-objZ1  |objY1Z1  <-tail objZ1
             ]|z0<-pZs|z1'<-tail pZs|mB'  <-midsY|mBT  <-tail midsY|mA'  <-midsZ
              |objZ0 <- objV | objZ1 <- tail objV
-            ]  `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
+            ]  `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) 32) rdeepseq
 
         -- (3) & (4) : get and tesselate loops
         sqTris = [[[
@@ -181,7 +184,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
             ]| segZ'  <- segsZ | segZT  <- tail segsZ
              | segY' <- segsY
              | segX' <- segsX
-            ]   `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) (32::Fastℕ)) rdeepseq
+            ]   `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nz) 32) rdeepseq
     in
       -- (5) merge squares, etc
       cleanupTris . mergedSquareTris . concat . concat $ concat sqTris
@@ -226,7 +229,7 @@ getContour p1@(x1, y1) p2 res obj =
                 (\n -> x1 + rx*(fromℕtoℝ (mx+n))) mx
                 (\n -> y1 + ry*(fromℕtoℝ (my+n))) my
             | mx <- [0..lenx] ] | my <- [0..leny] ]
-            `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ leny) (32::Fastℕ)) rdeepseq
+            `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ leny) 32) rdeepseq
 
         -- | fully evaluate obj to avoid waste in mids, segs, later.
         objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
@@ -236,14 +239,14 @@ getContour p1@(x1, y1) p2 res obj =
                  interpolate (y0, objX0Y0) (y1', objX0Y1) (obj $* x0) res
                  | x0 <- pXs |                  objX0Y0 <- objY0   | objX0Y1 <- objY1
                 ]| y0 <- pYs | y1' <- tail pYs | objY0   <- objV    | objY1   <- tail objV
-                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) 32) rdeepseq
 
 
         midsX = [[
                  interpolate (x0, objX0Y0) (x1', objX1Y0) (obj *$ y0) res
                  | x0 <- pXs | x1' <- tail pXs | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
                 ]| y0 <- pYs |                  objY0   <- objV
-                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) (32::Fastℕ)) rdeepseq
+                ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ nx) 32) rdeepseq
 
         -- | Calculate segments for each side
         segs = [[
@@ -254,7 +257,7 @@ getContour p1@(x1, y1) p2 res obj =
              |objX0Y0<-objY0|objX1Y0<-tail objY0|objX0Y1<-objY1|objX1Y1<-tail objY1
             ]|y0<-pYs|y1'<-tail pYs|mX'' <-midsX|mX'T <-tail midsX|mY'' <-midsY
              |objY0 <- objV  | objY1 <- tail objV
-            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) (32::Fastℕ)) rdeepseq
+            ] `using` parBuffer (fromFastℕ $ max 1 $ div (fromℕ ny) 32) rdeepseq
 
     in
       -- | merge squares, etc
