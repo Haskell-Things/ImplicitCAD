@@ -26,12 +26,12 @@ import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian (LittleEndian(LE))
 
-import Data.VectorSpace (normalized, negateV)
+import Data.VectorSpace (normalized, (^-^))
 import Data.Cross (cross3)
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
-    normalized $ (b + negateV a) `cross3` (c + negateV a)
+    normalized $ (b ^-^ a) `cross3` (c ^-^ a)
 
 stl :: TriangleMesh -> Text
 stl triangles = toLazyText $ stlHeader <> mconcat (map triangle triangles) <> stlFooter
