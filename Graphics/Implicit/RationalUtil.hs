@@ -15,8 +15,6 @@ import Prelude (RealFrac(properFraction), Fractional(fromRational, (/)), Ord, Do
 
 import qualified Prelude as P ((+), (-), (*), abs, signum, negate, (/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral, toRational, properFraction, show, fromRational, readsPrec)
 
-import Data.Coerce (coerce)
-
 import Data.AffineSpace (AffineSpace(Diff, (.-.), (.+^)))
 
 import Data.Maybe (Maybe(Just, Nothing))
@@ -139,34 +137,6 @@ fromℕtoℝ a = ℝ $ a % (1::ℕ)
 acosℝp :: Fastℕ -> Ratio ℕ -> Ratio ℕ
 acosℝp precision x = (π/2)-(asinℝp precision (abs x))
 
-
-instance ℚ Double where
-  π = P.pi
-  minℝ = 0.000000000000002
-  -- yes, these are nonsense. never meant to be evaluated.
-  infty = 1/0
-  neginfty = -1/0
-  powℝ a b = a P.** (P.fromIntegral b)
-  powℝℝ a b = a P.** b
-  sin = P.sin
-  cos = P.cos
-  tan = P.tan
-  asin = P.asin
-  acos = P.acos
-  atan = P.atan
-  sinh = P.sinh
-  cosh = P.cosh
-  tanh = P.tanh
-  atan2 = P.atan2
-  exp = P.exp
-  log = P.log
-  sqrt = P.sqrt
-  cbrt = (P.**(1/3))
-  normalizeℝ2 v = v ^/ magnitude v 
-  normalizeℝ3 v = v ^/ magnitude v 
-  fromℝ = P.realToFrac
-  toℝ a = ℝ a
-  (%) a b = (P./) (P.fromIntegral a) (P.fromIntegral b)
 -}
 -- CUT HERE --
 
@@ -226,18 +196,9 @@ instance Fractional ℝ where
   fromRational x  = ℝ $ P.fromRational x
   (/) (ℝ x) (ℝ y) = ℝ $ (P./) x y
   
-instance AdditiveGroup ℝ where
-  zeroV             = ℝ $ 0
-  (^-^) (ℝ a) (ℝ b) = ℝ $ (P.-) a b
-  (^+^) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
-  negateV (ℝ a)     = ℝ $ P.negate a
-
 instance Real ℝ where
   toRational (ℝ a) = P.toRational a
   {-# INLINABLE toRational #-}
-
-instance NFData ℝ where
-  rnf (ℝ a) = CDS.rnf a `seq` ()
 
 instance Num ℝ where
   (+) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
@@ -259,31 +220,18 @@ fromFastℕtoℝ a = ℝ $ P.realToFrac a
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat a = (P.realToFrac a :: Float)
 
--- CUT HERE --
+fromℝtoℕ :: ℝ -> Maybe ℕ
+fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
 
-{-
-import Prelude (Float)
+instance AdditiveGroup ℝ where
+  zeroV             = ℝ $ 0
+  (^-^) (ℝ a) (ℝ b) = ℝ $ (P.-) a b
+  (^+^) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
+  negateV (ℝ a)     = ℝ $ P.negate a
 
-instance ℚ Float where
-  π = P.pi
-  minℝ = 0.00000002
-  -- yes, these are nonsense. never meant to be evaluated.
-  infty = 1/0
-  neginfty = -1/0
-  powℝ a b = a ** (fromIntegral b)
-  cos = P.cos
-  sin = P.sin
-  acos = P.acos
-  asin = P.asin
-  sqrt = P.sqrt
-  normalizeℝ v = v ^/ magnitude v 
-  fromℝ = realToFrac
-  toℝ a = ℝ a
-newtype ℝ = ℝ Float
--}
+instance NFData ℝ where
+  rnf (ℝ a) = CDS.rnf a `seq` ()
 
--- Thanks, Solonarv and #haskell
--- copied from the VectorSpace (Ratio a) instance
 instance VectorSpace ℝ where
   type Scalar ℝ = ℝ
   (*^) (ℝ a) (ℝ b) = ℝ $ (P.*) a b
@@ -296,7 +244,5 @@ instance AffineSpace ℝ where
   (.-.) = (P.-)
   (.+^) = (P.+)
 
-fromℝtoℕ :: ℝ -> Maybe ℕ
-fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
 
 
