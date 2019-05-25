@@ -218,11 +218,9 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) =
     else concatMap (symbolicGetMesh res) independents
         ++ symbolicGetMesh res (UnionR3 r dependants)
 
--- If all that fails, coerce and apply marching cubes :(
--- (rebound is for being safe about the bounding box --
---  it slightly streches it to make sure nothing will 
---  have problems because it is right at the edge )
+-- | If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj =
-    case rebound3 (getImplicit3 obj, getBox3 obj) of
-        (obj', (a,b)) -> getMesh a b res obj'
+  -- Use rebound3 to stretch bounding box.
+  case rebound3 (getImplicit3 obj, getBox3 obj) of
+    (obj', (a,b)) -> getMesh a b res obj'
 

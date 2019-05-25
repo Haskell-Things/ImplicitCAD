@@ -12,6 +12,9 @@ import Data.VectorSpace((^-^), (^+^), (^/))
 
 default (ℝ)
 
+-- | Slightly stretch the bounding box of an object, in order to
+--   ensure that during mesh generation, there are no problems because
+--   values are right at the edge.
 rebound3 :: BoxedObj3 -> BoxedObj3
 rebound3 (obj, (a,b)) =
     let

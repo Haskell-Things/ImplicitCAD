@@ -22,18 +22,22 @@ import Data.Cross (cross3)
 
 import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
 
+default (ℕ, ℝ)
+
+-- Definitions
+
 data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
     deriving Show
 
--- | A ray. source point, and vector.
+-- | A ray. A point, and a normalized point in the direction the ray is going.
 data Ray    = Ray ℝ3 ℝ3
     deriving Show
+
+data Scene  = Scene Obj3 Color [Light] Color
 
 -- | A light source. source point, and.. ?
 data Light  = Light ℝ3 ℝ
     deriving Show
-
-data Scene  = Scene Obj3 Color [Light] Color
 
 type Color  = PixelRGBA8
 
@@ -63,7 +67,8 @@ average l =
         ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ map
             (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ], [ℝ]))
-        n = fromIntegral $ length l :: ℝ
+        n :: ℝ
+        n = fromIntegral $ length l
         (r', g', b', a') = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
     in PixelRGBA8
         (fromInteger . round $ r') (fromInteger . round $ g') (fromInteger . round $ b') (fromInteger . round $ a')
@@ -100,9 +105,9 @@ rayBounds ray box =
 intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe ℝ3
 intersection r@(Ray p v) ((a, aval),b) res obj =
     let
-        step | aval/(4::ℝ) > res = res
-             | aval/(2::ℝ) > res = res/(2 :: ℝ)
-             | otherwise = res/(10 :: ℝ)
+        step | aval/4 > res = res
+             | aval/2 > res = res/2
+             | otherwise = res/10
         a'  = a + step
         a'val = obj (p ^+^ a'*^v)
     in if a'val < 0
@@ -125,7 +130,7 @@ refine' :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 refine' 0 (a, _) _ _ = a
 refine' n (a, b) (aval, bval) obj =
     let
-        mid = (a+b)/(2::ℝ)
+        mid = (a+b)/2
         midval = obj mid
     in
         if midval == 0

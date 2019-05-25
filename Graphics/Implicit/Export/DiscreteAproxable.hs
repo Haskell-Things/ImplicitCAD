@@ -30,6 +30,8 @@ import Codec.Picture (DynamicImage, generateImage, PixelRGBA8(PixelRGBA8))
 import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
 import Data.AffineSpace ((.-^), (.+^))
 
+default (ℝ)
+
 -- | There is a discrete way to aproximate this object.
 --   eg. Aproximating a 3D object with a triangle mesh
 --       would be DiscreteApproxable Obj3 TriangleMesh
@@ -50,16 +52,16 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             obj = getImplicit3 symbObj
             box@((x1,y1,z1), (_,y2,z2)) = getBox3 symbObj
             av :: ℝ -> ℝ -> ℝ
-            av a b = (a+b)/(2::ℝ)
+            av a b = (a+b)/2
             avY = av y1 y2
             avZ = av z1 z2
             deviation = maximum [abs $ y1 - avY, abs $ y2 - avY, abs $ z1 - avZ, abs $ z2 - avZ]
-            camera = Camera (x1-deviation*(2.2::ℝ), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
-            lights = [Light (x1-deviation*(1.5::ℝ), y1 - (0.4::ℝ)*(y2-y1), avZ) ((0.03::ℝ)*deviation) ]
+            camera = Camera (x1-deviation*(2.2), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
+            lights = [Light (x1-deviation*(1.5), y1 - (0.4)*(y2-y1), avZ) ((0.03)*deviation) ]
             scene = Scene obj (PixelRGBA8 200 200 230 255) lights (PixelRGBA8 255 255 255 0)
             pixelRenderer :: Int -> Int -> Color
             pixelRenderer a b = renderScreen
-                ((fromIntegral a :: ℝ)/w - (0.5::ℝ)) ((fromIntegral b :: ℝ)/h - (0.5 ::ℝ))
+                ((fromIntegral a)/w - (0.5)) ((fromIntegral b)/h - (0.5))
             renderScreen :: ℝ -> ℝ -> Color
             renderScreen a b =
                     average [
