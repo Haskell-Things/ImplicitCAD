@@ -44,9 +44,9 @@ Library
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
                 -- for debugging.
+                -Wall
                 -Wextra
                 -Weverything
-                -Wall
 
     Exposed-modules:
                     Graphics.Implicit
@@ -217,7 +217,7 @@ Benchmark parser-bench
     Ghc-options:
                 -O2
                 -optc-O3
- --               -dynamic
+--                -dynamic
                 -- for debugging.
                 -Wall
                 -Wextra
