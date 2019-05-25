@@ -24,7 +24,9 @@ DOCGEN=dist/build/docgen/docgen
 
 ## Options used when calling ImplicitCAD. for testing, and for image generation.
 # Enable multiple CPU usage.
-RTSOPTS=+RTS -N 
+# Use the parallel garbage collector.
+# spit out some performance statistics.
+RTSOPTS=+RTS -N -qg -t
 # The resolution to generate objects at. FIXME: what does this mean in human terms? 
 RESOPTS=-r 50
 
