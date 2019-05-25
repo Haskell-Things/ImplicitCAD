@@ -50,7 +50,7 @@ cleanupTris tris =
           where
             norm :: ((Float,Float,Float),(Float,Float,Float)) -> (Float,Float,Float)
             norm (begin, end) = normalized $ begin ^-^ end
-        -- | Does this triangle fail because of two of it's points overlap, after conversion to float?
+        -- | Does this triangle fail because of two of it's points overlap?
         isDegenerateTriPoint :: Eq t => (t,t,t) -> Bool
         isDegenerateTriPoint (a,b,c) = (a == b) || (b == c) || (a == c)
 
@@ -111,8 +111,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map t
           triangle (a,b,c) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
           point :: (ℝ3) -> BI.Builder
           point (x,y,z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
-          normalV ps = let (x,y,z) = normal ps
-                       in fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
+          normalV ps = point $ normal ps
 
 jsTHREE :: TriangleMesh -> Text
 jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
