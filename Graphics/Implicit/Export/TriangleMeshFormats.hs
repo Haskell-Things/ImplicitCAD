@@ -40,6 +40,22 @@ cleanupTris tris =
         floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
         floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
 
+{-
+
+   -- Alternate methods of detecting degenerate triangles -- not used.
+   -- If you have to use one of these, please tell the maintainer.
+
+        -- | Does this triangle fail because it's points are on the same line?
+        isDegenerateTriLine (p1,p2,p3) = (norm (p1,p2)) == (norm (p2,p3)) || (norm (p1,p3)) == (norm(p2,p3))
+          where
+            norm :: ((Float,Float,Float),(Float,Float,Float)) -> (Float,Float,Float)
+            norm (begin, end) = normalized $ begin ^-^ end
+        -- | Does this triangle fail because of two of it's points overlap, after conversion to float?
+        isDegenerateTriPoint :: Eq t => (t,t,t) -> Bool
+        isDegenerateTriPoint (a,b,c) = (a == b) || (b == c) || (a == c)
+
+-}
+
         -- | Does this triangle fail because it is constrained on two axises?
         isDegenerateTri2Axis :: forall a. (Eq a) => ((a, a, a),(a, a, a),(a, a, a)) -> Bool
         isDegenerateTri2Axis tri = ((ysame tri) && (xsame tri)) || ((zsame tri) && (ysame tri)) || ((zsame tri) && (xsame tri))
@@ -52,11 +68,8 @@ cleanupTris tris =
             ysame ((_,y1,_),(_,y2,_),(_,y3,_)) = same (y1, y2, y3)
             zsame :: forall a. Eq a => ((a, a, a), (a, a, a), (a, a, a)) -> Bool
             zsame ((_,_,z1),(_,_,z2),(_,_,z3)) = same (z1, z2, z3)
-        -- | Does this triangle fail because of two of it's points overlap, after conversion to float?
-        isDegenerateTriPoint :: Eq t => (t,t,t) -> Bool
-        isDegenerateTriPoint (a,b,c) = (a == b) || (b == c) || (a == c)
         isDegenerateTri :: Triangle -> Bool
-        isDegenerateTri (a, b, c) = (isDegenerateTriPoint $ floatTri) || (isDegenerateTri2Axis $ floatTri)
+        isDegenerateTri (a, b, c) = (isDegenerateTri2Axis $ floatTri)  -- || (isDegenerateTriLine $ floatTri) || (isDegenerateTriPoint $ floatTri) 
           where
             floatTri = (floatPoint a, floatPoint b, floatPoint c)
     in filter (not . isDegenerateTri) tris
