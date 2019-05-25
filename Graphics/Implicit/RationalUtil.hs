@@ -146,7 +146,7 @@ newtype ℝ = ℝ Double
 -- Use this instance when ℝ ~ Double
 instance ℚ ℝ where
   π = ℝ $ P.pi
-  minℝ = ℝ $ 0.000000000000002
+  minℝ = ℝ $ 0.0000000000000002
   -- yes, these are nonsense. never meant to be evaluated.
   infty = ℝ $ 1/0
   neginfty = ℝ $ -1/0
