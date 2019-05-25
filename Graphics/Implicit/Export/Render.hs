@@ -185,22 +185,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 
     in
       -- (5) merge squares, etc
-      cleanupTris . mergedSquareTris . concat . concat $ concat sqTris
-
--- Removes triangles that are empty, when converting their positions to Float resolution.
--- NOTE: this will need to be disabled for AMF, and other triangle formats that can handle Double.
-cleanupTris :: TriangleMesh -> TriangleMesh
-cleanupTris tris =
-    let
-        toFloat :: ℝ -> Float
-        toFloat = fromℝtoFloat
-        floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
-        floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
-        isDegenerateTriFloat :: Eq t => (t,t,t) -> Bool
-        isDegenerateTriFloat (a,b,c) = (a == b) || (b == c) || (a == c)
-        isDegenerateTri :: Triangle -> Bool
-        isDegenerateTri (a, b, c) = isDegenerateTriFloat (floatPoint a, floatPoint b, floatPoint c)
-    in filter (not . isDegenerateTri) tris
+      mergedSquareTris . concat . concat $ concat sqTris
 
 -- getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ -> Obj2 -> [Polyline]
