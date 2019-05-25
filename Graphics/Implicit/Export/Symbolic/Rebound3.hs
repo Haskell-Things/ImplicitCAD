@@ -10,6 +10,9 @@ import Graphics.Implicit.Definitions(BoxedObj3, ℝ3)
 
 import Data.VectorSpace((^-^), (^+^), (^/))
 
+-- | Slightly stretch the bounding box of an object, in order to
+--   ensure that during mesh generation, there are no problems because
+--   values are right at the edge.
 rebound3 :: BoxedObj3 -> BoxedObj3
 rebound3 (obj, (a,b)) =
     let
