@@ -74,8 +74,6 @@ module Graphics.Implicit.Definitions (
         ExtrudeRM,
         ExtrudeOnEdgeOf,
         RotateExtrude),
-    Rectilinear2,
-    Rectilinear3,
     fromℕtoℝ,
     fromFastℕtoℝ,
     fromℝtoFloat
@@ -275,9 +273,4 @@ data SymbolicObj3 =
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
 
--- | Rectilinear 2D set
-type Rectilinear2 = [Box2]
-
--- | Rectilinear 3D set
-type Rectilinear3 = [Box3]
 
