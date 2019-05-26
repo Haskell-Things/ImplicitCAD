@@ -72,9 +72,7 @@ module Graphics.Implicit.Definitions (
         ExtrudeRotateR,
         ExtrudeRM,
         ExtrudeOnEdgeOf,
-        RotateExtrude),
-    Rectilinear2,
-    Rectilinear3
+        RotateExtrude)
     )
 where
 
@@ -97,14 +95,17 @@ type ℝ3 = (ℝ,ℝ,ℝ)
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
+{-# INLINABLE both #-}
 
 -- | apply a function to all three items in the provided tuple.
 allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
 allthree f (x,y,z) = (f x, f y, f z)
+{-# INLINABLE allthree #-}
 
--- TODO: Find a better place for this
+-- | TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
+{-# INLINABLE (⋅) #-}
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where
@@ -244,10 +245,3 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
-
--- | Rectilinear 2D set
-type Rectilinear2 = [Box2]
-
--- | Rectilinear 3D set
-type Rectilinear3 = [Box3]
-
