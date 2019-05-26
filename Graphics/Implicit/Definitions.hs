@@ -109,25 +109,32 @@ minℝ = 0.0000000000000002
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
+{-# INLINABLE both #-}
 
 -- | apply a function to all three items in the provided tuple.
 allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
 allthree f (x,y,z) = (f x, f y, f z)
+{-# INLINABLE allthree #-}
 
--- TODO: Find a better place for this
+-- | TODO: Find a better place for this
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
+{-# INLINABLE (⋅) #-}
 
 -- Wrap the functions that convert datatypes.
 
+-- | Convert from our Integral to our Rational. 
 fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
+{-# INLINABLE fromℕtoℝ #-}
 
 fromFastℕtoℝ :: Fastℕ -> ℝ
 fromFastℕtoℝ (Fastℕ a) = fromIntegral a
+{-# INLINABLE fromFastℕtoℝ #-}
 
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac
+{-# INLINABLE fromℝtoFloat #-}
 
 -- add aditional instances to Show, for when we dump the intermediate form of an object.
 instance Show (ℝ -> ℝ) where
