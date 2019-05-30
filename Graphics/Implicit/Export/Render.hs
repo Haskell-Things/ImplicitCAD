@@ -13,7 +13,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, (==), (||), filter, not, reverse, (.), Eq, concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Triangle, Polyline, (⋯/), both, allthree, fromℝtoFloat)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree, fromℝtoFloat)
 
 import Data.VectorSpace ((^-^))
 
