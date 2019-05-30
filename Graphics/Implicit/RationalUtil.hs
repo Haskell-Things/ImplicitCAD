@@ -9,7 +9,7 @@
 
 {-# LANGUAGE TypeApplications #-}
 
-module Graphics.Implicit.RationalUtil (ℚ(..), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat) where
+module Graphics.Implicit.RationalUtil (ℚ(..), ℝ) where
 
 import Prelude (RealFrac(properFraction, ceiling, floor, round, truncate), Fractional(fromRational, (/)), Ord, Double, Show(show), Eq, Num((+), (*), abs, negate, signum, fromInteger), Real(toRational), Read(readsPrec), ($), seq, (==), floor, Float, map)
 
@@ -64,8 +64,12 @@ class (RealFrac v) => ℚ v where
   atan2 :: v -> v -> v
   normalizeℝ2 :: (v,v) -> (v,v)
   normalizeℝ3 :: (v,v,v) -> (v,v,v)
-  toℝ :: v -> ℝ
-  fromℝ :: ℝ -> v
+  toℝ :: v -> v
+  fromℕtoℝ :: ℕ -> v
+  fromFastℕtoℝ :: Fastℕ -> v
+  fromℝ :: v -> v
+  fromℝtoFloat :: v -> Float
+  fromℝtoℕ :: v -> Maybe ℕ
   (%) :: ℕ -> ℕ -> v
 
 -- CUT HERE --
@@ -168,11 +172,24 @@ instance ℚ ℝ where
   cbrt (ℝ x) = ℝ $ (P.**(1/3)) x
   normalizeℝ2 (ℝ x, ℝ y) = bothℝ $ (x, y) ^/ magnitude (x, y)
     where bothℝ (a, b) = (ℝ a, ℝ b)
+  {-# INLINABLE normalizeℝ2 #-}
   normalizeℝ3 (ℝ x, ℝ y, ℝ z) = allThreeℝ $ (x, y, z) ^/ magnitude (x, y, z)
     where allThreeℝ (a, b, c) = (ℝ a, ℝ b, ℝ c)
-  fromℝ (ℝ x) = P.realToFrac x
+  {-# INLINABLE normalizeℝ3 #-}
   toℝ a = a
+  {-# INLINABLE toℝ #-}
+  fromℕtoℝ a = ℝ $ P.realToFrac a
+  {-# INLINABLE fromℕtoℝ #-}
+  fromFastℕtoℝ a = ℝ $ P.realToFrac a
+  {-# INLINABLE fromFastℕtoℝ #-}
+  fromℝtoFloat a = (P.realToFrac a :: Float)
+  {-# INLINABLE fromℝtoFloat #-}
+  fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
+  {-# INLINABLE fromℝtoℕ #-}
+  fromℝ (ℝ x) = P.realToFrac x
+  {-# INLINABLE fromℝ #-}
   (%) a b = ℝ $ (P./) (P.fromIntegral a) (P.fromIntegral b)
+  {-# INLINABLE (%) #-}
 
 instance Read ℝ where
   readsPrec prec input = map promoteFst $ (P.readsPrec prec input)
@@ -180,13 +197,13 @@ instance Read ℝ where
       promoteFst :: (Double, a) -> (ℝ, a)
       promoteFst (q, r) = (ℝ q, r)
   {-# INLINABLE readsPrec #-}
+-- FIXME: implement:
 --  readsListPrec
 --  readsList
 
 instance Show ℝ where
   show (ℝ a) = P.show a
   {-# INLINABLE show #-}
-
 
 instance RealFrac ℝ where
   ceiling (ℝ a)        = P.ceiling a
@@ -215,27 +232,17 @@ instance Real ℝ where
 
 instance Num ℝ where
   (+) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
+  {-# INLINABLE (+) #-}
   (*) (ℝ a) (ℝ b) = ℝ $ (P.*) a b
+  {-# INLINABLE (*) #-}
   abs (ℝ a)       = ℝ $ P.abs a
+  {-# INLINABLE abs #-}
   negate (ℝ a)    = ℝ $ P.negate a
+  {-# INLINABLE negate #-}
   signum (ℝ a)    = ℝ $ P.signum a
+  {-# INLINABLE signum #-}
   fromInteger a   = ℝ $ P.realToFrac a
-
-fromℕtoℝ :: ℕ -> ℝ
-fromℕtoℝ a = ℝ $ P.realToFrac a
-{-# INLINABLE fromℕtoℝ #-}
-
-fromFastℕtoℝ :: Fastℕ -> ℝ
-fromFastℕtoℝ a = ℝ $ P.realToFrac a
-{-# INLINABLE fromFastℕtoℝ #-}
-
-fromℝtoFloat :: ℝ -> Float
-fromℝtoFloat a = (P.realToFrac a :: Float)
-{-# INLINABLE fromℝtoFloat #-}
-
-fromℝtoℕ :: ℝ -> Maybe ℕ
-fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
-{-# INLINABLE fromℝtoℕ #-}
+  {-# INLINABLE fromInteger #-}
 
 instance AdditiveGroup ℝ where
   zeroV             = ℝ $ 0
