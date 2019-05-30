@@ -22,8 +22,6 @@ import Data.VectorSpace (magnitudeSq, (^+^), (*^), (^-^), InnerSpace)
 
 import Data.Cross (cross3)
 
-import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
-
 default (ℕ, ℝ)
 
 -- Definitions

@@ -11,9 +11,9 @@
 
 module Graphics.Implicit.RationalUtil (ℚ(..), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat) where
 
-import Prelude (RealFrac(properFraction), Fractional(fromRational, (/)), Ord, Double, Show(show), Eq, Num((+), (*), abs, negate, signum, fromInteger), Real(toRational), Read(readsPrec), ($), seq, (==), floor, Float, map)
+import Prelude (RealFrac(properFraction, ceiling, floor, round, truncate), Fractional(fromRational, (/)), Ord, Double, Show(show), Eq, Num((+), (*), abs, negate, signum, fromInteger), Real(toRational), Read(readsPrec), ($), seq, (==), floor, Float, map)
 
-import qualified Prelude as P ((+), (-), (*), abs, signum, negate, (/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral, toRational, properFraction, show, fromRational, readsPrec)
+import qualified Prelude as P ((+), (-), (*), abs, signum, negate, (/), (**), realToFrac, sqrt, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, pi, exp, log, fromIntegral, toRational, properFraction, show, fromRational, readsPrec, ceiling, floor, round, truncate)
 
 import Data.AffineSpace (AffineSpace(Diff, (.-.), (.+^)))
 
@@ -179,22 +179,35 @@ instance Read ℝ where
     where
       promoteFst :: (Double, a) -> (ℝ, a)
       promoteFst (q, r) = (ℝ q, r)
+  {-# INLINABLE readsPrec #-}
 --  readsListPrec
 --  readsList
 
 instance Show ℝ where
-    show (ℝ a) = P.show a
+  show (ℝ a) = P.show a
+  {-# INLINABLE show #-}
+
 
 instance RealFrac ℝ where
+  ceiling (ℝ a)        = P.ceiling a
+  {-# INLINABLE ceiling #-}
+  floor (ℝ a)          = P.floor a
+  {-# INLINABLE floor #-}
+  truncate (ℝ a)       = P.truncate a
+  {-# INLINABLE truncate #-}
+  round (ℝ a)          = P.round a
+  {-# INLINABLE round #-}
   properFraction (ℝ a) = promoteSnd $ P.properFraction a
     where
       promoteSnd :: (a, Double) -> (a, ℝ)
       promoteSnd (q, r) = (q, ℝ r)
-  -- ceiling, floor, truncate, round.
+  {-# INLINABLE properFraction #-}
 
 instance Fractional ℝ where
   fromRational x  = ℝ $ P.fromRational x
+  {-# INLINABLE fromRational #-}
   (/) (ℝ x) (ℝ y) = ℝ $ (P./) x y
+  {-# INLINABLE (/) #-}
   
 instance Real ℝ where
   toRational (ℝ a) = P.toRational a
@@ -210,39 +223,49 @@ instance Num ℝ where
 
 fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ a = ℝ $ P.realToFrac a
+{-# INLINABLE fromℕtoℝ #-}
 
 fromFastℕtoℝ :: Fastℕ -> ℝ
 fromFastℕtoℝ a = ℝ $ P.realToFrac a
-
---fromInttoℝ :: Int -> ℝ
---fromInttoℝ a = ℝ $ P.realToFrac a
+{-# INLINABLE fromFastℕtoℝ #-}
 
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat a = (P.realToFrac a :: Float)
+{-# INLINABLE fromℝtoFloat #-}
 
 fromℝtoℕ :: ℝ -> Maybe ℕ
 fromℝtoℕ n = if n == fromℕtoℝ (floor n) then Just (floor n) else Nothing
+{-# INLINABLE fromℝtoℕ #-}
 
 instance AdditiveGroup ℝ where
   zeroV             = ℝ $ 0
+  {-# INLINABLE zeroV #-}
   (^-^) (ℝ a) (ℝ b) = ℝ $ (P.-) a b
+  {-# INLINABLE (^-^) #-}
   (^+^) (ℝ a) (ℝ b) = ℝ $ (P.+) a b
+  {-# INLINABLE (^+^) #-}
   negateV (ℝ a)     = ℝ $ P.negate a
+  {-# INLINABLE negateV #-}
 
 instance NFData ℝ where
   rnf (ℝ a) = CDS.rnf a `seq` ()
+  {-# INLINABLE rnf #-}
 
 instance VectorSpace ℝ where
   type Scalar ℝ = ℝ
   (*^) (ℝ a) (ℝ b) = ℝ $ (P.*) a b
+  {-# INLINABLE (*^) #-}
 
 instance InnerSpace ℝ where
   (<.>) = (P.*)
+  {-# INLINABLE (<.>) #-}
 
 instance AffineSpace ℝ where
   type Diff ℝ = ℝ
   (.-.) = (P.-)
+  {-# INLINABLE (.-.) #-}
   (.+^) = (P.+)
+  {-# INLINABLE (.+^) #-}
 
 
 

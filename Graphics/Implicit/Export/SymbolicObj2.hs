@@ -13,7 +13,7 @@ module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbol
 
 import Prelude(map, ($), (-), (/), (+), (>), (*), (.), reverse, max, fromInteger, fromIntegral, ceiling)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), cos, sin, π, sqrt)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), cos, sin, π, sqrt)
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 

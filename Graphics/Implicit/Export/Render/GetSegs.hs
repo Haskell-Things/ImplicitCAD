@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
 
-import Prelude(Eq, Bool(True, False), (+), (*), (/=), map, (.), filter, ($), (<=))
+import Prelude(Bool(True, False), (+), (*), (/=), map, (.), filter, ($), (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline), sqrt)
 
