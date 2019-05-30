@@ -14,7 +14,7 @@ module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAp
 import Prelude((-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
 
 -- Definitions for our number system, objects, and the things we can use to approximately represent objects.
-import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, TriangleMesh, NormedTriangleMesh)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, Triangle, TriangleMesh(TriangleMesh), NormedTriangleMesh(NormedTriangleMesh))
 
 import Graphics.Implicit.ObjectUtil (getImplicit2, getImplicit3, getBox2, getBox3)
 
@@ -32,6 +32,9 @@ import Data.AffineSpace ((.-^), (.+^))
 
 default (ℝ)
 
+unmesh :: TriangleMesh -> [Triangle]
+unmesh (TriangleMesh m) = m
+
 -- | There is a discrete way to aproximate this object.
 --   eg. Aproximating a 3D object with a triangle mesh
 --       would be DiscreteApproxable Obj3 TriangleMesh
@@ -42,7 +45,7 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
     discreteAprox = symbolicGetMesh
 
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
-    discreteAprox res obj = map (normTriangle res (getImplicit3 obj)) $ symbolicGetMesh res obj
+    discreteAprox res obj = NormedTriangleMesh $ map (normTriangle res (getImplicit3 obj)) $ unmesh $ symbolicGetMesh res obj
 
 -- FIXME: way too many magic numbers.
 instance DiscreteAproxable SymbolicObj3 DynamicImage where

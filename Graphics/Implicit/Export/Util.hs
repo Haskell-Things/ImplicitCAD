@@ -11,13 +11,13 @@ module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
 import Prelude(Fractional, (/), (-), ($), foldl, recip, realToFrac, length)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle, NormedTriangle)
+import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), NormedTriangle(NormedTriangle))
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
-normTriangle res obj (a,b,c) =
-    (normify a', normify b', normify c')
+normTriangle res obj (Triangle (a,b,c)) =
+    NormedTriangle (normify a', normify b', normify c')
         where
             normify = normVertex res obj
             a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02

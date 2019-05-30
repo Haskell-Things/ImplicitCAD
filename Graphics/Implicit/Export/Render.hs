@@ -124,7 +124,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
 
         -- Calculate segments for each side
         segsZ = [[[
-            map2  (inj3 z0) $ getSegs (x0,y0) (x1',y1') (obj **$ z0)
+            map (injZ z0) $ getSegs (x0,y0) (x1',y1') (obj **$ z0)
                 (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
                 (midA0, midA1, midB0, midB1)
              |x0<-pXs|x1'<-tail pXs|midB0<-mX'' |midB1<-mX'T    |midA0<-mY'' |midA1<-tail mY''
@@ -136,7 +136,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
             ] `using` parBuffer (max 1 $ fromIntegral $ div nz 32) rdeepseq
 
         segsY = [[[
-            map2  (inj2 y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0)
+            map (injY y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0)
                  (objX0Y0Z0,objX1Y0Z0,objX0Y0Z1,objX1Y0Z1)
                  (midA0, midA1, midB0, midB1)
              |x0<-pXs|x1'<-tail pXs|midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-tail mA''
@@ -148,7 +148,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
             ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
 
         segsX = [[[
-            map2  (inj1 x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0)
+            map (injX x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0)
                  (objX0Y0Z0,objX0Y1Z0,objX0Y0Z1,objX0Y1Z1)
                  (midA0, midA1, midB0, midB1)
              |x0<-pXs|             midB0<-mB'' |midB1<-mBT'      |midA0<-mA'' |midA1<-mA'T
@@ -250,12 +250,18 @@ getContour p1@(x1, y1) p2 res obj =
 
 -- utility functions
 
-inj1 :: forall t t1 t2. t -> (t1, t2) -> (t, t1, t2)
-inj1 a (b,c) = (a,b,c)
-inj2 :: forall t t1 t2. t1 -> (t, t2) -> (t, t1, t2)
-inj2 b (a,c) = (a,b,c)
-inj3 :: forall t t1 t2. t2 -> (t, t1) -> (t, t1, t2)
-inj3 c (a,b) = (a,b,c)
+injX :: ℝ -> Polyline -> [ℝ3]
+injX a (Polyline xs) = map (prepend a) xs
+prepend :: ℝ -> ℝ2 -> ℝ3
+prepend a (b,c) = (a,b,c)
+injY :: ℝ -> Polyline -> [ℝ3]
+injY a (Polyline xs) = map (insert a) xs
+insert :: ℝ -> ℝ2 -> ℝ3
+insert b (a,c) = (a,b,c)
+injZ :: ℝ -> Polyline -> [ℝ3]
+injZ a (Polyline xs) = map (postfix a) xs
+postfix :: ℝ -> ℝ2 -> ℝ3
+postfix c (a,b) = (a,b,c)
 
 ($**) :: forall t t1 t2 t3. ((t1, t2, t3) -> t) -> t1 -> (t2, t3) -> t
 infixr 0 $**
@@ -282,11 +288,6 @@ appBC f b c a = f (a,b,c)
 appAC :: forall t t1 t2 t3. ((t1, t2, t3) -> t) -> t1 -> t3 -> t2 -> t
 appAC f a c b = f (a,b,c)
 
-map2 :: forall a b. (a -> b) -> [[a]] -> [[b]]
-map2 f = map (map f)
--- FIXME: not used?
---map2R :: forall a a1. (a1 -> a) -> [[a1]] -> [[a]]
---map2R f = map (reverse . map f)
 mapR :: forall a. [[a]] -> [[a]]
 mapR = map reverse
 

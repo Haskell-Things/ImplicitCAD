@@ -9,28 +9,35 @@
 
 module Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode, dxf2) where
 
-import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, concat, show, (++), unwords, map, mapM_, snd, compare, min, max, length)
+import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, (++), unwords, map, mapM_, snd, compare, min, max, length, concat, foldl)
 
-import Graphics.Implicit.Definitions (Polyline, ℝ, ℝ2)
+import Graphics.Implicit.Definitions (Polyline(Polyline), ℝ, ℝ2)
 
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, mempty, toLazyText, mconcat, bf, (<>), buildInt, buildTruncFloat)
 
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
-import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue)
+import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue,Svg)
 import Text.Blaze.Internal (stringValue)
 import qualified Text.Blaze.Svg11.Attributes as A (version, width, height, viewbox, points, stroke, strokeWidth, fill)
 
 import Data.List (sortBy)
 
+default (ℝ)
+
+-- FIXME: magic numbers.
 svg :: [Polyline] -> Text
 svg plines = renderSvg . svg11 . svg' $ plines
     where
       strokeWidth :: ℝ
-      strokeWidth = 1.0
-      (xmin, xmax, ymin, ymax) = (minimum xs - margin, maximum xs + margin, minimum ys - margin, maximum ys + margin)
+      strokeWidth = 1
+      (xmin, xmax, ymin, ymax) = (xmin' - margin, xmax' + margin, ymin' - margin, ymax' + margin)
            where margin = strokeWidth / 2
-                 (xs,ys) = unzip (concat plines)
-
+                 ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)  
+                 (xs,ys) = unzip $ concat $ map pair plines
+                 pair (Polyline a) = a
+                 maxMinList :: [ℝ] -> (ℝ,ℝ)
+                 maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
+                 maxMinList [] = (0,0)
       svg11 = docTypeSvg ! A.version "1.1"
                          ! A.width  (stringValue $ show (xmax-xmin) ++ "mm")
                          ! A.height (stringValue $ show (ymax-ymin) ++ "mm")
@@ -38,11 +45,12 @@ svg plines = renderSvg . svg11 . svg' $ plines
 
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.
+      svg' :: [Polyline] -> Svg
       svg' [] = mempty
       -- When we have a known point, we can compute said transformation:
       svg' polylines = thinBlueGroup $ mapM_ poly polylines
 
-      poly line = polyline ! A.points pointList
+      poly (Polyline line) = polyline ! A.points pointList
           where pointList = toValue $ toLazyText $ mconcat [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
@@ -84,11 +92,11 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
       dxf2Entities = mconcat [
         "  0\n",   "SECTION\n",
         "  2\n",   "ENTITIES\n",
-        mconcat [ buildPolyline orderedPolyline | orderedPolyline <- (orderPolylines plines)], 
+        mconcat [ buildPolyline orderedPolyline | orderedPolyline <- orderPolylines plines],
         "  0\n",   "ENDSEC\n"
         ]
-      buildPolyline :: [ℝ2] -> Builder
-      buildPolyline singlePolyline =
+      buildPolyline :: Polyline -> Builder
+      buildPolyline (Polyline singlePolyline) =
         mconcat [
         "  0\n",   "POLYLINE\n",
         "  8\n",   "0\n",
@@ -110,22 +118,26 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         "  20\n",   buildTruncFloat y1, "\n"
         ]
       (dxfxmin, dxfxmax, dxfymin, dxfymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
-      (xs, ys) = unzip (concat plines)
+      (xs, ys) = unzip $ concat $ map pair plines
+      pair :: Polyline -> [ℝ2]
+      pair (Polyline x) = x
 
 orderPolylines :: [Polyline] -> [Polyline]
 orderPolylines plines =
   map snd . sortBy (\(a,_) (b, _) -> compare a b) . map (\x -> (polylineRadius x, x)) $ plines
   where
-    polylineRadius :: [ℝ2] -> ℝ
-    polylineRadius [] = 0
+    polylineRadius :: Polyline -> ℝ
     polylineRadius polyline' = max (xmax' - xmin') (ymax' - ymin')
       where
-        ((xmin', xmax'), (ymin', ymax')) = polylineRadius' polyline'
-        polylineRadius' :: [ℝ2] -> (ℝ2, ℝ2)
-        polylineRadius' [] = ((0,0),(0,0))
-        polylineRadius' [(x,y)] = ((x,x),(y,y))
-        polylineRadius' ((x,y):ps) = ((min x xmin,max x xmax),(min y ymin, max y ymax))
-          where ((xmin, xmax), (ymin, ymax)) = polylineRadius' ps
+        ((xmin', xmax'), (ymin', ymax')) = polylineRadius' [polyline']
+        polylineRadius' :: [Polyline] -> (ℝ2, ℝ2)
+        polylineRadius' lines = (maxMinList xs,maxMinList ys)
+          where
+            (xs,ys) = unzip $ concat $ map pair lines
+            pair (Polyline a) = a
+            maxMinList :: [ℝ] -> (ℝ,ℝ)
+            maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
+            maxMinList [] = (0,0)
 
 -- Gcode generation for the laser cutter in HackLab. Complies with https://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
 hacklabLaserGCode :: [Polyline] -> Text
@@ -146,10 +158,11 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpret
                     ,"M2 (end)"]
       gcodeXY :: ℝ2 -> Builder
       gcodeXY (x,y) = mconcat ["X", buildTruncFloat x, " Y", buildTruncFloat y]
-      interpretPolyline (start:others) = mconcat [
+      interpretPolyline :: Polyline -> Builder
+      interpretPolyline (Polyline (start:others)) = mconcat [
                                           "G00 ", gcodeXY start
                                          ,"\nM62 P0 (laser on)\n"
                                          ,mconcat [ "G01 " <> gcodeXY point <> "\n" | point <- others]
                                          ,"M63 P0 (laser off)\n\n"
                                          ]
-      interpretPolyline [] = mempty
+      interpretPolyline (Polyline []) = mempty
