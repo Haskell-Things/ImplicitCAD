@@ -11,9 +11,9 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(Float, Bool, ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, (==), (||), filter, not, reverse, (.), Eq, concatMap)
+import Prelude(ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, reverse, (.), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree, fromℝtoFloat)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree)
 
 import Data.VectorSpace ((^-^))
 
