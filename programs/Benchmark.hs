@@ -11,11 +11,10 @@ import Prelude (($), (*), (/), String, IO, map, zip3, Maybe(Just, Nothing), Eith
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
 
--- The parts of ImplicitCAD we know how to benchmark (in theory).
-import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL)
+-- The parts of ImplicitCAD we know how to benchmark.
+import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeRM, rect3R)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
-import Graphics.Implicit.Primitives (translate, difference, extrudeRM, rect3R)
 
 -- The types for distance and counting in our world, along with some trig functions/values.
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, cos, π)
@@ -29,7 +28,7 @@ default (Fastℕ, ℝ)
 -- | What we extrude in the example on the website.
 obj2d_1 :: SymbolicObj2
 obj2d_1 =
-    union
+    unionR 8
         [ circle 10
         , translate (22,0) $ circle 10
         , translate (0,22) $ circle 10

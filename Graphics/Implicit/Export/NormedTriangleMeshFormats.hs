@@ -9,12 +9,11 @@ module Graphics.Implicit.Export.NormedTriangleMeshFormats (obj) where
 
 import Prelude(($), map, (+), (.), (*), length, (-), return)
 
-import Graphics.Implicit.Definitions (NormedTriangle, ℝ3)
+import Graphics.Implicit.Definitions (NormedTriangle(NormedTriangle), NormedTriangleMesh(NormedTriangleMesh), ℝ3)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, mconcat, buildInt)
 
-
-obj :: [NormedTriangle] -> Text
-obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
+obj :: NormedTriangleMesh -> Text
+obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> trianglecode
     where
         -- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
         v :: ℝ3 -> Builder
@@ -25,12 +24,12 @@ obj normedtriangles = toLazyText $ vertcode <> normcode <> trianglecode
         verts = do
             -- extract the vertices for each triangle
             -- recall that a normed triangle is of the form ((vert, norm), ...)
-            ((a,_),(b,_),(c,_)) <- normedtriangles
+            NormedTriangle ((a,_),(b,_),(c,_)) <- normedtriangles
             -- The vertices from each triangle take up 3 position in the resulting list
             [a,b,c]
         norms = do
             -- extract the normals for each triangle
-            ((_,a),(_,b),(_,c)) <- normedtriangles
+            NormedTriangle ((_,a),(_,b),(_,c)) <- normedtriangles
             -- The normals from each triangle take up 3 position in the resulting list
             [a,b,c]
         vertcode = mconcat $ map v verts

@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Prelude(Bool(True, False), fromIntegral, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat, max, div, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri, Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri(Polytri), Obj2, (⋯/), (⋯*))
 
 import Data.VectorSpace ((^-^),(^+^))
 
@@ -98,8 +98,8 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
         midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 
         -- decompose a square into two triangles...
-        square :: forall t t1. t -> t1 -> t1 -> t1 -> [(t, t1, t1)]
-        square aa bb cc dd = [(aa,bb,cc), (aa,cc,dd)]
+        square :: ℝ2 -> ℝ2 -> ℝ2 -> ℝ2 -> [Polytri]
+        square aa bb cc dd = [Polytri (aa,bb,cc), Polytri (aa,cc,dd)]
 
     in case (x1y2 <= 0, x2y2 <= 0,
              x1y1 <= 0, x2y1 <= 0) of
@@ -118,33 +118,30 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
         (True,  False,
          True,  False) -> square (x1,y1) midy1 midy2 (x1,y2)
         (True,  False,
-         False, False) -> [((x1,y2), midx1, midy2)]
+         False, False) -> [Polytri ((x1,y2), midx1, midy2)]
         (False, True,
          True,  True)  ->
-            [(midx1, (x1,y1), midy2), ((x1,y1), (x2,y1), midy2), (midy2, (x2,y1), (x2,y2))]
+            [Polytri (midx1, (x1,y1), midy2), Polytri ((x1,y1), (x2,y1), midy2), Polytri (midy2, (x2,y1), (x2,y2))]
         (True,  True,
          False, True)  ->
-            [((x1,y2), midx1, (x2,y2)), (midx1, midy1, (x2,y2)), ((x2,y2), midy1, (x2,y1))]
+            [Polytri ((x1,y2), midx1, (x2,y2)), Polytri (midx1, midy1, (x2,y2)), Polytri ((x2,y2), midy1, (x2,y1))]
         (False, False,
-         True,  False) -> [(midx1, (x1,y1), midy1)]
+         True,  False) -> [Polytri (midx1, (x1,y1), midy1)]
         (True,  True,
          True,  False) ->
-            [(midy1,midx2,(x2,y2)), ((x2,y2), (x1,y2), midy1), (midy1, (x1,y2), (x1,y1))]
+            [Polytri (midy1,midx2,(x2,y2)), Polytri ((x2,y2), (x1,y2), midy1), Polytri (midy1, (x1,y2), (x1,y1))]
         (False, False,
-         False, True)  -> [(midx2, midy1, (x2,y1))]
+         False, True)  -> [Polytri (midx2, midy1, (x2,y1))]
         (True,  False,
          True,  True)  ->
-            [(midy2, (x2,y1), midx2), ((x2,y1), midy2, (x1,y1)), ((x1,y1), midy2, (x1,y2))]
+            [Polytri (midy2, (x2,y1), midx2), Polytri ((x2,y1), midy2, (x1,y1)), Polytri ((x1,y1), midy2, (x1,y2))]
         (False, True,
-         False, False) -> [(midx2, (x2,y2), midy2)]
+         False, False) -> [Polytri (midx2, (x2,y2), midy2)]
         (True,  False,
          False, True)  -> if c > 0
-            then [((x1,y2), midx1, midy2), ((x2,y1), midy1, midx2)] --[[midx1, midy2], [midx2, midy1]]
+            then [Polytri ((x1,y2), midx1, midy2), Polytri ((x2,y1), midy1, midx2)] --[[midx1, midy2], [midx2, midy1]]
             else [] --[[midx1, midy1], [midx2, midy2]]
         (False, True,
          True,  False) -> if c <= 0
             then [] --[[midx1, midy2], [midx2, midy1]]
-            else [((x1,y1), midy1, midx1), ((x2,y2), midx2, midy2)] --[[midx1, midy1], [midx2, midy2]]
-
-
-
+            else [Polytri ((x1,y1), midy1, midx1), Polytri ((x2,y2), midx2, midy2)] --[[midx1, midy1], [midx2, midy2]]

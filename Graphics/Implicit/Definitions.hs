@@ -25,12 +25,12 @@ module Graphics.Implicit.Definitions (
     (⋅),
     (⋯*),
     (⋯/),
-    Polyline,
-    Polytri,
-    Triangle,
-    NormedTriangle,
-    TriangleMesh,
-    NormedTriangleMesh,
+    Polyline(Polyline),
+    Polytri(Polytri),
+    Triangle(Triangle),
+    NormedTriangle(NormedTriangle),
+    TriangleMesh(TriangleMesh),
+    NormedTriangleMesh(NormedTriangleMesh),
     Obj2,
     Obj3,
     Box2,
@@ -88,6 +88,9 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ, fromFastℕ, toFastℕ)
 
+import Control.DeepSeq (NFData, rnf)
+
+-- Let's make things a bit nicer. 
 -- Following the math notation ℝ, ℝ², ℝ³...
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
@@ -137,25 +140,37 @@ instance ComponentWiseMultable ℝ3 where
     (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
     (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
 
--- | A chain of line segments, as in SVG
+-- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-type Polyline = [ℝ2]
+newtype Polyline = Polyline [ℝ2]
 
 -- | A triangle in 2D space (a,b,c).
-type Polytri = (ℝ2, ℝ2, ℝ2)
+newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
 
 -- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
-type Triangle = (ℝ3, ℝ3, ℝ3)
+newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
-type NormedTriangle = ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
+newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
-type TriangleMesh = [Triangle]
+newtype TriangleMesh = TriangleMesh [Triangle]
 
 -- | A normed triangle mesh is a mesh of normed triangles.
-type NormedTriangleMesh = [NormedTriangle]
+newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
+
+instance NFData Triangle where
+  rnf (Triangle (a,b,c)) = rnf (a,b,c)
+
+instance NFData TriangleMesh where
+  rnf (TriangleMesh xs) = rnf xs
+
+instance NFData Polytri where
+  rnf (Polytri (a,b,c)) = rnf (a,b,c)
+
+instance NFData Polyline where
+  rnf (Polyline xs) = rnf xs
 
 -- | A 2D object.
 type Obj2 = (ℝ2 -> ℝ)
