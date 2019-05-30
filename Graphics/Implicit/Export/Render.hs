@@ -13,7 +13,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(ceiling, ($), fromIntegral, (+), (*), max, div, tail, map, concat, reverse, (.), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree)
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree, fromℕtoℝ)
 
 import Data.VectorSpace ((^-^))
 
@@ -81,19 +81,19 @@ getMesh p1@(x1,y1,z1) p2 res obj =
         (nx,ny,nz) = ceiling `allthree` ( d ⋯/ (res,res,res))
 
         -- How big are the steps?
-        (rx,ry,rz) = d ⋯/ (fromIntegral `allthree` (nx,ny,nz))
+        (rx,ry,rz) = d ⋯/ (fromℕtoℝ `allthree` (nx,ny,nz))
 
         -- The positions we're rendering.
-        pXs = [ x1 + rx*n | n <- [0.. fromIntegral nx] ]
-        pYs = [ y1 + ry*n | n <- [0.. fromIntegral ny] ]
-        pZs = [ z1 + rz*n | n <- [0.. fromIntegral nz] ]
+        pXs = [ x1 + rx*n | n <- [0.. fromℕtoℝ nx] ]
+        pYs = [ y1 + ry*n | n <- [0.. fromℕtoℝ ny] ]
+        pZs = [ z1 + rz*n | n <- [0.. fromℕtoℝ nz] ]
 
         par3DList :: forall t. NFData t => ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[[t]]]
         par3DList lenx leny lenz f =
             [[[f
-                (\n -> x1 + rx*fromIntegral (mx+n)) mx
-                (\n -> y1 + ry*fromIntegral (my+n)) my
-                (\n -> z1 + rz*fromIntegral (mz+n)) mz
+                (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
+                (\n -> y1 + ry*fromℕtoℝ (my+n)) my
+                (\n -> z1 + rz*fromℕtoℝ (mz+n)) mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
                 `using` parBuffer (max 1 . fromIntegral $ div lenz 32) rdeepseq
 
@@ -200,17 +200,17 @@ getContour p1@(x1, y1) p2 res obj =
         (nx,ny) = ceiling `both` (d ⋯/ (res,res))
 
         -- How big are the steps?
-        (rx,ry) = d ⋯/ (fromIntegral `both` (nx,ny))
+        (rx,ry) = d ⋯/ (fromℕtoℝ `both` (nx,ny))
 
         -- the points inside of the region.
-        pYs = [ y1 + ry*fromIntegral p | p <- [0.. ny] ]
-        pXs = [ x1 + rx*fromIntegral p | p <- [0.. nx] ]
+        pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
+        pXs = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
 
         par2DList :: forall t. NFData t => ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[t]]
         par2DList lenx leny f =
             [[ f
-                (\n -> x1 + rx*fromIntegral (mx+n)) mx
-                (\n -> y1 + ry*fromIntegral (my+n)) my
+                (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
+                (\n -> y1 + ry*fromℕtoℝ (my+n)) my
             | mx <- [0..lenx] ] | my <- [0..leny] ]
                 `using` parBuffer (max 1 . fromIntegral $ div leny 32) rdeepseq
 
