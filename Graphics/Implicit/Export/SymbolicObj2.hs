@@ -29,6 +29,7 @@ symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res symbObj
     where
         obj = getImplicit2 symbObj
+        -- FIXME: cowardly case handling.
         orient :: Polyline -> Polyline
         orient (Polyline (points@(x:y:_))) =
             let
@@ -37,6 +38,8 @@ symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res sym
             in if obj (x + dv) - obj x > 0
             then Polyline points
             else Polyline $ reverse points
+        orient (Polyline []) = Polyline []
+        orient (Polyline [_]) = Polyline []
 
 symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
 symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [Polyline [ (x1,y1), (x2,y1), (x2,y2), (x1,y2), (x1,y1) ]]
