@@ -11,11 +11,13 @@ module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 import Prelude(String, Either(Left, Right), IO, ($), fmap)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (CompState(CompState))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
+
 
 import Text.Parsec.Error (ParseError)
 import Control.Monad (mapM_)
@@ -27,8 +29,8 @@ runOpenscad :: String -> Either ParseError (IO (VarLookup, [SymbolicObj2], [Symb
 runOpenscad source =
     let
         initial =  defaultObjects
-        rearrange :: forall t t1 t2 t3 t4. (t, (t4, [OVal], t1, t2, t3)) -> (t4, [SymbolicObj2], [SymbolicObj3])
-        rearrange (_, (varlookup, ovals, _ , _ , _)) = (varlookup, obj2s, obj3s) where
+        rearrange :: forall t. (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3])
+        rearrange (_, (CompState (varlookup, ovals, _))) = (varlookup, obj2s, obj3s) where
                                   (obj2s, obj3s, _ ) = divideObjs ovals
     in case parseProgram source of
         Left e -> Left e
@@ -36,6 +38,6 @@ runOpenscad source =
             $ fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
-                runStateT sts' (initial, [], path, (), () )
+                runStateT sts' $ CompState (initial, [], path)
             )
             $ mapM_ runStatementI sts
