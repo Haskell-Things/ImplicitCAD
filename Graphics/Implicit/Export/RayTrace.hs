@@ -5,15 +5,20 @@
 -- FIXME: why are these needed?
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Graphics.Implicit.Export.RayTrace( dynamicImage, Color, average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
+module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
 
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋅), Obj3)
-import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
+
+import Codec.Picture (Pixel8)
+
 import Control.Monad (guard, return)
+
 import Control.Arrow ((***))
+
 import Data.VectorSpace (Scalar, magnitude, (^+^), (*^), normalized, (^-^), InnerSpace)
+
 import Data.Cross (cross3)
 
 default (ℕ, ℝ)
@@ -23,46 +28,45 @@ default (ℕ, ℝ)
 data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
     deriving Show
 
--- | A ray. A point, and a normalized point in the direction the ray is going.
+-- | A ray. A point, and a normal pointing in the direction the ray is going.
 data Ray    = Ray ℝ3 ℝ3
     deriving Show
 
 data Scene  = Scene Obj3 Color [Light] Color
 
+-- | A light source. source point, and intensity.
 data Light  = Light ℝ3 ℝ
     deriving Show
 
-type Color  = PixelRGBA8
-
-color :: Pixel8 -> Pixel8 -> Pixel8 -> Pixel8 -> PixelRGBA8
-color = PixelRGBA8
-
-dynamicImage :: Image PixelRGBA8 -> DynamicImage
-dynamicImage = ImageRGBA8
+-- | A colour. Red Green Blue and Alpha components.
+data Color  = Color Pixel8 Pixel8 Pixel8 Pixel8
 
 -- Math
 
+-- | The distance traveled by a line segment from the first point to the second point.
 vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
 vectorDistance a b = magnitude (b-a)
 
-colorMult :: Pixel8 -> PixelRGBA8 -> PixelRGBA8
-s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
+-- | Multiply a colour by an intensity.
+colorMult :: Pixel8 -> Color -> Color
+s `colorMult` (Color a b c d) = Color (s `mult` a) (s `mult` b) (s `mult` c) d
     where
         bound :: RealFrac a => a -> a
         bound = max 0 . min 254
         mult :: Pixel8 -> Pixel8 -> Pixel8
         mult x y = round . bound . toRational $ x * y
 
+-- | Average a set of colours.
 average :: [Color] -> Color
 average l =
     let
         ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ map
-            (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
+            (\(Color r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ], [ℝ]))
         n :: ℝ
         n = fromIntegral $ length l
         (r', g', b', a') = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
-    in PixelRGBA8
+    in Color
         (fromInteger . round $ r') (fromInteger . round $ g') (fromInteger . round $ b') (fromInteger . round $ a')
 
 -- Ray Utilities
@@ -76,6 +80,7 @@ cameraRay (Camera p vx vy f) (x,y) =
     in
         Ray p' n
 
+-- | Create a ray from two points.
 rayFromTo :: ℝ3 -> ℝ3 -> Ray
 rayFromTo p1 p2 = Ray p1 (normalized $ p2 ^-^ p1)
 
@@ -93,7 +98,6 @@ rayBounds ray box =
         (lower, upper)
 
 -- Intersection
-
 intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe ℝ3
 intersection r@(Ray p v) ((a, aval),b) res obj =
     let
@@ -137,7 +141,6 @@ intersects a b c d = case intersection a b c d of
     Just _  -> True
 
 -- Trace
-
 traceRay :: Ray -> ℝ -> (ℝ3, ℝ3) -> Scene -> Color
 traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultColor) =
     let
