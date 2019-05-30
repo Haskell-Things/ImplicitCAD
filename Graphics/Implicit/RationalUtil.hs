@@ -150,26 +150,46 @@ newtype ℝ = ℝ Double
 -- Use this instance when ℝ ~ Double
 instance ℚ ℝ where
   π = ℝ $ P.pi
+  {-# INLINABLE π #-}
   minℝ = ℝ $ 0.0000000000000002
+  {-# INLINABLE minℝ #-}
   -- yes, these are nonsense. never meant to be evaluated.
   infty = ℝ $ 1/0
+  {-# INLINABLE infty #-}
   neginfty = ℝ $ -1/0
+  {-# INLINABLE neginfty #-}
   powℝ (ℝ a) b = ℝ $ a P.** (P.fromIntegral b)
+  {-# INLINABLE powℝ #-}
   powℝℝ (ℝ a) (ℝ b) = ℝ $ a P.** b
+  {-# INLINABLE powℝℝ #-}
   sin (ℝ x) = ℝ $ P.sin x
+  {-# INLINABLE sin #-}
   cos (ℝ x) = ℝ $ P.cos x
+  {-# INLINABLE cos #-}
   tan (ℝ x) = ℝ $ P.tan x
+  {-# INLINABLE tan #-}
   asin (ℝ x) = ℝ $ P.asin x
+  {-# INLINABLE asin #-}
   acos (ℝ x) = ℝ $ P.acos x
+  {-# INLINABLE acos #-}
   atan (ℝ x) = ℝ $ P.atan x
+  {-# INLINABLE atan #-}
   sinh (ℝ x) = ℝ $ P.sinh x
+  {-# INLINABLE sinh #-}
   cosh (ℝ x) = ℝ $ P.cosh x
+  {-# INLINABLE cosh #-}
   tanh (ℝ x) = ℝ $ P.tanh x
+  {-# INLINABLE tanh #-}
   atan2 (ℝ x) (ℝ y) = ℝ $ P.atan2 x y
+  {-# INLINABLE atan2 #-}
   exp (ℝ x) = ℝ $ P.exp x
+  {-# INLINABLE exp #-}
   log (ℝ x) = ℝ $ P.log x
+  {-# INLINABLE log #-}
   sqrt (ℝ x) = ℝ $ P.sqrt x
+  {-# INLINABLE sqrt #-}
   cbrt (ℝ x) = ℝ $ (P.**(1/3)) x
+  {-# INLINABLE cbrt #-}
   normalizeℝ2 (ℝ x, ℝ y) = bothℝ $ (x, y) ^/ magnitude (x, y)
     where bothℝ (a, b) = (ℝ a, ℝ b)
   {-# INLINABLE normalizeℝ2 #-}
