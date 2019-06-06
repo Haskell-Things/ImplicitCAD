@@ -265,7 +265,7 @@ rotateExtrude = RotateExtrude
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
-rotate3 :: (ℝ, ℝ, ℝ) -> SymbolicObj3 -> SymbolicObj3
+rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3 = Rotate3
 
 rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
@@ -275,7 +275,7 @@ rotate3V = Rotate3V
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs =
     let
-        boxDropZ :: forall t t1 t2 t3 t4 t5. ((t2, t3, t), (t4, t5, t1)) -> ((t2, t3), (t4, t5))
+        boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
         boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
         withBoxes :: [(Box2, SymbolicObj3)]
         withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs

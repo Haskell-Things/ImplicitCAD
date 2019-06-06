@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.MarchingSquares (getContour) where
 
 import Prelude(Bool(True, False), ceiling, (/), (+), (-), filter, map, ($), (*), (/=), (<=), (>), splitAt, div, unzip, length, (++), (<), (++), head, ceiling, concat, div, max, not, null, (||), Eq, fromIntegral, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polyline, Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, both, Polyline, Obj2, (⋯/), (⋯*))
 
 import Data.VectorSpace ((^-^), (^+^))
 
@@ -23,10 +23,6 @@ import Graphics.Implicit.Export.Render.HandlePolylines (reducePolyline)
 
 -- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
-
--- apply a function to both items in the provided tuple.
-both :: forall t b. (t -> b) -> (t, t) -> (b, b)
-both f (x,y) = (f x, f y)
 
 -- getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]

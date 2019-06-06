@@ -475,7 +475,7 @@ obj2UpMap obj2upmod (x:xs) = case x of
     a          -> a                      : obj2UpMap obj2upmod xs
 obj2UpMap _ [] = []
 
-toInterval :: Bool -> ℝ -> (ℝ, ℝ)
+toInterval :: Bool -> ℝ -> ℝ2
 toInterval center h =
     if center
     then (-h/2, h/2)

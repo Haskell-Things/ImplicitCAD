@@ -6,7 +6,7 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- FIXME: Required. why?
+-- Allow us to use real types in the type constraints.
 {-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeDXF2, writeSCAD2, writeSCAD3, writePNG) where
@@ -31,7 +31,7 @@ import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTri
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
 import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
 
--- Write an object to a file with LazyText IO, using the given format writer function.
+-- | Write an object to a file with LazyText IO, using the given format writer function.
 writeObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
     -> (aprox -> Text)  -- ^ File Format Writer (Function that formats)
@@ -43,7 +43,7 @@ writeObject res formatWriter filename obj =
         aprox = formatObject res formatWriter obj
     in LT.writeFile filename aprox
 
--- Serialize an object using the given format writer, which takes the filename and writes to it..
+-- | Serialize an object using the given format writer, which takes the filename and writes to it..
 writeObject' :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
     -> (FilePath -> aprox -> IO ())  -- ^ File Format writer
@@ -53,7 +53,7 @@ writeObject' :: (DiscreteAproxable obj aprox)
 writeObject' res formatWriter filename obj =
     formatWriter filename (discreteAprox res obj)
 
--- Serialize an object using the given format writer. no file target implied.
+-- | Serialize an object using the given format writer. No file target is implied.
 formatObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
     -> (aprox -> Text)  -- ^ File Format Writer (Function that formats)

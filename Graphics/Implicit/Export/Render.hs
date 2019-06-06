@@ -88,6 +88,7 @@ getMesh p1@(x1,y1,z1) p2 res obj =
         pYs = [ y1 + ry*n | n <- [0.. fromℕtoℝ ny] ]
         pZs = [ z1 + rz*n | n <- [0.. fromℕtoℝ nz] ]
 
+        -- | Perform a function on every point in a 3D grid.
         par3DList :: forall t. NFData t => ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[[t]]]
         par3DList lenx leny lenz f =
             [[[f

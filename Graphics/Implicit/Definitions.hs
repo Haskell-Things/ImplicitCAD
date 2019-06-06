@@ -13,7 +13,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 -- Definitions of the types used when modeling, and a few operators.
-
 module Graphics.Implicit.Definitions (
     module F,
     module N,
@@ -87,24 +86,23 @@ import Data.Maybe (Maybe)
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
+
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
 -- Let's make things a bit nicer. 
 -- Following the math notation ℝ, ℝ², ℝ³...
--- Supports changing Float to Double for more precision!
--- FIXME: what about using rationals instead of Float/Double?
 type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
+-- | A give up point for dividing ℝs
 minℝ :: ℝ
--- for Floats.
---minℝ = 0.00000011920928955078125 * 2
-
 -- for Doubles.
 minℝ = 0.0000000000000002
+-- for Floats.
+--minℝ = 0.00000011920928955078125 * 2
 
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
@@ -128,15 +126,17 @@ fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
 {-# INLINABLE fromℕtoℝ #-}
 
+-- | Convert from our Fast Integer (int32) to ℝ.
 fromFastℕtoℝ :: Fastℕ -> ℝ
 fromFastℕtoℝ (Fastℕ a) = fromIntegral a
 {-# INLINABLE fromFastℕtoℝ #-}
 
+-- | Convert from our rational to a float, for output.
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac
 {-# INLINABLE fromℝtoFloat #-}
 
--- add aditional instances to Show, for when we dump the intermediate form of an object.
+-- |add aditional instances to Show, for when we dump the intermediate form of objects.
 instance Show (ℝ -> ℝ) where
     show _ = "<function ℝ>"
 
@@ -155,16 +155,23 @@ instance Show (ℝ3 -> ℝ) where
 --instance Show BoxedObj3 where
 --    show _ = "<BoxedObj3>"
 
+
+
 -- TODO: Find a better way to do this?
+-- | Add multiply and divide operators for two ℝ2s or ℝ3s.
 class ComponentWiseMultable a where
     (⋯*) :: a -> a -> a
     (⋯/) :: a -> a -> a
 instance ComponentWiseMultable ℝ2 where
     (x,y) ⋯* (x',y') = (x*x', y*y')
+    {-# INLINABLE (⋯*) #-}
     (x,y) ⋯/ (x',y') = (x/x', y/y')
+    {-# INLINABLE (⋯/) #-}
 instance ComponentWiseMultable ℝ3 where
     (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
+    {-# INLINABLE (⋯*) #-}
     (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
+    {-# INLINABLE (⋯/) #-}
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
