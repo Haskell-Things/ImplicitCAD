@@ -4,9 +4,9 @@
 
 module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
 
-import Prelude(Eq, Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
+import Prelude(Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline))
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
 
@@ -73,17 +73,15 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         midy1 = (midy1V , y )
         midy2 = (midy2V, y + dy)
 
-        notPointLine :: Eq a => [a] -> Bool
-        notPointLine (np1:np2:[]) = np1 /= np2
-        notPointLine [] = False
-        notPointLine [_] = False
-        notPointLine (_ : (_ : (_ : _))) = False
+        notPointLine :: Polyline -> Bool
+        notPointLine (Polyline [np1,np2]) = np1 /= np2
+        notPointLine _ = False
 
         -- takes straight lines between mid points and subdivides them to
         -- account for sharp corners, etc.
 
-    in map (refine res obj) . filter (notPointLine) $ case (x1y2 <= 0, x2y2 <= 0,
-                                                            x1y1 <= 0, x2y1 <= 0) of
+    in map (refine res obj) . filter notPointLine $ case (x1y2 <= 0, x2y2 <= 0,
+                                                          x1y1 <= 0, x2y1 <= 0) of
 
         -- An important point here is orientation. If you imagine going along a
         -- generated segment, the interior should be on the left-hand side.
@@ -99,56 +97,56 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
         -- Horizontal Cases
 
         (True,  True,
-         False, False) -> [[midx1, midx2]]
+         False, False) -> [Polyline [midx1, midx2]]
 
         (False, False,
-         True,  True)  -> [[midx2, midx1]]
+         True,  True)  -> [Polyline [midx2, midx1]]
 
         -- Vertical Cases
 
         (False, True,
-         False, True)  -> [[midy2, midy1]]
+         False, True)  -> [Polyline [midy2, midy1]]
 
         (True,  False,
-         True,  False) -> [[midy1, midy2]]
+         True,  False) -> [Polyline [midy1, midy2]]
 
         -- Corner Cases
 
         (True,  False,
-         False, False) -> [[midx1, midy2]]
+         False, False) -> [Polyline [midx1, midy2]]
 
         (False, True,
-         True,  True)  -> [[midy2, midx1]]
+         True,  True)  -> [Polyline [midy2, midx1]]
 
         (True,  True,
-         False, True)  -> [[midx1, midy1]]
+         False, True)  -> [Polyline [midx1, midy1]]
 
         (False, False,
-         True,  False) -> [[midy1, midx1]]
+         True,  False) -> [Polyline [midy1, midx1]]
 
         (True,  True,
-         True,  False) -> [[midy1, midx2]]
+         True,  False) -> [Polyline [midy1, midx2]]
 
         (False, False,
-         False, True)  -> [[midx2, midy1]]
+         False, True)  -> [Polyline [midx2, midy1]]
 
         (True,  False,
-         True,  True)  -> [[midx2, midy2]]
+         True,  True)  -> [Polyline [midx2, midy2]]
 
         (False, True,
-         False, False) -> [[midy2, midx2]]
+         False, False) -> [Polyline [midy2, midx2]]
 
         -- Dual Corner Cases
 
         (True,  False,
          False, True)  -> if c <= 0
-            then [[midx1, midy1], [midx2, midy2]]
-            else [[midx1, midy2], [midx2, midy1]]
+            then [Polyline [midx1, midy1], Polyline [midx2, midy2]]
+            else [Polyline [midx1, midy2], Polyline [midx2, midy1]]
 
         (False, True,
          True,  False) -> if c <= 0
-            then [[midy2, midx1], [midy1, midx2]]
-            else [[midy1, midx1], [midy2, midx2]]
+            then [Polyline [midy2, midx1], Polyline [midy1, midx2]]
+            else [Polyline [midy1, midx1], Polyline [midy2, midx2]]
 
 
 -- A convenience function, we don't actually care too much about

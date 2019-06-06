@@ -7,3 +7,6 @@
 *.stl
 dist/
 Setup
+docs/iscad.md
+.stack-work/
+Examples/*cachegrind*

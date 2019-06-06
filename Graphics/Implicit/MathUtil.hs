@@ -9,21 +9,27 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++))
+import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
-import Data.List (sort, sortBy, reverse, (!!))
+import Data.List (sort, sortBy, (!!))
+
 import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
-import Data.AffineSpace ((.-.))
+
+-- get the distance between two points.
+import Data.AffineSpace (distance)
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
-distFromLineSeg p (a,b) = magnitude (closest .-. p)
+distFromLineSeg p (a,b) = distance p closest
     where
         ab = b ^-^ a
         ap = p ^-^ a
-        d  = normalized ab ⋅ ap
+        d :: ℝ
+        d  = (normalized ab) ⋅ ap
+        -- the closest point to p on the line segment.
+        closest :: ℝ2
         closest
             | d < 0 = a
             | d > magnitude ab = b
@@ -70,26 +76,26 @@ rmaximum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round maximum
     -> ℝ   -- ^ resulting number
-rmaximum _ (a:[]) = a
-rmaximum r (a:b:[]) = rmax r a b
+rmaximum _ [a] = a
+rmaximum r [a,b] = rmax r a b
 rmaximum r l =
     let
-        tops = reverse $ sort l
+        tops = sortBy (flip compare) l
     in
-        rmax r (tops !! 0) (tops !! 1)
+        rmax r (head tops) (tops !! 1)
 
 -- | Like rmin but on a list.
 rminimum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round minimum
     -> ℝ   -- ^ resulting number
-rminimum _ (a:[]) = a
-rminimum r (a:b:[]) = rmin r a b
+rminimum _ [a] = a
+rminimum r [a,b] = rmin r a b
 rminimum r l =
     let
         tops = sort l
     in
-        rmin r (tops !! 0) (tops !! 1)
+        rmin r (head tops) (tops !! 1)
 
 -- | Pack the given objects in a box the given size.
 pack ::
@@ -107,9 +113,9 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
             (\(boxa, _) (boxb, _) -> compareBoxesByY boxa boxb )
             objs
 
-        tmap1 :: forall t t1 t2. (t2 -> t) -> (t2, t1) -> (t, t1)
+        tmap1 :: (t2 -> t) -> (t2, t1) -> (t, t1)
         tmap1 f (a,b) = (f a, b)
-        tmap2 :: forall t t1 t2. (t2 -> t1) -> (t, t2) -> (t, t1)
+        tmap2 :: (t2 -> t1) -> (t, t2) -> (t, t1)
         tmap2 f (a,b) = (a, f b)
 
         packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
@@ -121,7 +127,7 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
                         packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
                     rowAndUp =
                         if abs (by2-by1) - abs (y2-y1) > sep
-                        then tmap1 ((fst row) ++ ) $
+                        then tmap1 (fst row ++ ) $
                             packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
                         else row
                 in

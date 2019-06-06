@@ -7,9 +7,9 @@
 
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
 
-import Prelude(Bool(False), Maybe(Just, Nothing), map, (.), filter, (==), last, reverse, ($), (++), tail, (-), (/), abs, (<=), (||), (&&), (*), (>), not, null)
+import Prelude(Bool(True, False), Maybe(Just, Nothing), map, (.), filter, (==), last, reverse, ($), (++), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise)
 
-import Graphics.Implicit.Definitions (minℝ, Polyline, ℝ)
+import Graphics.Implicit.Definitions (minℝ, Polyline(Polyline))
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =
@@ -17,34 +17,45 @@ cleanLoopsFromSegs =
     . joinSegs
     . filter polylineNotNull
 
+-- | Join polylines that connect.
 joinSegs :: [Polyline] -> [Polyline]
 joinSegs [] = []
-joinSegs (present:remaining) =
+joinSegs (Polyline present:remaining) =
     let
-        findNext ((p3:ps):segs) = if p3 == last present then (Just (p3:ps), segs) else
-            if last ps == last present then (Just (reverse $ p3:ps), segs) else
-            case findNext segs of (res1,res2) -> (res1,(p3:ps):res2)
+        findNext :: [Polyline] -> (Maybe Polyline, [Polyline])
+        findNext (Polyline (p3:ps):segs)
+            | p3 == last present      = (Just (Polyline (p3:ps)), segs)
+            | last ps == last present = (Just (Polyline $ reverse $ p3:ps), segs)
+            | otherwise               = case findNext segs of (res1,res2) -> (res1,(Polyline (p3:ps)):res2)
         findNext [] = (Nothing, [])
-        findNext (([]):_) = (Nothing, [])
+        findNext (Polyline []:_) = (Nothing, [])
     in
         case findNext remaining of
-            (Nothing, _) -> present:(joinSegs remaining)
-            (Just match, others) -> joinSegs $ (present ++ tail match): others
+            (Nothing, _) -> Polyline present: joinSegs remaining
+            (Just (Polyline match), others) -> joinSegs $ (Polyline (present ++ match)) : others
 
-reducePolyline :: [(ℝ, ℝ)] -> [(ℝ, ℝ)]
-reducePolyline ((x1,y1):(x2,y2):(x3,y3):others) =
-    if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):(x3,y3):others) else
-    if abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
-       || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0)
-    then reducePolyline ((x1,y1):(x3,y3):others)
-    else (x1,y1) : reducePolyline ((x2,y2):(x3,y3):others)
-reducePolyline ((x1,y1):(x2,y2):others) =
-    if (x1,y1) == (x2,y2) then reducePolyline ((x2,y2):others) else (x1,y1):(x2,y2):others
+-- | Simplify and sort a polyline.
+reducePolyline :: Polyline -> Polyline
+reducePolyline (Polyline ((x1,y1):(x2,y2):(x3,y3):others))
+    -- Remove duplicate points.
+    | (x1,y1) == (x2,y2) = reducePolyline (Polyline ((x2,y2):(x3,y3):others))
+    | abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
+      || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0) =
+      reducePolyline (Polyline ((x1,y1):(x3,y3):others))
+    | otherwise = Polyline ((x1,y1) : (points $ reducePolyline (Polyline ((x2,y2):(x3,y3):others))))
+  where
+    points (Polyline pts) = pts
+-- | remove duplicate points
+reducePolyline (Polyline ((x1,y1):(x2,y2):others)) =
+    if (x1,y1) == (x2,y2) then reducePolyline (Polyline ((x2,y2):others)) else Polyline ((x1,y1):(x2,y2):others)
+-- | Return the last result.
 reducePolyline l = l
 
-polylineNotNull :: [a] -> Bool
-polylineNotNull (_:l) = not (null l)
-polylineNotNull [] = False
+-- ensure that polylines are not empty.
+polylineNotNull :: Polyline -> Bool
+polylineNotNull (Polyline (_:_:_)) = True
+polylineNotNull (Polyline [_]) = True
+polylineNotNull (Polyline []) = False
 
 {-cleanLoopsFromSegs =
     connectPolys

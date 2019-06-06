@@ -4,9 +4,9 @@
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
-import Prelude(concatMap, (++))
+import Prelude(concatMap, (++), ($))
 
-import Graphics.Implicit.Definitions (Triangle)
+import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Data.VectorSpace ((^*), (*^), (^+^))
 
@@ -57,16 +57,21 @@ import Data.VectorSpace ((^*), (*^), (^+^))
 
 -}
 
-mergedSquareTris :: [TriSquare] -> [Triangle]
+mergedSquareTris :: [TriSquare] -> TriangleMesh
 mergedSquareTris sqTris =
     let
         -- We don't need to do any work on triangles. They'll just be part of
         -- the list of triangles we give back. So, the triangles coming from
         -- triangles...
-        triTriangles = [tri | Tris tris <- sqTris, tri <- tris ]
+        triTriangles :: [Triangle]
+        triTriangles = [tri | Tris tris <- sqTris, tri <- unmesh tris ]
         --concat $ map (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
-        squaresFromTris = [ (Sq x y z q) | Sq x y z q <- sqTris ]
+        squaresFromTris :: [TriSquare]
+        squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]
+
+        unmesh (TriangleMesh m) = m
+
 {-
         -- Collect ones that are on the same plane.
         planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
@@ -85,7 +90,7 @@ mergedSquareTris sqTris =
         -- merge them to triangles, and combine with the original triangles.
         -- Disable square merging temporarily.
         --triTriangles ++ concat (map squareToTri finishedSquares)
-        triTriangles ++ concatMap squareToTri squaresFromTris
+        TriangleMesh $ triTriangles ++ concatMap squareToTri squaresFromTris
 
 -- And now for a bunch of helper functions that do the heavy lifting...
 
@@ -125,7 +130,7 @@ joinYaligned quads@((Sq b z _ yS):_) =
 joinYaligned [] = []
 -}
 
--- Reconstruct a triangle
+-- Deconstruct a square into two triangles.
 squareToTri :: TriSquare -> [Triangle]
 squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
     let
@@ -137,8 +142,9 @@ squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
         c = zV ^+^ x1V ^+^ y2V
         d = zV ^+^ x2V ^+^ y2V
     in
-        [(a,b,c),(c,b,d)]
+        [Triangle (a,b,c), Triangle (c,b,d)]
 
-squareToTri(Tris t) = t
-
+squareToTri (Tris t) = unmesh t
+  where
+    unmesh (TriangleMesh a) = a
 

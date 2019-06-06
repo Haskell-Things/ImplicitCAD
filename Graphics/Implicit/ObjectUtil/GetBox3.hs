@@ -4,19 +4,23 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), Maybe(Nothing, Just), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, sqrt, (>), (&&), head, (*), (<), abs, either, error, const)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take)
 
-import Graphics.Implicit.Definitions (ℝ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), (⋯*))
+import Data.Maybe(Maybe(Nothing, Just))
+
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
 import Data.Maybe (fromMaybe)
 import Data.VectorSpace ((^-^), (^+^))
 
--- test to see whether a Box3 has area.
+-- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
+
+-- Test to see whether a Box3 has area.
 isEmpty :: (Eq a2, Eq a1, Eq a) =>
            ((a, a1, a2), (a, a1, a2)) -> Bool
 isEmpty ((a,b,c),(d,e,f)) = a==d || b==e || c==f
@@ -29,7 +33,7 @@ outsetBox r (a,b) =
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Rect3R _ a b) = (a,b)
-getBox3 (Sphere r ) = ((-r, -r, -r), (r,r,r))
+getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
 getBox3 (Complement3 _) =
@@ -81,10 +85,17 @@ getBox3 (Scale3 s symbObj) =
         (sbx,sby,sbz) = s ⋯* b
     in
         ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
-getBox3 (Rotate3 _ symbObj) = ( (-d, -d, -d), (d, d, d) )
-    where
-        ((x1,y1, z1), (x2,y2, z2)) = getBox3 symbObj
-        d = (sqrt 3 *) $ maximum $ map abs [x1, x2, y1, y2, z1, z2]
+getBox3 (Rotate3 (a, b, c) symbObj) =
+    let
+        ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
+        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ RectR 0 (v1, w1) (v2, w2))
+        ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
+        ((z1'', x1'), (z2'', x2')) = rotate z1' x1 z2' x2 b
+        ((x1'', y1''), (x2'', y2'')) = rotate x1' y1' x2' y2' c
+        (xs, ys, zs) = ([x1'', x2''], [y1'', y2''], [z1'', z2''])
+    in
+        ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
+
 getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =
@@ -103,22 +114,25 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         ((bx1,by1),(bx2,by2)) = getBox2 symbObj2
     in
         ((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
--- FIXME: magic numbers in range.
+-- FIXME: magic numbers.
 getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
     let
-        range :: [ℝ]
-        range = [0, 0.1 .. 1.0]
+        samples :: Fastℕ
+        samples=11
+        hfuzz :: ℝ
+        hfuzz = 0.2
+        range :: [Fastℕ]
+        range = [0, 1 .. (samples-1)]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
-        (xrange, yrange) = (map (\s -> x1+s*dx) $ range, map (\s -> y1+s*dy) $ range )
-
+        (xrange, yrange) = ( map (\s -> x1+s*dx/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range, map (\s -> y1+s*dy/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range )
         h = case eitherh of
               Left h' -> h'
-              Right hf -> hmax + 0.2*(hmax-hmin)
+              Right hf -> hmax + hfuzz*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-        hrange = map (h*) $ range
+        hrange = map (/(fromFastℕtoℝ $ samples-1)) $ map (h*) $ map fromFastℕtoℝ range
         sval = case scale of
             Nothing -> 1
             Just scale' -> maximum $ map (abs . scale') hrange
@@ -130,7 +144,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
             Just _  -> (-d, -d, d, d)
                 where d = sval * getDist2 (0,0) symbObj
         translate' = fromMaybe (const (0,0)) translate
-        (tvalsx, tvalsy) = unzip . map (translate' . (h*)) $ hrange
+        (tvalsx, tvalsy) = unzip $ map (translate' . (h*)) hrange
         (tminx, tminy) = (minimum tvalsx, minimum tvalsy)
         (tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
     in
@@ -143,16 +157,28 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
         r = max x2 (x2 + xshift)
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
+-- FIXME: magic numbers.
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
+        samples :: Fastℕ
+        samples = 11
+        xfuzz :: ℝ
+        xfuzz = 1.1
+        yfuzz :: ℝ
+        yfuzz=0.1
+        range :: [Fastℕ]
+        range = [0, 1 .. (samples-1)]
+        step = rot/(fromFastℕtoℝ $ samples-1)
         ((x1,y1),(x2,y2)) = getBox2 symbObj
-        (xshifts, yshifts) = unzip [f θ | θ <- [0 , rot / 10 .. rot] ]
-        xmax = maximum xshifts
-        ymax = maximum yshifts
-        ymin = minimum yshifts
-        xmax' = if xmax > 0 then xmax * 1.1 else if xmax < - x1 then 0 else xmax
-        ymax' = ymax + 0.1 * (ymax - ymin)
-        ymin' = ymin - 0.1 * (ymax - ymin)
+        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ map f $ map (step*) $ map fromFastℕtoℝ range
+        xmax = maximum xrange
+        ymax = maximum yrange
+        ymin = minimum yrange
+        xmax' | xmax > 0 = xmax * xfuzz
+              | xmax < - x1 = 0
+              | otherwise = xmax
+        ymax' = ymax + yfuzz * (ymax - ymin)
+        ymin' = ymin - yfuzz * (ymax - ymin)
         (r, _, _) = if either (==0) (const False) rotate
             then let
                 s = maximum $ map abs [x2, y1, y2]
@@ -161,4 +187,4 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     in
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 -- FIXME: add case for ExtrudeRotateR!
-getBox3(ExtrudeRotateR _ _ _ _ ) = error "ExtrudeRotateR implementation incomplete!"
+getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"

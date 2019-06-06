@@ -1,9 +1,10 @@
-import Criterion.Main
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Expr
-import Graphics.Implicit.ExtOpenScad.Parser.Statement
-import Text.ParserCombinators.Parsec hiding (State)
-import Text.Printf
+import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
+import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+import Text.ParserCombinators.Parsec (parse)
+import Text.Printf (printf)
 
 lineComment :: Int -> String
 lineComment width = "//" ++ ['x' | _ <- [1..width]] ++ "\n"
@@ -24,7 +25,7 @@ assignments :: Int -> String
 assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
 
 intList :: Int -> String
-intList n = "[" ++ concat [(show i) ++ "," | i <- [1..n]] ++ "0]"
+intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
 
 parseExpr :: String -> Expr
 parseExpr s = case parse expr0 "src" s of
@@ -32,7 +33,7 @@ parseExpr s = case parse expr0 "src" s of
                Right e -> e
 
 parseStatements :: String -> [StatementI]
-parseStatements s = case parseProgram "src" s of
+parseStatements s = case parseProgram s of
                      Left err -> error (show err)
                      Right e -> e
 
@@ -45,12 +46,12 @@ deepArithmetic n
 
 run :: String -> (String -> a) -> String -> Benchmark
 run name func input =
-  env (return $ input) $ \s ->
+  env (return input) $ \s ->
   bench name $ whnf func s
 
 main :: IO ()
 main =
-  defaultMain $
+  defaultMain
   [ bgroup "comments"
     [ run "line" parseStatements (lineComments 5000)
     , run "block" parseStatements (blockComments 10 500)

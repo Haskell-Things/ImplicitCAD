@@ -8,29 +8,36 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Statement where
+-- The entry point for parsing an ExtOpenScad program.
+module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, Maybe(Just, Nothing), Monad, return, fmap, ($), (>>), Bool(False, True), map)
+import Prelude(Char, Either, String, Monad, return, fmap, ($), (>>), Bool(False, True), map)
 
-import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, SourceName, ParseError, many, noneOf, Line, (<|>), (<?>))
-
-import Text.Parsec.Prim (ParsecT)
+import Data.Maybe(Maybe(Just, Nothing))
 
 import Data.Functor.Identity(Identity)
 
+import Data.Kind (Type)
+
+-- We use parsec to parse.
+import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
+import Text.Parsec.Prim (ParsecT)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI))
 import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb)
+
+-- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
-parseProgram :: SourceName -> [Char] -> Either ParseError [StatementI]
-parseProgram name s = parse program name s where
-    program :: ParsecT [Char] u Identity [StatementI]
+parseProgram :: String -> Either ParseError [StatementI]
+parseProgram = parse program "" where -- "" is our program name.
+    program :: ParsecT String u Identity [StatementI]
     program = do
         sts <- many1 computation
         eof
         return sts
 
--- | A  in our programming openscad-like programming language.
+-- | A computable block of code in our openscad-like programming language.
 computation :: GenParser Char st StatementI
 computation =
     do -- suite statements: no semicolon...
@@ -39,30 +46,21 @@ computation =
             ifStatementI,
             forStatementI,
             throwAway,
-            userModuleDeclaration{-,
-            unimplemented "mirror",
-            unimplemented "multmatrix",
-            unimplemented "color",
-            unimplemented "render",
-            unimplemented "surface",
-            unimplemented "projection",
-            unimplemented "import_stl"-}
-            -- rotateExtrude
+            userModuleDeclaration
             ]
         _ <- genSpace
         return s
-    *<|> do -- Non suite s. Semicolon needed...
+    *<|> do -- Non suite statements. Semicolon needed...
         _ <- genSpace
         s <- tryMany [
             echo,
-            include,
+            include, -- also handles use
             function,
-            assignment--,
-            --use
+            assignment
             ]
         _ <- stringGS " ; "
         return s
-    *<|> do -- Modules
+    *<|> do -- Modules. no semicolon...
         _ <- genSpace
         s <- userModule
         _ <- genSpace
@@ -81,9 +79,8 @@ computation =
 --
 --      union() sphere(3);
 --
---  We consider it to be a list of s which
+--  We consider it to be a list of computables which
 --  are in turn StatementI s.
---  So this parses them.
 -}
 suite :: GenParser Char st [StatementI]
 suite = (fmap return computation <|> do
@@ -95,110 +92,120 @@ suite = (fmap return computation <|> do
     return stmts
     ) <?> " suite"
 
-
+-- | commenting out a comuptation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
 throwAway = do
     line <- lineNumber
+    column <- columnNumber
     _ <- genSpace
     _ <- oneOf "%*"
     _ <- genSpace
     _ <- computation
-    return $ StatementI line DoNothing
+    return $ StatementI line column DoNothing
 
--- An included ! Basically, inject another openscad file here...
+-- | An include! Basically, inject another extopenscad file here...
 include :: GenParser Char st StatementI
 include = (do
     line <- lineNumber
+    column <- columnNumber
     injectVals <-  (string "include" >> return True )
                <|> (string "use"     >> return False)
     _ <- stringGS " < "
     filename <- many (noneOf "<> ")
     _ <- stringGS " > "
-    return $ StatementI line $ Include filename injectVals
+    return $ StatementI line column $ Include filename injectVals
     ) <?> "include "
 
--- | An assignment  (parser)
+-- | An assignment (parser)
 assignment :: GenParser Char st StatementI
 assignment = ("assignment " ?:) $
     do
         line <- lineNumber
-        pattern <- patternMatcher
+        column <- columnNumber
+        lvalue <- patternMatcher
         _ <- stringGS " = "
         valExpr <- expr0
-        return $ StatementI line$ pattern := valExpr
+        return $ StatementI line column $ lvalue := valExpr
 
 -- | A function declaration (parser)
 function :: GenParser Char st StatementI
 function = ("function " ?:) $
     do
         line <- lineNumber
-        varSymb <- (string "function" >> space >> genSpace >> variableSymb)
+        column <- columnNumber
+        varSymb <- string "function" >> space >> genSpace >> variableSymb
         _ <- stringGS " ( "
         argVars <- sepBy patternMatcher (stringGS " , ")
         _ <- stringGS " ) = "
         valExpr <- expr0
-        return $ StatementI line $ Name varSymb := LamE argVars valExpr
+        return $ StatementI line column $ Name varSymb := LamE argVars valExpr
 
--- | An echo  (parser)
+-- | An echo (parser)
 echo :: GenParser Char st StatementI
 echo = do
     line <- lineNumber
+    column <- columnNumber
     _ <- stringGS "echo ( "
-    exprs <- expr0 `sepBy` (stringGS " , ")
+    exprs <- expr0 `sepBy` stringGS " , "
     _ <- stringGS " ) "
-    return $ StatementI line $ Echo exprs
+    return $ StatementI line column $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI =
     "if " ?: do
         line <- lineNumber
+        column <- columnNumber
         _ <- stringGS "if ( "
         bexpr <- expr0
         _ <- stringGS " ) "
         sTrueCase <- suite
         _ <- genSpace
-        sFalseCase <- (stringGS "else " >> suite ) *<|> (return [])
-        return $ StatementI line $ If bexpr sTrueCase sFalseCase
+        sFalseCase <- (stringGS "else " >> suite ) *<|> return []
+        return $ StatementI line column $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
 forStatementI =
     "for " ?: do
         line <- lineNumber
+        column <- columnNumber
         -- a for loop is of the form:
         --      for ( vsymb = vexpr   ) loops
         -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
         -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
         _ <- stringGS "for ( "
-        pattern <- patternMatcher
+        lvalue <- patternMatcher
         _ <- stringGS " = "
         vexpr <- expr0
         _ <- stringGS " ) "
         loopContent <- suite
-        return $ StatementI line $ For pattern vexpr loopContent
+        return $ StatementI line column $ For lvalue vexpr loopContent
 
+-- | parse a call to a module.
 userModule :: GenParser Char st StatementI
 userModule = do
     line <- lineNumber
+    column <- columnNumber
     name <- variableSymb
     _ <- genSpace
     args <- moduleArgsUnit
     _ <- genSpace
     s <- suite *<|> (stringGS " ; " >> return [])
-    return $ StatementI line $ ModuleCall name args s
+    return $ StatementI line column $ ModuleCall name args s
 
+-- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
     line <- lineNumber
+    column <- columnNumber
     _ <- stringGS "module "
     newModuleName <- variableSymb
     _ <- genSpace
     args <- moduleArgsUnitDecl
     _ <- genSpace
     s <- suite
-    return $ StatementI line $ NewModule newModuleName args s
+    return $ StatementI line column $ NewModule newModuleName args s
 
-----------------------
-
+-- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe String, Expr)]
 moduleArgsUnit = do
     _ <- stringGS " ( "
@@ -208,7 +215,7 @@ moduleArgsUnit = do
             symb <- variableSymb
             _ <- stringGS " = "
             expr <- expr0
-            return $ (Just symb, expr)
+            return (Just symb, expr)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- variableSymb
@@ -216,7 +223,7 @@ moduleArgsUnit = do
             argVars <- sepBy variableSymb (try $ stringGS " , ")
             _ <- stringGS " ) = "
             expr <- expr0
-            return $ (Just symb, LamE (map Name argVars) expr)
+            return (Just symb, LamE (map Name argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
@@ -225,6 +232,7 @@ moduleArgsUnit = do
     _ <- stringGS " ) "
     return args
 
+-- | parse the arguments in the module declaration.
 moduleArgsUnitDecl ::  GenParser Char st [(String, Maybe Expr)]
 moduleArgsUnitDecl = do
     _ <- stringGS " ( "
@@ -241,8 +249,6 @@ moduleArgsUnitDecl = do
             _ <- sepBy variableSymb (try $ stringGS " , ")
             _ <- stringGS " ) = "
             expr <- expr0
--- FIXME: this line looks right, but.. what does this change?
---            return $ (Just symb, LamE (map Name argVars) expr)
             return (symb, Just expr)
         *<|> do
             symb <- variableSymb
@@ -251,13 +257,13 @@ moduleArgsUnitDecl = do
     _ <- stringGS " ) "
     return argTemplate
 
-lineNumber :: forall s u (m :: * -> *).
+-- | Find the line number. Used when generating errors.
+lineNumber :: forall s u (m :: Type -> Type).
               Monad m => ParsecT s u m Line
 lineNumber = fmap sourceLine getPosition
 
---FIXME: use the below function to improve error reporting.
-{-
-columnNumber :: forall s u (m :: * -> *).
+-- | Find the column number. Used when generating errors.
+columnNumber :: forall s u (m :: Type -> Type).
               Monad m => ParsecT s u m Column
 columnNumber = fmap sourceColumn getPosition
--}
+

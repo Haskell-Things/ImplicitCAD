@@ -3,7 +3,7 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- Functions to make meshes/polylines finer.
 
@@ -11,13 +11,13 @@ module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
 import Prelude(Fractional, (/), (-), ($), foldl, recip, realToFrac, length)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle, NormedTriangle)
+import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), NormedTriangle(NormedTriangle))
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
-normTriangle res obj (a,b,c) =
-    (normify a', normify b', normify c')
+normTriangle res obj (Triangle (a,b,c)) =
+    NormedTriangle (normify a', normify b', normify c')
         where
             normify = normVertex res obj
             a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02
@@ -46,6 +46,7 @@ centroid pts =
     where
       norm :: Fractional a => a
       norm = recip $ realToFrac $ length pts
+{-# INLINABLE centroid #-}
 
 {--- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]

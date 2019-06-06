@@ -5,30 +5,43 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
-{-# LANGUAGE OverloadedStrings, ViewPatterns #-}
+-- FIXME: what are these for?
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
 
+-- FIXME: we need AuthN/AuthZ for https://github.com/kliment/explicitcad to be useful.
+
 -- Let's be explicit about what we're getting from where :)
+
+import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
 
 import Control.Applicative ((<|>))
 
-import Snap.Core (Snap, route, writeBS, method, Method(GET), modifyResponse, setContentType, getRequest, rqParam)
+import Snap.Core (Snap, route, writeBS, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
 import Snap.Http.Server (quickHttpServe)
 import Snap.Util.GZip (withCompression)
 
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
+-- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+
+-- Use default values when a Maybe is Nothing.
+import Data.Maybe (fromMaybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
+
+-- Operator to subtract two points. Used when defining the resolution of a 2d object.
+import Data.AffineSpace ((.-.))
 
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
@@ -45,33 +58,62 @@ import System.IO.Silently (capture)
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import qualified Data.Text.Lazy as TL (unpack)
 
+-- | The entry point. uses snap to serve a website.
 main :: IO ()
 main = quickHttpServe site
 
+-- | Our site definition. Renders requests to "render/", discards all else.
 site :: Snap ()
 site = route
     [
         ("render/", renderHandler)
     ] <|> writeBS "fall through"
 
+-- | Our render/ handler. Uses source, callback, and opitional format to render an object.
 renderHandler :: Snap ()
 renderHandler = method GET $ withCompression $ do
     modifyResponse $ setContentType "application/x-javascript"
+    setTimeout 600
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
-        (Just [source], Just [callback], Nothing) -> do
-            writeBS $ BS.Char.pack $ executeAndExport
+        (Just [source], Just [callback], Nothing) ->
+            writeBS . BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
                 Nothing
-        (Just [source], Just [callback], Just [format]) -> do
-            writeBS $ BS.Char.pack $ executeAndExport
+        (Just [source], Just [callback], Just [format]) ->
+            writeBS . BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
+-- | Find the resolution to raytrace at.
 getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+-- | If a resolution was specified in the input file, just use it.
+getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+-- | If there was no resolution specified, use a resolution chosen for 3D objects.
+--   FIXME: magic numbers.
+getRes (varlookup, _, obj:_) =
+    let
+        ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+        (x,y,z) = (x2-x1, y2-y1, z2-z1)
+    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
+        _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
+-- | ... Or use a resolution chosen for 2D objects.
+--   FIXME: magic numbers.
+getRes (varlookup, obj:_, _) =
+    let
+        (p1,p2) = getBox2 obj
+        (x,y) = p2 .-. p1
+    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+        ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
+        _                    -> min ((min x y)/2) (sqrt(x*y     ) / 30)
+-- | fallthrough value.
+getRes _ = 1
+
+{-
 getRes (varlookup, obj2s, obj3s) =
     let
         qual = case Map.lookup "$quality" varlookup of
@@ -83,8 +125,8 @@ getRes (varlookup, obj2s, obj3s) =
                 where
                     ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
                     (x,y,z) = (x2-x1, y2-y1, z2-z1)
-            (obj:_, _) -> ( min (min x y/2) ((x*y     )**0.5 / 30)
-                          , min (min x y/2) ((x*y/qual)**0.5 / 30) )
+            (obj:_, _) -> ( min (min x y/2) (sqrt(x*y     ) / 30)
+                          , min (min x y/2) (sqrt(x*y/qual) / 30) )
                 where
                     ((x1,y1),(x2,y2)) = getBox2 obj
                     (x,y) = (x2-x1, y2-y1)
@@ -98,20 +140,23 @@ getRes (varlookup, obj2s, obj3s) =
             if qual <= 30
             then qualRes
             else -1
+-}
 
-
-getWidth :: forall t. (t, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+-- | get the maximum dimension of the object being rendered.
+--   FIXME: shouldn't this get the diagonal across the box?
+getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 obj
-getWidth (_, [], []) = 0
+getWidth (_,    [],    []) = 0
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> Maybe String -> String
 executeAndExport content callback maybeFormat =
     let
+        showB :: IsString t => Bool -> t
         showB True  = "true"
         showB False = "false"
         callbackF :: Bool -> Bool -> ℝ -> String -> String
@@ -119,6 +164,7 @@ executeAndExport content callback maybeFormat =
             callback ++ "([null," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w  ++ "]);"
         callbackF True  is2D w msg =
             callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
+        callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
     in case runOpenscad content of
         Left err ->
@@ -130,7 +176,7 @@ executeAndExport content callback maybeFormat =
                 msgs = showErrorMessages' $ errorMessages err
             in callbackF False False 1 $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
         Right openscadProgram -> unsafePerformIO $ do
-            (msgs,s) <- capture $ openscadProgram
+            (msgs,s) <- capture openscadProgram
             let
                 res = getRes   s
                 w   = getWidth s
@@ -162,6 +208,7 @@ executeAndExport content callback maybeFormat =
                     callbackS (TL.unpack (svg (discreteAprox res obj))) msgs
                 (Right (Just obj, _), Just "gcode/hacklab-laser") ->
                     callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) msgs
-
+                (Right (_ , _), _) ->
+                    callbackF False False 1 "unexpected case"
 
 

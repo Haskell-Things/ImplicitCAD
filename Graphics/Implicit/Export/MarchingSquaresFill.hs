@@ -5,31 +5,54 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- define getContour, which gets a polyline describe the edge of your 2D object.
+-- export getContourMesh, which returns an array of triangles describing the interior of a 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
-import Prelude(Bool(True, False), fromInteger, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat)
+import Prelude(Bool(True, False), fromIntegral, ($), (-), (+), (/), (*), (<=), (>), ceiling, concat, max, div, floor)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2)
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri(Polytri), Obj2, (⋯/), (⋯*))
 
--- FIXME: commented out, test how to apply..
--- import Control.Parallel (par, pseq)
+import Data.VectorSpace ((^-^),(^+^))
 
-getContourMesh :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [(ℝ2,ℝ2,ℝ2)]
-getContourMesh (x1, y1) (x2, y2) (dx, dy) obj =
+import Data.List(genericIndex)
+
+-- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
+
+-- apply a function to both items in the provided tuple.
+both :: forall t b. (t -> b) -> (t, t) -> (b, b)
+both f (x,y) = (f x, f y)
+
+getContourMesh :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polytri]
+getContourMesh p1 p2 res obj =
     let
+        -- How much space are we rendering?
+        d = p2 ^-^ p1
+
         -- How many steps will we take on each axis?
-        nx :: ℝ
-        nx = fromInteger $ ceiling $ (x2 - x1) / dx
-        ny :: ℝ
-        ny = fromInteger $ ceiling $ (y2 - y1) / dy
-        -- Divide it up and compute the polylines
-        trisOnGrid :: [[[(ℝ2,ℝ2,ℝ2)]]]
-        trisOnGrid = [[getSquareTriangles
-                   (x1 + (x2 - x1)*mx/nx,     y1 + (y2 - y1)*my/ny)
-                   (x1 + (x2 - x1)*(mx+1)/nx, y1 + (y2 - y1)*(my+1)/ny)
-                   obj
-             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ]
+        nx :: ℕ
+        ny :: ℕ
+        n@(nx,ny) = ceiling `both` (d ⋯/ res)
+
+        -- a helper for calculating a position inside of the space.
+        gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2
+        gridPos n' m = p1 ^+^ d ⋯* ((fromIntegral `both` m) ⋯/ (fromIntegral `both` n'))
+
+        -- alternate Grid mapping funcs
+        toGrid :: ℝ2 -> (ℕ,ℕ)
+        toGrid f = floor `both` ((fromIntegral `both` n) ⋯* (f ^-^ p1) ⋯/ d)
+
+        -- Evaluate obj on a grid, in parallel.
+        valsOnGrid :: [[ℝ]]
+        valsOnGrid = [[ obj $ gridPos n (mx, my) | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parList rdeepseq
+
+        -- A faster version of the obj. Sort of like memoization, but done in advance, in parallel.
+        preEvaledObj p = valsOnGrid `genericIndex` my `genericIndex` mx where (mx,my) = toGrid p
+
+        -- compute the triangles.
+        trisOnGrid :: [[[Polytri]]]
+        trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) preEvaledObj
+             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
         triangles = concat $ concat trisOnGrid
     in
         triangles
@@ -39,16 +62,18 @@ getContourMesh (x1, y1) (x2, y2) (dx, dy) obj =
 --  values at its vertices.
 --  It is based on the linearly-interpolated marching squares algorithm.
 
-getSquareTriangles :: ℝ2 -> ℝ2 -> Obj2 -> [(ℝ2,ℝ2,ℝ2)]
+getSquareTriangles :: ℝ2 -> ℝ2 -> Obj2 -> [Polytri]
 getSquareTriangles (x1, y1) (x2, y2) obj =
     let
         (x,y) = (x1, y1)
 
-        -- Let's evlauate obj at a few points...
+        -- Let's evaluate obj at four corners...
         x1y1 = obj (x1, y1)
         x2y1 = obj (x2, y1)
         x1y2 = obj (x1, y2)
         x2y2 = obj (x2, y2)
+
+        -- And the center point..
         c = obj ((x1+x2)/2, (y1+y2)/2)
 
         dx = x2 - x1
@@ -56,16 +81,16 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
 
         -- linearly interpolated midpoints on the relevant axis
         --             midy2
-        --      _________*__________
-        --     |                    |
-        --     |                    |
-        --     |                    |
-        --midx1*                    * midx2
-        --     |                    |
-        --     |                    |
-        --     |                    |
-        --     -----------*----------
-        --              midy1
+        --      _________*_________
+        --     |                   |
+        --     |                   |
+        --     |                   |
+        --midx1*                   * midx2
+        --     |                   |
+        --     |                   |
+        --     |                   |
+        --      ---------*---------
+        --             midy1
 
         midx1 = (x,                       y + dy*x1y1/(x1y1-x1y2))
         midx2 = (x + dx,                  y + dy*x2y1/(x2y1-x2y2))
@@ -73,8 +98,8 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
         midy2 = (x + dx*x1y2/(x1y2-x2y2), y + dy)
 
         -- decompose a square into two triangles...
-        square :: forall t t1. t -> t1 -> t1 -> t1 -> [(t, t1, t1)]
-        square aa bb cc dd = [(aa,bb,cc), (aa,cc,dd)]
+        square :: ℝ2 -> ℝ2 -> ℝ2 -> ℝ2 -> [Polytri]
+        square aa bb cc dd = [Polytri (aa,bb,cc), Polytri (aa,cc,dd)]
 
     in case (x1y2 <= 0, x2y2 <= 0,
              x1y1 <= 0, x2y1 <= 0) of
@@ -93,33 +118,30 @@ getSquareTriangles (x1, y1) (x2, y2) obj =
         (True,  False,
          True,  False) -> square (x1,y1) midy1 midy2 (x1,y2)
         (True,  False,
-         False, False) -> [((x1,y2), midx1, midy2)]
+         False, False) -> [Polytri ((x1,y2), midx1, midy2)]
         (False, True,
          True,  True)  ->
-            [(midx1, (x1,y1), midy2), ((x1,y1), (x2,y1), midy2), (midy2, (x2,y1), (x2,y2))]
+            [Polytri (midx1, (x1,y1), midy2), Polytri ((x1,y1), (x2,y1), midy2), Polytri (midy2, (x2,y1), (x2,y2))]
         (True,  True,
          False, True)  ->
-            [((x1,y2), midx1, (x2,y2)), (midx1, midy1, (x2,y2)), ((x2,y2), midy1, (x2,y1))]
+            [Polytri ((x1,y2), midx1, (x2,y2)), Polytri (midx1, midy1, (x2,y2)), Polytri ((x2,y2), midy1, (x2,y1))]
         (False, False,
-         True,  False) -> [(midx1, (x1,y1), midy1)]
+         True,  False) -> [Polytri (midx1, (x1,y1), midy1)]
         (True,  True,
          True,  False) ->
-            [(midy1,midx2,(x2,y2)), ((x2,y2), (x1,y2), midy1), (midy1, (x1,y2), (x1,y1))]
+            [Polytri (midy1,midx2,(x2,y2)), Polytri ((x2,y2), (x1,y2), midy1), Polytri (midy1, (x1,y2), (x1,y1))]
         (False, False,
-         False, True)  -> [(midx2, midy1, (x2,y1))]
+         False, True)  -> [Polytri (midx2, midy1, (x2,y1))]
         (True,  False,
          True,  True)  ->
-            [(midy2, (x2,y1), midx2), ((x2,y1), midy2, (x1,y1)), ((x1,y1), midy2, (x1,y2))]
+            [Polytri (midy2, (x2,y1), midx2), Polytri ((x2,y1), midy2, (x1,y1)), Polytri ((x1,y1), midy2, (x1,y2))]
         (False, True,
-         False, False) -> [(midx2, (x2,y2), midy2)]
+         False, False) -> [Polytri (midx2, (x2,y2), midy2)]
         (True,  False,
          False, True)  -> if c > 0
-            then [((x1,y2), midx1, midy2), ((x2,y1), midy1, midx2)]
+            then [Polytri ((x1,y2), midx1, midy2), Polytri ((x2,y1), midy1, midx2)] --[[midx1, midy2], [midx2, midy1]]
             else [] --[[midx1, midy1], [midx2, midy2]]
         (False, True,
          True,  False) -> if c <= 0
             then [] --[[midx1, midy2], [midx2, midy1]]
-            else [((x1,y1), midy1, midx1), ((x2,y2), midx2, midy2)] --[[midx1, midy1], [midx2, midy2]]
-
-
-
+            else [Polytri ((x1,y1), midy1, midx1), Polytri ((x2,y2), midx2, midy2)] --[[midx1, midy1], [midx2, midy2]]

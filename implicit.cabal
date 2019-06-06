@@ -1,117 +1,113 @@
-name:                implicit
-version:             0.1.0
-cabal-version:       >= 1.8
-synopsis:            Math-inspired programmatic 2&3D CAD: CSG, bevels, and shells; gcode export..
-description:         A math-inspired programmatic CAD library in haskell.
+Name:                implicit
+Version:             0.2.1
+Cabal-version:       >= 1.8
+Tested-with:         GHC >= 8.2
+Build-type:          Simple
+Synopsis:            A Math-inspired programmatic 2&3D CAD system: CSG, bevels, and shells; gcode export..
+Description:         A math-inspired programmatic CAD library in haskell.
                      Build objects with constructive solid geometry, bevels,
                      shells and more in 2D & 3D. Then export to SVGs, STLs,
                      or produce gcode directly!
-license:             AGPL-3
-license-file:        LICENSE
-author:              Christopher Olah
-maintainer:          Julia Longtin <julial@turinglace.com>
-homepage:            http://kalli1.faikvm.com/ImplicitCAD/Stable
-build-type:          Simple
-category:            Graphics
+License:             AGPL-3
+License-file:        LICENSE
+Author:              Julia Longtin <julial@turinglace.com>
+Maintainer:          Julia Longtin <julial@turinglace.com>
+Homepage:            http://implicitcad.org/
+Category:            Graphics
 
-library
+Library
 
-    build-depends:
-        base >= 3 && < 5,
-        filepath,
-        directory,
-        download,
-        parsec,
-        unordered-containers,
-        parallel,
-        containers,
-        deepseq,
-        vector-space,
-        text,
-        monads-tf,
-        bytestring,
-        bytestring-builder,
-        blaze-builder,
-        blaze-markup,
-        blaze-svg,
-        storable-endian,
-        JuicyPixels,
-        NumInstances,
-        criterion,
-        snap-core,
-        snap-server,
-        silently,
-        transformers
+    Build-depends:
+                  base >= 3 && < 5,
+                  filepath,
+                  directory,
+                  parsec,
+                  parallel,
+                  containers,
+                  deepseq,
+                  hspec,
+                  vector-space,
+                  text,
+                  monads-tf,
+                  bytestring,
+                  blaze-builder,
+                  blaze-markup,
+                  blaze-svg,
+                  storable-endian,
+                  JuicyPixels,
+                  transformers
 
-    ghc-options:
-        -Wall
--- for debugging only.
---        -Weverything
-        -O2
-        -optc-O3
--- cannot use, we use infinity in some calculations.
---        -optc-ffast-math
+    Ghc-options:
+                -O2
+                -optc-O3
+--                -dynamic
+                -- see GHC manual 8.2.1 section 6.5.1.
+                -feager-blackholing
+                -- for debugging.
+                -Wall
+                -Wextra
+                -Weverything
 
-    extensions:
-    exposed-modules:
-        Graphics.Implicit
-        Graphics.Implicit.Definitions
-        Graphics.Implicit.Primitives
-        Graphics.Implicit.Export
-        Graphics.Implicit.MathUtil
-        Graphics.Implicit.ExtOpenScad
-        Graphics.Implicit.ObjectUtil
-        -- Note that these modules are only temporarily exposed, to
-        -- allow coding the unit tests against the current parser
-        -- interface.
-        Graphics.Implicit.ExtOpenScad.Parser.Statement
-        Graphics.Implicit.ExtOpenScad.Parser.Expr
-        Graphics.Implicit.ExtOpenScad.Definitions
-        -- these are exported for Benchmark.
-        Graphics.Implicit.Export.SymbolicObj2
-        Graphics.Implicit.Export.SymbolicObj3
-        -- these are exported for implicitsnap.
-        Graphics.Implicit.Export.TriangleMeshFormats
-        Graphics.Implicit.Export.PolylineFormats
-        Graphics.Implicit.Export.DiscreteAproxable
+    Exposed-modules:
+                    Graphics.Implicit
+                    Graphics.Implicit.Definitions
+                    Graphics.Implicit.Primitives
+                    Graphics.Implicit.Export
+                    Graphics.Implicit.MathUtil
+                    Graphics.Implicit.ExtOpenScad
+                    Graphics.Implicit.ObjectUtil
+                    -- These modules are exposed for the unit tests against the parser interface.
+                    Graphics.Implicit.ExtOpenScad.Parser.Statement
+                    Graphics.Implicit.ExtOpenScad.Parser.Expr
+                    Graphics.Implicit.ExtOpenScad.Definitions
+                    -- These are exposed for Benchmark.
+                    Graphics.Implicit.Export.SymbolicObj2
+                    Graphics.Implicit.Export.SymbolicObj3
+                    -- These are exposed for implicitsnap.
+                    Graphics.Implicit.Export.TriangleMeshFormats
+                    Graphics.Implicit.Export.PolylineFormats
+                    Graphics.Implicit.Export.DiscreteAproxable
+                    -- These are exposed for docgen.
+                    Graphics.Implicit.ExtOpenScad.Primitives            
 
-    other-modules:
-        Graphics.Implicit.ObjectUtil.GetBox2
-        Graphics.Implicit.ObjectUtil.GetBox3
-        Graphics.Implicit.ObjectUtil.GetImplicit2
-        Graphics.Implicit.ObjectUtil.GetImplicit3
-        Graphics.Implicit.ExtOpenScad.Default
-        Graphics.Implicit.ExtOpenScad.Parser.Util
-        Graphics.Implicit.ExtOpenScad.Primitives
-        Graphics.Implicit.ExtOpenScad.Eval.Statement
-        Graphics.Implicit.ExtOpenScad.Eval.Expr
-        Graphics.Implicit.ExtOpenScad.Util.StateC
-        Graphics.Implicit.ExtOpenScad.Util.ArgParser
-        Graphics.Implicit.ExtOpenScad.Util.OVal
-        Graphics.Implicit.Export.MarchingSquares
-        Graphics.Implicit.Export.MarchingSquaresFill
-        Graphics.Implicit.Export.RayTrace
-        Graphics.Implicit.Export.NormedTriangleMeshFormats
-        Graphics.Implicit.Export.SymbolicFormats
-        Graphics.Implicit.Export.Util
-        Graphics.Implicit.Export.TextBuilderUtils
-        Graphics.Implicit.Export.Symbolic.Rebound2
-        Graphics.Implicit.Export.Symbolic.Rebound3
-        Graphics.Implicit.Export.Render
-        Graphics.Implicit.Export.Render.Definitions
-        Graphics.Implicit.Export.Render.GetLoops
-        Graphics.Implicit.Export.Render.GetSegs
-        Graphics.Implicit.Export.Render.HandleSquares
-        Graphics.Implicit.Export.Render.Interpolate
-        Graphics.Implicit.Export.Render.RefineSegs
-        Graphics.Implicit.Export.Render.TesselateLoops
-        Graphics.Implicit.Export.Render.HandlePolylines
+    Other-modules:
+                  Graphics.Implicit.FastIntUtil
+                  Graphics.Implicit.IntegralUtil
+                  Graphics.Implicit.ObjectUtil.GetBox2
+                  Graphics.Implicit.ObjectUtil.GetBox3
+                  Graphics.Implicit.ObjectUtil.GetImplicit2
+                  Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.ExtOpenScad.Default
+                  Graphics.Implicit.ExtOpenScad.Parser.Util
+                  Graphics.Implicit.ExtOpenScad.Eval.Statement
+                  Graphics.Implicit.ExtOpenScad.Eval.Expr
+                  Graphics.Implicit.ExtOpenScad.Util.ArgParser
+                  Graphics.Implicit.ExtOpenScad.Util.OVal
+                  Graphics.Implicit.ExtOpenScad.Util.StateC
+                  -- Historic, but functional. Should be merged into MarchingSquaresFill.
+                  -- Graphics.Implicit.Export.MarchingSquares
+                  Graphics.Implicit.Export.MarchingSquaresFill
+                  Graphics.Implicit.Export.RayTrace
+                  Graphics.Implicit.Export.NormedTriangleMeshFormats
+                  Graphics.Implicit.Export.SymbolicFormats
+                  Graphics.Implicit.Export.Util
+                  Graphics.Implicit.Export.TextBuilderUtils
+                  Graphics.Implicit.Export.Symbolic.Rebound2
+                  Graphics.Implicit.Export.Symbolic.Rebound3
+                  Graphics.Implicit.Export.Render
+                  Graphics.Implicit.Export.Render.Definitions
+                  Graphics.Implicit.Export.Render.GetLoops
+                  Graphics.Implicit.Export.Render.GetSegs
+                  Graphics.Implicit.Export.Render.HandleSquares
+                  Graphics.Implicit.Export.Render.Interpolate
+                  Graphics.Implicit.Export.Render.RefineSegs
+                  Graphics.Implicit.Export.Render.TesselateLoops
+                  Graphics.Implicit.Export.Render.HandlePolylines
 
-executable extopenscad
-
-   main-is: extopenscad.hs
-   hs-source-dirs: programs
-   build-depends:
+Executable extopenscad
+   Main-is: extopenscad.hs
+   Hs-source-dirs: programs
+   Build-depends:
                  base,
                  containers,
                  vector-space,
@@ -119,129 +115,114 @@ executable extopenscad
                  parallel,
                  optparse-applicative >= 0.10.0,
                  implicit
-   ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -O2
-        -optc-O3
-        -optc-ffast-math
+   Ghc-options:
+               -O2
+               -optc-O3
+               -threaded
+               -rtsopts
+--               -dynamic
+               -- see GHC manual 8.2.1 section 6.5.1.
+               -feager-blackholing
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
 
--- FIXME: does not compile.
---Executable docgen
-
---   main-is: docgen.hs
---   build-depends:
---                 base,
---                 vector-space,
---                 text,
---                 JuicyPixels,
---                 blaze-builder,
---                 blaze-svg,
---                 blaze-markup,
---                 parallel,
---                 deepseq,
---                 vector-space,
---                 monads-tf,
---                 bytestring,
---                 storable-endian,
---                 parsec,
---                 directory,
---                 containers,
---                 filepath,
---                 snap-core,
---                 snap-server,
---                 silently,
---                 transformers
---   ghc-options:
---        -optc-O3
---        -threaded
---        -rtsopts
---        -funfolding-use-threshold=16
---       -fspec-constr-count=10
-               
-executable implicitsnap
-
-   main-is: implicitsnap.hs
-   hs-source-dirs: programs
+Executable docgen
+   main-is: docgen.hs
+   Hs-source-dirs: programs
    build-depends:
                  base,
-                 vector-space,
-                 text,
-                 JuicyPixels,
-                 blaze-builder,
-                 blaze-svg,
-                 blaze-markup,
-                 parallel,
-                 deepseq,
-                 vector-space,
-                 monads-tf,
+                 implicit
+   ghc-options:
+--               -dynamic
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
+
+Executable implicitsnap
+   Main-is: implicitsnap.hs
+   Hs-source-dirs: programs
+   Build-depends:
+                 base,
                  bytestring,
-                 storable-endian,
-                 parsec,
-                 directory,
                  containers,
-                 filepath,
+                 implicit,
+                 parallel,
+                 parsec,
+                 silently,
                  snap-core,
                  snap-server,
-                 silently,
-                 transformers,
-                 implicit
-   ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -O2
-        -optc-O3
-        -optc-ffast-math
-
-executable Benchmark
-
-   main-is: Benchmark.hs
-   hs-source-dirs: programs
-   build-depends:
-                 base,
                  text,
-                 JuicyPixels,
-                 blaze-svg,
-                 blaze-markup,
-                 parallel,
-                 deepseq,
-                 vector-space,
-                 monads-tf,
-                 blaze-builder,
-                 bytestring,
-                 storable-endian,
-                 parsec,
-                 directory,
-                 containers,
-                 filepath,
+                 vector-space
+   Ghc-options:
+               -threaded
+               -rtsopts
+               -O2
+               -optc-O3
+               -dynamic
+               -- see GHC manual 8.2.1 section 6.5.1.
+               -feager-blackholing
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
+
+Executable Benchmark
+   Main-is: Benchmark.hs
+   Hs-source-dirs: programs
+   Build-depends:
+                 base,
                  criterion,
-                 transformers,
                  implicit
-   ghc-options:
-        -threaded
-        -rtsopts
-        -Wall
-        -O2
-        -optc-O3
-        -optc-ffast-math
+   Ghc-options:
+               -O2
+               -optc-O3
+--               -dynamic
+               -- for debugging.
+               -Wall
+               -Wextra
+               -Weverything
 
-test-suite test-implicit
-    type: exitcode-stdio-1.0
-    build-depends: base, mtl, containers, hspec, parsec, implicit
-    main-is: Main.hs
-    hs-source-dirs: tests
+Test-suite test-implicit
+    Type: exitcode-stdio-1.0
+    Build-depends:
+                  base,
+                  containers,
+                  hspec,
+                  implicit,
+                  mtl,
+                  parsec
+    Main-is: Main.hs
+    Hs-source-dirs: tests
+    Ghc-options:
+                -O2
+                -optc-O3
+--                -dynamic
+                -- for debugging.
+                -Wall
+                -Wextra
+                -Weverything
+    Other-Modules:
+                  ParserSpec.Expr
+                  ParserSpec.Statement
+                  ParserSpec.Util
 
-benchmark parser-bench
-    type: exitcode-stdio-1.0
-    hs-source-dirs: bench
-    main-is: ParserBench.hs
-    build-depends: base, criterion, random, parsec, implicit
-    ghc-options:
-        -Wall
-        -O2 -optc-O3
+Benchmark parser-bench
+    Type: exitcode-stdio-1.0
+    Build-depends: base, criterion, random, parsec, implicit
+    Main-is: parser-bench.hs
+    Hs-source-dirs: programs
+    Ghc-options:
+                -O2
+                -optc-O3
+--                -dynamic
+                -- for debugging.
+                -Wall
+                -Wextra
+                -Weverything
 
-source-repository head
-    type:            git
-    location:        https://github.com/colah/ImplicitCAD.git
+Source-repository head
+    Type:            git
+    Location:        https://github.com/colah/ImplicitCAD.git

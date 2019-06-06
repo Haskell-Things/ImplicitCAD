@@ -6,22 +6,24 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
 
 -- The purpose of this function is to symbolicaly compute triangle meshes using the symbolic system where possible.
 -- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(map, zip, length, filter, (>), ($), null, concat, (++), concatMap)
+import Prelude(map, zip, length, filter, (>), ($), null, (++), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3))
+import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3), Triangle, TriangleMesh(TriangleMesh))
 import Graphics.Implicit.Export.Render (getMesh)
 import Graphics.Implicit.ObjectUtil (getBox3, getImplicit3)
 import Graphics.Implicit.MathUtil(box3sWithin)
 import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
 
-symbolicGetMesh :: ℝ -> SymbolicObj3 -> [(ℝ3, ℝ3, ℝ3)]
+import Control.Arrow(first, second)
+
+symbolicGetMesh :: ℝ -> SymbolicObj3 -> TriangleMesh
 
 {--
 -- A translated objects mesh is its mesh translated.
@@ -195,32 +197,32 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
         map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
 -}
 
-symbolicGetMesh res inputObj@(UnionR3 r objs) = 
+symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
     let
         boxes = map getBox3 objs
         boxedObjs = zip boxes objs
-        
+
         sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
-        sepFree ((box,obj):others) = 
+        sepFree ((box,obj):others) =
             if length (filter (box3sWithin r box) boxes) > 1
-            then (\(a,b) -> (obj:a,b)) $ sepFree others
-            else (\(a,b) -> (a,obj:b)) $ sepFree others
+            then first ((:) obj) $ sepFree others
+            else second ((:) obj) $ sepFree others
         sepFree [] = ([],[])
 
         (dependants, independents) = sepFree boxedObjs
     in if null independents
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
-        (obj, (a,b)) -> getMesh a b res obj 
+        (obj, (a,b)) -> unmesh $ getMesh a b res obj
     else if null dependants
-    then concatMap (symbolicGetMesh res) independents
-    else concatMap (symbolicGetMesh res) independents
-        ++ concat [symbolicGetMesh res (UnionR3 r dependants)]
+    then concatMap unmesh $ map (symbolicGetMesh res) independents
+    else  (concatMap unmesh $ map (symbolicGetMesh res) independents)
+        ++ (unmesh $ symbolicGetMesh res (UnionR3 r dependants))
 
--- If all that fails, coerce and apply marching cubes :(
--- (rebound is for being safe about the bounding box --
---  it slightly streches it to make sure nothing will 
---  have problems because it is right at the edge )
+-- | If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj =
-    case rebound3 (getImplicit3 obj, getBox3 obj) of
-        (obj', (a,b)) -> getMesh a b res obj'
+  -- Use rebound3 to stretch bounding box.
+  case rebound3 (getImplicit3 obj, getBox3 obj) of
+    (obj', (a,b)) -> getMesh a b res obj'
 
+unmesh :: TriangleMesh -> [Triangle]
+unmesh (TriangleMesh m) = m

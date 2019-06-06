@@ -13,26 +13,31 @@ module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), s
 import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
 
 import Text.ParserCombinators.Parsec (GenParser, many, oneOf, noneOf, (<|>), try, string, manyTill, anyChar, (<?>), char, many1, sepBy)
+
 import Text.Parsec.Prim (ParsecT, Stream)
+
 import Data.Functor.Identity (Identity)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP))
 
+import Data.Kind (Type)
+
 -- white space, including tabs, newlines and comments
-genSpace :: ParsecT [Char] u Identity [Char]
+genSpace :: ParsecT String u Identity String
 genSpace = many $
     oneOf " \t\n\r"
-    <|> (try $ do
+    <|> try ( do
         _ <- string "//"
         _ <- many ( noneOf "\n")
-        _ <- string "\n"
         return ' '
-    ) <|> (try $ do
+    ) <|> try ( do
         _ <- string "/*"
         _ <- manyTill anyChar (try $ string "*/")
         return ' '
     )
 
-pad :: forall b u. ParsecT [Char] u Identity b -> ParsecT [Char] u Identity b
+-- a padded ... parser?
+pad :: ParsecT String u Identity b -> ParsecT String u Identity b
 pad parser = do
     _ <- genSpace
     a <- parser
@@ -44,10 +49,10 @@ infixr 1 *<|>
 a *<|> b = try a <|> b
 
 infixr 2 ?:
-(?:) :: forall s u (m :: * -> *) a. String -> ParsecT s u m a -> ParsecT s u m a
+(?:) :: forall s u (m :: Type -> Type) a. String -> ParsecT s u m a -> ParsecT s u m a
 l ?: p = p <?> l
 
-stringGS :: [Char] -> ParsecT [Char] u Identity [Char]
+stringGS :: String -> ParsecT String u Identity String
 stringGS (' ':xs) = do
     x'  <- genSpace
     xs' <- stringGS xs
@@ -58,7 +63,8 @@ stringGS (x:xs) = do
     return (x' : xs')
 stringGS "" = return ""
 
-padString :: String -> ParsecT [Char] u Identity String
+-- a padded string
+padString :: String -> ParsecT String u Identity String
 padString s = do
     _ <- genSpace
     s' <- string s
@@ -66,10 +72,11 @@ padString s = do
     return s'
 
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
-tryMany = (foldl1 (<|>)) . (map try)
+tryMany = foldl1 (<|>) . map try
 
-variableSymb :: forall s u (m :: * -> *). Stream s m Char => ParsecT s u m [Char]
+variableSymb :: forall s u (m :: Type -> Type). Stream s m Char => ParsecT s u m String
 variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
+{-# INLINABLE variableSymb #-}
 
 patternMatcher :: GenParser Char st Pattern
 patternMatcher =
@@ -88,7 +95,7 @@ patternMatcher =
     ) <|> ( do
         _ <- char '['
         _ <- genSpace
-        components <- patternMatcher `sepBy` (try $ genSpace >> char ',' >> genSpace)
+        components <- patternMatcher `sepBy` try (genSpace >> char ',' >> genSpace)
         _ <- genSpace
         _ <- char ']'
         return $ ListP components

@@ -14,13 +14,17 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   TestInvariant(EulerCharacteristic),
                                                   collector) where
 
-import Prelude(Eq, Show, String, Maybe, Bool(True, False), Int, IO, (==), show, map, ($), (++), undefined, all, id, zipWith, foldl1)
+import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
-import Graphics.Implicit.Definitions (ℝ, SymbolicObj2, SymbolicObj3)
+-- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
+import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
-import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return)
+import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
 import Data.Map (Map)
+
+-- for keeping track of the line and column number we are on in our extopenscad file.
+import Text.ParserCombinators.Parsec (Line, Column)
 
 -----------------------------------------------------------------
 -- | Handles parsing arguments to modules
@@ -45,14 +49,14 @@ instance Functor ArgParser where
     fmap = liftM
 
 instance Applicative ArgParser where
-    pure a = APTerminator a
+    pure = APTerminator
     (<*>) = ap
 
 instance Monad ArgParser where
     -- We need to describe how (>>=) works.
     -- Let's get the hard ones out of the way first.
     -- ArgParser actually
-    (AP str fallback d f) >>= g = AP str fallback d (\a -> (f a) >>= g)
+    (AP str fallback d f) >>= g = AP str fallback d (f >=> g)
     (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
     -- These next to is easy, they just pass the work along to their child
     (APExample str child) >>= g = APExample str (child >>= g)
@@ -60,13 +64,13 @@ instance Monad ArgParser where
     -- And an ArgParserTerminator happily gives away the value it contains
     (APTerminator a) >>= g = g a
     (APBranch bs) >>= g = APBranch $ map (>>= g) bs
-    return g = APTerminator g
+    return = pure
 
 instance MonadPlus ArgParser where
     mzero = APFailIf True "" undefined
     mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
     mplus (APBranch as) b             = APBranch ( as  ++ [b] )
-    mplus a             (APBranch bs) = APBranch ( [a] ++  bs )
+    mplus a             (APBranch bs) = APBranch ( a   :   bs )
     mplus a             b             = APBranch [ a   ,   b  ]
 
 instance Alternative ArgParser where
@@ -75,8 +79,8 @@ instance Alternative ArgParser where
 
 type Symbol = String
 
-data Pattern = Name  Symbol
-             | ListP  [Pattern]
+data Pattern = Name Symbol
+             | ListP [Pattern]
              | Wild
              | Symbol :@ Pattern
     deriving (Show, Eq)
@@ -88,7 +92,8 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
-data StatementI = StatementI Int (Statement StatementI)
+-- a statement, along with the line and column number it is found on.
+data StatementI = StatementI Line Column (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool
@@ -118,7 +123,7 @@ data OVal = OUndefined
 instance Eq OVal where
     (OBool a) == (OBool b) = a == b
     (ONum  a) == (ONum  b) = a == b
-    (OList a) == (OList b) = all id $ zipWith (==) a b
+    (OList a) == (OList b) = and $ zipWith (==) a b
     (OString a) == (OString b) = a == b
     _ == _ = False
 
@@ -141,6 +146,6 @@ collector :: Symbol -> [Expr] -> Expr
 collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
 
-data TestInvariant = EulerCharacteristic Int
+newtype TestInvariant = EulerCharacteristic ℕ
     deriving (Show)
 

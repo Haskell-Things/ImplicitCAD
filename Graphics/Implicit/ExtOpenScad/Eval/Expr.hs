@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (==), (!!), const, (++), foldr, concatMap)
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -15,11 +15,12 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
 
-import Data.List (findIndex)
+import Data.List (elemIndex)
 import Data.Map (fromList, lookup)
 import Control.Monad (zipWithM, mapM, forM)
 import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
+import Control.Arrow (second)
 
 patVars :: Pattern -> [String]
 patVars (Name  name) = [name]
@@ -40,22 +41,19 @@ matchPat pat val = do
     vals <- patMatch pat val
     return $ fromList $ zip vars vals
 
-
 evalExpr :: Expr -> StateC OVal
 evalExpr expr = do
     varlookup  <- getVarLookup
     (valf, _) <- liftIO $ runStateT (evalExpr' expr) (varlookup, [])
     return $ valf []
 
-
-
 evalExpr' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
 
 evalExpr' (Var   name ) = do
     (varlookup, namestack) <- get
     return $
-        case (lookup name varlookup, findIndex (==name) namestack) of
-            (_, Just pos) -> \s -> s !! pos
+        case (lookup name varlookup, elemIndex name namestack) of
+            (_, Just pos) -> (!! pos)
             (Just val, _) -> const val
             _             -> const $ OError ["Variable " ++ name ++ " not in scope" ]
 
@@ -80,7 +78,7 @@ evalExpr' (fexpr :$ argExprs) = do
 
 evalExpr' (LamE pats fexpr) = do
     fparts <- forM pats $ \pat -> do
-        modify (\(vl, names) -> (vl, patVars pat ++ names))
+        modify (second (patVars pat ++))
         return $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs ++ xss)
             Nothing -> OError ["Pattern match failed"]

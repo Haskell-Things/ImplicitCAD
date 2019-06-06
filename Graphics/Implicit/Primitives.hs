@@ -138,12 +138,12 @@ polygonR = PolygonR
 -- $ Shared Operations
 
 class Object obj vec | obj -> vec where
-    
+
     -- | Complement an Object
     complement ::
         obj     -- ^ Object to complement
         -> obj  -- ^ Result
-    
+
     -- | Rounded union
     unionR ::
         ℝ        -- ^ The radius of rounding
@@ -161,7 +161,7 @@ class Object obj vec | obj -> vec where
         ℝ        -- ^ The radius of rounding
         -> [obj] -- ^ Objects to intersect
         -> obj   -- ^ Resulting object
-    
+
     -- | Translate an object by a vector of appropriate dimension.
     translate ::
         vec      -- ^ Vector to translate by (Also: a is a vector, blah, blah)
@@ -200,7 +200,7 @@ class Object obj vec | obj -> vec where
         (vec -> ℝ)     -- ^ Implicit function
         -> (vec, vec)  -- ^ Bounding box
         -> obj         -- ^ Resulting object
-    
+
 
 instance Object SymbolicObj2 ℝ2 where
     translate   = Translate2
@@ -265,7 +265,7 @@ rotateExtrude = RotateExtrude
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
-rotate3 :: (ℝ, ℝ, ℝ) -> SymbolicObj3 -> SymbolicObj3
+rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3 = Rotate3
 
 rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
@@ -275,7 +275,7 @@ rotate3V = Rotate3V
 pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
 pack3 (dx, dy) sep objs =
     let
-        boxDropZ :: forall t t1 t2 t3 t4 t5. ((t2, t3, t), (t4, t5, t1)) -> ((t2, t3), (t4, t5))
+        boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
         boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
         withBoxes :: [(Box2, SymbolicObj3)]
         withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs

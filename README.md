@@ -146,7 +146,7 @@ linear_extrude (height = 40, center=true, twist=90, r=5){
 ![A rounded twisted extrusion](http://faikvm.com/ImplicitCAD/example7.png)
 
 
-ImplicitCAD also provides full programmatic functionality, like variable assignment in loops, which are sadly absent in OpenSCAD. For example, the trivial program:
+ImplicitCAD also provides full programmatic functionality, like variable assignment in loops. For example, the trivial program:
 
 ```c
 // Example8.escad -- variable assignment in loops.

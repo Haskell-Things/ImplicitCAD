@@ -2,65 +2,71 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- FIXME: why are these needed?
 {-# LANGUAGE TypeSynonymInstances, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Graphics.Implicit.Export.RayTrace where
+module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
 
-import Prelude(Show, RealFrac, Maybe(Just, Nothing), Int, Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, (++), not, abs, floor, fromIntegral, toRational)
+import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, (⋅), Obj3)
-import Codec.Picture (Pixel8, Image, DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋅), Obj3)
+
+import Codec.Picture (Pixel8)
+
 import Control.Monad (guard, return)
+
+import Control.Arrow ((***))
+
 import Data.VectorSpace (Scalar, magnitude, (^+^), (*^), normalized, (^-^), InnerSpace)
+
 import Data.Cross (cross3)
+
+default (ℕ, ℝ)
 
 -- Definitions
 
 data Camera = Camera ℝ3 ℝ3 ℝ3 ℝ
     deriving Show
 
+-- | A ray. A point, and a normal pointing in the direction the ray is going.
 data Ray    = Ray ℝ3 ℝ3
-    deriving Show
-
-data Light  = Light ℝ3 ℝ
     deriving Show
 
 data Scene  = Scene Obj3 Color [Light] Color
 
-type Color  = PixelRGBA8
+-- | A light source. source point, and intensity.
+data Light  = Light ℝ3 ℝ
+    deriving Show
 
-color :: Pixel8 -> Pixel8 -> Pixel8 -> Pixel8 -> PixelRGBA8
-color r g b a = PixelRGBA8 r g b a
-
-dynamicImage :: Image PixelRGBA8 -> DynamicImage
-dynamicImage = ImageRGBA8
+-- | A colour. Red Green Blue and Alpha components.
+data Color  = Color Pixel8 Pixel8 Pixel8 Pixel8
 
 -- Math
 
+-- | The distance traveled by a line segment from the first point to the second point.
 vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
 vectorDistance a b = magnitude (b-a)
 
-colorMult :: Pixel8 -> PixelRGBA8 -> PixelRGBA8
-s `colorMult` (PixelRGBA8 a b c d) = color (s `mult` a) (s `mult` b) (s `mult` c) d
+-- | Multiply a colour by an intensity.
+colorMult :: Pixel8 -> Color -> Color
+s `colorMult` (Color a b c d) = Color (s `mult` a) (s `mult` b) (s `mult` c) d
     where
         bound :: RealFrac a => a -> a
         bound = max 0 . min 254
         mult :: Pixel8 -> Pixel8 -> Pixel8
         mult x y = round . bound . toRational $ x * y
 
+-- | Average a set of colours.
 average :: [Color] -> Color
-average l = 
-    let    
-        ((rs, gs), (bs, as)) = (\(a'',b'') -> (unzip a'', unzip b'')) $ unzip $ map
-            (\(PixelRGBA8 r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
-            l :: (([ℝ], [ℝ]), ([ℝ],[ℝ]))
-        n = fromIntegral $ length l :: ℝ
+average l =
+    let
+        ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ map
+            (\(Color r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
+            l :: (([ℝ], [ℝ]), ([ℝ], [ℝ]))
+        n :: ℝ
+        n = fromIntegral $ length l
         (r', g', b', a') = (sum rs/n, sum gs/n, sum bs/n, sum as/n)
-    in PixelRGBA8
+    in Color
         (fromInteger . round $ r') (fromInteger . round $ g') (fromInteger . round $ b') (fromInteger . round $ a')
 
 -- Ray Utilities
@@ -74,6 +80,7 @@ cameraRay (Camera p vx vy f) (x,y) =
     in
         Ray p' n
 
+-- | Create a ray from two points.
 rayFromTo :: ℝ3 -> ℝ3 -> Ray
 rayFromTo p1 p2 = Ray p1 (normalized $ p2 ^-^ p1)
 
@@ -91,19 +98,16 @@ rayBounds ray box =
         (lower, upper)
 
 -- Intersection
-
-
 intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe ℝ3
 intersection r@(Ray p v) ((a, aval),b) res obj =
     let
-        step = 
-            if      aval/(4::ℝ) > res then res
-            else if aval/(2::ℝ) > res then res/(2 :: ℝ)
-            else                           res/(10 :: ℝ)
+        step | aval/4 > res = res
+             | aval/2 > res = res/2
+             | otherwise = res/10
         a'  = a + step
         a'val = obj (p ^+^ a'*^v)
     in if a'val < 0
-    then 
+    then
         let a'' = refine (a,a') (\s -> obj (p ^+^ s*^v))
         in Just (p ^+^ a''*^v)
     else if a' < b
@@ -111,18 +115,18 @@ intersection r@(Ray p v) ((a, aval),b) res obj =
     else Nothing
 
 refine :: ℝ2 -> (ℝ -> ℝ) -> ℝ
-refine (a, b) obj = 
+refine (a, b) obj =
     let
         (aval, bval) = (obj a, obj b)
     in if bval < aval
     then refine' 10 (a, b) (aval, bval) obj
     else refine' 10 (b, a) (aval, bval) obj
 
-refine' :: Int -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+refine' :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 refine' 0 (a, _) _ _ = a
-refine' n (a, b) (aval, bval) obj = 
+refine' n (a, b) (aval, bval) obj =
     let
-        mid = (a+b)/(2::ℝ)
+        mid = (a+b)/2
         midval = obj mid
     in
         if midval == 0
@@ -137,13 +141,12 @@ intersects a b c d = case intersection a b c d of
     Just _  -> True
 
 -- Trace
-
 traceRay :: Ray -> ℝ -> (ℝ3, ℝ3) -> Scene -> Color
 traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultColor) =
     let
         (a,b) = rayBounds ray box
     in case intersection ray ((a, obj (cameraP ^+^ a*^cameraV)), b) step obj of
-        Just p  -> flip colorMult objColor $ floor (sum $ [0.2] ++ do
+        Just p  -> flip colorMult objColor $ floor (sum $ 0.2 : do
             Light lightPos lightIntensity <- lights
             let
                 ray'@(Ray _ v) = rayFromTo p lightPos
@@ -154,19 +157,19 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                 dirDeriv :: ℝ3 -> ℝ
                 dirDeriv v'' = (obj (p ^+^ step*^v'') ^-^ pval)/step
                 deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
-                normal = normalized $ deriv
-                unitV = normalized $ v'
-                proj :: forall v. InnerSpace v => v -> v -> v
+                normal = normalized deriv
+                unitV = normalized v'
+                proj :: InnerSpace v => v -> v -> v
                 proj a' b' = (a'⋅b')*^b'
                 dist  = vectorDistance p lightPos
-                illumination = (max 0 (normal ⋅ unitV)) * lightIntensity * (25 /dist)
-                rV = 
+                illumination = max 0 (normal ⋅ unitV) * lightIntensity * (25 /dist)
+                rV =
                     let
                         normalComponent = proj v' normal
                         parComponent    = v' - normalComponent
                     in
-                        normalComponent - parComponent    
-            return $ illumination*(3 + 0.3*(abs $ rV ⋅ cameraV)*(abs $ rV ⋅ cameraV))
+                        normalComponent - parComponent
+            return $ illumination*(3 + 0.3*abs(rV ⋅ cameraV)*abs(rV ⋅ cameraV))
             )
         Nothing   -> defaultColor
 
