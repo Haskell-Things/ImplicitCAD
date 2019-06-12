@@ -1,6 +1,8 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
+[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit)  [![Build Status](https://travis-ci.org/colah/ImplicitCAD.png?branch=master)](https://travis-ci.org/colah/ImplicitCAD)
+
 Introduction
 ------------
 
