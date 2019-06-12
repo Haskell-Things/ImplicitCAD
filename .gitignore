@@ -5,6 +5,7 @@
 *.png
 *.ps
 *.stl
+*.dxf
 dist/
 Setup
 docs/iscad.md
