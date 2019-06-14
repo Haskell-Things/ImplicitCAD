@@ -8,7 +8,7 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, tryMany, variableSymb, patternMatcher) where
+module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, padChar, tryMany, variableSymb, patternMatcher) where
 
 import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
 
@@ -68,6 +68,14 @@ padString :: String -> ParsecT String u Identity String
 padString s = do
     _ <- genSpace
     s' <- string s
+    _ <- genSpace
+    return s'
+
+-- a padded character
+padChar :: Char -> ParsecT String u Identity Char
+padChar s = do
+    _ <- genSpace
+    s' <- char s
     _ <- genSpace
     return s'
 
