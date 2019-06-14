@@ -52,11 +52,11 @@ literalSpec :: Spec
 literalSpec = do
   it "handles integers" $
     "12356" -->  num 12356
-  it "handles positive leading zero integers" $ do
+  it "handles positive leading zero integers" $
     "000012356" -->  num 12356
-  it "handles zero integer" $ do
+  it "handles zero integer" $
     "0" -->  num 0
-  it "handles leading zero integer" $ do
+  it "handles leading zero integer" $
     "0000" -->  num 0
   it "handles floats" $
     "23.42" -->  num 23.42
@@ -66,13 +66,13 @@ literalSpec = do
 
 letBindingSpec :: Spec
 letBindingSpec = do
-  it "handles let with integer binding and spaces" $ do
+  it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
-  it "handles multiple variable let" $ do
+  it "handles multiple variable let" $
     "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles empty let" $ do
+  it "handles empty let" $
     "let () a" --> (Var "a")
-  it "handles nested let" $ do
+  it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
 
 exprSpec :: Spec
@@ -87,11 +87,11 @@ exprSpec = do
       "( false )" -->  bool False
     it "handles vectors" $
       "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
-    it "handles empty vectors" $ do
+    it "handles empty vectors" $
       "[]" -->  ListE []
-    it "handles single element vectors" $ do
+    it "handles single element vectors" $
       "[a]" -->  ListE [Var "a"]
-    it "handles nested vectors" $ do
+    it "handles nested vectors" $
       "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
       "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
@@ -119,21 +119,21 @@ exprSpec = do
     it "handles unary +/-" $ do
       "-42" --> num (-42)
       "+42" -->  num 42
-    it "handles unary - with extra spaces" $ do
+    it "handles unary - with extra spaces" $
       "-  42" --> num (-42)
-    it "handles unary + with extra spaces" $ do
+    it "handles unary + with extra spaces" $
       "+  42" -->  num 42
-    it "handles unary - with parentheses" $ do
+    it "handles unary - with parentheses" $
       "-(4 - 3)" -->  negate [ minus [num 4, num 3]]
-    it "handles unary + with parentheses" $ do
+    it "handles unary + with parentheses" $
       "+(4 - 1)" -->  minus [num 4, num 1]
-    it "handles unary - with identifier" $ do
+    it "handles unary - with identifier" $
       "-foo" --> negate [Var "foo"]
-    it "handles unary + with identifier" $ do
+    it "handles unary + with identifier" $
       "+foo" -->  Var "foo"
-    it "handles unary - with string literal" $ do
+    it "handles unary - with string literal" $
       "-\"foo\"" --> negate [stringLiteral "foo"]
-    it "handles unary + with string literal" $ do
+    it "handles unary + with string literal" $
       "+\"foo\"" -->  stringLiteral "foo"
     it "handles +" $ do
       "1 + 2" --> plus [num 1, num 2]
