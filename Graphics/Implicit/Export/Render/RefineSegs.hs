@@ -12,25 +12,22 @@ import Graphics.Implicit.Export.Util (centroid)
 
 import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
 
--- The purpose of refine is to add detail to a polyline aproximating
--- the boundary of an implicit function and to remove redundant points.
-
--- We break this into two steps: detail and then simplify.
-
+-- | The purpose of refine is to add detail to a polyline aproximating
+--   the boundary of an implicit function and to remove redundant points.
+--   We break this into two steps: detail and then simplify.
 refine :: ℝ -> Obj2 -> Polyline -> Polyline
 refine res obj = simplify res . detail' res obj
 
--- we wrap detail to make it ignore very small segments, and to pass in
--- an initial value for a pointer counter argument. This is detail'
-
+-- | We wrap detail to make it ignore very small segments, and to pass in
+--   an initial value for a depth counter argument.
 -- FIXME: magic number.
 detail' :: ℝ -> (ℝ2 -> ℝ) -> Polyline -> Polyline
 detail' res obj (Polyline [p1@(x1,y1), p2@(x2,y2)])
   | (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) > res*res/200 = detail 0 res obj $ Polyline [p1,p2]
 detail' _ _ a = a
 
--- FIXME: all of the magic numbers.
 -- | detail adds new points to a polyline to add more detail.
+-- FIXME: all of the magic numbers.
 detail :: ℕ -> ℝ -> (ℝ2 -> ℝ) -> Polyline -> Polyline
 detail n res obj (Polyline [p1, p2]) | n < 2 =
     let
@@ -69,6 +66,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
 
 detail _ _ _ x = x
 
+-- FIXME: re-add simplify2 and simplify3?
 simplify :: ℝ -> Polyline -> Polyline
 simplify _ = {-simplify3 . simplify2 res . -} simplify1
 

@@ -15,6 +15,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), Norme
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
+-- FIXME: magic numbers.
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj (Triangle (a,b,c)) =
     NormedTriangle (normify a', normify b', normify c')
@@ -25,6 +26,7 @@ normTriangle res obj (Triangle (a,b,c)) =
             c' = (c ^+^ r*^b ^+^ r*^a) ^/ 1.02
             r = 0.01 :: ℝ
 
+-- FIXME: magic numbers.
 normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
 normVertex res obj p =
     let
@@ -48,7 +50,9 @@ centroid pts =
       norm = recip $ realToFrac $ length pts
 {-# INLINABLE centroid #-}
 
-{--- If we need to make a 2D mesh finer...
+{-
+
+-- If we need to make a 2D mesh finer...
 divideMesh2To :: ℝ -> [(ℝ2, ℝ2, ℝ2)] -> [(ℝ2, ℝ2, ℝ2)]
 divideMesh2To res mesh =
     let
@@ -108,6 +112,4 @@ dividePolylineTo res polyline =
         if m /= n
             then divide (polyline !! m) (polyline !! (m+1))
             else [polyline !! n]
-
-
 -}
