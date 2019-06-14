@@ -21,7 +21,7 @@ import Graphics.Implicit.ObjectUtil (getImplicit2, getBox2)
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
-import qualified Graphics.Implicit.Export.Render as Render (getContour)
+import Graphics.Implicit.Export.Render (getContour)
 
 import Data.VectorSpace ((^/), magnitude)
 
@@ -51,7 +51,7 @@ symbolicGetContour res (Translate2 v obj) = appOpPolylines (+ v) $ symbolicGetCo
 symbolicGetContour res (Scale2 s@(a,b) obj) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
     where sc = max a b
 symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-    (obj', (a,b)) -> Render.getContour a b res obj'
+    (obj', (a,b)) -> getContour a b (res,res) obj'
 
 appOpPolylines :: (ℝ2 -> ℝ2) -> [Polyline] -> [Polyline]
 appOpPolylines op polylines = map (appOpPolyline op) polylines
