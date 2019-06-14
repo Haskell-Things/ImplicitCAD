@@ -2,7 +2,7 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.GetSegs (getSegs, getSegs') where
+module Graphics.Implicit.Export.Render.GetSegs (getSegs) where
 
 import Prelude(Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
 
@@ -56,21 +56,18 @@ import Data.VectorSpace ((^-^))
                  = midy1
 
 -}
-
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
-getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
+getSegs p1@(x,y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
     let
-        (x,y) = p1
-
         -- Let's evaluate obj at a few points...
         c = obj (centroid [p1,p2])
 
         (dx,dy) = p2 ^-^ p1
         res = sqrt (dx*dy)
 
-        midx1 = (x,      midx1V )
-        midx2 = (x + dx, midx2V )
-        midy1 = (midy1V , y )
+        midx1 = (x,      midx1V)
+        midx2 = (x + dx, midx2V)
+        midy1 = (midy1V, y     )
         midy2 = (midy2V, y + dy)
 
         notPointLine :: Polyline -> Bool
@@ -88,75 +85,32 @@ getSegs p1 p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
 
         -- Empty Cases
 
-        (True,  True,
-         True,  True)  -> []
-
-        (False, False,
-         False, False) -> []
+        (True,   True,  True,  True) -> []
+        (False, False, False, False) -> []
 
         -- Horizontal Cases
-
-        (True,  True,
-         False, False) -> [Polyline [midx1, midx2]]
-
-        (False, False,
-         True,  True)  -> [Polyline [midx2, midx1]]
+        ( True,  True, False, False) -> [Polyline [midx1, midx2]]
+        (False, False,  True,  True) -> [Polyline [midx2, midx1]]
 
         -- Vertical Cases
-
-        (False, True,
-         False, True)  -> [Polyline [midy2, midy1]]
-
-        (True,  False,
-         True,  False) -> [Polyline [midy1, midy2]]
+        (False,  True, False,  True) -> [Polyline [midy2, midy1]]
+        ( True, False,  True, False) -> [Polyline [midy1, midy2]]
 
         -- Corner Cases
-
-        (True,  False,
-         False, False) -> [Polyline [midx1, midy2]]
-
-        (False, True,
-         True,  True)  -> [Polyline [midy2, midx1]]
-
-        (True,  True,
-         False, True)  -> [Polyline [midx1, midy1]]
-
-        (False, False,
-         True,  False) -> [Polyline [midy1, midx1]]
-
-        (True,  True,
-         True,  False) -> [Polyline [midy1, midx2]]
-
-        (False, False,
-         False, True)  -> [Polyline [midx2, midy1]]
-
-        (True,  False,
-         True,  True)  -> [Polyline [midx2, midy2]]
-
-        (False, True,
-         False, False) -> [Polyline [midy2, midx2]]
+        ( True, False, False, False) -> [Polyline [midx1, midy2]]
+        (False,  True,  True,  True) -> [Polyline [midy2, midx1]]
+        ( True,  True, False,  True) -> [Polyline [midx1, midy1]]
+        (False, False,  True, False) -> [Polyline [midy1, midx1]]
+        ( True,  True,  True, False) -> [Polyline [midy1, midx2]]
+        (False, False, False,  True) -> [Polyline [midx2, midy1]]
+        ( True, False,  True,  True) -> [Polyline [midx2, midy2]]
+        (False,  True, False, False) -> [Polyline [midy2, midx2]]
 
         -- Dual Corner Cases
-
-        (True,  False,
-         False, True)  -> if c <= 0
+        (True,  False, False, True)  -> if c <= 0
             then [Polyline [midx1, midy1], Polyline [midx2, midy2]]
             else [Polyline [midx1, midy2], Polyline [midx2, midy1]]
 
-        (False, True,
-         True,  False) -> if c <= 0
+        (False, True, True,  False) -> if c <= 0
             then [Polyline [midy2, midx1], Polyline [midy1, midx2]]
             else [Polyline [midy1, midx1], Polyline [midy2, midx2]]
-
-
--- A convenience function, we don't actually care too much about
-getSegs' :: (ℝ, ℝ) -> (ℝ, ℝ) -> ((ℝ, ℝ) -> ℝ) -> (ℝ, ℝ, ℝ, ℝ) -> [Polyline]
-getSegs' (x1, y1) (x2, y2) obj (midx1V,midx2V,midy1V,midy2V) =
-    let
-        x1y1 = obj (x1, y1)
-        x2y1 = obj (x2, y1)
-        x1y2 = obj (x1, y2)
-        x2y2 = obj (x2, y2)
-    in
-        getSegs (x1, y1) (x2, y2) obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V)
-
