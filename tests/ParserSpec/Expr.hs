@@ -77,6 +77,10 @@ letBindingSpec = do
     "let () a" --> (Var "a")
   it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles let on right side of an arithmetic operator" $
+    "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
+  it "handles let on right side of a unary negation" $
+    "- let(b = y) b" --> negate [lambda [Name "b"] (Var "b") [Var "y"]]
 
 exprSpec :: Spec
 exprSpec = do
@@ -120,8 +124,9 @@ exprSpec = do
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
 
   describe "arithmetic" $ do
-    it "handles unary +/-" $ do
+    it "handles unary -" $ do
       "-42" --> num (-42)
+    it "handles unary +" $ do
       "+42" --> num 42
     it "handles unary - with extra spaces" $
       "-  42" --> num (-42)
@@ -175,4 +180,4 @@ exprSpec = do
     specify "multiple" $
       "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
     specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> (index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"])
+      "foo(x)[0](y)" --> index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"]
