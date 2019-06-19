@@ -78,7 +78,7 @@ cube = moduleWithoutSuite "cube" $ do
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
             let
-                toInterval' :: ℝ -> (ℝ, ℝ)
+                toInterval' :: ℝ -> ℝ2
                 toInterval' = toInterval center
             return (either toInterval' id x,
                     either toInterval' id y,
@@ -119,7 +119,7 @@ square = moduleWithoutSuite "square" $ do
                 `doc` "should center? (non-intervals)"
                 `defaultTo` False
             let
-                toInterval' :: ℝ -> (ℝ, ℝ)
+                toInterval' :: ℝ -> ℝ2
                 toInterval' = toInterval center
             return (either toInterval' id x,
                     either toInterval' id y)

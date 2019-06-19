@@ -74,7 +74,7 @@ letBindingSpec = do
   it "handles multiple variable let" $
     "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles empty let" $
-    "let () a" --> (Var "a")
+    "let () a" --> Var "a"
   it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles let on right side of an arithmetic operator" $
@@ -122,7 +122,6 @@ exprSpec = do
       "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
     it "handles multiple function calls" $
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
-
   describe "arithmetic" $ do
     it "handles unary -" $ do
       "-42" --> num (-42)
