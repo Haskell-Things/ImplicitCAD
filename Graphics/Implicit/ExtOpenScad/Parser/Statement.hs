@@ -5,6 +5,9 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
+-- Allow us to use a shorter form of Name.
+{-# LANGUAGE PatternSynonyms #-}
+
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures #-}
 
@@ -23,11 +26,17 @@ import Data.Kind (Type)
 import Text.ParserCombinators.Parsec (try, sepBy, sourceLine, sourceColumn, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
 import Text.Parsec.Prim (ParsecT)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Name), Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI))
+import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)), Expr(LamE), StatementI(StatementI), Symbol(Symbol))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
+
 import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb)
 
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+
+-- Let us use the old syntax when defining Names.
+pattern Name n = GIED.Name (Symbol n)
 
 parseProgram :: String -> Either ParseError [StatementI]
 parseProgram = parse program "" where -- "" is our program name.
@@ -190,7 +199,7 @@ userModule = do
     args <- moduleArgsUnit
     _ <- genSpace
     s <- suite *<|> (stringGS " ; " >> return [])
-    return $ StatementI line column $ ModuleCall name args s
+    return $ StatementI line column $ ModuleCall (Symbol name) args s
 
 -- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
@@ -203,10 +212,10 @@ userModuleDeclaration = do
     args <- moduleArgsUnitDecl
     _ <- genSpace
     s <- suite
-    return $ StatementI line column $ NewModule newModuleName args s
+    return $ StatementI line column $ NewModule (Symbol newModuleName) args s
 
 -- | parse the arguments passed to a module.
-moduleArgsUnit :: GenParser Char st [(Maybe String, Expr)]
+moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
 moduleArgsUnit = do
     _ <- stringGS " ( "
     args <- sepBy (
@@ -215,7 +224,7 @@ moduleArgsUnit = do
             symb <- variableSymb
             _ <- stringGS " = "
             expr <- expr0
-            return (Just symb, expr)
+            return (Just (Symbol symb), expr)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- variableSymb
@@ -223,7 +232,7 @@ moduleArgsUnit = do
             argVars <- sepBy variableSymb (try $ stringGS " , ")
             _ <- stringGS " ) = "
             expr <- expr0
-            return (Just symb, LamE (map Name argVars) expr)
+            return (Just (Symbol symb), LamE (map Name argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
@@ -233,7 +242,7 @@ moduleArgsUnit = do
     return args
 
 -- | parse the arguments in the module declaration.
-moduleArgsUnitDecl ::  GenParser Char st [(String, Maybe Expr)]
+moduleArgsUnitDecl ::  GenParser Char st [(Symbol, Maybe Expr)]
 moduleArgsUnitDecl = do
     _ <- stringGS " ( "
     argTemplate <- sepBy (
@@ -241,7 +250,7 @@ moduleArgsUnitDecl = do
             symb <- variableSymb;
             _ <- stringGS " = "
             expr <- expr0
-            return (symb, Just expr)
+            return (Symbol symb, Just expr)
         *<|> do
             symb <- variableSymb;
             _ <- stringGS " ( "
@@ -249,10 +258,10 @@ moduleArgsUnitDecl = do
             _ <- sepBy variableSymb (try $ stringGS " , ")
             _ <- stringGS " ) = "
             expr <- expr0
-            return (symb, Just expr)
+            return (Symbol symb, Just expr)
         *<|> do
             symb <- variableSymb
-            return (symb, Nothing)
+            return (Symbol symb, Nothing)
         ) (try $ stringGS " , ")
     _ <- stringGS " ) "
     return argTemplate
