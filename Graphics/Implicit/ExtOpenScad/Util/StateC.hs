@@ -9,7 +9,7 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState)) where
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
@@ -21,46 +21,49 @@ import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
 import Data.Kind (Type)
 
--- This is the state machine. It contains the variables, their values, the path, and... ?
-type CompState = (VarLookup, [OVal], FilePath, (), ())
+-- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
+newtype CompState = CompState (VarLookup, [OVal], FilePath)
+
 type StateC = StateT CompState IO
 
 getVarLookup :: StateC VarLookup
-getVarLookup = fmap (\(a,_,_,_,_) -> a) get
+getVarLookup = fmap (\(CompState (a,_,_)) -> a) get
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
-modifyVarLookup = modify . (\f (a,b,c,d,e) -> (f a, b, c, d, e))
+modifyVarLookup = modify . (\f (CompState (a,b,c)) -> CompState (f a, b, c))
 
+-- | Perform a variable lookup
 lookupVar :: String -> StateC (Maybe OVal)
 lookupVar name = do
     varlookup <- getVarLookup
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals = modify (\(a,b,c,d,e) -> (a, vals ++ b,c,d,e))
+pushVals vals = modify (\(CompState (a,b,c)) -> CompState (a, vals ++ b, c))
 
 getVals :: StateC [OVal]
 getVals = do
-    (_,b,_,_,_) <- get
+    (CompState (_,b,_)) <- get
     return b
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
-    (a,_,c,d,e) <- get
-    put (a,vals,c,d,e)
+    (CompState (a,_,c)) <- get
+    put $ CompState (a,vals,c)
 
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
 withPathShiftedBy pathShift s = do
-    (a,b,path,d,e) <- get
-    put (a, b, path </> pathShift, d, e)
+    (CompState (a,b,path)) <- get
+    put $ CompState (a, b, path </> pathShift)
     x <- s
-    (a',b',_,d',e') <- get
-    put (a', b', path, d', e')
+    (CompState (a',b',_)) <- get
+    put $ CompState (a', b', path)
     return x
 
+-- | Return the path stored in the state.
 getPath :: StateC FilePath
 getPath = do
-    (_,_,c,_,_) <- get
+    (CompState (_,_,c)) <- get
     return c
 
 getRelPath :: FilePath -> StateC FilePath

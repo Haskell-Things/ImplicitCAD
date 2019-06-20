@@ -20,7 +20,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -78,7 +78,7 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (varlookup, _, path, _, _) <- get
+    (CompState (varlookup, _, path)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI lineN columnN $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -109,7 +109,7 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
 
 runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
         maybeMod  <- lookupVar name
-        (varlookup, _, path, _, _) <- get
+        (CompState (varlookup, _, path)) <- get
         childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
@@ -149,7 +149,7 @@ runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
     (res, _) <- runStateT
         (runSuite suite >> getVals)
-        (varlookup, [], path, (), () )
+        (CompState (varlookup, [], path))
     return res
 
 

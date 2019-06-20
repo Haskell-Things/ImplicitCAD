@@ -18,7 +18,7 @@ import Data.List (genericLength)
 
 import Data.Cross (cross3)
 
-
+-- FIXME: res should be ℝ3.
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 
 tesselateLoop _ _ [] = []
@@ -63,7 +63,8 @@ tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
    |  |  ->  | /|
    #__#      #/_#
 -}
-
+-- | Create a pair of triangles from a quad.
+-- FIXME: magic number
 tesselateLoop res obj [[a,_],[b,_],[c,_],[d,_]] | obj (centroid [a,c]) < res/30 =
     return $ Tris $ TriangleMesh [Triangle (a,b,c), Triangle (a,c,d)]
 
@@ -100,6 +101,7 @@ shrinkLoop _ path@[a,b,c] res obj =
     else
         ([], path)
 
+-- FIXME: magic number.
 shrinkLoop n path@(a:b:c:xs) res obj | n < genericLength path =
     if abs (obj (centroid [a,c])) < res/50
     then

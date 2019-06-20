@@ -5,8 +5,8 @@
 -- Allow our DiscreteAproxable class to handle multiple parameters.
 {-# LANGUAGE MultiParamTypeClasses #-}
 
--- FIXME: why is this here?
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+-- For the instance declaration of DiscreteAproxable SymbolicObj2 [Polyline]
+{-# LANGUAGE FlexibleInstances #-}
 
 -- | A module for retrieving approximate represententations of objects.
 module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox) where
@@ -19,7 +19,9 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Pol
 import Graphics.Implicit.ObjectUtil (getImplicit2, getImplicit3, getBox2, getBox3)
 
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
+
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
+
 import Graphics.Implicit.Export.Util (normTriangle)
 
 -- We are the only ones that use this.
@@ -28,6 +30,7 @@ import Graphics.Implicit.Export.RayTrace (Color(Color), Camera(Camera), Light(Li
 import Codec.Picture (DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8), generateImage)
 
 import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
+
 import Data.AffineSpace ((.-^), (.+^))
 
 default (ℝ)
@@ -51,6 +54,7 @@ instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 instance DiscreteAproxable SymbolicObj3 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where
+            -- | Size of the image to produce.
             (w,h) = (150, 150) :: ℝ2
             obj = getImplicit3 symbObj
             box@((x1,y1,z1), (_,y2,z2)) = getBox3 symbObj
@@ -62,6 +66,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             camera = Camera (x1-deviation*(2.2), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
             lights = [Light (x1-deviation*(1.5), y1 - (0.4)*(y2-y1), avZ) ((0.03)*deviation) ]
             scene = Scene obj (Color 200 200 230 255) lights (Color 255 255 255 0)
+            -- | passed to generateImage, it's external, and determines this type.
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer a b = renderScreen
                 ((fromIntegral a)/w - (0.5)) ((fromIntegral b)/h - (0.5))
@@ -92,11 +97,13 @@ instance DiscreteAproxable SymbolicObj2 [Polyline] where
 instance DiscreteAproxable SymbolicObj2 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where
+            -- | Size of the image to produce.
             (w,h) = (150, 150) :: ℝ2
             obj = getImplicit2 symbObj
             (p1@(x1,_), p2@(_,y2)) = getBox2 symbObj
             (dx, dy) = p2 ^-^ p1
             dxy = max dx dy
+            -- | passed to generateImage, it's external, and determines this type.
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer mya myb = mycolor
                 where

@@ -83,11 +83,9 @@ Library
                   Graphics.Implicit.ExtOpenScad.Parser.Util
                   Graphics.Implicit.ExtOpenScad.Eval.Statement
                   Graphics.Implicit.ExtOpenScad.Eval.Expr
-                  Graphics.Implicit.ExtOpenScad.Util.StateC
                   Graphics.Implicit.ExtOpenScad.Util.ArgParser
                   Graphics.Implicit.ExtOpenScad.Util.OVal
-                  -- Historic, but functional. Should be merged into MarchingSquaresFill.
-                  -- Graphics.Implicit.Export.MarchingSquares
+                  Graphics.Implicit.ExtOpenScad.Util.StateC
                   Graphics.Implicit.Export.MarchingSquaresFill
                   Graphics.Implicit.Export.RayTrace
                   Graphics.Implicit.Export.NormedTriangleMeshFormats

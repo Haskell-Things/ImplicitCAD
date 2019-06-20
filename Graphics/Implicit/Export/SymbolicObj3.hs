@@ -212,7 +212,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
         (dependants, independents) = sepFree boxedObjs
     in if null independents
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
-        (obj, (a,b)) -> unmesh $ getMesh a b res obj
+        (obj, (a,b)) -> unmesh $ getMesh a b (res,res,res) obj
     else if null dependants
     then concatMap unmesh $ map (symbolicGetMesh res) independents
     else  (concatMap unmesh $ map (symbolicGetMesh res) independents)
@@ -222,7 +222,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
 symbolicGetMesh res obj =
   -- Use rebound3 to stretch bounding box.
   case rebound3 (getImplicit3 obj, getBox3 obj) of
-    (obj', (a,b)) -> getMesh a b res obj'
+    (obj', (a,b)) -> getMesh a b (res,res,res) obj'
 
 unmesh :: TriangleMesh -> [Triangle]
 unmesh (TriangleMesh m) = m

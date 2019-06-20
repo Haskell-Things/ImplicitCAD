@@ -28,6 +28,9 @@ ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 negationIssue :: Expectation -> Expectation
 negationIssue _ = pendingWith "parser doesn't handle negation operator correctly"
 
+listIssue :: Expectation -> Expectation
+listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
+
 logicalSpec :: Spec
 logicalSpec = do
   describe "not" $ do
@@ -51,29 +54,33 @@ logicalSpec = do
 literalSpec :: Spec
 literalSpec = do
   it "handles integers" $
-    "12356" -->  num 12356
-  it "handles positive leading zero integers" $ do
-    "000012356" -->  num 12356
-  it "handles zero integer" $ do
-    "0" -->  num 0
-  it "handles leading zero integer" $ do
-    "0000" -->  num 0
+    "12356" --> num 12356
+  it "handles positive leading zero integers" $
+    "000012356" --> num 12356
+  it "handles zero integer" $
+    "0" --> num 0
+  it "handles leading zero integer" $
+    "0000" --> num 0
   it "handles floats" $
-    "23.42" -->  num 23.42
+    "23.42" --> num 23.42
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
 
 letBindingSpec :: Spec
 letBindingSpec = do
-  it "handles let with integer binding and spaces" $ do
+  it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
-  it "handles multiple variable let" $ do
+  it "handles multiple variable let" $
     "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles empty let" $ do
-    "let () a" --> (Var "a")
-  it "handles nested let" $ do
+  it "handles empty let" $
+    "let () a" --> Var "a"
+  it "handles nested let" $
     "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles let on right side of an arithmetic operator" $
+    "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
+  it "handles let on right side of a unary negation" $
+    "- let(b = y) b" --> negate [lambda [Name "b"] (Var "b") [Var "y"]]
 
 exprSpec :: Spec
 exprSpec = do
@@ -84,17 +91,18 @@ exprSpec = do
       "foo_bar" --> Var "foo_bar"
   describe "grouping" $ do
     it "allows parens" $
-      "( false )" -->  bool False
+      "( false )" --> bool False
+    it "handles empty vectors" $
+      "[]" --> ListE []
+    it "handles single element vectors" $
+      "[a]" --> ListE [Var "a"]
     it "handles vectors" $
-      "[ 1, 2, 3 ]" -->  ListE [num 1, num 2, num 3]
-    it "handles empty vectors" $ do
-      "[]" -->  ListE []
-    it "handles single element vectors" $ do
-      "[a]" -->  ListE [Var "a"]
-    it "handles nested vectors" $ do
+      "[ 1, 2, 3 ]" --> ListE [num 1, num 2, num 3]
+    it "handles nested vectors" $
       "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
-      "( 1, 2, 3 )" -->  ListE [num 1, num 2, num 3]
+      listIssue $
+      "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : b ]" -->
       fapp "list_gen" [Var "a", Var "b"]
@@ -114,27 +122,27 @@ exprSpec = do
       "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
     it "handles multiple function calls" $
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
-
   describe "arithmetic" $ do
-    it "handles unary +/-" $ do
+    it "handles unary -" $ do
       "-42" --> num (-42)
-      "+42" -->  num 42
-    it "handles unary - with extra spaces" $ do
+    it "handles unary +" $ do
+      "+42" --> num 42
+    it "handles unary - with extra spaces" $
       "-  42" --> num (-42)
-    it "handles unary + with extra spaces" $ do
-      "+  42" -->  num 42
-    it "handles unary - with parentheses" $ do
-      "-(4 - 3)" -->  negate [ minus [num 4, num 3]]
-    it "handles unary + with parentheses" $ do
-      "+(4 - 1)" -->  minus [num 4, num 1]
-    it "handles unary - with identifier" $ do
+    it "handles unary + with extra spaces" $
+      "+  42" --> num 42
+    it "handles unary - with parentheses" $
+      "-(4 - 3)" --> negate [ minus [num 4, num 3]]
+    it "handles unary + with parentheses" $
+      "+(4 - 1)" --> minus [num 4, num 1]
+    it "handles unary - with identifier" $
       "-foo" --> negate [Var "foo"]
-    it "handles unary + with identifier" $ do
-      "+foo" -->  Var "foo"
-    it "handles unary - with string literal" $ do
+    it "handles unary + with identifier" $
+      "+foo" --> Var "foo"
+    it "handles unary - with string literal" $
       "-\"foo\"" --> negate [stringLiteral "foo"]
-    it "handles unary + with string literal" $ do
-      "+\"foo\"" -->  stringLiteral "foo"
+    it "handles unary + with string literal" $
+      "+\"foo\"" --> stringLiteral "foo"
     it "handles +" $ do
       "1 + 2" --> plus [num 1, num 2]
       "1 + 2 + 3" --> plus [num 1, num 2, num 3]
@@ -150,14 +158,14 @@ exprSpec = do
                                            minus [minus [num 4, num 5],
                                                      num 6]]
     it "handles exponentiation" $
-      "x ^ y" -->  power [Var "x", Var "y"]
+      "x ^ y" --> power [Var "x", Var "y"]
     it "handles multiple exponentiations" $
-      "x ^ y ^ z" -->  power [Var "x", power [Var "y", Var "z"]]
+      "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
     it "handles *" $ do
-      "3 * 4" -->  mult [num 3, num 4]
-      "3 * 4 * 5" -->  mult [num 3, num 4, num 5]
+      "3 * 4" --> mult [num 3, num 4]
+      "3 * 4 * 5" --> mult [num 3, num 4, num 5]
     it "handles /" $
-      "4.2 / 2.3" -->  divide [num 4.2, num 2.3]
+      "4.2 / 2.3" --> divide [num 4.2, num 2.3]
     it "handles precedence" $
       "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
     it "handles append" $
@@ -171,4 +179,4 @@ exprSpec = do
     specify "multiple" $
       "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
     specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> (index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"])
+      "foo(x)[0](y)" --> index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"]
