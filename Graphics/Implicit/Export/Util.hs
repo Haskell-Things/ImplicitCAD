@@ -15,6 +15,9 @@ import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), Norme
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
+-- | Change the default for bare numbers in this file.
+default (ℝ)
+
 -- FIXME: magic numbers.
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj (Triangle (a,b,c)) =
@@ -24,7 +27,8 @@ normTriangle res obj (Triangle (a,b,c)) =
             a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02
             b' = (b ^+^ r*^a ^+^ r*^c) ^/ 1.02
             c' = (c ^+^ r*^b ^+^ r*^a) ^/ 1.02
-            r = 0.01 :: ℝ
+            r :: ℝ
+            r = 0.01
 
 -- FIXME: magic numbers.
 normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)

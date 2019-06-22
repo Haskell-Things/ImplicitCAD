@@ -28,7 +28,7 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, example, te
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.ArgParser as GIEUA (argument)
 
-import Graphics.Implicit.ExtOpenScad.Util.OVal (caseOType, divideObjs, (<||>))
+import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideObjs, (<||>))
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
@@ -39,7 +39,10 @@ import Control.Monad (mplus)
 
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
 
--- use the old syntax when defining arguments.
+default (ℝ)
+
+-- | Use the old syntax when defining arguments.
+argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
 -- | The only thing exported here. basically, a list of functions, which accept OVal arguments and retrun an ArgParser ?
@@ -216,6 +219,7 @@ polygon = moduleWithoutSuite "polygon" $ do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
+                        `defaultTo` []
 {-    r      :: ℝ     <- argument "r"
                         `doc` "rounding of the polygon corners"
     paths  :: [ℕ]   <- argument "paths"
@@ -224,13 +228,14 @@ polygon = moduleWithoutSuite "polygon" $ do
     case paths of
         [] -> addObj2 $ Prim.polygonR r points
         _ -> return $ return []
--}                        `defaultTo` 0
-    addObj2 $ Prim.polygonR r points
+                        `defaultTo` 0
+-}
+    addObj2 $ Prim.polygonR 0 points
 
 union :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 union = moduleWithSuite "union" $ \children -> do
     r :: ℝ <- argument "r"
-        `defaultTo` 0.0
+        `defaultTo` 0
         `doc` "Radius of rounding for the union interface"
     return $ return $ if r > 0
         then objReduce (Prim.unionR r) (Prim.unionR r) children
@@ -239,7 +244,7 @@ union = moduleWithSuite "union" $ \children -> do
 intersect :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 intersect = moduleWithSuite "intersection" $ \children -> do
     r :: ℝ <- argument "r"
-        `defaultTo` 0.0
+        `defaultTo` 0
         `doc` "Radius of rounding for the intersection interface"
     return $ return $ if r > 0
         then objReduce (Prim.intersectR r) (Prim.intersectR r) children
@@ -248,7 +253,7 @@ intersect = moduleWithSuite "intersection" $ \children -> do
 difference :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 difference = moduleWithSuite "difference" $ \children -> do
     r :: ℝ <- argument "r"
-        `defaultTo` 0.0
+        `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
     return $ return $ if r > 0
         then objReduce (Prim.differenceR r) (Prim.differenceR r) children
@@ -279,7 +284,7 @@ translate = moduleWithSuite "translate" $ \children -> do
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
 deg2rad :: ℝ -> ℝ
-deg2rad x = x / 180.0 * pi
+deg2rad x = x / 180 * pi
 
 -- This is mostly insane
 rotate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
@@ -382,8 +387,8 @@ rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
     -- arguments
     h :: ℝ <- realArgument "h"
     center :: Bool <- boolArgumentWithDefault "center" False
-    twist :: ℝ <- realArgumentWithDefault 0.0
-    r :: ℝ <- realArgumentWithDefault "r" 0.0
+    twist :: ℝ <- realArgumentWithDefault 0
+    r :: ℝ <- realArgumentWithDefault "r" 0
 
     getAndModUpObj2s suite (\obj -> extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h)
 -}
