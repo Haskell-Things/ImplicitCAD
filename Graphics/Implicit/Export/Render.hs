@@ -196,11 +196,11 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
         -- | How big are the steps?
         (rx,ry) = d ⋯/ (fromℕtoℝ `both` (nx,ny))
 
-        -- the points inside of the region.
+        -- The points inside of the region.
         pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
         pXs = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
 
-        -- | performance tuning.
+        -- | Performance tuning.
         -- FIXME: magic number.
         forcesteps :: Fastℕ
         forcesteps=32
@@ -214,9 +214,7 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
                 ] | my <- [0..leny]
                 ] `using` parBuffer (fromFastℕ . max 1 $ div (fromℕ $ lenx+leny) forcesteps) rdeepseq
 
-        -- Evaluate obj to avoid waste in mids, segs, later.
-
-        -- | fully evaluate obj to avoid waste in mids, segs, later.
+        -- | Fully evaluate obj to avoid waste in mids, segs, later.
         objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
 
         -- | Calculate mid points on X, and Y axis in 2D space.
@@ -239,7 +237,8 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
             ]| y0<-pYs | y1'<-tail pYs |mX'' <-midsX | mX'T <-tail midsX | mY'' <-midsY                    | objY0 <- objV                        | objY1 <- tail objV
             ] `using` parBuffer (fromFastℕ . max 1 $ div (fromℕ $ nx+ny) forcesteps) rdeepseq
     in
-      cleanLoopsFromSegs . concat $ concat segs -- (5) merge squares, etc
+      -- | Merge squares, etc
+      cleanLoopsFromSegs . concat $ concat segs
   
 -- utility functions
   
