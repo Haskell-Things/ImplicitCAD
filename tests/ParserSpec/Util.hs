@@ -39,8 +39,8 @@ import Prelude (Bool, String, Either, (<), ($), (.), (<*), otherwise)
 -- The datatype of positions in our world.
 import Graphics.Implicit.Definitions (ℝ)
 
--- The datatype of expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), OVal(ONum, OBool, OString), Pattern)
+-- Expressions, symbols, and values in the OpenScad language.
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), Symbol(Symbol), OVal(ONum, OBool, OString), Pattern)
 
 import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
 
@@ -101,8 +101,8 @@ append = fapp "++"
 
 -- | We need two different kinds of application functions, one for operators, and one for functions.
 oapp,fapp :: String -> [Expr] -> Expr
-oapp name args = Var name :$ args
-fapp name args = Var name :$ [ListE args]
+oapp name args = Var (Symbol name) :$ args
+fapp name args = Var (Symbol name) :$ [ListE args]
 
 lambda :: [Pattern] -> Expr -> [Expr] -> Expr
 lambda params expr args = LamE params expr :$ args

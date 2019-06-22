@@ -2,6 +2,9 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use shorter forms of Var and Name.
+{-# LANGUAGE PatternSynonyms #-}
+
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
@@ -10,9 +13,15 @@ import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(T
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Pattern(Name))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Symbol(Symbol))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString, padChar)
+
+-- Let us use the old syntax when defining Vars and Names.
+pattern Var  s = GIED.Var  (Symbol s)
+pattern Name n = GIED.Name (Symbol n)
 
 variable :: GenParser Char st Expr
 variable = fmap Var variableSymb

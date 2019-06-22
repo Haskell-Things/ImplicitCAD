@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return)
 
 import Control.Applicative ((<|>))
 
@@ -26,7 +26,8 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup)
+-- Variable access functionality, so we can look up a requested resolution.
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -47,7 +48,6 @@ import Data.AffineSpace ((.-.))
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
 import Data.String (IsString)
-import Data.Map.Strict as Map (lookup, Map)
 
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
 import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
@@ -89,58 +89,29 @@ renderHandler = method GET $ withCompression $ do
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
 -- | Find the resolution to raytrace at.
-getRes :: forall k. (Data.String.IsString k, Ord k) => (Map k OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes ::  (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 -- | If a resolution was specified in the input file, just use it.
-getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+getRes (lookupVarIn "$res" -> Just (ONum res), _, _) = res
 -- | If there was no resolution specified, use a resolution chosen for 3D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, _, obj:_) =
+getRes (vars, _, obj:_) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
 -- | ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, obj:_, _) =
+getRes (vars, obj:_, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
         _                    -> min ((min x y)/2) (sqrt(x*y     ) / 30)
 -- | fallthrough value.
 getRes _ = 1
-
-{-
-getRes (varlookup, obj2s, obj3s) =
-    let
-        qual = case Map.lookup "$quality" varlookup of
-            Just (ONum n) | n >= 1  ->  n
-            _                       ->  1
-        (defaultRes, qualRes) = case (obj2s, obj3s) of
-            (_, obj:_) -> ( min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
-                          , min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22))
-                where
-                    ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-                    (x,y,z) = (x2-x1, y2-y1, z2-z1)
-            (obj:_, _) -> ( min (min x y/2) (sqrt(x*y     ) / 30)
-                          , min (min x y/2) (sqrt(x*y/qual) / 30) )
-                where
-                    ((x1,y1),(x2,y2)) = getBox2 obj
-                    (x,y) = (x2-x1, y2-y1)
-            _ -> (1, 1)
-    in case Map.lookup "$res" varlookup of
-        Just (ONum requestedRes) ->
-            if defaultRes <= 30*requestedRes
-            then requestedRes
-            else -1
-        _ ->
-            if qual <= 30
-            then qualRes
-            else -1
--}
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?

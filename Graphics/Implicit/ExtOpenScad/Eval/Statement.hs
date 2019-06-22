@@ -14,8 +14,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name),
                                                   Expr(LitE),
                                                   OVal(OString, OBool, OList, OModule),
-                                                  VarLookup,
-                                                  StatementI(StatementI)
+                                                  VarLookup(VarLookup),
+                                                  StatementI(StatementI),
+                                                  Symbol(Symbol)
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
@@ -34,6 +35,10 @@ import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
 
+-- helper, to use union on VarLookups.
+varUnion :: VarLookup -> VarLookup -> VarLookup
+varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
+
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
@@ -42,7 +47,7 @@ runStatementI (StatementI lineN columnN (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC lineN columnN err
-        (_, Just match) -> modifyVarLookup $ union match
+        (_, Just match) -> modifyVarLookup $ varUnion match
         (_,   Nothing ) -> errorC lineN columnN "pattern match failed in assignment"
 
 runStatementI (StatementI lineN columnN (Echo exprs)) = do
@@ -61,7 +66,7 @@ runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
         (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
-                    modifyVarLookup $ union match
+                    modifyVarLookup $ varUnion match
                     runSuite loopContent
                 Nothing -> return ()
         _ -> return ()
@@ -78,7 +83,7 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (varlookup, _, path)) <- get
+    (CompState (VarLookup varlookup, _, path)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI lineN columnN $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -104,11 +109,11 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals  = runSuiteCapture varlookup' path suite
+            suiteVals  = runSuiteCapture (VarLookup varlookup') path suite
         return suiteVals
 
-runStatementI (StatementI lineN columnN (ModuleCall name argsExpr suite)) = do
-        maybeMod  <- lookupVar name
+runStatementI (StatementI lineN columnN (ModuleCall (Symbol name) argsExpr suite)) = do
+        maybeMod  <- lookupVar (Symbol name)
         (CompState (varlookup, _, path)) <- get
         childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
