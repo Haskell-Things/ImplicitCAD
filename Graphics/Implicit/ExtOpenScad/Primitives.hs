@@ -454,8 +454,6 @@ unit = moduleWithSuite "unit" $ \children -> do
         Just r  ->
             return $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
 
----------------
-
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = mplus
 
