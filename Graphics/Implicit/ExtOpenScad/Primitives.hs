@@ -210,15 +210,16 @@ circle = moduleWithoutSuite "circle" $ do
         else Prim.polygonR 0 $
             [(r*cos θ, r*sin θ )| θ <- [2*pi*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
 
+-- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
-    r      :: ℝ     <- argument "r"
+{-    r      :: ℝ     <- argument "r"
                         `doc` "rounding of the polygon corners"
-{-    paths  :: [ℕ]   <- argument "paths"
-                        `doc` "order to go through vertices; ignored for now"
+    paths  :: [ℕ]   <- argument "paths"
+                        `doc` "order to go through vertices"
                         `defaultTo` []
     case paths of
         [] -> addObj2 $ Prim.polygonR r points
