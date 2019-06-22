@@ -67,6 +67,9 @@ import Control.DeepSeq (NFData)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 
+-- Set the default types for the numbers in this file.
+default (ℕ, Fastℕ, ℝ)
+
 getMesh :: ℝ3 -> ℝ3 -> ℝ3 -> Obj3 -> TriangleMesh
 getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
     let
@@ -182,22 +185,22 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
 getContour p1@(x1, y1) p2 res@(xres,yres) obj =
     let
-        -- The size of the region we're being asked to search.
+        -- | The size of the region we're being asked to search.
         d = p2 ^-^ p1
 
-        -- How many steps will we take on each axis?
+        -- | How many steps will we take on each axis?
         nx :: ℕ
         ny :: ℕ
         (nx,ny) = ceiling `both` (d ⋯/ res)
 
-        -- How big are the steps?
+        -- | How big are the steps?
         (rx,ry) = d ⋯/ (fromℕtoℝ `both` (nx,ny))
 
-        -- the points inside of the region.
+        -- The points inside of the region.
         pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
         pXs = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
 
-        -- | performance tuning.
+        -- | Performance tuning.
         -- FIXME: magic number.
         forcesteps :: Fastℕ
         forcesteps=32
@@ -211,13 +214,10 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
                 ] | my <- [0..leny]
                 ] `using` parBuffer (fromFastℕ . max 1 $ div (fromℕ $ lenx+leny) forcesteps) rdeepseq
 
-
-        -- Evaluate obj to avoid waste in mids, segs, later.
-
+        -- | Fully evaluate obj to avoid waste in mids, segs, later.
         objV = par2DList (nx+2) (ny+2) $ \x _ y _ -> obj (x 0, y 0)
 
-        -- (1) Calculate mid points on X, and Y axis in 2D space.
-
+        -- | Calculate mid points on X, and Y axis in 2D space.
         midsY = [[
                  interpolate (y0, objX0Y0) (y1', objX0Y1) (obj $* x0) yres
                  | x0 <- pXs |                   objX0Y0 <- objY0   | objX0Y1 <- objY1
@@ -230,15 +230,15 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
                 ]| y0 <- pYs |                   objY0   <- objV
                 ] `using` parBuffer (fromFastℕ . max 1 $ div (fromℕ nx) forcesteps) rdeepseq
 
-        -- Calculate segments for each side
-
+        -- | Calculate segments for each side
         segs = [[
             getSegs (x0,y0) (x1',y1') obj (objX0Y0, objX1Y0, objX0Y1, objX1Y1) (midA0, midA1, midB0, midB1)
              | x0<-pXs | x1'<-tail pXs |midB0<-mX''  | midB1<-mX'T       | midA0<-mY''  | midA1<-tail mY'' | objX0Y0<-objY0 | objX1Y0<-tail objY0 | objX0Y1<-objY1 | objX1Y1<-tail objY1
             ]| y0<-pYs | y1'<-tail pYs |mX'' <-midsX | mX'T <-tail midsX | mY'' <-midsY                    | objY0 <- objV                        | objY1 <- tail objV
             ] `using` parBuffer (fromFastℕ . max 1 $ div (fromℕ $ nx+ny) forcesteps) rdeepseq
     in
-      cleanLoopsFromSegs . concat $ concat segs -- (5) merge squares, etc
+      -- | Merge squares, etc
+      cleanLoopsFromSegs . concat $ concat segs
   
 -- utility functions
   
