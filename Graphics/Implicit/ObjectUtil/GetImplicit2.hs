@@ -30,6 +30,7 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) =
          else rmaximum r [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> (sqrt $ x * x + y * y) - r
+-- FIXME: stop ignoring rounding for polygons.
 getImplicit2 (PolygonR _ points) =
     \p -> let
         pair :: ℕ -> (ℝ2,ℝ2)

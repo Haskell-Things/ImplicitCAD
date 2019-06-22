@@ -14,15 +14,15 @@ import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map,
                 abs, signum, fromInteger, (.), floor, ceiling, round, max, min, flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, π, sqrt, exp, powℝℝ, atan2, log)
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
 import Data.List (genericIndex, genericLength)
 import Control.Arrow (second)
 
-defaultObjects :: VarLookup -- = Map String OVal
-defaultObjects = fromList $
+defaultObjects :: VarLookup
+defaultObjects = VarLookup $ fromList $
     defaultConstants
     ++ defaultFunctions
     ++ defaultFunctions2
@@ -35,85 +35,85 @@ defaultObjects = fromList $
 -- FIXME: what standard?
 
 
-defaultConstants :: [(String, OVal)]
+defaultConstants :: [(Symbol, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [("pi", π)]
+    [((Symbol "pi"), π)]
 
-defaultFunctions :: [(String, OVal)]
+defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     [
-        ("sin",   sin),
-        ("cos",   cos),
-        ("tan",   tan),
-        ("asin",  asin),
-        ("acos",  acos),
-        ("atan",  atan),
-        ("sinh",  sinh),
-        ("cosh",  cosh),
-        ("tanh",  tanh),
-        ("abs",   abs),
-        ("sign",  signum),
-        ("floor", fromInteger . floor ),
-        ("ceil",  fromInteger . ceiling ),
-        ("round", fromInteger . round ),
-        ("exp",   exp),
-        ("ln",    log),
-        ("log",   log),
-        ("sign",  signum),
-        ("sqrt",  sqrt)
+        ((Symbol "sin"),   sin),
+        ((Symbol "cos"),   cos),
+        ((Symbol "tan"),   tan),
+        ((Symbol "asin"),  asin),
+        ((Symbol "acos"),  acos),
+        ((Symbol "atan"),  atan),
+        ((Symbol "sinh"),  sinh),
+        ((Symbol "cosh"),  cosh),
+        ((Symbol "tanh"),  tanh),
+        ((Symbol "abs"),   abs),
+        ((Symbol "sign"),  signum),
+        ((Symbol "floor"), fromInteger . floor ),
+        ((Symbol "ceil"),  fromInteger . ceiling ),
+        ((Symbol "round"), fromInteger . round ),
+        ((Symbol "exp"),   exp),
+        ((Symbol "ln"),    log),
+        ((Symbol "log"),   log),
+        ((Symbol "sign"),  signum),
+        ((Symbol "sqrt"),  sqrt)
     ]
 
-defaultFunctions2 :: [(String, OVal)]
+defaultFunctions2 :: [(Symbol, OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
-        ("max", max),
-        ("min", min),
-        ("atan2", atan2),
-        ("pow", powℝℝ)
+        ((Symbol "max"), max),
+        ((Symbol "min"), min),
+        ((Symbol "atan2"), atan2),
+        ((Symbol "pow"), powℝℝ)
     ]
 
-defaultFunctionsSpecial :: [(String, OVal)]
+defaultFunctionsSpecial :: [(Symbol, OVal)]
 defaultFunctionsSpecial =
     [
-        ("map", toOObj $ flip
+        ((Symbol "map"), toOObj $ flip
             (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
     ]
 
-defaultModules :: [(String, OVal)]
+defaultModules :: [(Symbol, OVal)]
 defaultModules =
     map (second OModule) primitives
 
 -- more complicated ones:
 
-defaultPolymorphicFunctions :: [(String, OVal)]
+defaultPolymorphicFunctions :: [(Symbol, OVal)]
 defaultPolymorphicFunctions =
     [
-        ("+", sumtotal),
-        ("sum", sumtotal),
-        ("*", prod),
-        ("prod", prod),
-        ("/", divide),
-        ("-", toOObj sub),
-        ("%", toOObj omod),
-        ("^", toOObj (powℝℝ :: ℝ -> ℝ -> ℝ)),
-        ("negate", toOObj negatefun),
-        ("index", toOObj index),
-        ("splice", toOObj osplice),
-        ("<", toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
-        (">", toOObj  ((>) :: ℝ -> ℝ -> Bool) ),
-        (">=", toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
-        ("<=", toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
-        ("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
-        ("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ),
-        ("?", toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
-        ("&&", toOObj (&&) ),
-        ("||", toOObj (||) ),
-        ("!", toOObj not ),
-        ("list_gen", toOObj list_gen),
-        ("++", concatenate),
-        ("len", toOObj olength),
-        ("str", toOObj (show :: OVal -> String))
+        ((Symbol "+"), sumtotal),
+        ((Symbol "sum"), sumtotal),
+        ((Symbol "*"), prod),
+        ((Symbol "prod"), prod),
+        ((Symbol "/"), divide),
+        ((Symbol "-"), toOObj sub),
+        ((Symbol "%"), toOObj omod),
+        ((Symbol "^"), toOObj (powℝℝ :: ℝ -> ℝ -> ℝ)),
+        ((Symbol "negate"), toOObj negatefun),
+        ((Symbol "index"), toOObj index),
+        ((Symbol "splice"), toOObj osplice),
+        ((Symbol "<"), toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol ">"), toOObj  ((>) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol ">="), toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol "<="), toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol "=="), toOObj ((==) :: OVal -> OVal -> Bool) ),
+        ((Symbol "!="), toOObj ((/=) :: OVal -> OVal -> Bool) ),
+        ((Symbol "?"), toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
+        ((Symbol "&&"), toOObj (&&) ),
+        ((Symbol "||"), toOObj (||) ),
+        ((Symbol "!"), toOObj not ),
+        ((Symbol "list_gen"), toOObj list_gen),
+        ((Symbol "++"), concatenate),
+        ((Symbol "len"), toOObj olength),
+        ((Symbol "str"), toOObj (show :: OVal -> String))
     ] where
 
         -- Some key functions are written as OVals in optimizations attempts
