@@ -12,7 +12,7 @@
 
 import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, snd, sequence, (.), concat, head, tail, sequence, length, (>), (/=), (+))
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol))
 
 import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_, mapM)
@@ -29,8 +29,8 @@ isArgument _ = False
 isBranch (Branch _) = True
 isBranch _ = False
 
-dumpPrimitive :: String -> [DocPart] -> Int -> IO ()
-dumpPrimitive moduleName moduleDocList level = do
+dumpPrimitive :: Symbol -> [DocPart] -> Int -> IO ()
+dumpPrimitive (Symbol moduleName) moduleDocList level = do
   let
     examples = filter isExample moduleDocList
     arguments = filter isArgument moduleDocList
@@ -71,7 +71,7 @@ dumpPrimitive moduleName moduleDocList level = do
             putStrLn "#Arguments:\n"
           else
             putStrLn "#Shared Arguments:\n"
-      forM_ arguments $ \(ArgumentDoc name posfallback description) ->
+      forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
         case (posfallback, description) of
           (Nothing, "") -> do
             putStrLn $ "   * `" ++ name  ++ "`"
@@ -90,7 +90,7 @@ dumpPrimitive moduleName moduleDocList level = do
       return ()
     else
       forM_ syntaxes $ \(Branch syntax) -> do
-        dumpPrimitive ("Syntax " ++ (show $ level+1)) syntax (level+1)
+        dumpPrimitive (Symbol $ "Syntax " ++ (show $ level+1)) syntax (level+1)
 
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
@@ -113,7 +113,7 @@ data Doc = Doc String [DocPart]
              deriving (Show)
 
 data DocPart = ExampleDoc String
-             | ArgumentDoc String (Maybe String) String
+             | ArgumentDoc Symbol (Maybe String) String
              | Branch [DocPart]
              | Empty
                deriving (Show, Eq)
@@ -130,7 +130,7 @@ getArgParserDocs ::
     (ArgParser a)      -- ^ ArgParser(s)
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
-getArgParserDocs (AP name fallback doc fnext) = do
+getArgParserDocs (AP  name fallback doc fnext) = do
   otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
   if (otherDocs /= [Empty])
     then

@@ -32,9 +32,9 @@ import Data.Char (toLower)
 import Data.Tuple (swap)
 
 -- Functions and types for dealing with the types used by runOpenscad.
--- Note that Map is different than the maps used by the prelude functions.
-import qualified Data.Map.Strict as Map (Map, lookup)
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum))
+
+-- The definition of the symbol type, so we can access variables, and see the requested resolution.
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn)
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
@@ -147,25 +147,25 @@ instance Read OutputFormat where
               else tryParse xs
 
 -- | Find the resolution to raytrace at.
-getRes :: (Map.Map String OVal, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
 -- | First, use a resolution specified by a variable in the input file.
-getRes (Map.lookup "$res" -> Just (ONum res), _, _) = res
+getRes (lookupVarIn "$res" -> Just (ONum res), _, _) = res
 -- | Use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
-getRes (varlookup, _, obj:_) =
+getRes (vars, _, obj:_) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
 -- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
-getRes (varlookup, obj:_, _) =
+getRes (vars, obj:_, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y) / 30)
 -- | fallthrough value.

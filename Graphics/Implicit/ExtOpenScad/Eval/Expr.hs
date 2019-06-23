@@ -10,7 +10,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
                                                   OVal(OList, OError, OFunc),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
-                                                  VarLookup)
+                                                  Symbol(Symbol),
+                                                  VarLookup(VarLookup))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
@@ -23,7 +24,7 @@ import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 import Control.Arrow (second)
 
 patVars :: Pattern -> [String]
-patVars (Name  name) = [name]
+patVars (Name  (Symbol name)) = [name]
 patVars (ListP pats) = concatMap patVars pats
 patVars _ = []
 
@@ -37,22 +38,22 @@ patMatch _ _ = Nothing
 
 matchPat :: Pattern -> OVal -> Maybe VarLookup
 matchPat pat val = do
-    let vars = patVars pat
+    let vars = map Symbol $ patVars pat
     vals <- patMatch pat val
-    return $ fromList $ zip vars vals
+    return $ VarLookup $ fromList $ zip vars vals
 
 evalExpr :: Expr -> StateC OVal
 evalExpr expr = do
-    varlookup  <- getVarLookup
-    (valf, _) <- liftIO $ runStateT (evalExpr' expr) (varlookup, [])
+    (VarLookup varlookup)  <- getVarLookup
+    (valf, _) <- liftIO $ runStateT (evalExpr' expr) ((VarLookup varlookup), [])
     return $ valf []
 
 evalExpr' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
 
-evalExpr' (Var   name ) = do
-    (varlookup, namestack) <- get
+evalExpr' (Var (Symbol name)) = do
+    ((VarLookup varlookup), namestack) <- get
     return $
-        case (lookup name varlookup, elemIndex name namestack) of
+        case (lookup (Symbol name) varlookup, elemIndex name namestack) of
             (_, Just pos) -> (!! pos)
             (Just val, _) -> const val
             _             -> const $ OError ["Variable " ++ name ++ " not in scope" ]

@@ -2,6 +2,9 @@
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use shorter forms of Var and Name.
+{-# LANGUAGE PatternSynonyms #-}
+
 module ParserSpec.Expr (exprSpec) where
 
 -- Be explicit about what we import.
@@ -11,7 +14,9 @@ import Prelude (Bool(True, False), ($))
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
 
 -- Parsed expression components.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)), Pattern(Name))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, (:$)), Symbol(Symbol))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
 -- The type used for variables, in ImplicitCAD.
 import Graphics.Implicit.Definitions (ℝ)
@@ -21,6 +26,10 @@ import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
+
+-- Let us use the old syntax when defining Vars and Names.
+pattern Var  s = GIED.Var  (Symbol s)
+pattern Name n = GIED.Name (Symbol n)
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"

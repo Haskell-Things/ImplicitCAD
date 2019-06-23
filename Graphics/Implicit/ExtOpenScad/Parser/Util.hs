@@ -18,7 +18,7 @@ import Text.Parsec.Prim (ParsecT, Stream)
 
 import Data.Functor.Identity (Identity)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP))
+import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), Symbol(Symbol))
 
 import Data.Kind (Type)
 
@@ -99,7 +99,7 @@ patternMatcher =
             else Nothing
     ) <|> -} ( do
         symb <- variableSymb
-        return $ Name symb
+        return $ Name (Symbol symb)
     ) <|> ( do
         _ <- char '['
         _ <- genSpace

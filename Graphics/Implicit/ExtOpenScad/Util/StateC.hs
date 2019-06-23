@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup,
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol)
 
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
@@ -33,9 +33,9 @@ modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
 modifyVarLookup = modify . (\f (CompState (a,b,c)) -> CompState (f a, b, c))
 
 -- | Perform a variable lookup
-lookupVar :: String -> StateC (Maybe OVal)
+lookupVar :: Symbol -> StateC (Maybe OVal)
 lookupVar name = do
-    varlookup <- getVarLookup
+    (VarLookup varlookup) <- getVarLookup
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
