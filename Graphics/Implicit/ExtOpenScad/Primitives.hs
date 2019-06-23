@@ -15,10 +15,13 @@
 -- For the type arithmatic involved in calling VectorSpace.
 {-# LANGUAGE TypeFamilies #-}
 
+-- to simplify polygon
+{-# LANGUAGE PatternGuards #-}
+
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
+import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn, otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -38,6 +41,8 @@ import Data.Maybe (isNothing)
 import Control.Monad (mplus)
 
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
+
+import Data.AffineSpace (distanceSq)
 
 default (ℝ)
 
@@ -213,13 +218,13 @@ circle = moduleWithoutSuite "circle" $ do
         else Prim.polygonR 0 $
             [(r*cos θ, r*sin θ )| θ <- [2*pi*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
 
+-- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
-                        `defaultTo` []
 {-    r      :: ℝ     <- argument "r"
                         `doc` "rounding of the polygon corners"
     paths  :: [ℕ]   <- argument "paths"
@@ -230,8 +235,30 @@ polygon = moduleWithoutSuite "polygon" $ do
         _ -> return $ return []
                         `defaultTo` 0
 -}
-    addObj2 $ Prim.polygonR 0 points
-
+    let
+      addPolyOrSquare pts
+        | [p1,p2,p3,p4] <- pts =
+          let
+            d1d2 = distanceSq p1 p2
+            d3d4 = distanceSq p3 p4
+            d1d3 = distanceSq p1 p3
+            d2d4 = distanceSq p2 p4
+            d1d4 = distanceSq p1 p4
+            d2d3 = distanceSq p2 p3
+            isGridAligned :: ℝ2 -> ℝ2 -> Bool
+            isGridAligned (x1, y1) (x2, y2) = x1 == x2 || y1 == y2
+          -- | Rectangles have no overlapping points,
+          --   the distance on each side is equal to it's opposing side,
+          --   and the distance between the pairs of opposing corners are equal.
+          in if ((p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
+                 && (d1d2==d3d4 && d1d3==d2d4)
+                 && (d1d4==d2d3))
+             then if isGridAligned p1 p2
+                  then Prim.rectR 0 p1 p3
+                  else Prim.polygonR 0 pts
+             else Prim.polygonR 0 pts
+        | otherwise = Prim.polygonR 0 points
+    addObj2 $ addPolyOrSquare points
 union :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 union = moduleWithSuite "union" $ \children -> do
     r :: ℝ <- argument "r"
