@@ -45,7 +45,8 @@ default (ℝ)
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
--- | The only thing exported here. basically, a list of functions, which accept OVal arguments and retrun an ArgParser ?
+-- | The only thing exported here. basically, a list of functions, which accept OVal arguments and return an ArgParser ?
+-- | FIXME: allow for these to fail, and return a failure condition.
 primitives :: [(Symbol, [OVal] -> ArgParser (IO [OVal]))]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
@@ -67,6 +68,8 @@ sphere = moduleWithoutSuite "sphere" $ do
     -- (Graphics.Implicit.Primitives)
     addObj3 $ Prim.sphere r
 
+-- | FIXME: square1, square2 like cylinder has?
+-- | FIXME: translate for square2?
 cube :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 cube = moduleWithoutSuite "cube" $ do
     -- examples
@@ -287,6 +290,7 @@ deg2rad :: ℝ -> ℝ
 deg2rad x = x / 180 * pi
 
 -- This is mostly insane
+-- | FIXME: rotating a module that is not found returns no geometry, instead of an error.
 rotate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 rotate = moduleWithSuite "rotate" $ \children -> do
     a <- argument "a"
