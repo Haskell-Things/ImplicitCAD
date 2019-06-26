@@ -30,7 +30,7 @@ runOpenscad :: LanguageOpts -> String -> IO (VarLookup, [SymbolicObj2], [Symboli
 runOpenscad languageOpts source =
     let
         initial =  defaultObjects
-        rearrange :: forall t. (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+        rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
         rearrange (_, (CompState (varlookup, ovals, _, _, messages))) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
         parseProgram = if alternateParser languageOpts then Alt.parseProgram else Orig.parseProgram
