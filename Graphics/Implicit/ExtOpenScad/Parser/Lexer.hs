@@ -1,10 +1,12 @@
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (lexer, matchTok, matchTrue, matchFalse, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
 
-import Control.Monad.Identity;
-import Text.Parsec.Token
-import Text.ParserCombinators.Parsec  hiding (State)
-import qualified Text.ParserCombinators.Parsec.Token as P
-import Text.ParserCombinators.Parsec.Language
+-- Be explicit about what we import.
+import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
+import Control.Monad.Identity (Identity)
+import Text.Parsec.Token (GenTokenParser, makeTokenParser)
+import Text.ParserCombinators.Parsec (GenParser, (<|>), char, letter, alphaNum, (<?>), many1, digit, oneOf)
+import qualified Text.ParserCombinators.Parsec.Token as P (whiteSpace, reserved, naturalOrFloat, identifier, stringLiteral, reservedOp, lexeme, symbol)
+import Text.ParserCombinators.Parsec.Language (GenLanguageDef, emptyDef, commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
 
 -- The token parsers are in roughly the same order as the OpenSCAD lexer.l Flex source, to make it easier to compare them.
 

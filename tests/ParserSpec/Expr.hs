@@ -2,6 +2,9 @@
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use shorter forms of Var and Name.
+{-# LANGUAGE PatternSynonyms #-}
+
 module ParserSpec.Expr (exprSpec) where
 
 
@@ -9,13 +12,15 @@ module ParserSpec.Expr (exprSpec) where
 import Prelude (Bool(True, False), ($))
 
 -- TODO remove tracing
-import Debug.Trace
+import Debug.Trace(trace)
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
 
 -- Parsed expression components.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, ListE, (:$)), Pattern(Name))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, (:$)), Symbol(Symbol))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
 -- The type used for variables, in ImplicitCAD.
 import Graphics.Implicit.Definitions (ℝ)
@@ -23,14 +28,16 @@ import Graphics.Implicit.Definitions (ℝ)
 -- Our utility library, for making these tests easier to read.
 import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver, parseAltExpr, origParseExpr)
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
-import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
-import Graphics.Implicit.ExtOpenScad.Parser.Statement
+import qualified Graphics.Implicit.ExtOpenScad.Parser.AltExpr as ALT (expr0)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as ORIG (expr0)
 import Text.ParserCombinators.Parsec hiding (State)
-import Data.Either
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
+
+-- Let us use the old syntax when defining Vars and Names.
+pattern Var  s = GIED.Var  (Symbol s)
+pattern Name n = GIED.Name (Symbol n)
 
 -- to choose which expression parser to test, change enableAlternateParser to True or False
 enableAlternateParser = True
@@ -51,8 +58,8 @@ parseExpr =
 
 testParser =
     if enableAlternateParser
-    then trace ("altExpr") altExpr
-    else trace ("origExpr") expr0
+    then trace ("altExpr") ALT.expr0
+    else trace ("origExpr") ORIG.expr0
 
 originalParserAdditionAstStyle :: Expectation -> Expectation
 originalParserAdditionAstStyle a =
@@ -121,13 +128,13 @@ letBindingSpec = do
     experimentalParserAstStyle $
       "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles empty let" $
-    "let () a" --> (Var "a")
+    "let () a" --> Var "a"
   it "handles nested let" $ do
     originalParserAdditionAstStyle $
       "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
     experimentalParserAstStyle $
       "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles let on right side of a binary operator" $ do
+  it "handles let on right side of an arithmatic operator" $ do
     originalParserAdditionAstStyle $
       "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
     experimentalParserAstStyle $

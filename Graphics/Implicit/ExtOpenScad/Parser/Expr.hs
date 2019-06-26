@@ -2,7 +2,10 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- a parser for a numeric expression.
+-- Allow us to use shorter forms of Var and Name.
+{-# LANGUAGE PatternSynonyms #-}
+
+-- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
 import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
@@ -10,9 +13,15 @@ import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(T
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(Var, LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Pattern(Name))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Symbol(Symbol))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString)
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
+
+import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString, padChar)
+
+-- Let us use the old syntax when defining Vars and Names.
+pattern Var  s = GIED.Var  (Symbol s)
+pattern Name n = GIED.Name (Symbol n)
 
 variable :: GenParser Char st Expr
 variable = fmap Var variableSymb
@@ -69,7 +78,7 @@ literal = ("literal" ?:) $
             return . LitE $ ONum $ read a
         )
      *<|> "string" ?: do
-        _ <- string "\""
+        _ <- char '"'
         strlit <-  many $ (string "\\\"" >> return '\"')
                      *<|> (string "\\n" >> return '\n')
                      *<|> (string "\\r" >> return '\r')
@@ -77,25 +86,25 @@ literal = ("literal" ?:) $
                      *<|> (string "\\\\" >> return '\\')
                       -- FIXME: no \u unicode support?
                      *<|> noneOf "\"\n"
-        _ <- string "\""
+        _ <- char '"'
         return . LitE $ OString strlit
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
   _ <- string "let"
   _ <- genSpace
-  _ <- string "("
+  _ <- char '('
   _ <- genSpace
   bindingPairs <- sepBy ( do
     _ <- genSpace
     boundName <- variableSymb
     _ <- genSpace
-    _ <- string "="
+    _ <- char '='
     _ <- genSpace
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
-  _ <- string ")"
+  _ <- char ')'
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
       bindLets _ e = e
@@ -118,29 +127,29 @@ exprN A12 =
     *<|> variable
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )
-        _ <- string "("
+        _ <- char '('
         expr <- expr0
-        _ <- string ")"
+        _ <- char ')'
         return expr
     *<|> "vector/list" ?: (
         do
             -- eg. [ 3, a, a+1, b, a*b ]
-            _ <- string "["
+            _ <- char '['
             exprs <- sepBy expr0 (char ',' )
-            _ <- string "]"
+            _ <- char ']'
             return $ ListE exprs
         *<|> do
             -- eg. ( 1,2,3 )
-            _ <- string "("
+            _ <- char '('
             exprs <- sepBy expr0 (char ',' )
-            _ <- string ")"
+            _ <- char ')'
             return $ ListE exprs
         )
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
-        _ <- string "["
+        _ <- char '['
         exprs <- sepBy expr0 (char ':' )
-        _ <- string "]"
+        _ <- char ']'
         return $ collector "list_gen" exprs
 
 exprN A11 =
@@ -149,21 +158,21 @@ exprN A11 =
         _ <- genSpace
         mods <- many1 (
             "function application" ?: do
-                _ <- padString "("
-                args <- sepBy expr0 (padString ",")
-                _ <- padString ")"
+                _ <- padChar '('
+                args <- sepBy expr0 (padChar ',')
+                _ <- padChar ')'
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
-                _ <- padString "["
+                _ <- padChar '['
                 i <- expr0
-                _ <- padString "]"
+                _ <- padChar ']'
                 return $ \l -> Var "index" :$ [l, i]
             *<|> "list splicing" ?: do
-                _ <- padString "["
+                _ <- padChar '['
                 start <- optionMaybe expr0
-                _ <- padString ":"
+                _ <- padChar ':'
                 end   <- optionMaybe expr0
-                _ <- padString "]"
+                _ <- padChar ']'
                 return $ case (start, end) of
                     (Nothing, Nothing) -> id
                     (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
@@ -176,11 +185,11 @@ exprN A11 =
 -- match a leading (+) or (-) operator.
 exprN A10 =
     "negation" ?: do
-        _ <- padString "-"
+        _ <- padChar '-'
         expr <- exprN A11
         return $ Var "negate" :$ [expr]
     *<|> do
-        _ <- padString "+"
+        _ <- padChar '+'
         exprN A11
     *<|> exprN A11
 
@@ -188,7 +197,7 @@ exprN A10 =
 exprN A9 =
     "exponentiation" ?: do
         a <- exprN A10
-        _ <- padString "^"
+        _ <- padChar '^'
         b <- exprN A9
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
@@ -200,8 +209,8 @@ exprN A8 =
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN A9) (try $ padString "/" ))
-            (try $ padString "*" )
+            (sepBy1 (exprN A9) (try $ padChar '/' ))
+            (try $ padChar '*' )
         let div' a b = Var "/" :$ [a, b]
         return . collector "*" $ map (foldl1 div') exprs
     *<|> exprN A9
@@ -209,7 +218,7 @@ exprN A8 =
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN  A8) (try $ padString "%")
+        exprs <- sepBy1 (exprN  A8) (try $ padChar '%')
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
@@ -228,8 +237,8 @@ exprN A5 =
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN A6) (try $ padString "-" ))
-            (try $ padString "+" )
+            (sepBy1 (exprN A6) (try $ padChar '-' ))
+            (try $ padChar '+' )
         let sub a b = Var "-" :$ [a, b]
         return . collector "+" $ map (foldl1 sub) exprs
     *<|> exprN A6
@@ -260,7 +269,7 @@ exprN A4 =
 -- match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
-        _ <- padString "!"
+        _ <- padChar '!'
         a <- exprN A4
         return $ Var "!" :$ [a]
     *<|> exprN A4
@@ -279,9 +288,9 @@ exprN A2 =
 exprN A1 =
     "ternary" ?: do
         a <- exprN A2
-        _ <- padString "?"
+        _ <- padChar '?'
         b <- exprN A1
-        _ <- padString ":"
+        _ <- padChar ':'
         c <- exprN A1
         return $ Var "?" :$ [a,b,c]
     *<|> exprN A2

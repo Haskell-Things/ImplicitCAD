@@ -1,24 +1,34 @@
-module Graphics.Implicit.ExtOpenScad.Parser.AltStatement (
-    parseProgram,
-    altParseProgram
-) where
 
-import Data.Maybe
-import Text.ParserCombinators.Parsec  hiding (State)
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer
-import Graphics.Implicit.ExtOpenScad.Parser.AltExpr
+-- Enable explicit-forall syntax.
+{-# LANGUAGE ExplicitForAll #-}
+
+module Graphics.Implicit.ExtOpenScad.Parser.AltStatement (parseProgram) where
+
+import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
+
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
+
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchEach, matchLet, matchTok, identifier, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor)
+
+import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
+
 import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
+
+import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+
+import Text.ParserCombinators.Parsec (GenParser, SourceName, ParseError, getPosition, between, skipMany1, sepBy, (<|>), try, sepEndBy, many, optionMaybe, many1, eof, parse)
+
+import Text.Parsec.Prim (ParsecT)
+
+import Data.Functor.Identity (Identity)
 
 -- In general, the grammar is predictive and requires no more than one character of lookahead,
 -- except when differentiating between keywords and identifiers.
 -- Or at least, that is the goal. exceptions are documented.
 
-altParseProgram :: SourceName -> String -> Either ParseError [StatementI]
-altParseProgram = parseProgram
-
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
+    program :: ParsecT String st Identity [StatementI]
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
          -- This leaves us to deal only with the first spaces in the file.
@@ -50,7 +60,7 @@ statement =
         moduleName <- identifier
         argDecls   <- surroundedBy '(' moduleParametersDeclaration ')'
         stmt       <- statements
-        returnStatement $ NewModule moduleName argDecls stmt
+        returnStatement $ NewModule (Symbol moduleName) argDecls stmt
     <|> do -- user function declaration, e.g. "function foo(a, b = [1,2]) a;
         _          <- matchFunction
         funcName   <- identifier
@@ -58,10 +68,11 @@ statement =
         _          <- matchTok '='
         funcExpr   <- expression
         _          <- oneOrMoreSemis
-        returnStatement $ NewFunction funcName argDecls funcExpr
+        returnStatement $ NewFunction (Symbol funcName) argDecls funcExpr
     <|>
         ifStatement
 
+ifStatement :: ParsecT String st Identity StatementI
 ifStatement = do
     _          <- matchIf
     condition  <- surroundedBy '(' expression ')'
@@ -78,7 +89,7 @@ ifStatement = do
 moduleInstantiationOrAssignment :: GenParser Char st StatementI
 moduleInstantiationOrAssignment = do
         ident <- identifier
-        moduleInstantiationTail ident <|> assignment ident
+        moduleInstantiationTail ident <|> assignment (Symbol ident)
     <|> do
         _ <- matchFor
         moduleInstantiationTail "for"
@@ -98,33 +109,36 @@ assignment ident =
     _     <- oneOrMoreSemis
     returnStatement $ Name ident := expr
 
+moduleFlag :: forall st b. Char -> ParsecT String st Identity b -> ParsecT String st Identity b
+moduleFlag tok inst = matchTok tok >> inst
+
 flaggedModuleInstantiation :: GenParser Char st StatementI
 flaggedModuleInstantiation = do
-        moduleFlag '!' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '!' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '#' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '#' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '%' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '%' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '*' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '*' maybeFlaggedModuleInstantiation
         returnDoNothing
-    where moduleFlag tok inst = matchTok tok >> inst
+
 
 maybeFlaggedModuleInstantiation :: GenParser Char st StatementI
 maybeFlaggedModuleInstantiation = do
-        moduleFlag '!' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '!' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '#' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '#' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '%' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '%' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleFlag '*' maybeFlaggedModuleInstantiation
+        _ <- moduleFlag '*' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
         moduleName <- identifier
@@ -139,15 +153,14 @@ maybeFlaggedModuleInstantiation = do
         _ <- matchLet
         moduleInstantiationTail "let"
     <|> do
-        ifStatement
+        _ <- ifStatement
         returnDoNothing
-    where moduleFlag tok inst = matchTok tok >> inst
 
-moduleInstantiationTail :: Symbol -> GenParser Char st StatementI
+moduleInstantiationTail :: String -> GenParser Char st StatementI
 moduleInstantiationTail moduleName = do
     arguments  <- surroundedBy '(' moduleCallArguments ')'
     child      <- childStatement
-    returnStatement $ ModuleCall moduleName arguments $ removeNoOps [child]
+    returnStatement $ ModuleCall (Symbol moduleName) arguments $ removeNoOps [child]
 
 moduleParametersDeclaration :: GenParser Char st [(Symbol, Maybe Expr)]
 moduleParametersDeclaration = sepEndBy moduleParameterDeclaration oneOrMoreCommas
@@ -156,8 +169,9 @@ moduleParameterDeclaration :: GenParser Char st (Symbol, Maybe Expr)
 moduleParameterDeclaration = do
     parameterName <- identifier
     defaultExpr   <- optionMaybe defaultExpression
-    return (parameterName, defaultExpr)
+    return ((Symbol parameterName), defaultExpr)
     where
+        defaultExpression :: ParsecT String u Identity Expr
         defaultExpression =
               lambdaDeclaration
           <|> (matchTok '=' >> expression)
@@ -169,8 +183,10 @@ argumentDeclaration :: GenParser Char st (Symbol, Maybe Expr)
 argumentDeclaration = do
     parameterName <- identifier
     defaultExpr   <- optionMaybe defaultValueExpression
-    return (parameterName, defaultExpr)
-    where defaultValueExpression = matchTok '=' >> expression
+    return ((Symbol parameterName), defaultExpr)
+    where
+        defaultValueExpression :: ParsecT String st Identity Expr
+        defaultValueExpression = matchTok '=' >> expression
 
 childStatements :: GenParser Char st [StatementI]
 childStatements = removeNoOps <$> many innerChildStatement
@@ -181,8 +197,8 @@ childStatement =
         _ <- oneOrMoreSemis
         returnDoNothing
     <|> do
-        statements <- surroundedBy '{' childStatements '}'
-        returnStatement $ Sequence statements
+        subStatements <- surroundedBy '{' childStatements '}'
+        returnStatement $ Sequence subStatements
     <|>
         maybeFlaggedModuleInstantiation
 
@@ -192,8 +208,8 @@ innerChildStatement =
         _ <- oneOrMoreSemis
         returnDoNothing
     <|> do
-        statements <- surroundedBy '{' childStatements '}'
-        returnStatement $ Sequence statements
+        subStatements <- surroundedBy '{' childStatements '}'
+        returnStatement $ Sequence subStatements
     <|>
         moduleInstantiationOrAssignment
     <|> -- module instantiations with '!', '#', '%', '*' prefixes
@@ -216,10 +232,10 @@ moduleCallArgument =
         do
             _        <- matchTok '='
             argValue <- expression
-            return (Just paramName, argValue)
+            return (Just (Symbol paramName), argValue)
          <|> do
             lambda <- lambdaDeclaration
-            return (Just paramName, lambda))
+            return (Just (Symbol paramName), lambda))
     <|> do
         argValue  <- expression
         return (Nothing, argValue)
@@ -231,11 +247,13 @@ lambdaDeclaration = do
     lambdaExpr <- expression
     return $ LamE lambdaArgs lambdaExpr
 
+lambdaFormalParameters :: GenParser Char st [Pattern]
 lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
     where
+        symbol :: ParsecT String st Identity Pattern
         symbol = do
             ident <- identifier
-            return $ Name ident
+            return $ Name (Symbol ident)
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
@@ -258,10 +276,10 @@ returnStatement ast = do
 
 removeNoOps :: [StatementI] -> [StatementI]
 removeNoOps [] = []
-removeNoOps a@(StatementI _ (Sequence []):sts) = removeNoOps sts
-removeNoOps a@(StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
-removeNoOps a@(StatementI _ DoNothing:sts) = removeNoOps sts
+removeNoOps (StatementI _ (Sequence []):sts) = removeNoOps sts
+removeNoOps (StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
+removeNoOps (StatementI _ DoNothing:sts) = removeNoOps sts
 removeNoOps (st:sts) = st : removeNoOps sts
 
 expression :: GenParser Char st Expr
-expression = altExpr
+expression = expr0

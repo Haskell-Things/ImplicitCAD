@@ -14,9 +14,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name),
                                                   Expr(LitE),
                                                   OVal(OString, OBool, OList, OModule, OVargsModule),
-                                                  VarLookup,
+                                                  VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   CompState(CompState),
+                                                  Symbol(Symbol),
                                                   LanguageOpts
                                                  )
 
@@ -26,7 +27,6 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, errorC, modifyVarLooku
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
-import Data.Maybe(fromMaybe)
 
 import Data.Map (union, fromList)
 
@@ -36,6 +36,10 @@ import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
 
+-- helper, to use union on VarLookups.
+varUnion :: VarLookup -> VarLookup -> VarLookup
+varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
+
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
@@ -44,7 +48,7 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
-        (_, Just match) -> modifyVarLookup $ union match
+        (_, Just match) -> modifyVarLookup $ varUnion match
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
 runStatementI (StatementI sourcePos (Echo exprs)) = do
@@ -63,7 +67,7 @@ runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
         (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
-                    modifyVarLookup $ union match
+                    modifyVarLookup $ varUnion match
                     runSuite loopContent
                 Nothing -> return ()
         _ -> return ()
@@ -81,7 +85,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (varlookup, _, path, langOpts, _)) <- get
+    (CompState (VarLookup varlookup, _, path, langOpts, _)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -107,12 +111,12 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals  = runSuiteCapture varlookup' path langOpts suite
+            suiteVals  = runSuiteCapture (VarLookup varlookup') path langOpts suite
         return suiteVals
 
-runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
+runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
         opts <- languageOptions
-        maybeMod  <- lookupVar name
+        maybeMod  <- lookupVar (Symbol name)
         (CompState (varlookup, _, path, _, _)) <- get
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
@@ -126,8 +130,8 @@ runStatementI (StatementI sourcePos (ModuleCall name argsExpr suite)) = do
                         Just iovals -> iovals
                         Nothing     -> return []
                 liftIO ioNewVals
-            Just (OVargsModule name mod') -> do
-                _ <- mod' name sourcePos argsVal suite runSuite -- no values are returned
+            Just (OVargsModule modname mod') -> do
+                _ <- mod' modname sourcePos argsVal suite runSuite -- no values are returned
                 return []
             Just foo            -> do
                     case getErrors foo of
@@ -170,5 +174,5 @@ runSuiteCapture varlookup path opts suite = do
         (CompState (varlookup, [], path, opts, []))
     return res
 
-runSuiteInModule :: FilePath -> LanguageOpts -> [StatementI] -> VarLookup -> IO [OVal]
-runSuiteInModule path opts suite varlookup = runSuiteCapture varlookup path opts suite
+--runSuiteInModule :: FilePath -> LanguageOpts -> [StatementI] -> VarLookup -> IO [OVal]
+--runSuiteInModule path opts suite varlookup = runSuiteCapture varlookup path opts suite

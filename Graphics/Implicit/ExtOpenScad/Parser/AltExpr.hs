@@ -1,14 +1,31 @@
-module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0, altExpr) where
+-- Allow us to use a shorter form of Var.
+{-# LANGUAGE PatternSynonyms #-}
 
-import Control.Monad.Fix
-import Text.ParserCombinators.Parsec  hiding (State)
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer
+-- Enable explicit-forall syntax.
+{-# LANGUAGE ExplicitForAll #-}
+
+module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0) where
+
+import Prelude (Char, String, Bool(True, False), Either(Left, Right), ($), return, id, foldr, fromIntegral)
+
+import Control.Monad.Fix(fix)
+
+import Text.ParserCombinators.Parsec (GenParser, (<|>), sepBy, between, chainl1, chainr1)
+
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)), Symbol(Symbol), Pattern (Name), OVal(OBool, OUndefined, ONum, OString))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
+
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTok, identifier, matchTrue, matchFalse, matchUndef, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet)
+
+import Text.Parsec.Prim (ParsecT)
+
+import Data.Functor.Identity (Identity)
+
+-- Let us use the old syntax when defining Vars.
+pattern Var n = GIED.Var (Symbol n)
 
 -- TODO use the more helpful parser combinators like option, optional, between.
-
-altExpr :: GenParser Char st Expr
-altExpr = expr0
 
 expr0 :: GenParser Char st Expr
 expr0 = expr
@@ -49,6 +66,7 @@ nonAssociativeExpr = do -- boolean true
 expr :: GenParser Char st Expr
 expr = foldr ($) nonAssociativeExpr levels
     where
+        levels :: [ParsecT String u Identity Expr -> ParsecT String u Identity Expr]
         levels =
           [ id
 
@@ -188,7 +206,7 @@ assignment = do
 
 -- build nested let statements when foldr'd.
 bindLets :: Expr -> Expr -> Expr
-bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
+bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name (Symbol boundName)] nestedExpr :$ [boundExpr]
 bindLets _ e = e
 
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a

@@ -9,7 +9,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap, Maybe(Just, Nothing), show, return)
+import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, LanguageOpts, Message(Message), MessageType(SyntaxError), alternateParser)
@@ -20,14 +20,10 @@ import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (CompState(CompState))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
+import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages)
 import Control.Monad (mapM_)
 import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
-import Text.ParserCombinators.Parsec(errorPos)
-import qualified Text.Parsec.Error as Err (errorPos, errorMessages, showErrorMessages)
-import qualified Control.Monad as Monad (mapM_)
-import qualified Control.Monad.State as State (runStateT)
-import qualified System.Directory as Dir (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: LanguageOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
@@ -39,10 +35,10 @@ runOpenscad languageOpts source =
                                   (obj2s, obj3s, _) = divideObjs ovals
         parseProgram = if alternateParser languageOpts then Alt.parseProgram else Orig.parseProgram
         show' err
-            = Err.showErrorMessages "or" "unknown parse error"
+            = showErrorMessages "or" "unknown parse error"
                                 "expecting" "unexpected" "end of input"
-                               (Err.errorMessages err)
-        mesg e = Message SyntaxError (sourcePosition $ Err.errorPos e) $ show' e
+                               (errorMessages err)
+        mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
     in case parseProgram "" source of
         Left e -> return (initial, [], [], [mesg e])
         Right sts -> fmap rearrange

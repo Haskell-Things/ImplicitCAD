@@ -8,7 +8,7 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, tryMany, variableSymb, patternMatcher, sourcePosition) where
+module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, padChar, tryMany, variableSymb, patternMatcher, sourcePosition) where
 
 import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
 
@@ -20,7 +20,7 @@ import Text.Parsec.Prim (ParsecT, Stream)
 
 import Data.Functor.Identity (Identity)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), SourcePosition(SourcePosition))
+import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), SourcePosition(SourcePosition), Symbol(Symbol))
 
 import Graphics.Implicit.Definitions (toFastℕ)
 
@@ -75,6 +75,14 @@ padString s = do
     _ <- genSpace
     return s'
 
+-- a padded character
+padChar :: Char -> ParsecT String u Identity Char
+padChar s = do
+    _ <- genSpace
+    s' <- char s
+    _ <- genSpace
+    return s'
+
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . map try
 
@@ -95,7 +103,7 @@ patternMatcher =
             else Nothing
     ) <|> -} ( do
         symb <- variableSymb
-        return $ Name symb
+        return $ Name (Symbol symb)
     ) <|> ( do
         _ <- char '['
         _ <- genSpace

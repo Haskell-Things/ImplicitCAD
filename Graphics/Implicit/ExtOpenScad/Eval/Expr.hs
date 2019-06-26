@@ -2,15 +2,21 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use a shorter form of Name and Var.
+{-# LANGUAGE PatternSynonyms #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
 import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Pattern(Name, ListP, Wild),
+                                                  Pattern(ListP, Wild),
                                                   OVal(OList, OError, OFunc),
-                                                  Expr(LitE, Var, ListE, LamE, (:$)),
-                                                  VarLookup)
+                                                  Expr(LitE, ListE, LamE, Var, (:$)),
+                                                  Symbol(Symbol),
+                                                  VarLookup(VarLookup))
+
+import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
@@ -21,6 +27,9 @@ import Control.Monad (zipWithM, mapM, forM)
 import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
 import Control.Arrow (second)
+
+-- Let us use the old syntax when defining Names.
+pattern Name n = GIED.Name (Symbol n)
 
 patVars :: Pattern -> [String]
 patVars (Name  name) = [name]
@@ -37,22 +46,22 @@ patMatch _ _ = Nothing
 
 matchPat :: Pattern -> OVal -> Maybe VarLookup
 matchPat pat val = do
-    let vars = patVars pat
+    let vars = map Symbol $ patVars pat
     vals <- patMatch pat val
-    return $ fromList $ zip vars vals
+    return $ VarLookup $ fromList $ zip vars vals
 
 evalExpr :: Expr -> StateC OVal
 evalExpr expr = do
-    varlookup  <- getVarLookup
-    (valf, _) <- liftIO $ runStateT (evalExpr' expr) (varlookup, [])
+    (VarLookup varlookup)  <- getVarLookup
+    (valf, _) <- liftIO $ runStateT (evalExpr' expr) ((VarLookup varlookup), [])
     return $ valf []
 
 evalExpr' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
 
-evalExpr' (Var   name ) = do
-    (varlookup, namestack) <- get
+evalExpr' (Var (Symbol name)) = do
+    ((VarLookup varlookup), namestack) <- get
     return $
-        case (lookup name varlookup, elemIndex name namestack) of
+        case (lookup (Symbol name) varlookup, elemIndex name namestack) of
             (_, Just pos) -> (!! pos)
             (Just val, _) -> const val
             _             -> const $ OError ["Variable " ++ name ++ " not in scope" ]
@@ -63,17 +72,17 @@ evalExpr' (ListE exprs) = do
     valFuncs <- mapM evalExpr' exprs
     return $ \s -> OList $ map ($s) valFuncs
 
-evalExpr' (Var "+" :$ [ListE argExprs]) =
-    evalExpr'' $ Var "+" :$ [ListE argExprs]
+evalExpr' (Var (Symbol "+") :$ [ListE argExprs]) =
+    evalExpr'' $ Var (Symbol "+") :$ [ListE argExprs]
 
-evalExpr' (Var "+" :$ argExprs) =
-    evalExpr'' $ Var "+" :$ [ListE argExprs]
+evalExpr' (Var (Symbol "+") :$ argExprs) =
+    evalExpr'' $ Var (Symbol "+") :$ [ListE argExprs]
 
-evalExpr' (Var "*" :$ [ListE argExprs]) =
-    evalExpr'' $ Var "*" :$ [ListE argExprs]
+evalExpr' (Var (Symbol "*") :$ [ListE argExprs]) =
+    evalExpr'' $ Var (Symbol "*") :$ [ListE argExprs]
 
-evalExpr' (Var "*" :$ argExprs) =
-    evalExpr'' $ Var "*" :$ [ListE argExprs]
+evalExpr' (Var (Symbol "*") :$ argExprs) =
+    evalExpr'' $ Var (Symbol "*") :$ [ListE argExprs]
 
 evalExpr' (fexpr :$ argExprs) = evalExpr'' (fexpr :$ argExprs)
 
@@ -86,6 +95,7 @@ evalExpr' (LamE pats fexpr) = do
     fval <- evalExpr' fexpr
     return $ foldr ($) fval fparts
 
+evalExpr'' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
 evalExpr'' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
     argValFuncs <- mapM evalExpr' argExprs
@@ -98,6 +108,9 @@ evalExpr'' (fexpr :$ argExprs) = do
                     app' x _ = OError ["Can't apply arguments to " ++ oTypeStr x]
                 (Just err, _     ) -> OError [err]
                 (_,      Just err) -> OError [err]
+
+evalExpr'' _ = do
+    return $ \_ -> OError ["Fallthrough in expression parser."]
 
 --------------
 

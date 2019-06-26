@@ -41,8 +41,8 @@ import Prelude (Bool, String, Either, (<), ($), (.), (<*), otherwise)
 -- The datatype of positions in our world.
 import Graphics.Implicit.Definitions (ℝ)
 
--- The datatype of expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), OVal(ONum, OBool, OString), Pattern)
+-- Expressions, symbols, and values in the OpenScad language.
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), Symbol(Symbol), OVal(ONum, OBool, OString), Pattern)
 
 import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
 
@@ -53,23 +53,23 @@ import Test.Hspec (Expectation, shouldBe)
 import Data.Either (Either(Right))
 
 -- The expression parser entry point.
-import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as ORIG (expr0)
 
 -- The alternative parser entry point.
-import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
+import Graphics.Implicit.ExtOpenScad.Parser.AltExpr as ALT (expr0)
 
 
 -- An operator for expressions for "the left side should parse to the right side."
 infixr 1 -->
 (-->) :: String -> Expr -> Expectation
 (-->) source expr =
-  parse (expr0 <* eof) "<expr>" source `shouldBe` Right expr
+  parse (ORIG.expr0 <* eof) "<expr>" source `shouldBe` Right expr
 
 -- An operator for expressions for "the left side should parse to the right side, and some should be left over".
 infixr 1 -->+
 (-->+) :: String -> (Expr, String) -> Expectation
 (-->+) source (result, leftover) =
-  parseWithLeftOver expr0 source `shouldBe` Right (result, leftover)
+  parseWithLeftOver ORIG.expr0 source `shouldBe` Right (result, leftover)
 
 -- | Types
 
@@ -107,8 +107,8 @@ append = fapp "++"
 
 -- | We need two different kinds of application functions, one for operators, and one for functions.
 oapp,fapp :: String -> [Expr] -> Expr
-oapp name args = Var name :$ args
-fapp name args = Var name :$ [ListE args]
+oapp name args = Var (Symbol name) :$ args
+fapp name args = Var (Symbol name) :$ [ListE args]
 
 lambda :: [Pattern] -> Expr -> [Expr] -> Expr
 lambda params expr args = LamE params expr :$ args
@@ -123,7 +123,7 @@ parseWithEof :: Parser a -> String -> String -> Either ParseError a
 parseWithEof p = parse (p <* eof)
 
 origParseExpr :: String -> Either ParseError Expr
-origParseExpr = parseWithEof expr0 "expr"
+origParseExpr = parseWithEof ORIG.expr0 "expr"
 
 parseAltExpr :: String -> Either ParseError Expr
-parseAltExpr = parseWithEof altExpr "altexpr"
+parseAltExpr = parseWithEof ALT.expr0 "altexpr"

@@ -3,14 +3,13 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample),
-                                                  Symbol,
+                                                  Symbol(Symbol),
                                                   Pattern(Wild, Name, ListP),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
                                                   OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OVargsModule, OObj2, OObj3),
-                                                  VarLookup,
-                                                  FStack,
+                                                  VarLookup(VarLookup),
                                                   CompState(CompState),
                                                   StateC,
                                                   TestInvariant(EulerCharacteristic),
@@ -20,18 +19,20 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   MessageType(..),
                                                   sourceLine,
                                                   sourceColumn,
+                                                  sourceName,
                                                   openScadCompatibility,
                                                   alternateParser,
+                                                  lookupVarIn,
                                                   collector) where
 
-import Prelude(Eq, Show, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
-import Data.Map (Map)
+import Data.Map (Map, lookup)
 import Control.Monad.State (StateT)
 
 -- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
@@ -43,7 +44,7 @@ type StateC = StateT CompState IO
 data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
-                 = AP String (Maybe OVal) String (OVal -> ArgParser a)
+                 = AP Symbol (Maybe OVal) String (OVal -> ArgParser a)
                  -- | For returns:
                  --   ArgParserTerminator (return value)
                  | APTerminator a
@@ -89,7 +90,10 @@ instance Alternative ArgParser where
         (<|>) = mplus
         empty = mzero
 
-type Symbol = String
+newtype Symbol = Symbol String
+  deriving (Show, Eq, Ord)
+
+newtype VarLookup = VarLookup (Map Symbol OVal)
 
 data Pattern = Name Symbol
              | ListP [Pattern]
@@ -153,10 +157,7 @@ instance Show OVal where
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
-type VarLookup = Map String OVal
-type FStack = [OVal]
-
--- in order to not propagate Parsec or other classes around, create our own source position type for the AST.
+-- In order to not propagate Parsec or other classes around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
     { sourceLine :: Fastℕ
     , sourceColumn :: Fastℕ
@@ -197,9 +198,16 @@ instance Show LanguageOpts where
         ", openScadCompatibility: " ++
         show openScadCompat
 
-collector :: Symbol -> [Expr] -> Expr
+-- | Apply a symbolic operator to a list of expressions, returning one big expression.
+--   Accepts a string for the operator, to simplify callers.
+collector :: String -> [Expr] -> Expr
 collector _ [x] = x
-collector s  l  = Var s :$ [ListE l]
+collector s  l  = Var (Symbol s) :$ [ListE l]
+{-# INLINABLE collector #-}
+
+-- | For programs using this API to perform variable lookups, after execution of an escad has completed.
+lookupVarIn :: String -> VarLookup -> Maybe OVal
+lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
 newtype TestInvariant = EulerCharacteristic ℕ
     deriving (Show)

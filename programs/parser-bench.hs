@@ -3,8 +3,8 @@ import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as Orig (expr0)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
-import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (altExpr)
-import Graphics.Implicit.ExtOpenScad.Parser.AltStatement (altParseProgram)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.AltExpr as Alt (expr0)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 import Text.ParserCombinators.Parsec (parse, SourceName, ParseError, GenParser)
 import Text.Printf (printf)
@@ -66,11 +66,11 @@ main =
     ]
   , bgroup "alt"
     [ bgroup "comments"
-      [ run "line" (parseStatements altParseProgram) (lineComments 5000)
-      , run "block" (parseStatements altParseProgram) (blockComments 10 500)
+      [ run "line" (parseStatements Alt.parseProgram) (lineComments 5000)
+      , run "block" (parseStatements Alt.parseProgram) (blockComments 10 500)
       ]
-    , run "assignments" (parseStatements altParseProgram) (assignments 100)
-    , run "int list" (parseExpr altExpr) (intList 1000)
-    , run "deep arithmetic" (parseExpr altExpr) (deepArithmetic 3)
+    , run "assignments" (parseStatements Alt.parseProgram) (assignments 100)
+    , run "int list" (parseExpr Alt.expr0) (intList 1000)
+    , run "deep arithmetic" (parseExpr Alt.expr0) (deepArithmetic 3)
     ]
   ]

@@ -13,7 +13,7 @@ import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char
 
 import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OObj2, OObj3))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OObj2, OObj3, OVargsModule))
 
 import Control.Monad (mapM, msum)
 
@@ -115,16 +115,17 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
 
 -- A string representing each type.
 oTypeStr :: OVal -> String
-oTypeStr OUndefined = "Undefined"
-oTypeStr (OBool   _ ) = "Bool"
-oTypeStr (ONum    _ ) = "Number"
-oTypeStr (OList   _ ) = "List"
-oTypeStr (OString _ ) = "String"
-oTypeStr (OFunc   _ ) = "Function"
-oTypeStr (OModule _ ) = "Module"
-oTypeStr (OError  _ ) = "Error"
-oTypeStr (OObj2   _ ) = "2D Object"
-oTypeStr (OObj3   _ ) = "3D Object"
+oTypeStr OUndefined         = "Undefined"
+oTypeStr (OBool          _ ) = "Bool"
+oTypeStr (ONum           _ ) = "Number"
+oTypeStr (OList          _ ) = "List"
+oTypeStr (OString        _ ) = "String"
+oTypeStr (OFunc          _ ) = "Function"
+oTypeStr (OModule        _ ) = "Module"
+oTypeStr (OError         _ ) = "Error"
+oTypeStr (OObj2          _ ) = "2D Object"
+oTypeStr (OObj3          _ ) = "3D Object"
+oTypeStr (OVargsModule _ _ ) = "VargsModule"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
@@ -155,12 +156,6 @@ divideObjs children =
     objs <- rpar (filter (not . isOObj) children)
     return (obj2s, obj3s, objs)
         where
-            isOObj2 (OObj2 _) = True
-            isOObj2    _      = False
-            isOObj3 (OObj3 _) = True
-            isOObj3    _      = False
             isOObj  (OObj2 _) = True
             isOObj  (OObj3 _) = True
             isOObj     _      = False
-            fromOObj2 (OObj2 x) = x
-            fromOObj3 (OObj3 x) = x

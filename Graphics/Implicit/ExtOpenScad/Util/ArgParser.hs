@@ -14,7 +14,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, e
 import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, (&&))
 import qualified Prelude as Prelude (null)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol(Symbol))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
@@ -33,9 +33,9 @@ import Control.Arrow(first)
 -- ** argument and combinators
 
 -- | Builds an argparser for the type that is expected from it.
-argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
-argument name =
-    AP name Nothing "" $ \oObjVal -> do
+argument :: forall desiredType. (OTypeMirror desiredType) => Symbol -> ArgParser desiredType
+argument (Symbol name) =
+    AP (Symbol name) Nothing "" $ \oObjVal -> do
         let
             val :: Maybe desiredType
             val = fromOObj oObjVal
@@ -76,7 +76,7 @@ eulerCharacteristic _ _ = error "Impossible!"
 -- | Apply arguments to an ArgParser
 
 argMap ::
-    [(Maybe String, OVal)]      -- ^ arguments
+    [(Maybe Symbol, OVal)]      -- ^ arguments
     -> ArgParser a              -- ^ ArgParser to apply them to
     -> (Maybe a, [String])      -- ^ (result, error messages)
 
@@ -85,7 +85,7 @@ argMap args = argMap2 unnamedArgs (fromList namedArgs) where
     namedArgs   = map (first fromJust) $ filter (isJust . fst) args
 
 
-argMap2 :: [OVal] -> Map String OVal -> ArgParser a -> (Maybe a, [String])
+argMap2 :: [OVal] -> Map Symbol OVal -> ArgParser a -> (Maybe a, [String])
 
 argMap2 uArgs nArgs (APBranch branches) =
     foldl1 merge solutions where
@@ -96,11 +96,11 @@ argMap2 uArgs nArgs (APBranch branches) =
         merge a@(Just _, _) _ = a
         merge (Nothing, _)  a = a
 
-argMap2 unnamedArgs namedArgs (AP name fallback _ f) =
-    case lookup name namedArgs of
+argMap2 unnamedArgs namedArgs (AP (Symbol name) fallback _ f) =
+    case lookup (Symbol name) namedArgs of
         Just a -> argMap2
             unnamedArgs
-            (delete name namedArgs)
+            (delete (Symbol name) namedArgs)
             (f a)
         Nothing -> case unnamedArgs of
             x:xs -> argMap2 xs namedArgs (f x)

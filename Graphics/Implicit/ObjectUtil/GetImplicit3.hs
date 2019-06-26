@@ -175,7 +175,6 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                    _       -> False
     in
         \(x,y,z) -> minimum $ do
-
             let
                 r = sqrt $ x*x + y*y
                 θ = atan2 y x

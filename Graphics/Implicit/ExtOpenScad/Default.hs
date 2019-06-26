@@ -10,20 +10,20 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, putStrLn, return, id)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol, StateC, StatementI, LanguageOpts, SourcePosition, MessageType(Info, Unimplemented), openScadCompatibility)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(Info, Unimplemented), openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup, addMessage)
-import Data.Map (fromList, insert)
+import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
 import Control.Arrow (second)
-import Control.Monad.State (lift, liftIO, liftM, forM)
+import Control.Monad.State (forM)
 
 defaultObjects :: VarLookup
-defaultObjects = fromList $
+defaultObjects = VarLookup $ fromList $
     defaultConstants
     ++ defaultFunctions
     ++ defaultFunctions2
@@ -35,64 +35,64 @@ defaultObjects = fromList $
 -- Missing standard ones:
 -- rand, lookup,
 
-defaultConstants :: [(String, OVal)]
+defaultConstants :: [(Symbol, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [("pi", pi)
-    ,("PI", pi)]
+    [((Symbol "pi"), pi),
+     ((Symbol "PI"), pi)]
 
-defaultFunctions :: [(String, OVal)]
+defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     [
-        ("sin",   sin),
-        ("cos",   cos),
-        ("tan",   tan),
-        ("asin",  asin),
-        ("acos",  acos),
-        ("atan",  atan),
-        ("sinh",  sinh),
-        ("cosh",  cosh),
-        ("tanh",  tanh),
-        ("abs",   abs),
-        ("sign",  signum),
-        ("floor", fromInteger . floor ),
-        ("ceil",  fromInteger . ceiling ),
-        ("round", fromInteger . round ),
-        ("exp",   exp),
-        ("ln",    log),
-        ("log",   log),
-        ("sign",  signum),
-        ("sqrt",  sqrt)
+        ((Symbol "sin"),   sin),
+        ((Symbol "cos"),   cos),
+        ((Symbol "tan"),   tan),
+        ((Symbol "asin"),  asin),
+        ((Symbol "acos"),  acos),
+        ((Symbol "atan"),  atan),
+        ((Symbol "sinh"),  sinh),
+        ((Symbol "cosh"),  cosh),
+        ((Symbol "tanh"),  tanh),
+        ((Symbol "abs"),   abs),
+        ((Symbol "sign"),  signum),
+        ((Symbol "floor"), fromInteger . floor ),
+        ((Symbol "ceil"),  fromInteger . ceiling ),
+        ((Symbol "round"), fromInteger . round ),
+        ((Symbol "exp"),   exp),
+        ((Symbol "ln"),    log),
+        ((Symbol "log"),   log),
+        ((Symbol "sign"),  signum),
+        ((Symbol "sqrt"),  sqrt)
     ]
 
-defaultFunctions2 :: [(String, OVal)]
+defaultFunctions2 :: [(Symbol, OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
-        ("max", max),
-        ("min", min),
-        ("atan2", atan2),
-        ("pow", (**))
+        ((Symbol "max"), max),
+        ((Symbol "min"), min),
+        ((Symbol "atan2"), atan2),
+        ((Symbol "pow"), (**))
     ]
 
-defaultFunctionsSpecial :: [(String, OVal)]
+defaultFunctionsSpecial :: [(Symbol, OVal)]
 defaultFunctionsSpecial =
     [
-        ("map", toOObj $ flip
+        ((Symbol "map"), toOObj $ flip
             (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
     ]
 
-defaultModules :: [(String, OVal)]
+defaultModules :: [(Symbol, OVal)]
 defaultModules =
     map (second OModule) primitives
 
-varArgModules :: [(String, OVal)]
+varArgModules :: [(Symbol, OVal)]
 varArgModules =
     [
         modVal "echo" echo
        ,modVal "for" for
        ,modVal "color" executeSuite
     ] where
-        modVal name func = (name, OVargsModule name func)
+        modVal name func = ((Symbol name), OVargsModule name func)
 
         -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
         executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
@@ -103,11 +103,14 @@ varArgModules =
         echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         echo _ pos args suite runSuite = do
             languageOpts <- languageOptions
-            let text a = intercalate ", " $ map show' a
+            let
+                text :: [(Maybe Symbol, OVal)] -> String
+                text a = intercalate ", " $ map show' a
+                show' :: (Maybe Symbol, OVal) -> String
                 show' (Nothing, arg) = show arg
-                show' (Just var, arg) = var ++ " = " ++ show arg
+                show' (Just (Symbol var), arg) = var ++ " = " ++ show arg
                 showe' (Nothing, OString arg) = arg
-                showe' (Just var, arg) = var ++ " = " ++ showe' (Nothing, arg)
+                showe' (Just (Symbol var), arg) = var ++ " = " ++ showe' (Nothing, arg)
                 showe' a = show' a
                 compat = openScadCompatibility languageOpts
                 openScadFormat = "ECHO: " ++ text args
@@ -115,6 +118,13 @@ varArgModules =
                 formattedMessage = if compat then openScadFormat else extopenscadFormat
             addMessage Info pos $ formattedMessage
             runSuite suite
+
+        for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        for _ _ args suite runSuite = do
+            _ <- forM (iterator args) $ \iter -> do
+                modifyVarLookup iter
+                runSuite suite
+            return ()
 
         -- convert the loop iterator variable's expression value to a list (possibly of one value)
         valsList :: OVal -> [OVal]
@@ -125,48 +135,45 @@ varArgModules =
         valsList _ = []
 
         -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
-        iterator :: [(Maybe String, OVal)] -> [VarLookup -> VarLookup]
+--        iterator :: [(Maybe Symbol, OVal)] -> [Map Symbol OVal -> Map Symbol OVal]
+        iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
         iterator [] = [id]
-        iterator ((Nothing, vals):iterators) = [outer | _ <- valsList vals, outer <- iterator iterators]
-        iterator ((Just var, vals):iterators) = [outer . inner | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
+        iterator ((Nothing, _):iterators) = [outer | outer <- iterator iterators]
+        iterator ((Just var, vals):iterators) = [outer . (varify inner) | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
 
-        for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
-        for _ _ args suite runSuite = do
-            _ <- forM (iterator args) $ \iter -> do
-                modifyVarLookup iter
-                runSuite suite
-            return ()
+        varify :: (Map Symbol OVal -> Map Symbol OVal) -> VarLookup -> VarLookup
+        varify f (VarLookup v) = VarLookup $ f v 
 
 -- more complicated ones:
 
-defaultPolymorphicFunctions :: [(String, OVal)]
+defaultPolymorphicFunctions :: [(Symbol, OVal)]
 defaultPolymorphicFunctions =
     [
-        ("+", sumtotal),
-        ("sum", sumtotal),
-        ("*", prod),
-        ("prod", prod),
-        ("/", divide),
-        ("-", toOObj sub),
-        ("%", toOObj omod),
-        ("^", toOObj ((**) :: ℝ -> ℝ -> ℝ)),
-        ("negate", toOObj negatefun),
-        ("index", toOObj index),
-        ("splice", toOObj osplice),
-        ("<", toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
-        (">", toOObj  ((>) :: ℝ -> ℝ -> Bool) ),
-        (">=", toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
-        ("<=", toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
-        ("==", toOObj ((==) :: OVal -> OVal -> Bool) ),
-        ("!=", toOObj ((/=) :: OVal -> OVal -> Bool) ),
-        ("?", toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
-        ("&&", toOObj (&&) ),
-        ("||", toOObj (||) ),
-        ("!", toOObj not ),
-        ("list_gen", toOObj list_gen),
-        ("++", concatenate),
-        ("len", toOObj olength),
-        ("str", toOObj (show :: OVal -> String))
+        ((Symbol "+"), sumtotal),
+        ((Symbol "sum"), sumtotal),
+        ((Symbol "*"), prod),
+        ((Symbol "prod"), prod),
+        ((Symbol "/"), divide),
+        ((Symbol "-"), toOObj sub),
+        ((Symbol "%"), toOObj omod),
+        ((Symbol "^"), toOObj ((**) :: ℝ -> ℝ -> ℝ)),
+        ((Symbol "negate"), toOObj negatefun),
+        ((Symbol "index"), toOObj index),
+        ((Symbol "splice"), toOObj osplice),
+        ((Symbol "<"), toOObj  ((<) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol ">"), toOObj  ((>) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol ">="), toOObj ((>=) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol "<="), toOObj ((<=) :: ℝ -> ℝ -> Bool) ),
+        ((Symbol "=="), toOObj ((==) :: OVal -> OVal -> Bool) ),
+        ((Symbol "!="), toOObj ((/=) :: OVal -> OVal -> Bool) ),
+        ((Symbol "?"), toOObj ( ternary :: Bool -> OVal -> OVal -> OVal) ),
+        ((Symbol "&&"), toOObj (&&) ),
+        ((Symbol "||"), toOObj (||) ),
+        ((Symbol "!"), toOObj not ),
+        ((Symbol "list_gen"), toOObj list_gen),
+        ((Symbol "++"), concatenate),
+        ((Symbol "len"), toOObj olength),
+        ((Symbol "str"), toOObj (show :: OVal -> String))
     ] where
 
         -- Some key functions are written as OVals in optimizations attempts

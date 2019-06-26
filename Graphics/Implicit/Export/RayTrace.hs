@@ -9,6 +9,7 @@ module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera),
 
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
 
+-- Our number system, and the definition of a 3D object.
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋅), Obj3)
 
 import Codec.Picture (Pixel8)

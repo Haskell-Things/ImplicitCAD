@@ -26,7 +26,7 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (ONum), VarLookup, LanguageOpts(LanguageOpts), Message)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, LanguageOpts(LanguageOpts), Message)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -38,6 +38,7 @@ import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 import Data.Maybe (fromMaybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
+
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
@@ -47,7 +48,9 @@ import Data.AffineSpace ((.-.))
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
 import Data.List (concatMap, intercalate)
+
 import Data.Map.Strict as Map (lookup, Map)
+
 import Data.String (IsString)
 
 import Text.ParserCombinators.Parsec (errorPos, sourceLine)
@@ -89,62 +92,30 @@ renderHandler = method GET $ withCompression $ do
                 (Just $ BS.Char.unpack format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
-lookupVar :: String -> VarLookup -> (Maybe OVal)
-lookupVar name vars = Map.lookup name vars
-
 -- | Find the resolution to raytrace at.
 getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 -- | If a resolution was specified in the input file, just use it.
-getRes (lookupVar "$res" -> Just (ONum res), _, _, _) = res
+getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 -- | If there was no resolution specified, use a resolution chosen for 3D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, _, obj:_, _) =
+getRes (vars, _, obj:_, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
 -- | ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
-getRes (varlookup, obj:_, _, _) =
+getRes (vars, obj:_, _, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
-    in case fromMaybe (ONum 1) $ Map.lookup "$quality" varlookup of
+    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
         _                    -> min ((min x y)/2) (sqrt(x*y     ) / 30)
 -- | fallthrough value.
 getRes _ = 1
-
-{-
-getRes (varlookup, obj2s, obj3s) =
-    let
-        qual = case Map.lookup "$quality" varlookup of
-            Just (ONum n) | n >= 1  ->  n
-            _                       ->  1
-        (defaultRes, qualRes) = case (obj2s, obj3s) of
-            (_, obj:_) -> ( min (minimum [x,y,z]/2) ((x*y*z     )**(1/3) / 22)
-                          , min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22))
-                where
-                    ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-                    (x,y,z) = (x2-x1, y2-y1, z2-z1)
-            (obj:_, _) -> ( min (min x y/2) (sqrt(x*y     ) / 30)
-                          , min (min x y/2) (sqrt(x*y/qual) / 30) )
-                where
-                    ((x1,y1),(x2,y2)) = getBox2 obj
-                    (x,y) = (x2-x1, y2-y1)
-            _ -> (1, 1)
-    in case Map.lookup "$res" varlookup of
-        Just (ONum requestedRes) ->
-            if defaultRes <= 30*requestedRes
-            then requestedRes
-            else -1
-        _ ->
-            if qual <= 30
-            then qualRes
-            else -1
--}
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?

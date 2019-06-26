@@ -11,15 +11,13 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), languageOptions) where
 
-import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
+import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup, OVal, StateC, CompState(CompState), LanguageOpts, SourcePosition, Message(Message), MessageType(Error), sourceLine, sourceColumn)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, StateC, CompState(CompState), LanguageOpts, SourcePosition, Message(Message), MessageType(Error))
 
 import Data.Map (lookup)
-import Control.Monad.State (StateT, get, put, modify, liftIO)
+import Control.Monad.State (get, put, modify, liftIO)
 import System.FilePath((</>))
-import Control.Monad.IO.Class (MonadIO)
-import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup
 getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get
@@ -28,9 +26,9 @@ modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
 modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
 
 -- | Perform a variable lookup
-lookupVar :: String -> StateC (Maybe OVal)
+lookupVar :: Symbol -> StateC (Maybe OVal)
 lookupVar name = do
-    varlookup <- getVarLookup
+    (VarLookup varlookup) <- getVarLookup
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
@@ -77,13 +75,13 @@ addMesg = modify . (\message (CompState (a, b, c, d, messages)) -> (CompState (a
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
 
---errorC :: forall (m :: Type -> Type) a. (Show a, MonadIO m) => a -> a -> String -> m ()
+errorC :: SourcePosition -> String -> StateC()
 errorC sourcePos err = do
     liftIO $ putStrLn $ "At " ++ show sourcePos ++ ": " ++ err
     addMessage Error sourcePos err
 {-# INLINABLE errorC #-}
 
-mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
+mapMaybeM :: Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do
     b <- f a
     return (Just b)
