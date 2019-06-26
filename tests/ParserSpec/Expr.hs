@@ -132,9 +132,9 @@ exprSpec = do
     it "handles multiple function calls" $
       "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
   describe "arithmetic" $ do
-    it "handles unary -" $ do
+    it "handles unary -" $
       "-42" --> num (-42)
-    it "handles unary +" $ do
+    it "handles unary +" $
       "+42" --> num 42
     it "handles unary - with extra spaces" $
       "-  42" --> num (-42)

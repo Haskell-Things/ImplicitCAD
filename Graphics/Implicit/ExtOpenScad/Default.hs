@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol), SourcePosition)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
@@ -34,7 +34,8 @@ defaultObjects = VarLookup $ fromList $
 
 defaultConstants :: [(Symbol, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [((Symbol "pi"), pi)]
+    [((Symbol "pi"), pi),
+     ((Symbol "PI"), pi)]
 
 defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))

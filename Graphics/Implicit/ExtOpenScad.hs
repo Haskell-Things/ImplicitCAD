@@ -13,6 +13,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap)
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (CompState(CompState))
@@ -29,10 +30,10 @@ runOpenscad :: String -> Either ParseError (IO (VarLookup, [SymbolicObj2], [Symb
 runOpenscad source =
     let
         initial =  defaultObjects
-        rearrange :: forall t. (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3])
+        rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3])
         rearrange (_, (CompState (varlookup, ovals, _))) = (varlookup, obj2s, obj3s) where
                                   (obj2s, obj3s, _ ) = divideObjs ovals
-    in case parseProgram source of
+    in case parseProgram "" source of
         Left e -> Left e
         Right sts -> Right
             $ fmap rearrange

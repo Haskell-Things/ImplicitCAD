@@ -11,13 +11,14 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule,OError, OObj2, OObj3),
                                                   VarLookup(VarLookup),
                                                   TestInvariant(EulerCharacteristic),
+                                                  SourcePosition(SourcePosition),
                                                   lookupVarIn,
                                                   collector) where
 
-import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
-import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
@@ -95,8 +96,8 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
--- a statement, along with the line and column number it is found on.
-data StatementI = StatementI Line Column (Statement StatementI)
+-- | A statement, along with the line and column number it is found on.
+data StatementI = StatementI SourcePosition (Statement StatementI)
     deriving (Show, Eq)
 
 data Statement st = Include String Bool
@@ -108,8 +109,6 @@ data Statement st = Include String Bool
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
                | DoNothing
     deriving (Show, Eq)
-
-
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined
@@ -142,6 +141,18 @@ instance Show OVal where
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
+-- In order to not propagate Parsec or other modules around, create our own source position type for the AST.
+data SourcePosition = SourcePosition
+    { sourceLine :: Fastℕ
+    , sourceColumn :: Fastℕ
+    , sourceName :: FilePath
+    }
+    deriving (Eq)
+
+instance Show SourcePosition where
+    show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
+    show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
+
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
 collector :: String -> [Expr] -> Expr
@@ -155,4 +166,3 @@ lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
 newtype TestInvariant = EulerCharacteristic ℕ
     deriving (Show)
-

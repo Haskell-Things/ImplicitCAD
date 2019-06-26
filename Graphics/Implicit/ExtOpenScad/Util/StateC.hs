@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup,
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition)
 
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
@@ -71,8 +71,9 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
-errorC :: forall (m :: Type -> Type) a. (Show a, MonadIO m) => a -> a -> String -> m ()
-errorC lineN columnN err = liftIO $ putStrLn $ "On line " ++ show lineN ++ ", column " ++ show columnN ++ ": " ++ err
+errorC :: SourcePosition -> String -> StateC()
+errorC sourcePos err =
+      liftIO $ putStrLn $ "At " ++ show sourcePos ++ ": " ++ err
 {-# INLINABLE errorC #-}
 
 mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)

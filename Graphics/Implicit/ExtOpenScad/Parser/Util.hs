@@ -8,17 +8,21 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, padChar, tryMany, variableSymb, patternMatcher) where
+module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, padChar, tryMany, variableSymb, patternMatcher, sourcePosition) where
 
 import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
 
-import Text.ParserCombinators.Parsec (GenParser, many, oneOf, noneOf, (<|>), try, string, manyTill, anyChar, (<?>), char, many1, sepBy)
+import Text.ParserCombinators.Parsec (GenParser, SourcePos, many, oneOf, noneOf, (<|>), try, string, manyTill, anyChar, (<?>), char, many1, sepBy)
+
+import qualified Text.ParserCombinators.Parsec as P (sourceLine, sourceColumn, sourceName)
 
 import Text.Parsec.Prim (ParsecT, Stream)
 
 import Data.Functor.Identity (Identity)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), SourcePosition(SourcePosition), Symbol(Symbol))
+
+import Graphics.Implicit.Definitions (toFastℕ)
 
 import Data.Kind (Type)
 
@@ -108,3 +112,6 @@ patternMatcher =
         _ <- char ']'
         return $ ListP components
     )
+
+sourcePosition :: SourcePos -> SourcePosition
+sourcePosition pos = SourcePosition (toFastℕ $ P.sourceLine pos) (toFastℕ $ P.sourceColumn pos) (P.sourceName pos)

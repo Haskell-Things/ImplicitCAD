@@ -14,12 +14,14 @@ import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, 
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol(Symbol), Expr(ListE, LamE, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(ListP))
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol(Symbol), Expr(ListE, LamE, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(ListP), SourcePosition(SourcePosition))
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
 -- Parse an ExtOpenScad program.
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+
+import Graphics.Implicit.Definitions (Fastℕ)
 
 import Data.Either (Either(Right), isLeft)
 
@@ -33,19 +35,19 @@ pattern Name n = GIED.Name (Symbol n)
 infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
-    parseProgram source `shouldBe` Right stmts
+    parseProgram "noname" source `shouldBe` Right stmts
 
 -- | an expectation that a string generates an error.
 parsesAsError :: String -> Expectation
-parsesAsError source = parseProgram source `shouldSatisfy` isLeft
+parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
-single st = [StatementI 1 1 st]
+single st = [StatementI (SourcePosition 1 1 "noname") st]
 
 -- | A function call.
-call :: String -> Column -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
-call name position args stmts = StatementI 1 position (ModuleCall (Symbol name) args stmts)
+call :: String -> Fastℕ -> [(Maybe Symbol, Expr)] -> [StatementI] -> StatementI
+call name column args stmts = StatementI (SourcePosition 1 column "noname") (ModuleCall (Symbol name) args stmts)
 
 -- | Test a simple if block.
 ifSpec :: Spec
