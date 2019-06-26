@@ -108,7 +108,7 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
--- | a statement, along with the line and column number it is found on.
+-- | A statement, along with the line, column number, and file it is found at.
 data StatementI = StatementI SourcePosition (Statement StatementI)
     deriving (Show, Eq)
 
@@ -157,7 +157,7 @@ instance Show OVal where
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
--- In order to not propagate Parsec or other classes around, create our own source position type for the AST.
+-- In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
     { sourceLine :: Fastℕ
     , sourceColumn :: Fastℕ
@@ -211,4 +211,3 @@ lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
 newtype TestInvariant = EulerCharacteristic ℕ
     deriving (Show)
-

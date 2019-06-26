@@ -133,13 +133,13 @@ assignment = ("assignment " ?:) $ do
 -- | A function declaration (parser)
 function :: GenParser Char st StatementI
 function = ("function " ?:) $ do
-        pos <- sourcePos
-        varSymb <- string "function" >> space >> genSpace >> variableSymb
-        _ <- stringGS " ( "
-        argVars <- sepBy patternMatcher (stringGS " , ")
-        _ <- stringGS " ) = "
-        valExpr <- expr0
-        return $ StatementI pos $ Name varSymb := LamE argVars valExpr
+    pos <- sourcePos
+    varSymb <- string "function" >> space >> genSpace >> variableSymb
+    _ <- stringGS " ( "
+    argVars <- sepBy patternMatcher (stringGS " , ")
+    _ <- stringGS " ) = "
+    valExpr <- expr0
+    return $ StatementI pos $ Name varSymb := LamE argVars valExpr
 
 -- | An echo (parser)
 echo :: GenParser Char st StatementI
@@ -152,30 +152,29 @@ echo = do
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = "if " ?: do
-        pos <- sourcePos
-        _ <- stringGS "if ( "
-        bexpr <- expr0
-        _ <- stringGS " ) "
-        sTrueCase <- suite
-        _ <- genSpace
-        sFalseCase <- (stringGS "else " >> suite ) *<|> return []
-        return $ StatementI pos $ If bexpr sTrueCase sFalseCase
+    pos <- sourcePos
+    _ <- stringGS "if ( "
+    bexpr <- expr0
+    _ <- stringGS " ) "
+    sTrueCase <- suite
+    _ <- genSpace
+    sFalseCase <- (stringGS "else " >> suite ) *<|> return []
+    return $ StatementI pos $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
-forStatementI =
-    "for " ?: do
-        pos <- sourcePos
-        -- a for loop is of the form:
-        --      for ( vsymb = vexpr   ) loops
-        -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
-        -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-        _ <- stringGS "for ( "
-        lvalue <- patternMatcher
-        _ <- stringGS " = "
-        vexpr <- expr0
-        _ <- stringGS " ) "
-        loopContent <- suite
-        return $ StatementI pos $ For lvalue vexpr loopContent
+forStatementI = "for " ?: do
+    pos <- sourcePos
+    -- a for loop is of the form:
+    --      for ( vsymb = vexpr   ) loops
+    -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
+    -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
+    _ <- stringGS "for ( "
+    lvalue <- patternMatcher
+    _ <- stringGS " = "
+    vexpr <- expr0
+    _ <- stringGS " ) "
+    loopContent <- suite
+    return $ StatementI pos $ For lvalue vexpr loopContent
 
 -- | parse a call to a module.
 userModule :: GenParser Char st StatementI
@@ -255,8 +254,5 @@ moduleArgsUnitDecl = do
 -- | Find the source position. Used when generating errors.
 sourcePos :: ParsecT s u Identity SourcePosition
 sourcePos = do
-    pos <- getPosition
-    return $ sourcePosition pos
-
-
-
+  pos <- getPosition
+  return $ sourcePosition pos

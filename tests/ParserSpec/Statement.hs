@@ -23,6 +23,8 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 -- New parser
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
 
+import Graphics.Implicit.Definitions (Fastℕ)
+
 import Data.Either (Either(Right), isLeft)
 
 import Graphics.Implicit.Definitions (Fastℕ)
