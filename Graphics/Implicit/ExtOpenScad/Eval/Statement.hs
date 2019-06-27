@@ -83,7 +83,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (VarLookup varlookup, _, path)) <- get
+    (CompState (VarLookup varlookup, _, path, _)) <- get
 --  FIXME: \_? really?
     runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
@@ -114,7 +114,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
 
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
         maybeMod  <- lookupVar (Symbol name)
-        (CompState (varlookup, _, path)) <- get
+        (CompState (varlookup, _, path, _)) <- get
         childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
@@ -154,7 +154,7 @@ runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
 runSuiteCapture varlookup path suite = do
     (res, _) <- runStateT
         (runSuite suite >> getVals)
-        (CompState (varlookup, [], path))
+        (CompState (varlookup, [], path, []))
     return res
 
 

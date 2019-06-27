@@ -12,6 +12,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   VarLookup(VarLookup),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
+                                                  Message(Message),
+                                                  MessageType(..),
                                                   lookupVarIn,
                                                   collector) where
 
@@ -152,6 +154,28 @@ data SourcePosition = SourcePosition
 instance Show SourcePosition where
     show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
+
+-- | the types of messages the execution engine can send back to the application.
+data MessageType = Info
+                 | Debug
+                 | Trace
+                 | Warning
+                 | Error
+                 | SyntaxError
+                 | Advice
+                 | Lint
+                 | Compatibility
+                 | Unimplemented
+  deriving (Show, Eq)
+
+-- | An individual message.
+data Message = Message MessageType SourcePosition String
+  deriving (Eq)
+
+instance Show Message where
+  show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
+
+      
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
