@@ -14,19 +14,17 @@
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, Monad, return, fmap, ($), (>>), Bool(False, True), map)
+import Prelude(Char, Either, String, return, fmap, ($), (>>), Bool(False, True), map)
 
 import Data.Maybe(Maybe(Just, Nothing))
 
 import Data.Functor.Identity(Identity)
 
-import Data.Kind (Type)
-
 -- We use parsec to parse.
-import Text.ParserCombinators.Parsec (SourceName, try, sepBy, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, Line, Column, (<|>), (<?>))
+import Text.ParserCombinators.Parsec (SourceName, try, sepBy, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, (<|>), (<?>))
 import Text.Parsec.Prim (ParsecT)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)), Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
+import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
@@ -39,7 +37,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 pattern Name n = GIED.Name (Symbol n)
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
-parseProgram name s = parse program name s where 
+parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
         sts <- many1 computation

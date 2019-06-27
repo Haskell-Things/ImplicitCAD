@@ -96,7 +96,7 @@ data Expr = Var Symbol
           | Expr :$ [Expr]
     deriving (Show, Eq)
 
--- | A statement, along with the line and column number it is found on.
+-- | A statement, along with the line, column number, and file it is found at.
 data StatementI = StatementI SourcePosition (Statement StatementI)
     deriving (Show, Eq)
 

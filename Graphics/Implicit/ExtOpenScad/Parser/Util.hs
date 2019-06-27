@@ -26,7 +26,7 @@ import Graphics.Implicit.Definitions (toFastℕ)
 
 import Data.Kind (Type)
 
--- white space, including tabs, newlines and comments
+-- | Consume white space, including tabs, newlines and comments.
 genSpace :: ParsecT String u Identity String
 genSpace = many $
     oneOf " \t\n\r"
