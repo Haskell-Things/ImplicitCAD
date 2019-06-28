@@ -66,11 +66,11 @@ getRelPath relPath = do
 
 languageOptions :: StateC LanguageOpts
 languageOptions = do
-    (CompState (_, _, _, opts, _)) <- get
+    (CompState (_, _, _, _, opts)) <- get
     return opts
 
 addMesg :: Message -> StateC ()
-addMesg = modify . (\message (CompState (a, b, c, d, messages)) -> (CompState (a, b, c, d, messages ++ [message])))
+addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> (CompState (a, b, c, messages ++ [message], d)))
 
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text

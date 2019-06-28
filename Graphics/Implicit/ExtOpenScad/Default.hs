@@ -15,6 +15,7 @@ import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map,
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(Info, Unimplemented), openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)

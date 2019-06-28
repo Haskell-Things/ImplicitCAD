@@ -36,7 +36,7 @@ import Data.Map (Map, lookup)
 import Control.Monad.State (StateT)
 
 -- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
-newtype CompState = CompState (VarLookup, [OVal], FilePath, LanguageOpts, [Message])
+newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], LanguageOpts)
 type StateC = StateT CompState IO
 
 -----------------------------------------------------------------
@@ -169,6 +169,7 @@ instance Show SourcePosition where
     show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
 
+-- | the types of messages the execution engine can send back to the application.
 data MessageType = Info
                  | Debug
                  | Trace
@@ -179,12 +180,14 @@ data MessageType = Info
                  | Lint
                  | Compatibility
                  | Unimplemented
-    deriving (Show, Eq)
+  deriving (Show, Eq)
 
+-- | An individual message.
 data Message = Message MessageType SourcePosition String
-    deriving (Eq)
+  deriving (Eq)
+
 instance Show Message where
-    show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
+  show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
 data LanguageOpts = LanguageOpts
     { alternateParser :: Bool

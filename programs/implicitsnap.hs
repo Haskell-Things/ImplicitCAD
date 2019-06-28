@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), Ord, String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return, map)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), (**), sqrt, min, max, minimum, maximum, show, return, map)
 
 import Control.Applicative ((<|>))
 
@@ -26,6 +26,7 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
+-- Variable access functionality, so we can look up a requested resolution.
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, LanguageOpts(LanguageOpts), Message)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
@@ -119,7 +120,7 @@ getRes _ = 1
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?
-getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], a) -> ℝ
+getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 getWidth (_,     _, obj:_, _) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
 getWidth (_, obj:_,     _, _) = max (x2-x1) (y2-y1)
@@ -143,33 +144,30 @@ executeAndExport content callback maybeFormat =
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
         languageOptions = LanguageOpts False False
         openscadProgram = runOpenscad languageOptions content
-        
---            callbackF False False 1 $ (\s-> "error :" ++ s) $ concatMap (\l->l++"\n") msgs
     in
-    unsafePerformIO $ do
---          hMessageOutput <- messageOutputHandle args
-          s@(_,_,_,messages) <- openscadProgram
-          let
-                res = getRes   s
-                w   = getWidth s
-                is2D = case s of
-                    (_, _, _:_, _)  -> False
-                    (_, _:_, _, _)  -> True
-                    _               -> False
-                highResError = "Unreasonable resolution requested: "
-                            ++ "the server imps revolt! "
-                            ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-                objOrErr = case s of
-                    (_, _, x:_, _)  ->
-                        if res > 0
-                        then Right (Nothing, x)
-                        else Left highResError
-                    (_, x:_, _, _) ->
-                        if res > 0
-                        then Right (Just x, extrudeR 0 x res)
-                        else Left highResError
-                    _            ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
-          return $ case (objOrErr, maybeFormat) of
+      unsafePerformIO $ do
+      s@(_,_,_,messages) <- openscadProgram
+      let
+        res = getRes   s
+        w   = getWidth s
+        is2D = case s of
+          (_, _, _:_, _)  -> False
+          (_, _:_, _, _)  -> True
+          _               -> False
+        highResError = "Unreasonable resolution requested: "
+                       ++ "the server imps revolt! "
+                       ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+        objOrErr = case s of
+                     (_, _, x:_, _) ->
+                       if res > 0
+                       then Right (Nothing, x)
+                       else Left highResError
+                     (_, x:_, _, _) ->
+                       if res > 0
+                       then Right (Just x, extrudeR 0 x res)
+                       else Left highResError
+                     _              ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
+      return $ case (objOrErr, maybeFormat) of
                 (Left errmsg, _) -> callbackF False False 1 errmsg
                 (Right (_,obj), Nothing)  ->
                     TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ (intercalate "\n" $ map show messages))
