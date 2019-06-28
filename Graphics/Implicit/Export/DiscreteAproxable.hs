@@ -11,7 +11,7 @@
 -- | A module for retrieving approximate represententations of objects.
 module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox) where
 
-import Prelude((-), (/), ($), (<), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
+import Prelude((-), (/), ($), map, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
 
 -- Definitions for our number system, objects, and the things we can use to approximately represent objects.
 import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, Triangle, TriangleMesh(TriangleMesh), NormedTriangleMesh(NormedTriangleMesh))
@@ -28,6 +28,8 @@ import Graphics.Implicit.Export.Util (normTriangle)
 import Graphics.Implicit.Export.RayTrace (Color(Color), Camera(Camera), Light(Light), Scene(Scene), average, traceRay, cameraRay)
 
 import Codec.Picture (DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8), generateImage)
+
+import Data.Ord (Ordering(..), compare)
 
 import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
 
@@ -117,5 +119,8 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
                         objColor $ xy (a'-s) (b'-s)]
                     colorToPixelRGBA8 :: Color -> PixelRGBA8
                     colorToPixelRGBA8 (Color rr gg bb aa) = PixelRGBA8 rr gg bb aa
-            objColor p = if obj p < 0 then Color 150 150 160 255 else Color 255 255 255 0
+            objColor p = case obj p `compare` 0 of
+                LT -> Color 150 150 160 255 
+                EQ -> Color 0 0 255 255 
+                GT -> Color 255 255 255 0
 
