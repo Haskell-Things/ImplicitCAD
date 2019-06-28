@@ -13,7 +13,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, LanguageOpts, Message(Message), MessageType(SyntaxError), alternateParser)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), alternateParser)
 
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
@@ -37,14 +37,14 @@ import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: LanguageOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-runOpenscad languageOpts source =
+runOpenscad :: ScadOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+runOpenscad scadOpts source =
     let
         initial =  defaultObjects
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
         rearrange (_, (CompState (varlookup, ovals, _, messages, _))) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
-        parseProgram = if alternateParser languageOpts then Alt.parseProgram else Orig.parseProgram
+        parseProgram = if alternateParser scadOpts then Alt.parseProgram else Orig.parseProgram
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
         mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
     in case parseProgram "" source of
@@ -52,6 +52,6 @@ runOpenscad languageOpts source =
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
-                runStateT sts' $ CompState (initial, [], path, [], languageOpts)
+                runStateT sts' $ CompState (initial, [], path, [], scadOpts)
             )
             $ mapM_ runStatementI sts

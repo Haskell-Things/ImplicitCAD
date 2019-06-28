@@ -27,7 +27,7 @@ import Snap.Util.GZip (withCompression)
 import Graphics.Implicit (runOpenscad, extrudeR)
 
 -- Variable access functionality, so we can look up a requested resolution.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, LanguageOpts(LanguageOpts), Message)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, ScadOpts(ScadOpts))
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -54,11 +54,7 @@ import Data.Map.Strict as Map (lookup, Map)
 
 import Data.String (IsString)
 
-import Text.ParserCombinators.Parsec (errorPos, sourceLine)
-import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
-
 import System.IO.Unsafe (unsafePerformIO)
-import System.IO.Silently (capture)
 
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import qualified Data.Text.Lazy as TL (unpack)
@@ -142,8 +138,8 @@ executeAndExport content callback maybeFormat =
             callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
-        languageOptions = LanguageOpts False False
-        openscadProgram = runOpenscad languageOptions content
+        scadOptions = ScadOpts False False
+        openscadProgram = runOpenscad scadOptions content
     in
       unsafePerformIO $ do
       s@(_,_,_,messages) <- openscadProgram
@@ -151,9 +147,9 @@ executeAndExport content callback maybeFormat =
         res = getRes   s
         w   = getWidth s
         is2D = case s of
-          (_, _, _:_, _)  -> False
-          (_, _:_, _, _)  -> True
-          _               -> False
+                 (_, _, _:_, _)  -> False
+                 (_, _:_, _, _)  -> True
+                 _               -> False
         highResError = "Unreasonable resolution requested: "
                        ++ "the server imps revolt! "
                        ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"

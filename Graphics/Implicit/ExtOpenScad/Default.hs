@@ -15,9 +15,8 @@ import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map,
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(Info, Unimplemented), openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (languageOptions, modifyVarLookup, addMessage)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
 import Control.Arrow (second)
@@ -103,7 +102,7 @@ varArgModules =
 
         echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         echo _ pos args suite runSuite = do
-            languageOpts <- languageOptions
+            scadOpts <- scadOptions
             let
                 text :: [(Maybe Symbol, OVal)] -> String
                 text a = intercalate ", " $ map show' a
@@ -113,7 +112,7 @@ varArgModules =
                 showe' (Nothing, OString arg) = arg
                 showe' (Just (Symbol var), arg) = var ++ " = " ++ showe' (Nothing, arg)
                 showe' a = show' a
-                compat = openScadCompatibility languageOpts
+                compat = openScadCompatibility scadOpts
                 openScadFormat = "ECHO: " ++ text args
                 extopenscadFormat = concatMap showe' args
                 formattedMessage = if compat then openScadFormat else extopenscadFormat

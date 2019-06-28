@@ -9,11 +9,11 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), languageOptions) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
 
 import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, StateC, CompState(CompState), LanguageOpts, SourcePosition, Message(Message), MessageType(Error))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, StateC, CompState(CompState), ScadOpts, SourcePosition, Message(Message), MessageType(Error))
 
 import Data.Map (lookup)
 import Control.Monad.State (get, put, modify, liftIO)
@@ -26,6 +26,7 @@ modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
 modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
 
 -- | Perform a variable lookup
+--   FIXME: generate a warning when we look up a variable that is not present.
 lookupVar :: Symbol -> StateC (Maybe OVal)
 lookupVar name = do
     (VarLookup varlookup) <- getVarLookup
@@ -64,10 +65,10 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
-languageOptions :: StateC LanguageOpts
-languageOptions = do
-    (CompState (_, _, _, _, opts)) <- get
-    return opts
+scadOptions :: StateC ScadOpts
+scadOptions = do
+  (CompState (_, _, _, _, opts)) <- get
+  return opts
 
 addMesg :: Message -> StateC ()
 addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> (CompState (a, b, c, messages ++ [message], d)))

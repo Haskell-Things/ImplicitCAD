@@ -10,10 +10,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
                                                   OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OVargsModule, OObj2, OObj3),
                                                   VarLookup(VarLookup),
-                                                  CompState(CompState),
-                                                  StateC,
                                                   TestInvariant(EulerCharacteristic),
-                                                  LanguageOpts(LanguageOpts),
                                                   SourcePosition(SourcePosition),
                                                   Message(Message),
                                                   MessageType(..),
@@ -22,6 +19,9 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   sourceName,
                                                   openScadCompatibility,
                                                   alternateParser,
+                                                  ScadOpts(ScadOpts),
+                                                  StateC,
+                                                  CompState(CompState),
                                                   lookupVarIn,
                                                   collector) where
 
@@ -35,11 +35,11 @@ import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, lift
 import Data.Map (Map, lookup)
 import Control.Monad.State (StateT)
 
--- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
-newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], LanguageOpts)
+-- | This is the state of a computation. It contains a hash of variables, an array of OVals, a path, and messages.
+newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
+
 type StateC = StateT CompState IO
 
------------------------------------------------------------------
 -- | Handles parsing arguments to modules
 data ArgParser a
                  -- | For actual argument entries:
@@ -157,7 +157,7 @@ instance Show OVal where
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
--- In order to not propagate Parsec or other modules around, create our own source position type for the AST.
+-- | In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
     { sourceLine :: Fastℕ
     , sourceColumn :: Fastℕ
@@ -169,7 +169,7 @@ instance Show SourcePosition where
     show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
 
--- | the types of messages the execution engine can send back to the application.
+-- | The types of messages the execution engine can send back to the application.
 data MessageType = Info
                  | Debug
                  | Trace
@@ -189,17 +189,19 @@ data Message = Message MessageType SourcePosition String
 instance Show Message where
   show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
-data LanguageOpts = LanguageOpts
-    { alternateParser :: Bool
-    , openScadCompatibility :: Bool
+-- | Options changing the behavior of the extended OpenScad engine.
+data ScadOpts = ScadOpts
+    { openScadCompatibility :: Bool
+    , alternateParser :: Bool
     }
 
-instance Show LanguageOpts where
-    show (LanguageOpts altParser openScadCompat) =
-        "LanguageOpts alternateParser: " ++
-        show altParser ++
-        ", openScadCompatibility: " ++
-        show openScadCompat
+instance Show ScadOpts where
+  show (ScadOpts openScadCompat altParser) =
+    "ScadOpts openScadCompatibility: " ++
+    show openScadCompat ++
+    "alternateParser: " ++
+    show altParser
+    
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.

@@ -32,7 +32,7 @@ import Data.Char (toLower)
 import Data.Tuple (swap)
 
 -- Functions and Types used to access variables, see the requested resolution, process messages from the extOpenScad engine, and send it messages..
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn, LanguageOpts(LanguageOpts), Message)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn, Message, ScadOpts(ScadOpts))
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
@@ -64,8 +64,8 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , resolution :: Maybe ℝ
     , inputFile :: FilePath
     , messageOutputFile :: Maybe FilePath
-    , alternateParser :: Bool
     , openScadCompatibility :: Bool
+    , alternateParser :: Bool
     }
 
 -- | A type serving to enumerate our output formats.
@@ -143,14 +143,14 @@ extOpenScadOpts = ExtOpenScadOpts
           )
         )
     <*> switch
-        (  short 'A'
-        <> long "alternate-parser"
-        <> help "Use the experimental alternate parser which will work with fewer ExtOpenScad files and more OpenSCAD files"
+        (  short 'O'
+           <> long "fopenscad-compat"
+           <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
         )
     <*> switch
-        (  short 'O'
-        <> long "openscad-compatibility"
-        <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
+        (  short 'A'
+           <> long "alternate-parser"
+           <> help "Use the experimental alternate parser which will work with fewer ExtOpenScad files and more OpenSCAD files"
         )
 
 -- | Try to look up an output format from a supplied extension.
@@ -234,8 +234,8 @@ run args = do
                 _ | Just fmt <- outputFormat args -> Just fmt
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
-        languageOpts = LanguageOpts (alternateParser args) (openScadCompatibility args)
-        openscadProgram = runOpenscad languageOpts content
+        scadOpts = ScadOpts (openScadCompatibility args) (alternateParser args)
+        openscadProgram = runOpenscad scadOpts content
 
     putStrLn "Processing File."
 
