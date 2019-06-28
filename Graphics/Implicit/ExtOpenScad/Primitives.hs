@@ -80,10 +80,6 @@ cube = moduleWithoutSuite "cube" $ do
     -- examples
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
-    -- arguments shared between forms
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
     -- arguments (two forms)
     ((x1,x2), (y1,y2), (z1,z2)) <-
         do
@@ -110,6 +106,10 @@ cube = moduleWithoutSuite "cube" $ do
                 `defaultTo` False
             let (x,y, z) = either (\w -> (w,w,w)) id size
             return (toInterval center x, toInterval center y, toInterval center z)
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
     -- Tests
     test "cube(4);"
         `eulerCharacteristic` 2
@@ -123,10 +123,6 @@ square = moduleWithoutSuite "square" $ do
     example "square(x=[-2,2], y=[-1,5]);"
     example "square(size = [3,4], center = true, r = 0.5);"
     example "square(4);"
-    -- arguments shared between forms
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
     -- arguments (two forms)
     ((x1,x2), (y1,y2)) <-
         do
@@ -150,6 +146,10 @@ square = moduleWithoutSuite "square" $ do
                 `defaultTo` False
             let (x,y) = either (\w -> (w,w)) id size
             return (toInterval center x, toInterval center y)
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
     -- Tests
     test "square(2);"
         `eulerCharacteristic` 0

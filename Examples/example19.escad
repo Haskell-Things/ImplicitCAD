@@ -1,0 +1,6 @@
+// Example 19 -- The union of a cube and a sphere.
+union()
+{
+  cube(20);
+  translate(20,20,20) sphere (15);
+}
