@@ -14,6 +14,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   SourcePosition(SourcePosition),
                                                   Message(Message),
                                                   MessageType(..),
+                                                  ScadOpts(ScadOpts),
                                                   lookupVarIn,
                                                   collector) where
 
@@ -143,7 +144,7 @@ instance Show OVal where
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
 
--- In order to not propagate Parsec or other modules around, create our own source position type for the AST.
+-- | In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
     { sourceLine :: Fastℕ
     , sourceColumn :: Fastℕ
@@ -155,7 +156,7 @@ instance Show SourcePosition where
     show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
 
--- | the types of messages the execution engine can send back to the application.
+-- | The types of messages the execution engine can send back to the application.
 data MessageType = Info
                  | Debug
                  | Trace
@@ -174,6 +175,16 @@ data Message = Message MessageType SourcePosition String
 
 instance Show Message where
   show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
+
+-- | Options changing the behavior of the extended OpenScad engine.
+data ScadOpts = ScadOpts
+    { openScadCompatibility :: Bool
+    }
+
+instance Show ScadOpts where
+  show (ScadOpts openScadCompat) =
+    "ScadOpts openScadCompatibility: " ++
+    show openScadCompat
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.

@@ -27,7 +27,7 @@ import Snap.Util.GZip (withCompression)
 import Graphics.Implicit (runOpenscad, extrudeR)
 
 -- Variable access functionality, so we can look up a requested resolution.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, ScadOpts(ScadOpts))
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -39,6 +39,7 @@ import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 import Data.Maybe (fromMaybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
+
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
@@ -51,11 +52,7 @@ import Data.List (intercalate)
 
 import Data.String (IsString)
 
-import Text.ParserCombinators.Parsec (errorPos, sourceLine)
-import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
-
 import System.IO.Unsafe (unsafePerformIO)
-import System.IO.Silently (capture)
 
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import qualified Data.Text.Lazy as TL (unpack)
@@ -139,31 +136,32 @@ executeAndExport content callback maybeFormat =
             callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
-        openscadProgram = runOpenscad content
+        scadOptions = ScadOpts False
+        openscadProgram = runOpenscad scadOptions content
     in
       unsafePerformIO $ do
-        s@(_,_,_,messages) <- openscadProgram
-        let
-          res = getRes   s
-          w   = getWidth s
-          is2D = case s of
-                   (_, _, _:_, _)  -> False
-                   (_, _:_, _, _)  -> True
-                   _               -> False
-          highResError = "Unreasonable resolution requested: "
-                         ++ "the server imps revolt! "
-                         ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-          objOrErr = case s of
-                       (_, _, x:_, _) ->
-                         if res > 0
-                         then Right (Nothing, x)
-                         else Left highResError
-                       (_, x:_, _, _) ->
-                         if res > 0
-                         then Right (Just x, extrudeR 0 x res)
-                         else Left highResError
-                       _           ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
-        return $ case (objOrErr, maybeFormat) of
+      s@(_,_,_,messages) <- openscadProgram
+      let
+        res = getRes   s
+        w   = getWidth s
+        is2D = case s of
+                 (_, _, _:_, _)  -> False
+                 (_, _:_, _, _)  -> True
+                 _               -> False
+        highResError = "Unreasonable resolution requested: "
+                       ++ "the server imps revolt! "
+                       ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+        objOrErr = case s of
+                     (_, _, x:_, _) ->
+                       if res > 0
+                       then Right (Nothing, x)
+                       else Left highResError
+                     (_, x:_, _, _) ->
+                       if res > 0
+                       then Right (Just x, extrudeR 0 x res)
+                       else Left highResError
+                     _           ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
+      return $ case (objOrErr, maybeFormat) of
                 (Left errmsg, _) -> callbackF False False 1 errmsg
                 (Right (_,obj), Nothing)  ->
                     TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ (intercalate "\n" $ map show messages))

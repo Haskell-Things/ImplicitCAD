@@ -12,7 +12,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, Message(Message), MessageType(SyntaxError))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError))
 
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -35,12 +35,12 @@ import Control.Monad.State (runStateT)
 import System.Directory (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-runOpenscad source =
+runOpenscad :: ScadOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+runOpenscad scadOpts source =
     let
         initial =  defaultObjects
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-        rearrange (_, (CompState (varlookup, ovals, _, messages))) = (varlookup, obj2s, obj3s, messages) where
+        rearrange (_, (CompState (varlookup, ovals, _, messages, _))) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _ ) = divideObjs ovals
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
         mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
@@ -49,6 +49,6 @@ runOpenscad source =
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
-                runStateT sts' $ CompState (initial, [], path, [])
+                runStateT sts' $ CompState (initial, [], path, [], scadOpts)
             )
             $ mapM_ runStatementI sts
