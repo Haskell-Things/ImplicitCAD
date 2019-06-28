@@ -175,8 +175,6 @@ data Message = Message MessageType SourcePosition String
 instance Show Message where
   show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
-      
-
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
 collector :: String -> [Expr] -> Expr
