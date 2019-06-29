@@ -37,8 +37,8 @@ pushVals vals = modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, 
 
 getVals :: StateC [OVal]
 getVals = do
-    (CompState (_,b,_,_,_)) <- get
-    return b
+    (CompState (_,vals,_,_,_)) <- get
+    return vals
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do

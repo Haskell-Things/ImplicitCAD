@@ -19,6 +19,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
+
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
 
 import Data.List (elemIndex)

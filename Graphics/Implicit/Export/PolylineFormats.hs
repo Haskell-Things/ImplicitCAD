@@ -56,7 +56,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth (stringValue $ show strokeWidth) ! A.fill "none" -- obj
 
--- DXF2 export in 2D. conforming to AutoCAD R12/13.
+-- | DXF2 export in 2D. conforming to AutoCAD R12/13.
 dxf2 :: [Polyline] -> Text
 dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entities
      where
@@ -102,7 +102,7 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         "  8\n",   "0\n",
         "  6\n",   "CONTINUOUS\n",
         " 66\n",   "1\n",
-        " 62\n",   buildInt $ length singlePolyline,"\n",
+        " 62\n",   buildInt $ length singlePolyline, "\n",
         " 10\n",   "0.0\n",
         " 20\n",   "0.0\n",
         " 30\n",   "0.0000\n",
@@ -139,7 +139,8 @@ orderPolylines plines =
             maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
             maxMinList [] = (0,0)
 
--- Gcode generation for the laser cutter in HackLab. Complies with https://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
+-- | Gcode generation for the laser cutter in HackLab. Complies with https://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
+--   FIXME: parameters would be nice.
 hacklabLaserGCode :: [Polyline] -> Text
 hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> mconcat (map interpretPolyline (orderPolylines polylines)) <> gcodeFooter
     where

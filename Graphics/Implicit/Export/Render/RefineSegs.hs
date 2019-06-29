@@ -7,10 +7,12 @@ module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
 import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, ℕ, Obj2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2, (⋅))
 import Graphics.Implicit.Export.Util (centroid)
 
 import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
+
+default (Fastℕ, ℝ)
 
 -- | The purpose of refine is to add detail to a polyline aproximating
 --   the boundary of an implicit function and to remove redundant points.
@@ -28,7 +30,7 @@ detail' _ _ a = a
 
 -- | detail adds new points to a polyline to add more detail.
 -- FIXME: all of the magic numbers.
-detail :: ℕ -> ℝ -> (ℝ2 -> ℝ) -> Polyline -> Polyline
+detail :: Fastℕ -> ℝ -> (ℝ2 -> ℝ) -> Polyline -> Polyline
 detail n res obj (Polyline [p1, p2]) | n < 2 =
     let
         mid = centroid [p1,p2]

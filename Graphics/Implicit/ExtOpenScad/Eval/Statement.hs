@@ -23,10 +23,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, scadOptions)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
-
 
 import Data.Map (union, fromList)
 
@@ -53,7 +52,6 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
 
 -- FIXME: take scadOptions into account.
 runStatementI (StatementI sourcePos (Echo exprs)) = do
-    opts <- scadOptions
     let
         show2 (OString s) = s
         show2 x = show x
@@ -83,7 +81,6 @@ runStatementI (StatementI sourcePos (If expr a b)) = do
         _                 -> return ()
 
 runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
-    opts <- scadOptions
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
@@ -117,28 +114,27 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
         return suiteVals
 
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
-        opts <- scadOptions
         maybeMod  <- lookupVar (Symbol name)
-        (CompState (varlookup, _, path, _, _)) <- get
+        (CompState (varlookup, _, path, _, opts)) <- get
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)
         newVals <- case maybeMod of
             Just (OModule mod') -> do
-                childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path opts suite
-                let
-                    argparser = mod' childVals
-                    ioNewVals = case fst $ argMap argsVal argparser of
-                        Just iovals -> iovals
-                        Nothing     -> return []
-                liftIO ioNewVals
+              childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path opts suite
+              let
+                argparser = mod' childVals
+                ioNewVals = case fst $ argMap argsVal argparser of
+                              Just iovals -> iovals
+                              Nothing     -> return []
+              liftIO ioNewVals
             Just (OVargsModule modname mod') -> do
                 _ <- mod' modname sourcePos argsVal suite runSuite -- no values are returned
                 return []
             Just foo            -> do
                     case getErrors foo of
                         Just err -> errorC sourcePos err
-                        Nothing  -> errorC sourcePos "Object called not module!"
+                        Nothing  -> errorC sourcePos "Object called is not a module!"
                     return []
             Nothing -> do
                 errorC sourcePos $ "Module " ++ name ++ " not in scope."
