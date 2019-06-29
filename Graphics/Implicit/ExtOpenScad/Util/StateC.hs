@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
 
-import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
+import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error), ScadOpts)
 
@@ -44,8 +44,8 @@ pushVals vals = modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, 
 
 getVals :: StateC [OVal]
 getVals = do
-    (CompState (_,b,_,_,_)) <- get
-    return b
+    (CompState (_,vals,_,_,_)) <- get
+    return vals
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
@@ -64,8 +64,8 @@ withPathShiftedBy pathShift s = do
 -- | Return the path stored in the state.
 getPath :: StateC FilePath
 getPath = do
-    (CompState (_,_,c,_,_)) <- get
-    return c
+    (CompState (_,_,path,_,_)) <- get
+    return path
 
 getRelPath :: FilePath -> StateC FilePath
 getRelPath relPath = do

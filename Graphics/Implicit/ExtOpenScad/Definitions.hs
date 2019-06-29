@@ -27,10 +27,6 @@ import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
 import Data.Map (Map, lookup)
 
--- for keeping track of the line and column number we are on in our extopenscad file.
-import Text.ParserCombinators.Parsec (Line, Column)
-
------------------------------------------------------------------
 -- | Handles parsing arguments to modules
 data ArgParser a
                  -- | For actual argument entries:
