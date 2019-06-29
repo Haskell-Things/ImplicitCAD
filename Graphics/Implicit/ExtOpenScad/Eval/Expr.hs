@@ -9,11 +9,12 @@ import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip,
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
                                                   OVal(OList, OError, OFunc),
-                                                  Expr(LitE, Var, ListE, LamE, (:$)),
+                                                  Expr(LitE, ListE, LamE, Var, (:$)),
                                                   Symbol(Symbol),
                                                   VarLookup(VarLookup))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
+
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
 
 import Data.List (elemIndex)

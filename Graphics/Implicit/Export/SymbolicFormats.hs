@@ -19,6 +19,8 @@ import Data.List (intersperse, (++))
 
 import Data.Function (fix)
 
+default (ℝ)
+
 scad2 :: ℝ -> SymbolicObj2 -> Text
 scad2 res obj = toLazyText $ runReader (buildS2 obj) res
 

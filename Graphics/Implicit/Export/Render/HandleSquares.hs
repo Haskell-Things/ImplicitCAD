@@ -10,7 +10,7 @@ import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Trian
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Data.VectorSpace ((^*), (*^), (^+^))
 
--- Disable square merging temporarily.
+-- Disable square merging temporarily, while we hunt down mesh problems.
 --import GHC.Exts (groupWith)
 --import Data.List (sortBy)
 
@@ -41,7 +41,7 @@ import Data.VectorSpace ((^*), (*^), (^+^))
   |         |  |
   |_________|__|
 
-   | joinXaligned (presently disabled)
+   | joinXaligned
    v
    ____________
   |            |

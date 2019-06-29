@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera),
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
 
 -- Our number system, and the definition of a 3D object.
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋅), Obj3, normalizeℝ3, sqrt)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋅), Obj3, normalizeℝ3, sqrt)
 
 import Codec.Picture (Pixel8)
 
@@ -22,7 +22,7 @@ import Data.VectorSpace (magnitudeSq, (^+^), (*^), (^-^), InnerSpace)
 
 import Data.Cross (cross3)
 
-default (ℕ, ℝ)
+default (Fastℕ, ℝ)
 
 -- Definitions
 
@@ -53,7 +53,7 @@ colorMult :: Pixel8 -> Color -> Color
 s `colorMult` (Color a b c d) = Color (s `mult` a) (s `mult` b) (s `mult` c) d
     where
         bound :: RealFrac a => a -> a
-        bound = max 0 . min 254
+        bound = max 0 . min 255
         mult :: Pixel8 -> Pixel8 -> Pixel8
         mult x y = round . bound . toRational $ x * y
 
@@ -99,6 +99,7 @@ rayBounds ray box =
         (lower, upper)
 
 -- Intersection
+-- FIXME: magic numbers.
 intersection :: Ray -> ((ℝ,ℝ), ℝ) -> ℝ -> Obj3 -> Maybe ℝ3
 intersection r@(Ray p v) ((a, aval),b) res obj =
     let
@@ -123,7 +124,7 @@ refine (a, b) obj =
     then refine' 10 (a, b) (aval, bval) obj
     else refine' 10 (b, a) (aval, bval) obj
 
-refine' :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+refine' :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 refine' 0 (a, _) _ _ = a
 refine' n (a, b) (aval, bval) obj =
     let
@@ -142,6 +143,7 @@ intersects a b c d = case intersection a b c d of
     Just _  -> True
 
 -- Trace
+-- FIXME: magic numbers.
 traceRay :: Ray -> ℝ -> (ℝ3, ℝ3) -> Scene -> Color
 traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultColor) =
     let
