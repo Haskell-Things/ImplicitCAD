@@ -115,6 +115,8 @@ cube = moduleWithoutSuite "cube" $ do
         `eulerCharacteristic` 2
     test "cube(size=[2,3,4]);"
         `eulerCharacteristic` 2
+    test "cube([2,3,4]);" -- openscad syntax
+        `eulerCharacteristic` 2
     addObj3 $ Prim.rect3R r (x1, y1, z1) (x2, y2, z2)
 
 square :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
