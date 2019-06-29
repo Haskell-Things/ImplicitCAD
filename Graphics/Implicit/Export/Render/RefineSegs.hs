@@ -5,12 +5,13 @@
 -- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
+import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2, (⋅), normalizeℝ2, sqrt)
+
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
+import Data.VectorSpace (magnitudeSq, (^-^), (^*), (^+^))
 
 default (Fastℕ, ℝ)
 
@@ -39,7 +40,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
        then Polyline [p1, p2]
        else
          let
-           normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^-^ p1)
+           normal = (\(a,b) -> (b, -a)) $ normalizeℝ2 (p2 ^-^ p1)
            derivN = -(obj (mid ^-^ (normal ^* (midval/2))) - midval) * (2/midval)
          in
            if abs derivN > 0.5 && abs derivN < 2 && abs (midval/derivN) < 3*res
@@ -54,7 +55,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
                derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
                derivNormSq = derivX*derivX + derivY*derivY
              in
-               if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/sqrt derivNormSq) < 3*res
+               if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/(sqrt derivNormSq)) < 3*res
                then
                  let
                    (dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
@@ -74,7 +75,7 @@ simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: Polyline -> Polyline
 simplify1 (Polyline (a:b:c:xs)) =
-    if abs ( ((b ^-^ a) ⋅ (c ^-^ a)) - magnitude (b ^-^ a) * magnitude (c ^-^ a) ) <= minℝ
+    if abs ( ((b ^-^ a) ⋅ (c ^-^ a)) - (sqrt $ magnitudeSq (b ^-^ a)) * (sqrt $ magnitudeSq (c ^-^ a)) ) <= minℝ
     then simplify1 (Polyline (a:c:xs))
     else addPolylines (Polyline [a]) (simplify1 (Polyline (b:c:xs)))
 simplify1 a = a

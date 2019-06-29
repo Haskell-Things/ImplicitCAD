@@ -6,13 +6,13 @@ module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
 import Prelude(return, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), (⋅), Triangle(Triangle))
+import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), (⋅), Triangle(Triangle), sqrt, normalizeℝ3)
 
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.VectorSpace (normalized, (^-^), (^+^), magnitude, (^/), (^*))
+import Data.VectorSpace ((^-^), (^+^), magnitudeSq, (^/), (^*))
 
 import Data.List (genericLength)
 
@@ -24,7 +24,6 @@ tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 tesselateLoop _ _ [] = []
 
 tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [Tris $ TriangleMesh [Triangle (a,b,c)]]
-
 
 {-
    #____#     #____#
@@ -54,8 +53,8 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 
 tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
     let
-        b1 = normalized $ a ^-^ b
-        b2 = normalized $ c ^-^ b
+        b1 = normalizeℝ3 $ a ^-^ b
+        b2 = normalizeℝ3 $ c ^-^ b
         b3 = b1 `cross3` b2
     in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
 
@@ -83,7 +82,7 @@ tesselateLoop res obj pathSides = return $ Tris $ TriangleMesh $
         midval = obj mid
         preNormal = foldl1 (^+^)
             [ a `cross3` b | (a,b) <- zip path (tail path ++ [head path]) ]
-        preNormalNorm = magnitude preNormal
+        preNormalNorm = sqrt $ magnitudeSq preNormal
         normal = preNormal ^/ preNormalNorm
         deriv = (obj (mid ^+^ (normal ^* (res/100)) ) ^-^ midval)/res*100
         mid' = mid ^-^ normal ^* (midval/deriv)

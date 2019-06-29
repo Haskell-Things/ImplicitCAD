@@ -90,7 +90,7 @@ instance Enum ℕ where
   {-# INLINABLE toEnum #-}
   fromEnum (ℕ n) = P.fromEnum n
   {-# INLINABLE fromEnum #-}
-  
+
 
 
 

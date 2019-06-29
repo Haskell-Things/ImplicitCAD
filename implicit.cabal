@@ -77,6 +77,8 @@ Library
                   Graphics.Implicit.ObjectUtil.GetBox3
                   Graphics.Implicit.ObjectUtil.GetImplicit2
                   Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.RationalFunctions
+                  Graphics.Implicit.RationalUtil
                   Graphics.Implicit.ExtOpenScad.Default
                   Graphics.Implicit.ExtOpenScad.Parser.Util
                   Graphics.Implicit.ExtOpenScad.Eval.Statement
@@ -159,7 +161,7 @@ Executable implicitsnap
                -rtsopts
                -O2
                -optc-O3
-               -dynamic
+--               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
                -- for debugging.

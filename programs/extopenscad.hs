@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines)
+import Prelude (Bool, Read(readsPrec), Maybe(Just, Nothing), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (-), readFile, minimum, drop, error, map, fst, min, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -20,7 +20,7 @@ import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOB
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, cbrt, sqrt)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -177,8 +177,8 @@ getRes (vars, _, obj:_, _) =
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
-        _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
+        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((cbrt (x*y*z/qual)) / 22)
+        _                     -> min (minimum [x,y,z]/2) ((cbrt (x*y*z     )) / 22)
 -- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
 getRes (vars, obj:_, _, _) =

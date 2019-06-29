@@ -4,10 +4,12 @@
 
 module Graphics.Implicit.Export.Render.GetSegs (getSegs) where
 
-import Prelude(Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
+import Prelude(Bool(True, False), (+), (*), (/=), map, (.), filter, ($), (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline), sqrt)
+
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
+
 import Graphics.Implicit.Export.Util (centroid)
 
 import Data.VectorSpace ((^-^))

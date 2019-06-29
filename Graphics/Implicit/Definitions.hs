@@ -16,12 +16,11 @@
 module Graphics.Implicit.Definitions (
     module F,
     module N,
-    ℝ,
+    module R,
     ℝ2,
     both,
     ℝ3,
     allthree,
-    minℝ,
     (⋅),
     (⋯*),
     (⋯/),
@@ -72,37 +71,28 @@ module Graphics.Implicit.Definitions (
         ExtrudeRotateR,
         ExtrudeRM,
         ExtrudeOnEdgeOf,
-        RotateExtrude),
-    fromℕtoℝ,
-    fromFastℕtoℝ,
-    fromℝtoFloat
+        RotateExtrude)
     )
 where
 
-import Prelude (Show, Double, Either, show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Show, Either, show, (*), (/))
 
 import Data.Maybe (Maybe)
 
 import Data.VectorSpace (Scalar, InnerSpace, (<.>))
 
-import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
+import Graphics.Implicit.RationalUtil as R (ℚ(minℝ, π, sqrt, cbrt, powℝ, powℝℝ, exp, log, cos, sin, tan, asin, acos, atan, sinh, cosh, tanh, atan2, fromℝ, toℝ, normalizeℝ2, normalizeℝ3, powℝ, (%), infty, neginfty), ℝ, fromFastℕtoℝ, fromℕtoℝ, fromℝtoℕ, fromℝtoFloat)
 
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
+
+import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
 -- Let's make things a bit nicer. 
 -- Following the math notation ℝ, ℝ², ℝ³...
-type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
-
--- | A give up point for dividing ℝs
-minℝ :: ℝ
--- for Doubles.
-minℝ = 0.0000000000000002
--- for Floats.
---minℝ = 0.00000011920928955078125 * 2
 
 -- | apply a function to both items in the provided tuple.
 both :: forall t b. (t -> b) -> (t, t) -> (b, b)
@@ -118,23 +108,6 @@ allthree f (x,y,z) = (f x, f y, f z)
 (⋅) :: InnerSpace a => a -> a -> Scalar a
 (⋅) = (<.>)
 {-# INLINABLE (⋅) #-}
-
--- Wrap the functions that convert datatypes.
-
--- | Convert from our Integral to our Rational. 
-fromℕtoℝ :: ℕ -> ℝ
-fromℕtoℝ = fromIntegral
-{-# INLINABLE fromℕtoℝ #-}
-
--- | Convert from our Fast Integer (int32) to ℝ.
-fromFastℕtoℝ :: Fastℕ -> ℝ
-fromFastℕtoℝ (Fastℕ a) = fromIntegral a
-{-# INLINABLE fromFastℕtoℝ #-}
-
--- | Convert from our rational to a float, for output.
-fromℝtoFloat :: ℝ -> Float
-fromℝtoFloat = realToFrac
-{-# INLINABLE fromℝtoFloat #-}
 
 -- |add aditional instances to Show, for when we dump the intermediate form of objects.
 instance Show (ℝ -> ℝ) where
@@ -293,4 +266,3 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
-

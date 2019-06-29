@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera),
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
 
 -- Our number system, and the definition of a 3D object.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋅), Obj3)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋅), Obj3, normalizeℝ3, sqrt)
 
 import Codec.Picture (Pixel8)
 
@@ -18,7 +18,7 @@ import Control.Monad (guard, return)
 
 import Control.Arrow ((***))
 
-import Data.VectorSpace (Scalar, magnitude, (^+^), (*^), normalized, (^-^), InnerSpace)
+import Data.VectorSpace (magnitudeSq, (^+^), (*^), (^-^), InnerSpace)
 
 import Data.Cross (cross3)
 
@@ -45,8 +45,8 @@ data Color  = Color Pixel8 Pixel8 Pixel8 Pixel8
 -- Math
 
 -- | The distance traveled by a line segment from the first point to the second point.
-vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
-vectorDistance a b = magnitude (b-a)
+vectorDistance :: ℝ3 -> ℝ3 -> ℝ
+vectorDistance a b = sqrt $ magnitudeSq (b-a)
 
 -- | Multiply a colour by an intensity.
 colorMult :: Pixel8 -> Color -> Color
@@ -77,13 +77,13 @@ cameraRay (Camera p vx vy f) (x,y) =
     let
         v  = vx `cross3` vy
         p' = p ^+^ f*^v ^+^ x*^vx ^+^ y*^vy
-        n  = normalized (p' ^-^ p)
+        n  = normalizeℝ3 (p' ^-^ p)
     in
         Ray p' n
 
 -- | Create a ray from two points.
 rayFromTo :: ℝ3 -> ℝ3 -> Ray
-rayFromTo p1 p2 = Ray p1 (normalized $ p2 ^-^ p1)
+rayFromTo p1 p2 = Ray p1 (normalizeℝ3 $ p2 ^-^ p1)
 
 rayBounds :: Ray -> (ℝ3, ℝ3) -> ℝ2
 rayBounds ray box =
@@ -153,15 +153,15 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
             Light lightPos lightIntensity <- lights
             let
                 ray'@(Ray _ v) = rayFromTo p lightPos
-                v' = normalized v
+                v' = normalizeℝ3 v
             guard . not $ intersects ray' ((0, obj p),20) step obj
             let
                 pval = obj p
                 dirDeriv :: ℝ3 -> ℝ
                 dirDeriv v'' = (obj (p ^+^ step*^v'') ^-^ pval)/step
                 deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
-                normal = normalized deriv
-                unitV = normalized v'
+                normal = normalizeℝ3 deriv
+                unitV = normalizeℝ3 v'
                 proj :: InnerSpace v => v -> v -> v
                 proj a' b' = (a'⋅b')*^b'
                 dist  = vectorDistance p lightPos
@@ -175,5 +175,3 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
             return $ illumination*(3 + 0.3*abs(rV ⋅ cameraV)*abs(rV ⋅ cameraV))
             )
         Nothing   -> defaultColor
-
-

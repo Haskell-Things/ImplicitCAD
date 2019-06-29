@@ -10,9 +10,10 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, 
+                abs, signum, fromInteger, (.), floor, ceiling, round, max, min, flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, π, sqrt, exp, powℝℝ, atan2, log)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol), SourcePosition, MessageType(Info, Unimplemented))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage)
@@ -32,11 +33,12 @@ defaultObjects = VarLookup $ fromList $
 
 -- Missing standard ones:
 -- rand, lookup,
+-- FIXME: what standard?
 
 defaultConstants :: [(Symbol, OVal)]
 defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
-    [((Symbol "pi"), pi),
-     ((Symbol "PI"), pi)]
+    [((Symbol "pi"), π),
+     ((Symbol "PI"), π)]
 
 defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
@@ -68,7 +70,7 @@ defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
         ((Symbol "max"), max),
         ((Symbol "min"), min),
         ((Symbol "atan2"), atan2),
-        ((Symbol "pow"), (**))
+        ((Symbol "pow"), powℝℝ)
     ]
 
 defaultFunctionsSpecial :: [(Symbol, OVal)]
@@ -95,7 +97,7 @@ defaultPolymorphicFunctions =
         ((Symbol "/"), divide),
         ((Symbol "-"), toOObj sub),
         ((Symbol "%"), toOObj omod),
-        ((Symbol "^"), toOObj ((**) :: ℝ -> ℝ -> ℝ)),
+        ((Symbol "^"), toOObj (powℝℝ :: ℝ -> ℝ -> ℝ)),
         ((Symbol "negate"), toOObj negatefun),
         ((Symbol "index"), toOObj index),
         ((Symbol "splice"), toOObj osplice),

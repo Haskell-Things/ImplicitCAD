@@ -13,7 +13,8 @@ module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) wh
 
 import Prelude (Float, Eq, Bool, ($), (+), map, (.), toEnum, length, zip, return, (==), (||), (&&), filter, not)
 
-import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh), ℕ, ℝ3, ℝ, fromℝtoFloat)
+import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh), ℕ, ℝ, ℝ3, normalizeℝ3, fromℝtoFloat)
+
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildℕ)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
@@ -26,7 +27,7 @@ import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian (LittleEndian(LE))
 
-import Data.VectorSpace (normalized, (^-^))
+import Data.VectorSpace ((^-^))
 import Data.Cross (cross3)
 
 unmesh :: TriangleMesh -> [Triangle]
@@ -34,7 +35,7 @@ unmesh (TriangleMesh m) = m
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
-    normalized $ (b ^-^ a) `cross3` (c ^-^ a)
+    normalizeℝ3 $ (b ^-^ a) `cross3` (c ^-^ a)
 
 -- | Removes triangles that are empty when converting their positions to Float resolution.
 cleanupTris :: TriangleMesh -> TriangleMesh

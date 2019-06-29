@@ -8,14 +8,15 @@
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Prelude(Maybe(Just, Nothing), Either(Left), ($), (.), (*), map, ($!), (-), (/), pi, error, (+), (==), take, floor)
+import Prelude(Maybe(Just, Nothing), Either(Left), ($), (.), (*), map, ($!), (-), (/), error, (+), (==), take, floor)
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
+import Graphics.Implicit.Definitions(ℝ, π, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>), mconcat, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
 
 import Data.List (intersperse, (++))
+
 import Data.Function (fix)
 
 default (ℝ)
@@ -26,9 +27,9 @@ scad2 res obj = toLazyText $ runReader (buildS2 obj) res
 scad3 :: ℝ -> SymbolicObj3 -> Text
 scad3 res obj = toLazyText $ runReader (buildS3 obj) res
 
--- used by rotate2 and rotate3
+-- | used by rotate2 and rotate3
 rad2deg :: ℝ -> ℝ
-rad2deg r = r * (180/pi)
+rad2deg r = r * 180 / π
 
 -- | Format an openscad call given that all the modified objects are in the Reader monad...
 callToken :: (Text, Text) -> Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
@@ -96,8 +97,8 @@ buildS3 (ExtrudeRM r (Just twist) Nothing Nothing obj (Left height)) | r == 0 = 
                         callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
                                    buildS2 obj
                                   ]
-                       ] |  h <- take (floor (res / height)) $ fix (\f x -> [x] ++ f (x+res)) (0)
-            ]
+                        ] |  h <- take (floor (res / height)) $ fix (\f x -> [x] ++ f (x+res)) (0)
+             ]
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
@@ -114,8 +115,7 @@ buildS3(EmbedBoxedObj3 _) = error "cannot provide roundness when exporting opens
 buildS3 RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
--- Now the 2D objects/transforms.
-
+-- | Now the 2D objects/transforms.
 buildS2 :: SymbolicObj2 -> Reader ℝ Builder
 
 buildS2 (RectR r (x1,y1) (x2,y2)) | r == 0 = call "translate" [bf x1, bf y1] [

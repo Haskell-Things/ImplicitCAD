@@ -8,7 +8,10 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+
+-- for a 'power' operator, from our math library.
+import Graphics.Implicit.Definitions (powℝ)
 
 -- The parsec parsing library.
 import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
@@ -38,14 +41,14 @@ literal = ("literal" ?:) $
             a <- many1 digit
             _ <- char 'e'
             b <- many1 digit
-            return . LitE $ ONum $ read a * (10 ** read b)
+            return . LitE $ ONum $ read a * (10 `powℝ` read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
             b <- many digit
             _ <- char 'e'
             c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
+            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 `powℝ` read c)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -53,7 +56,7 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '+'
             c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
+            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 `powℝ` read c)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -61,13 +64,13 @@ literal = ("literal" ?:) $
             _ <- char 'e'
             _ <- char '-'
             c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) / (10 ** read c)
+            return . LitE $ ONum $ read (a ++ "." ++ b) / (10 `powℝ` read c)
         *<|>  do
             a <- many1 digit
             _ <- char 'e'
             _ <- char '-'
             b <- many1 digit
-            return . LitE $ ONum $ read a / (10 ** read b)
+            return . LitE $ ONum $ read a / (10 `powℝ` read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'

@@ -46,7 +46,7 @@ bf value = formatRealFloat Exponent Nothing $ (fromℝtoFloat value)
 
 -- | Serialize a float with four decimal places
 buildTruncFloat :: ℝ -> Builder
-buildTruncFloat = formatRealFloat Fixed $ Just 4
+buildTruncFloat value = formatRealFloat Fixed (Just 4) (fromℝtoFloat value)
 
 buildℕ :: ℕ -> Builder
 buildℕ = decimal
