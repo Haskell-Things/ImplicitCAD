@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), min, max, minimum, maximum, show, return)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Either(Left, Right), Show, ($), (++), (>), (.), (-), (/), (*), min, max, minimum, maximum, show, return, map)
 
 import Control.Applicative ((<|>))
 
@@ -27,7 +27,7 @@ import Snap.Util.GZip (withCompression)
 import Graphics.Implicit (runOpenscad, extrudeR)
 
 -- Variable access functionality, so we can look up a requested resolution.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, ScadOpts(ScadOpts))
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -39,6 +39,7 @@ import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, cbrt, sqr
 import Data.Maybe (fromMaybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
+
 import Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode)
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
@@ -47,13 +48,11 @@ import Data.AffineSpace ((.-.))
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
+import Data.List (intercalate)
+
 import Data.String (IsString)
 
-import Text.ParserCombinators.Parsec (errorPos, sourceLine)
-import Text.ParserCombinators.Parsec.Error (errorMessages, showErrorMessages)
-
 import System.IO.Unsafe (unsafePerformIO)
-import System.IO.Silently (capture)
 
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import qualified Data.Text.Lazy as TL (unpack)
@@ -89,12 +88,12 @@ renderHandler = method GET $ withCompression $ do
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
 -- | Find the resolution to raytrace at.
-getRes ::  (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes ::  (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 -- | If a resolution was specified in the input file, just use it.
-getRes (lookupVarIn "$res" -> Just (ONum res), _, _) = res
+getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 -- | If there was no resolution specified, use a resolution chosen for 3D objects.
 --   FIXME: magic numbers.
-getRes (vars, _, obj:_) =
+getRes (vars, _, obj:_, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
@@ -103,7 +102,7 @@ getRes (vars, _, obj:_) =
         _                     -> min (minimum [x,y,z]/2) ((cbrt (x*y*z     )) / 22)
 -- | ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
-getRes (vars, obj:_, _) =
+getRes (vars, obj:_, _, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
@@ -115,12 +114,12 @@ getRes _ = 1
 
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?
-getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
-getWidth (_,     _, obj:_) = maximum [x2-x1, y2-y1, z2-z1]
+getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
+getWidth (_,     _, obj:_, _) = maximum [x2-x1, y2-y1, z2-z1]
     where ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
-getWidth (_, obj:_,     _) = max (x2-x1) (y2-y1)
+getWidth (_, obj:_,     _, _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 obj
-getWidth (_,    [],    []) = 0
+getWidth (_,    [],    [], _) = 0
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
@@ -137,48 +136,41 @@ executeAndExport content callback maybeFormat =
             callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str   msg = callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
-    in case runOpenscad content of
-        Left err ->
-            let
-                line = sourceLine . errorPos $ err
-                showErrorMessages' = showErrorMessages
-                    "or" "unknown parse error" "expecting" "unexpected" "end of input"
-                msgs :: String
-                msgs = showErrorMessages' $ errorMessages err
-            in callbackF False False 1 $ (\s-> "error (" ++ show line ++ "):" ++ s) msgs
-        Right openscadProgram -> unsafePerformIO $ do
-            (msgs,s) <- capture openscadProgram
-            let
-                res = getRes   s
-                w   = getWidth s
-                is2D = case s of
-                    (_, _, _:_)  -> False
-                    (_, _:_, _)  -> True
-                    _             -> False
-                highResError = "Unreasonable resolution requested: "
-                            ++ "the server imps revolt! "
-                            ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-                objOrErr = case s of
-                    (_, _, x:_)  ->
-                        if res > 0
-                        then Right (Nothing, x)
-                        else Left highResError
-                    (_, x:_, _) ->
-                        if res > 0
-                        then Right (Just x, extrudeR 0 x res)
-                        else Left highResError
-                    _            ->  Left $ msgs ++ "Nothing to render."
-
-            return $ case (objOrErr, maybeFormat) of
+        scadOptions = ScadOpts False
+        openscadProgram = runOpenscad scadOptions content
+    in
+      unsafePerformIO $ do
+      s@(_,_,_,messages) <- openscadProgram
+      let
+        res = getRes   s
+        w   = getWidth s
+        is2D = case s of
+                 (_, _, _:_, _)  -> False
+                 (_, _:_, _, _)  -> True
+                 _               -> False
+        highResError = "Unreasonable resolution requested: "
+                       ++ "the server imps revolt! "
+                       ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+        objOrErr = case s of
+                     (_, _, x:_, _) ->
+                       if res > 0
+                       then Right (Nothing, x)
+                       else Left highResError
+                     (_, x:_, _, _) ->
+                       if res > 0
+                       then Right (Just x, extrudeR 0 x res)
+                       else Left highResError
+                     _           ->  Left $ (intercalate "\n" $ map show messages) ++ "Nothing to render."
+      return $ case (objOrErr, maybeFormat) of
                 (Left errmsg, _) -> callbackF False False 1 errmsg
                 (Right (_,obj), Nothing)  ->
-                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ callbackF True is2D w msgs
+                    TL.unpack (jsTHREE (discreteAprox res obj)) ++ (callbackF True is2D w $ (intercalate "\n" $ map show messages))
                 (Right (_,obj), Just "STL") ->
-                    callbackS (TL.unpack (stl (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (stl (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (Just obj, _), Just "SVG") ->
-                    callbackS (TL.unpack (svg (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (svg (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (Just obj, _), Just "gcode/hacklab-laser") ->
-                    callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) msgs
+                    callbackS (TL.unpack (hacklabLaserGCode (discreteAprox res obj))) $ intercalate "\n" $ map show messages
                 (Right (_ , _), _) ->
                     callbackF False False 1 "unexpected case"
 

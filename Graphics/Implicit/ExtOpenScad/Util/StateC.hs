@@ -9,11 +9,11 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState)) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
 
 import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Show, Monad, fmap, (.), ($), (++), return, putStrLn, show)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error), ScadOpts)
 
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
@@ -21,49 +21,50 @@ import System.FilePath((</>))
 import Control.Monad.IO.Class (MonadIO)
 import Data.Kind (Type)
 
--- | This is the state of a computation. It contains a hash of variables, an array of OVals, and a path.
-newtype CompState = CompState (VarLookup, [OVal], FilePath)
+-- | This is the state of a computation. It contains a hash of variables, an array of OVals, a path, and messages.
+newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
 
 type StateC = StateT CompState IO
 
 getVarLookup :: StateC VarLookup
-getVarLookup = fmap (\(CompState (a,_,_)) -> a) get
+getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
-modifyVarLookup = modify . (\f (CompState (a,b,c)) -> CompState (f a, b, c))
+modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
 
 -- | Perform a variable lookup
+--   FIXME: generate a warning when we look up a variable that is not present.
 lookupVar :: Symbol -> StateC (Maybe OVal)
 lookupVar name = do
     (VarLookup varlookup) <- getVarLookup
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals = modify (\(CompState (a,b,c)) -> CompState (a, vals ++ b, c))
+pushVals vals = modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, d, e))
 
 getVals :: StateC [OVal]
 getVals = do
-    (CompState (_,b,_)) <- get
+    (CompState (_,b,_,_,_)) <- get
     return b
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
-    (CompState (a,_,c)) <- get
-    put $ CompState (a,vals,c)
+    (CompState (a,_,c,d,e)) <- get
+    put $ CompState (a,vals,c,d,e)
 
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
 withPathShiftedBy pathShift s = do
-    (CompState (a,b,path)) <- get
-    put $ CompState (a, b, path </> pathShift)
+    (CompState (a,b,path,d,e)) <- get
+    put $ CompState (a, b, path </> pathShift, d, e)
     x <- s
-    (CompState (a',b',_)) <- get
-    put $ CompState (a', b', path)
+    (CompState (a',b',_,d',e')) <- get
+    put $ CompState (a', b', path, d', e')
     return x
 
 -- | Return the path stored in the state.
 getPath :: StateC FilePath
 getPath = do
-    (CompState (_,_,c)) <- get
+    (CompState (_,_,c,_,_)) <- get
     return c
 
 getRelPath :: FilePath -> StateC FilePath
@@ -71,8 +72,21 @@ getRelPath relPath = do
     path <- getPath
     return $ path </> relPath
 
-errorC :: forall (m :: Type -> Type) a. (Show a, MonadIO m) => a -> a -> String -> m ()
-errorC lineN columnN err = liftIO $ putStrLn $ "On line " ++ show lineN ++ ", column " ++ show columnN ++ ": " ++ err
+scadOptions :: StateC ScadOpts
+scadOptions = do
+  (CompState (_, _, _, _, opts)) <- get
+  return opts
+
+addMesg :: Message -> StateC ()
+addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> (CompState (a, b, c, messages ++ [message], d)))
+
+addMessage :: MessageType -> SourcePosition -> String -> StateC ()
+addMessage mtype pos text = addMesg $ Message mtype pos text
+
+errorC :: SourcePosition -> String -> StateC()
+errorC sourcePos err = do
+      liftIO $ putStrLn $ "At " ++ show sourcePos ++ ": " ++ err
+      addMessage Error sourcePos err
 {-# INLINABLE errorC #-}
 
 mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)

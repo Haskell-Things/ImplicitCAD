@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), Either(Left, Right), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (-), readFile, minimum, drop, error, map, fst, min,  tail, take, length, putStrLn, show, print, (>>=), lookup)
+import Prelude (Bool, Read(readsPrec), Maybe(Just, Nothing), IO, FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (-), readFile, minimum, drop, error, map, fst, min, tail, take, length, putStrLn, show, print, (>>=), lookup, return, unlines)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -23,7 +23,7 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, cbrt, sqrt)
 
 -- Use default values when a Maybe is Nothing.
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, maybe)
 
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
@@ -34,20 +34,24 @@ import Data.Tuple (swap)
 -- Functions and types for dealing with the types used by runOpenscad.
 
 -- The definition of the symbol type, so we can access variables, and see the requested resolution.
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn, Message, ScadOpts(ScadOpts))
 
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
 
+-- For defining the <> operator.
 import Data.Monoid (Monoid, mappend)
 
 import Control.Applicative ((<$>), (<*>))
 
 -- NOTE: make sure we don't import (<>) in new versions.
-import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption)
+import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption, switch)
 
 -- For handling input/output files.
 import System.FilePath (splitExtension)
+
+-- For handling handles to output files.
+import System.IO (Handle, hPutStr, stdout, openFile, IOMode(WriteMode))
 
 -- | The following is needed to ensure backwards/forwards compatibility
 -- | with old versions of Data.Monoid:
@@ -61,6 +65,8 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , outputFormat :: Maybe OutputFormat
     , resolution :: Maybe ℝ
     , inputFile :: FilePath
+    , messageOutputFile :: Maybe FilePath
+    , openScadCompatibility :: Bool
     }
 
 -- | A type serving to enumerate our output formats.
@@ -98,6 +104,7 @@ guessOutputFormat fileName =
         (_,ext) = splitExtension fileName
 
 -- | The parser for our command line arguments.
+-- FIXME: -q for quiet.
 extOpenScadOpts :: Parser ExtOpenScadOpts
 extOpenScadOpts = ExtOpenScadOpts
     <$> optional (
@@ -128,6 +135,19 @@ extOpenScadOpts = ExtOpenScadOpts
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
         )
+    <*> optional (
+        strOption
+          (  short 'e'
+             <> long "echo-output"
+             <> metavar "FILE"
+             <> help "Output file name for echo statements"
+          )
+        )
+    <*> switch
+        (  short 'O'
+           <> long "fopenscad-compat"
+           <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
+        )
 
 -- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
@@ -147,12 +167,12 @@ instance Read OutputFormat where
               else tryParse xs
 
 -- | Find the resolution to raytrace at.
-getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3]) -> ℝ
+getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 -- | First, use a resolution specified by a variable in the input file.
-getRes (lookupVarIn "$res" -> Just (ONum res), _, _) = res
+getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 -- | Use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
-getRes (vars, _, obj:_) =
+getRes (vars, _, obj:_, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
@@ -161,7 +181,7 @@ getRes (vars, _, obj:_) =
         _                     -> min (minimum [x,y,z]/2) ((cbrt (x*y*z     )) / 22)
 -- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
-getRes (vars, obj:_, _) =
+getRes (vars, obj:_, _, _) =
     let
         (p1,p2) = getBox2 obj
         (x,y) = p2 .-. p1
@@ -194,6 +214,10 @@ export2 posFmt res output obj =
         Nothing    -> writeSVG res output obj
         Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
 
+-- | Determine where to direct the text output of running the extopenscad program.
+messageOutputHandle :: ExtOpenScadOpts -> IO Handle
+messageOutputHandle args = maybe (return stdout) (`openFile` WriteMode) (messageOutputFile args)
+
 -- | Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO ()
 run args = do
@@ -206,38 +230,41 @@ run args = do
                 _ | Just fmt <- outputFormat args -> Just fmt
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
-    putStrLn "Processing File."
+        scadOpts = ScadOpts (openScadCompatibility args)
+        openscadProgram = runOpenscad scadOpts content
 
-    case runOpenscad content of
-        Left err -> print err
-        Right openscadProgram -> do
-            s@(_, obj2s, obj3s) <- openscadProgram
-            let res = fromMaybe (getRes s) (resolution args)
-            let basename = fst (splitExtension $ inputFile args)
-            let posDefExt = case format of
-                                Just f  -> Prelude.lookup f (map swap formatExtensions)
-                                Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
-            case (obj2s, obj3s) of
-                ([], [obj]) -> do
-                    let output = fromMaybe
-                                     (basename ++ "." ++ fromMaybe "stl" posDefExt)
-                                     (outputFile args)
-                    putStrLn $ "Rendering 3D object to " ++ output
-                    putStrLn $ "With resolution " ++ show res
-                    putStrLn $ "In box " ++ show (getBox3 obj)
-                    print obj
-                    export3 format res output obj
-                ([obj], []) -> do
-                    let output = fromMaybe
-                                     (basename ++ "." ++ fromMaybe "svg" posDefExt)
-                                     (outputFile args)
-                    putStrLn $ "Rendering 2D object to " ++ output
-                    putStrLn $ "With resolution " ++ show res
-                    putStrLn $ "In box " ++ show (getBox2 obj)
-                    print obj
-                    export2 format res output obj
-                ([], []) -> putStrLn "No objects to render."
-                _        -> putStrLn "A mixture of 2D and 3D objects, what do you want to render?"
+    putStrLn "Processing File."
+    
+    hMessageOutput <- messageOutputHandle args
+
+    s@(_, obj2s, obj3s, messages) <- openscadProgram
+    let res = fromMaybe (getRes s) (resolution args)
+        basename = fst (splitExtension $ inputFile args)
+        posDefExt = case format of
+                      Just f  -> Prelude.lookup f (map swap formatExtensions)
+                      Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+    hPutStr hMessageOutput $ unlines $ map show messages
+    case (obj2s, obj3s) of
+      ([], [obj]) -> do
+        let output = fromMaybe
+                     (basename ++ "." ++ fromMaybe "stl" posDefExt)
+                     (outputFile args)
+        putStrLn $ "Rendering 3D object to " ++ output
+        putStrLn $ "With resolution " ++ show res
+        putStrLn $ "In box " ++ show (getBox3 obj)
+        putStrLn $ show obj
+        export3 format res output obj
+      ([obj], []) -> do
+        let output = fromMaybe
+                     (basename ++ "." ++ fromMaybe "svg" posDefExt)
+                     (outputFile args)
+        putStrLn $ "Rendering 2D object to " ++ output
+        putStrLn $ "With resolution " ++ show res
+        putStrLn $ "In box " ++ show (getBox2 obj)
+        putStrLn $ show obj
+        export2 format res output obj
+      ([], []) -> putStrLn "No objects to render."
+      _        -> putStrLn "A mixture of 2D and 3D objects, what do you want to render?"
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()

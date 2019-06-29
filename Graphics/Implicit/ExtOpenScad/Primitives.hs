@@ -15,10 +15,13 @@
 -- For the type arithmatic involved in calling VectorSpace.
 {-# LANGUAGE TypeFamilies #-}
 
+-- to simplify polygon
+{-# LANGUAGE PatternGuards #-}
+
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn)
+import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn, otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, cos, sin, π, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -39,13 +42,16 @@ import Control.Monad (mplus)
 
 import Data.VectorSpace (VectorSpace, Scalar, (*^))
 
+import Data.AffineSpace (distanceSq)
+
 default (ℝ)
 
 -- | Use the old syntax when defining arguments.
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
--- | The only thing exported here. basically, a list of functions, which accept OVal arguments and retrun an ArgParser ?
+-- | The only thing exported here. basically, a list of functions, which accept OVal arguments and return an ArgParser ?
+-- | FIXME: allow for these to fail, and return a failure condition.
 primitives :: [(Symbol, [OVal] -> ArgParser (IO [OVal]))]
 primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
 
@@ -67,15 +73,13 @@ sphere = moduleWithoutSuite "sphere" $ do
     -- (Graphics.Implicit.Primitives)
     addObj3 $ Prim.sphere r
 
+-- | FIXME: square1, square2 like cylinder has?
+-- | FIXME: translate for square2?
 cube :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 cube = moduleWithoutSuite "cube" $ do
     -- examples
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
-    -- arguments shared between forms
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
     -- arguments (two forms)
     ((x1,x2), (y1,y2), (z1,z2)) <-
         do
@@ -102,6 +106,10 @@ cube = moduleWithoutSuite "cube" $ do
                 `defaultTo` False
             let (x,y, z) = either (\w -> (w,w,w)) id size
             return (toInterval center x, toInterval center y, toInterval center z)
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
     -- Tests
     test "cube(4);"
         `eulerCharacteristic` 2
@@ -115,10 +123,6 @@ square = moduleWithoutSuite "square" $ do
     example "square(x=[-2,2], y=[-1,5]);"
     example "square(size = [3,4], center = true, r = 0.5);"
     example "square(4);"
-    -- arguments shared between forms
-    r      :: ℝ    <- argument "r"
-                        `doc` "radius of rounding"
-                        `defaultTo` 0
     -- arguments (two forms)
     ((x1,x2), (y1,y2)) <-
         do
@@ -142,6 +146,10 @@ square = moduleWithoutSuite "square" $ do
                 `defaultTo` False
             let (x,y) = either (\w -> (w,w)) id size
             return (toInterval center x, toInterval center y)
+    -- arguments shared between forms
+    r      :: ℝ    <- argument "r"
+                        `doc` "radius of rounding"
+                        `defaultTo` 0
     -- Tests
     test "square(2);"
         `eulerCharacteristic` 0
@@ -213,13 +221,13 @@ circle = moduleWithoutSuite "circle" $ do
         else Prim.polygonR 0 $
             [(r*cos θ, r*sin θ )| θ <- [2*π*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
 
+-- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
-                        `defaultTo` []
 {-    r      :: ℝ     <- argument "r"
                         `doc` "rounding of the polygon corners"
     paths  :: [ℕ]   <- argument "paths"
@@ -230,8 +238,30 @@ polygon = moduleWithoutSuite "polygon" $ do
         _ -> return $ return []
                         `defaultTo` 0
 -}
-    addObj2 $ Prim.polygonR 0 points
-
+    let
+      addPolyOrSquare pts
+        | [p1,p2,p3,p4] <- pts =
+          let
+            d1d2 = distanceSq p1 p2
+            d3d4 = distanceSq p3 p4
+            d1d3 = distanceSq p1 p3
+            d2d4 = distanceSq p2 p4
+            d1d4 = distanceSq p1 p4
+            d2d3 = distanceSq p2 p3
+            isGridAligned :: ℝ2 -> ℝ2 -> Bool
+            isGridAligned (x1, y1) (x2, y2) = x1 == x2 || y1 == y2
+          -- | Rectangles have no overlapping points,
+          --   the distance on each side is equal to it's opposing side,
+          --   and the distance between the pairs of opposing corners are equal.
+          in if ((p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
+                 && (d1d2==d3d4 && d1d3==d2d4)
+                 && (d1d4==d2d3))
+             then if isGridAligned p1 p2
+                  then Prim.rectR 0 p1 p3
+                  else Prim.polygonR 0 pts
+             else Prim.polygonR 0 pts
+        | otherwise = Prim.polygonR 0 points
+    addObj2 $ addPolyOrSquare points
 union :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 union = moduleWithSuite "union" $ \children -> do
     r :: ℝ <- argument "r"
@@ -287,6 +317,7 @@ deg2rad :: ℝ -> ℝ
 deg2rad x = x / 180 * π
 
 -- This is mostly insane
+-- | FIXME: rotating a module that is not found returns no geometry, instead of an error.
 rotate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 rotate = moduleWithSuite "rotate" $ \children -> do
     a <- argument "a"
@@ -457,10 +488,10 @@ unit = moduleWithSuite "unit" $ \children -> do
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = mplus
 
-moduleWithSuite :: String -> t1 -> (Symbol, t1)
+moduleWithSuite :: String -> ([OVal] -> ArgParser (IO [OVal])) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
 moduleWithSuite name modArgMapper = ((Symbol name), modArgMapper)
 
-moduleWithoutSuite :: String -> a -> (Symbol, b -> a)
+moduleWithoutSuite :: String -> ArgParser (IO [OVal]) -> (Symbol, b -> ArgParser (IO [OVal]))
 moduleWithoutSuite name modArgMapper = ((Symbol name), const modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (IO [OVal])

@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, putStrLn, concatMap, return, (++), fmap, reverse, fst, readFile)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, concatMap, return, (++), fmap, reverse, fst, readFile)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
@@ -16,12 +16,14 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   OVal(OString, OBool, OList, OModule),
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
-                                                  Symbol(Symbol)
+                                                  Symbol(Symbol),
+                                                  MessageType(Info),
+                                                  ScadOpts
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, scadOptions)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -42,27 +44,29 @@ varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
-runStatementI (StatementI lineN columnN (pat := expr)) = do
+runStatementI (StatementI sourcePos (pat := expr)) = do
     val <- evalExpr expr
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
-        (Just err,  _ ) -> errorC lineN columnN err
+        (Just err,  _ ) -> errorC sourcePos err
         (_, Just match) -> modifyVarLookup $ varUnion match
-        (_,   Nothing ) -> errorC lineN columnN "pattern match failed in assignment"
+        (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
-runStatementI (StatementI lineN columnN (Echo exprs)) = do
+-- FIXME: take scadOptions into account.
+runStatementI (StatementI sourcePos (Echo exprs)) = do
+    opts <- scadOptions
     let
         show2 (OString s) = s
         show2 x = show x
     vals <- mapM evalExpr exprs
     case getErrors (OList vals) of
-        Nothing  -> liftIO . putStrLn $ concatMap show2 vals
-        Just err -> errorC lineN columnN err
+        Nothing  -> addMessage Info sourcePos $ concatMap show2 vals
+        Just err -> errorC sourcePos err
 
-runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
+runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
     val <- evalExpr expr
     case (getErrors val, val) of
-        (Just err, _)      -> errorC lineN columnN err
+        (Just err, _)      -> errorC sourcePos err
         (_, OList vals) -> forM_ vals $ \v ->
             case matchPat pat v of
                 Just match -> do
@@ -71,21 +75,22 @@ runStatementI (StatementI lineN columnN (For pat expr loopContent)) = do
                 Nothing -> return ()
         _ -> return ()
 
-runStatementI (StatementI lineN columnN (If expr a b)) = do
+runStatementI (StatementI sourcePos (If expr a b)) = do
     val <- evalExpr expr
     case (getErrors val, val) of
-        (Just err,  _  )  -> errorC lineN columnN ("In conditional expression of if statement: " ++ err)
+        (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " ++ err)
         (_, OBool True )  -> runSuite a
         (_, OBool False)  -> runSuite b
         _                 -> return ()
 
-runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
+runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
+    opts <- scadOptions
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
         defval <- mapMaybeM evalExpr defexpr
         return (name', defval)
-    (CompState (VarLookup varlookup, _, path)) <- get
+    (CompState (VarLookup varlookup, _, path, _, scadOpts)) <- get
 --  FIXME: \_? really?
-    runStatementI . StatementI lineN columnN $ (Name name :=) $ LitE $ OModule $ \_ -> do
+    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule $ \_ -> do
         newNameVals <- forM argTemplate' $ \(name', maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument name' `defaultTo` def
@@ -109,13 +114,14 @@ runStatementI (StatementI lineN columnN (NewModule name argTemplate suite)) = do
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals  = runSuiteCapture (VarLookup varlookup') path suite
+            suiteVals  = runSuiteCapture (VarLookup varlookup') path scadOpts suite
         return suiteVals
 
-runStatementI (StatementI lineN columnN (ModuleCall (Symbol name) argsExpr suite)) = do
+runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
+        opts <- scadOptions
         maybeMod  <- lookupVar (Symbol name)
-        (CompState (varlookup, _, path)) <- get
-        childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path suite
+        (CompState (varlookup, _, path, _, _)) <- get
+        childVals <- fmap reverse . liftIO $ runSuiteCapture varlookup path opts suite
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
             val <- evalExpr expr
             return (posName, val)
@@ -125,19 +131,19 @@ runStatementI (StatementI lineN columnN (ModuleCall (Symbol name) argsExpr suite
                 ioNewVals = fromMaybe (return []) (fst $ argMap argsVal argparser)
             Just foo            -> do
                     case getErrors foo of
-                        Just err -> errorC lineN columnN err
-                        Nothing  -> errorC lineN columnN "Object called not module!"
+                        Just err -> errorC sourcePos err
+                        Nothing  -> errorC sourcePos "Object called not module!"
                     return []
             Nothing -> do
-                errorC lineN columnN $ "Module " ++ name ++ " not in scope."
+                errorC sourcePos $ "Module " ++ name ++ " not in scope."
                 return []
         pushVals newVals
 
-runStatementI (StatementI _ _ (Include name injectVals)) = do
+runStatementI (StatementI sourcePos (Include name injectVals)) = do
     name' <- getRelPath name
     content <- liftIO $ readFile name'
-    case parseProgram content of
-        Left e -> liftIO $ putStrLn $ "Error parsing " ++ name ++ ":" ++ show e
+    case parseProgram name' content of
+        Left e -> errorC sourcePos $ "Error parsing " ++ name ++ ":" ++ show e
         Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
             putVals []
@@ -145,18 +151,14 @@ runStatementI (StatementI _ _ (Include name injectVals)) = do
             vals' <- getVals
             if injectVals then putVals (vals' ++ vals) else putVals vals
 
-runStatementI (StatementI _ _ DoNothing) = liftIO $ putStrLn "Do Nothing?"
+runStatementI (StatementI _ DoNothing) = return ()
 
 runSuite :: [StatementI] -> StateC ()
 runSuite = mapM_ runStatementI
 
-runSuiteCapture :: VarLookup -> FilePath -> [StatementI] -> IO [OVal]
-runSuiteCapture varlookup path suite = do
+runSuiteCapture :: VarLookup -> FilePath -> ScadOpts -> [StatementI] -> IO [OVal]
+runSuiteCapture varlookup path opts suite = do
     (res, _) <- runStateT
         (runSuite suite >> getVals)
-        (CompState (varlookup, [], path))
+        (CompState (varlookup, [], path, [], opts))
     return res
-
-
-
-
