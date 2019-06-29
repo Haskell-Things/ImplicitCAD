@@ -94,6 +94,8 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
 instance DiscreteAproxable SymbolicObj2 [Polyline] where
     discreteAprox = symbolicGetContour
 
+-- FIXME: way too many magic numbers.
+-- FIXME: adjustable resolution?
 instance DiscreteAproxable SymbolicObj2 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where

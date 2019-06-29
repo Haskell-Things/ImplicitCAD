@@ -11,9 +11,9 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbolicGetContour, symbolicGetContourMesh) where
 
-import Prelude(map, ($), (-), (/), (+), (>), (*), (.), reverse, cos, pi, sin, max, fromInteger, ceiling)
+import Prelude(map, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
@@ -46,7 +46,7 @@ symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [Polyline [ (x1,y1), (x2,y1), (
 -- FIXME: magic number.
 symbolicGetContour res (Circle r) = [Polyline [ ( r*cos(2*pi*m/n), r*sin(2*pi*m/n) ) | m <- [0.. n] ]] where
     n :: ℝ
-    n = max 5 (fromInteger . ceiling $ 2*pi*r/res)
+    n = fromFastℕtoℝ $ max 5 (ceiling $ 2*pi*r/res)
 symbolicGetContour res (Translate2 v obj) = appOpPolylines (+ v) $ symbolicGetContour res obj
 symbolicGetContour res (Scale2 s@(a,b) obj) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
     where sc = max a b
@@ -72,6 +72,6 @@ symbolicGetContourMesh res (Circle r) =
       )| m <- [0.. n-1] ]
     where
       n :: ℝ
-      n = max 5 (fromInteger . ceiling $ 2*pi*r/res)
+      n =fromFastℕtoℝ $ max 5 (ceiling $ 2*pi*r/res)
 symbolicGetContourMesh res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> getContourMesh a b (res,res) obj'

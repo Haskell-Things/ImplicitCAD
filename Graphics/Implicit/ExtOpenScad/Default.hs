@@ -242,4 +242,3 @@ defaultPolymorphicFunctions =
         olength (OString s) = ONum $ genericLength s
         olength (OList s)   = ONum $ genericLength s
         olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
-

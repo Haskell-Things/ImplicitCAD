@@ -18,7 +18,6 @@ import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Sym
 import Data.Map (lookup)
 import Control.Monad.State (StateT, get, put, modify, liftIO)
 import System.FilePath((</>))
-import Control.Monad.IO.Class (MonadIO)
 import Data.Kind (Type)
 
 -- | This is the state of a computation. It contains a hash of variables, an array of OVals, a path, and messages.

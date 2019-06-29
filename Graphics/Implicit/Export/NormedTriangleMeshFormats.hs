@@ -12,7 +12,8 @@ import Prelude(($), map, (+), (.), (*), length, (-), return)
 import Graphics.Implicit.Definitions (NormedTriangle(NormedTriangle), NormedTriangleMesh(NormedTriangleMesh), ℝ3)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, mconcat, buildInt)
 
--- | Generate a .obformat file from a NormedTriangleMesh
+-- | Generate a .obj format file from a NormedTriangleMesh
+--   see: https://en.wikipedia.org/wiki/Wavefront_.obj_file
 obj :: NormedTriangleMesh -> Text
 obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> trianglecode
     where
@@ -26,12 +27,12 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
             -- | Extract the vertices for each triangle
             --   recall that a normed triangle is of the form ((vert, norm), ...)
             NormedTriangle ((a,_),(b,_),(c,_)) <- normedtriangles
-            -- | The vertices from each triangle take up 3 position in the resulting list
+            -- | The vertices from each triangle take up 3 positions in the resulting list
             [a,b,c]
         norms = do
             -- | extract the normals for each triangle
             NormedTriangle ((_,a),(_,b),(_,c)) <- normedtriangles
-            -- | The normals from each triangle take up 3 position in the resulting list
+            -- | The normals from each triangle take up 3 positions in the resulting list
             [a,b,c]
         vertcode = mconcat $ map v verts
         normcode = mconcat $ map n norms

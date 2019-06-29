@@ -9,8 +9,9 @@ module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 
 import Prelude((*), (>), (<), (/=), (+), (-), (/), (==), (&&), abs)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2)
 
+default (Fastℕ, ℝ)
 -- Consider a function f(x):
 
 {-
@@ -121,7 +122,7 @@ interpolate (a,aval) (b,bval) f _ =
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
-interpolateLin :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateLin :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
@@ -155,7 +156,7 @@ interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
 interpolateLin _ (a, _) _ _ = a
 
 -- Now for binary searching!
-interpolateBin :: ℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
+interpolateBin :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 
 -- The termination case:
 
