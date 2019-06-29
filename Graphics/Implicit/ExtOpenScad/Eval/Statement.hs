@@ -23,7 +23,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, scadOptions)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
