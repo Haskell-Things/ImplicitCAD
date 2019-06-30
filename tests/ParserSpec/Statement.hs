@@ -25,8 +25,6 @@ import Graphics.Implicit.Definitions (Fastℕ)
 
 import Data.Either (Either(Right), isLeft)
 
-import Text.ParserCombinators.Parsec (Line, Column)
-
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var  s = GIED.Var  (Symbol s)
 pattern Name n = GIED.Name (Symbol n)

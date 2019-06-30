@@ -49,7 +49,7 @@ getContourMesh p1 p2 res obj =
         -- | Compute the triangles.
         trisOnGrid :: [[[Polytri]]]
         trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) preEvaledObj
-             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromℕ $ div ny 32) rdeepseq
+             | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromℕ $ div ny 32) rdeepseq
         -- FIXME: merge adjacent triangles.
         triangles = concat $ concat trisOnGrid
     in
