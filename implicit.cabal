@@ -25,8 +25,8 @@ Library
                   parallel,
                   containers,
                   deepseq,
-                  hspec,
                   vector-space,
+                  hspec,
                   text,
                   monads-tf,
                   bytestring,
@@ -107,10 +107,8 @@ Executable extopenscad
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 containers,
                  vector-space,
                  filepath,
-                 parallel,
                  optparse-applicative >= 0.10.0,
                  implicit
    Ghc-options:
@@ -145,11 +143,7 @@ Executable implicitsnap
    Build-depends:
                  base,
                  bytestring,
-                 containers,
                  implicit,
-                 parallel,
-                 parsec,
-                 silently,
                  snap-core,
                  snap-server,
                  text,
@@ -187,10 +181,8 @@ Test-suite test-implicit
     Type: exitcode-stdio-1.0
     Build-depends:
                   base,
-                  containers,
                   hspec,
                   implicit,
-                  mtl,
                   parsec
     Main-is: Main.hs
     Hs-source-dirs: tests
@@ -209,7 +201,11 @@ Test-suite test-implicit
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
-    Build-depends: base, criterion, random, parsec, implicit
+    Build-depends:
+                  base,
+                  criterion,
+                  parsec,
+                  implicit
     Main-is: parser-bench.hs
     Hs-source-dirs: programs
     Ghc-options:
