@@ -153,14 +153,10 @@ instance Show SourcePosition where
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
 
 -- | The types of messages the execution engine can send back to the application.
-data MessageType = Info
-                 | Debug
-                 | Trace
+data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
                  | Warning
                  | Error
                  | SyntaxError
-                 | Advice
-                 | Lint
                  | Compatibility
                  | Unimplemented
   deriving (Show, Eq)
