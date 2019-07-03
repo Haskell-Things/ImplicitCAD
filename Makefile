@@ -30,6 +30,8 @@ RTSOPTS=+RTS -N -qg -t
 # The resolution to generate objects at. FIXME: what does this mean in human terms? 
 RESOPTS=-r 50
 
+SCADOPTS?=-q
+
 # Uncomment for profiling support. Note that you will need to recompile all of the libraries, as well.
 #PROFILING= --enable-profiling
 
@@ -101,7 +103,7 @@ dist: $(TARGETS)
 
 # Generate examples.
 examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) -q $$each $(RTSOPTS); } done
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $(SCADOPTS) $$each $(RTSOPTS); } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; cd ..; $(GHC) Examples/$$filename.hs -o Examples/$$filename; cd Examples; echo $$filename; $$filename +RTS -t ; } done
 
 # Generate images from the examples, so we can upload the images to our website.
