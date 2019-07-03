@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, putStr)
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, putStr, (||), (&&))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -64,10 +64,12 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     { outputFile :: Maybe FilePath
     , outputFormat :: Maybe OutputFormat
     , resolution :: Maybe ℝ
-    , inputFile :: FilePath
     , messageOutputFile :: Maybe FilePath
-    , openScadCompatibility :: Bool
     , quiet :: Bool
+    , openScadCompatibility :: Bool
+    , openScadEcho :: Bool
+    , rawEcho :: Bool
+    , inputFile :: FilePath
     }
 
 -- | A type serving to enumerate our output formats.
@@ -132,10 +134,6 @@ extOpenScadOpts = ExtOpenScadOpts
         <> help "Approximation quality (smaller is better)"
         )
       )
-    <*> argument str
-        (  metavar "FILE"
-        <> help "Input extended OpenSCAD file"
-        )
     <*> optional (
         strOption
           (  short 'e'
@@ -145,14 +143,26 @@ extOpenScadOpts = ExtOpenScadOpts
           )
         )
     <*> switch
+        (  short 'q'
+           <> long "quiet"
+           <> help "Supress normal program output, only outputting messages resulting from the parsing or execution of extended OpenSCAD code"
+        )
+    <*> switch
         (  short 'O'
            <> long "fopenscad-compat"
            <> help "Favour compatibility with OpenSCAD semantics, where they are incompatible with ExtOpenScad semantics"
         )
     <*> switch
-        (  short 'q'
-           <> long "quiet"
-           <> help "Supress normal program output, only outputting messages resulting from the parsing or execution of extended OpenSCAD code"
+        (  long "fopenscad-echo"
+           <> help "Use OpenSCAD's style when displaying text output from the extended OpenSCAD code"
+        )
+    <*> switch
+        (  long "fraw-echo"
+           <> help "Do not use any prefix when displaying text output from the extended OpenSCAD code"
+        )
+    <*> argument str
+        (  metavar "FILE"
+        <> help "Input extended OpenSCAD file"
         )
 
 -- | Try to look up an output format from a supplied extension.
@@ -224,13 +234,27 @@ export2 posFmt res output obj =
 messageOutputHandle :: ExtOpenScadOpts -> IO Handle
 messageOutputHandle args = maybe (return stdout) (`openFile` WriteMode) (messageOutputFile args)
 
+textOutOpenScad :: Message -> String
+textOutOpenScad  (Message _ _ msg) = "ECHO: " ++ msg
+
+textOutBare :: Message -> String
+textOutBare (Message _ _ msg) = show msg
+
 isTextOut :: Message -> Bool
 isTextOut (Message (TextOut) _ _ ) = True
 isTextOut _                        = False
 
+-- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
+--processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts -> [Message]
+processArgs (ExtOpenScadOpts o f r e q compat echo rawecho file) =
+  ExtOpenScadOpts o f r e q compat echo_flag rawecho file
+  where
+    echo_flag    = (compat || echo) && (not rawecho)
+
 -- | Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO ()
-run args = do
+run rawargs = do
+    let args = processArgs rawargs
 
     if (quiet args)
       then return ()
@@ -290,8 +314,16 @@ run args = do
           else putStrLn "No objects to render."
       _        -> putStrLn "File contains a mixture of 2D and 3D objects, what do you want to render?"
 
+    -- Always display our warnings, errors, and other non-textout messages on stdout.
     putStr $ unlines $ map show $ filter (\m -> not $ isTextOut m) messages
-    hPutStr hMessageOutput $ unlines $ map show $ filter isTextOut messages
+
+    let textOutHandler =
+          case () of
+            _ | openScadEcho args -> textOutOpenScad
+            _ | rawEcho args      -> textOutBare
+            _                     -> show
+
+    hPutStr hMessageOutput $ unlines $ map textOutHandler $ filter isTextOut messages
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()
