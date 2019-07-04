@@ -11,12 +11,12 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
 
-import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return, putStrLn, show)
+import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error), ScadOpts)
 
 import Data.Map (lookup)
-import Control.Monad.State (StateT, get, put, modify, liftIO)
+import Control.Monad.State (StateT, get, put, modify)
 import System.FilePath((</>))
 import Data.Kind (Type)
 
@@ -82,9 +82,8 @@ addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> (CompState (a
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
 
-errorC :: SourcePosition -> String -> StateC()
+errorC :: SourcePosition -> String -> StateC ()
 errorC sourcePos err = do
-      liftIO $ putStrLn $ "At " ++ show sourcePos ++ ": " ++ err
       addMessage Error sourcePos err
 {-# INLINABLE errorC #-}
 
