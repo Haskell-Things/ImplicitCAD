@@ -246,6 +246,7 @@ isTextOut _                        = False
 
 -- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
 --processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts -> [Message]
+processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts
 processArgs (ExtOpenScadOpts o f r e q compat echo rawecho file) =
   ExtOpenScadOpts o f r e q compat echo_flag rawecho file
   where
