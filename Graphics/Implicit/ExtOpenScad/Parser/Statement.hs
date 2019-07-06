@@ -34,6 +34,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- Let us use the old syntax when defining Names.
+pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]

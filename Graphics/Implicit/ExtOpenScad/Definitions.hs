@@ -142,10 +142,9 @@ instance Show OVal where
 
 -- | In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
-    { sourceLine :: Fastℕ
-    , sourceColumn :: Fastℕ
-    , sourceName :: FilePath
-    }
+    Fastℕ -- sourceLine
+    Fastℕ -- sourceColumn
+    FilePath -- sourceName
     deriving (Eq)
 
 instance Show SourcePosition where
@@ -169,9 +168,8 @@ instance Show Message where
   show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
 -- | Options changing the behavior of the extended OpenScad engine.
-data ScadOpts = ScadOpts
-    { openScadCompatibility :: Bool
-    }
+newtype ScadOpts = ScadOpts
+    Bool -- openScadCompatibility 
 
 instance Show ScadOpts where
   show (ScadOpts openScadCompat) =

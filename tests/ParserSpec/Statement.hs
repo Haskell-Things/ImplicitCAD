@@ -10,7 +10,7 @@ module ParserSpec.Statement (statementSpec) where
 
 import Prelude (String, Maybe(Just), Bool(True), ($))
 
-import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, describe)
+import Test.Hspec (Spec, Expectation, shouldBe, it, pendingWith, describe)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
@@ -23,10 +23,12 @@ import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
 import Graphics.Implicit.Definitions (Fastℕ)
 
-import Data.Either (Either(Right), isLeft)
+import Data.Either (Either(Right))
 
 -- Let us use the old syntax when defining Vars and Names.
+pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
+pattern Name :: String -> Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- | an expectation that a string is equivalent to a statement.
@@ -36,8 +38,8 @@ infixr 1 -->
     parseProgram "noname" source `shouldBe` Right stmts
 
 -- | an expectation that a string generates an error.
-parsesAsError :: String -> Expectation
-parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
+-- parsesAsError :: String -> Expectation
+-- parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
