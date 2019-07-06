@@ -17,7 +17,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
-                                                  MessageType(Info),
+                                                  MessageType(TextOut),
                                                   ScadOpts
                                                  )
 
@@ -57,7 +57,7 @@ runStatementI (StatementI sourcePos (Echo exprs)) = do
         show2 x = show x
     vals <- mapM evalExpr exprs
     case getErrors (OList vals) of
-        Nothing  -> addMessage Info sourcePos $ concatMap show2 vals
+        Nothing  -> addMessage TextOut sourcePos $ concatMap show2 vals
         Just err -> errorC sourcePos err
 
 runStatementI (StatementI sourcePos (For pat expr loopContent)) = do

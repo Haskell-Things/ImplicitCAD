@@ -13,7 +13,7 @@ import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ)
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅))
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
 
@@ -21,12 +21,14 @@ import Data.Maybe (fromMaybe, isJust)
 
 import qualified Data.Either as Either (either)
 
-import Data.VectorSpace ((^-^), (^+^), (^*), (<.>), normalized)
+import Data.VectorSpace ((^*), normalized)
 
-import Data.Cross (cross3)
+import Data.Cross(cross3)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
+
+default (ℝ)
 
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
@@ -78,7 +80,7 @@ getImplicit3 (Translate3 v symbObj) =
     let
         obj = getImplicit3 symbObj
     in
-        \p -> obj (p ^-^ v)
+        \p -> obj (p - v)
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     let
         obj = getImplicit3 symbObj
@@ -103,8 +105,8 @@ getImplicit3 (Rotate3V θ axis symbObj) =
     in
         \v -> obj $
             v ^* (cos θ)
-            ^-^ (axis' `cross3` v) ^* (sin θ)
-            ^+^ (axis' ^* (axis' <.> (v ^* (1 - (cos θ)))))
+            - (axis' `cross3` v) ^* (sin θ)
+            + (axis' ^* (axis' ⋅ (v ^* (1 - (cos θ)))))
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) =
     let
@@ -142,7 +144,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
     in
         \(x,y,z) -> let h = height' (x,y) in
             rmax r
-                (obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a ^-^ translate' z) $ (x,y))
+                (obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a - translate' z) $ (x,y))
                 ((abs $ z - h/2) - h/2)
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
     let
@@ -182,7 +184,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 ns =
                     if capped
                     then -- we will cap a different way, but want leeway to keep the function cont
-                        [-1 .. ceiling (totalRotation' / tau) + 1]
+                        [-1 .. ceiling $ (totalRotation' / tau) + 1]
                     else
                         [0 .. floor $ (totalRotation' - θ) / tau]
             n <- ns
