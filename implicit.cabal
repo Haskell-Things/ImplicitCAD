@@ -45,9 +45,16 @@ Library
                 -feager-blackholing
                 -- for debugging.
                 -Wall
-                -Wextra
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
                 -Wimplicit-prelude
                 -Wredundant-constraints
+                -Wall-missed-specialisations
                 -Werror
     Exposed-modules:
                     Graphics.Implicit
@@ -122,9 +129,16 @@ Executable extopenscad
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Wredundant-constraints
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
                -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
                -Werror
 
 Executable docgen
@@ -137,9 +151,16 @@ Executable docgen
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
                -Wimplicit-prelude
                -Wredundant-constraints
+               -Wall-missed-specialisations
                -Werror
 
 Executable implicitsnap
@@ -163,9 +184,16 @@ Executable implicitsnap
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Wredundant-constraints
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
                -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
                -Werror
 
 Executable Benchmark
@@ -181,9 +209,16 @@ Executable Benchmark
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
-               -Wredundant-constraints
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
                -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
                -Werror
 
 Test-suite test-implicit
@@ -201,9 +236,16 @@ Test-suite test-implicit
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Wredundant-constraints
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
                 -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
                 -Werror
     Other-Modules:
                   ParserSpec.Expr
@@ -225,9 +267,16 @@ Benchmark parser-bench
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Wredundant-constraints
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
                 -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
                 -Werror
 
 Source-repository head
