@@ -179,7 +179,7 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if (null objs)
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = TL.unpack $ maybe stl getOutputHandler3 maybeFormat $ discreteAprox res target
+              output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
           if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
             then output3d ++ (callbackF True False w (scadMessages ++ unionWarning))
             else callbackS output3d (scadMessages ++ unionWarning)
@@ -191,7 +191,7 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if (null objs)
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = TL.unpack $ maybe stl getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
+              output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
               output2d        = TL.unpack $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
           if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
             then output3d ++ (callbackF True True w (scadMessages ++ unionWarning))
