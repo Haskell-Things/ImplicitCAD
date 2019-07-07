@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (++), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, map, unlines, otherwise)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (++), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, map, unlines, otherwise, filter, not)
 
 import Control.Applicative ((<|>))
 
@@ -34,6 +34,8 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
 import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ, Polyline, TriangleMesh)
+
+import Graphics.Implicit.ExtOpenScad.Definitions (Message(Message), MessageType(TextOut))
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -137,6 +139,10 @@ getOutputHandler3 name
 --  | name == "OBJ"                   = obj
   | otherwise                       = jsTHREE
 
+isTextOut :: Message -> Bool
+isTextOut (Message (TextOut) _ _ ) = True
+isTextOut _                        = False
+
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> Maybe String -> String
@@ -167,19 +173,21 @@ executeAndExport content callback maybeFormat =
         render = if res > 0
                  then True
                  else False
-        scadMessages = intercalate "\n" $ map show messages
+        scadMessages = intercalate "\n" $
+                       (map show $ filter (\m -> not $ isTextOut m) messages) ++
+                       (map show $ filter isTextOut messages)
 
       return $ case (obj2s, obj3s, render) of
         (_ ,        _, False) -> callbackF False False 1 resError
         ([], obj:objs, _    ) -> do
-          let target          = if (null objs)
-                                then obj
-                                else UnionR3 0 (obj:objs)
+          let target           = if (null objs)
+                                 then obj
+                                 else UnionR3 0 (obj:objs)
               unionWarning :: String
-              unionWarning    = if (null objs)
-                                then ""
-                                else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
+              unionWarning     = if (null objs)
+                                 then ""
+                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
+              output3d         = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
           if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
             then output3d ++ (callbackF True False w (scadMessages ++ unionWarning))
             else callbackS output3d (scadMessages ++ unionWarning)
