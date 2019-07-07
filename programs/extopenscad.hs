@@ -184,10 +184,10 @@ instance Read OutputFormat where
 
 -- | Find the resolution to raytrace at.
 getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
--- | First, use a resolution specified by a variable in the input file.
+-- | If specified, use a resolution specified by the "$res" a variable in the input file.
 getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
--- | Use a resolution chosen for 3D objects.
--- FIXME: magic numbers.
+-- | If there was no resolution specified, use a resolution chosen for 3D objects.
+--   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
         ((x1,y1,z1),(x2,y2,z2)) = getBox3 (UnionR3 0 (obj:objs))
@@ -195,15 +195,15 @@ getRes (vars, _, obj:objs, _) =
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
--- | Use a resolution chosen for 2D objects.
--- FIXME: magic numbers.
+-- | ... Or use a resolution chosen for 2D objects.
+--   FIXME: magic numbers.
 getRes (vars, obj:objs, _, _) =
     let
         (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
-        _                    -> min (min x y/2) (sqrt(x*y) / 30)
+        ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
+        _                    -> min ((min x y)/2) (sqrt(x*y) / 30)
 -- | fallthrough value.
 getRes _ = 1
 
