@@ -45,9 +45,17 @@ Library
                 -feager-blackholing
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
-
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
     Exposed-modules:
                     Graphics.Implicit
                     Graphics.Implicit.Definitions
@@ -121,8 +129,17 @@ Executable extopenscad
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable docgen
    main-is: docgen.hs
@@ -134,8 +151,17 @@ Executable docgen
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
@@ -158,8 +184,17 @@ Executable implicitsnap
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable Benchmark
    Main-is: Benchmark.hs
@@ -174,8 +209,17 @@ Executable Benchmark
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Test-suite test-implicit
     Type: exitcode-stdio-1.0
@@ -192,8 +236,17 @@ Test-suite test-implicit
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
@@ -214,8 +267,17 @@ Benchmark parser-bench
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
 
 Source-repository head
     Type:            git
