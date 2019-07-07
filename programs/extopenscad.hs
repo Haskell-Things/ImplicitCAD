@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, putStr, (||), (&&))
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -20,7 +20,7 @@ import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOB
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -51,7 +51,7 @@ import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help
 import System.FilePath (splitExtension)
 
 -- For handling handles to output files.
-import System.IO (Handle, hPutStr, stdout, openFile, IOMode(WriteMode))
+import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
 
 -- | The following is needed to ensure backwards/forwards compatibility
 -- | with old versions of Data.Monoid:
@@ -188,18 +188,18 @@ getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 -- | Use a resolution chosen for 3D objects.
 -- FIXME: magic numbers.
-getRes (vars, _, obj:_, _) =
+getRes (vars, _, obj:objs, _) =
     let
-        ((x1,y1,z1),(x2,y2,z2)) = getBox3 obj
+        ((x1,y1,z1),(x2,y2,z2)) = getBox3 (UnionR3 0 (obj:objs))
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
 -- | Use a resolution chosen for 2D objects.
 -- FIXME: magic numbers.
-getRes (vars, obj:_, _, _) =
+getRes (vars, obj:objs, _, _) =
     let
-        (p1,p2) = getBox2 obj
+        (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
@@ -244,6 +244,10 @@ isTextOut :: Message -> Bool
 isTextOut (Message (TextOut) _ _ ) = True
 isTextOut _                        = False
 
+objectMessage :: String -> String -> String -> String -> String -> String
+objectMessage dimensions infile outfile res box =
+  "Rendering " ++ dimensions ++ " object from " ++ infile ++ " to " ++ outfile ++ " with resolution " ++ res ++ " in box " ++ box
+
 -- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
 --processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts -> [Message]
 processArgs (ExtOpenScadOpts o f r e q compat echo rawecho file) =
@@ -255,6 +259,8 @@ processArgs (ExtOpenScadOpts o f r e q compat echo rawecho file) =
 run :: ExtOpenScadOpts -> IO ()
 run rawargs = do
     let args = processArgs rawargs
+
+    hMessageOutput <- messageOutputHandle args
 
     if (quiet args)
       then return ()
@@ -274,8 +280,6 @@ run rawargs = do
       then return ()
       else putStrLn "Processing File."
 
-    hMessageOutput <- messageOutputHandle args
-
     s@(_, obj2s, obj3s, messages) <- openscadProgram
     let res = fromMaybe (getRes s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
@@ -284,38 +288,62 @@ run rawargs = do
                       Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
 
     case (obj2s, obj3s) of
-      ([], [obj]) -> do
+      ([], obj:objs) -> do
         let output = fromMaybe
                      (basename ++ "." ++ fromMaybe "stl" posDefExt)
                      (outputFile args)
+            target = if (null objs)
+                     then obj
+                     else UnionR3 0 (obj:objs)
+
         if (quiet args)
           then return ()
-          else do
-          putStrLn $ "Rendering 3D object to " ++ output
-          putStrLn $ "With resolution " ++ show res
-          putStrLn $ "In box " ++ show (getBox3 obj)
-          putStrLn $ show obj
-        export3 format res output obj
-      ([obj], []) -> do
+          else putStrLn $ objectMessage "3D" (inputFile args) output (show res) $ show $ getBox3 target
+
+        -- FIXME: construct and use a warning for this.
+        if (null objs)
+          then return ()
+          else
+            hPutStr stderr "WARNING: Multiple objects detected. Adding a Union around them.\n"
+
+        if (quiet args)
+          then return ()
+          else putStrLn $ show target
+
+        export3 format res output target
+
+      (obj:objs, []) -> do
         let output = fromMaybe
                      (basename ++ "." ++ fromMaybe "svg" posDefExt)
                      (outputFile args)
+            target = if (null objs)
+                     then obj
+                     else UnionR2 0 (obj:objs)
+
         if (quiet args)
           then return ()
-          else do
-          putStrLn $ "Rendering 2D object to " ++ output
-          putStrLn $ "With resolution " ++ show res
-          putStrLn $ "In box " ++ show (getBox2 obj)
-          putStrLn $ show obj
-        export2 format res output obj
+          else putStrLn $ objectMessage "2D" (inputFile args) output (show res) $ show $ getBox2 target
+
+        -- FIXME: construct and use a warning for this.
+        if (null objs)
+          then return ()
+          else
+            hPutStr stderr "WARNING: Multiple objects detected. Adding a Union around them.\n"
+
+        if (quiet args)
+          then return ()
+          else putStrLn $ show target
+
+        export2 format res output target
+
       ([], []) ->
         if (quiet args)
           then return ()
           else putStrLn "No objects to render."
-      _        -> putStrLn "File contains a mixture of 2D and 3D objects, what do you want to render?"
+      _        -> hPutStr stderr "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
 
-    -- Always display our warnings, errors, and other non-textout messages on stdout.
-    putStr $ unlines $ map show $ filter (\m -> not $ isTextOut m) messages
+    -- | Always display our warnings, errors, and other non-textout messages on stderr.
+    hPutStr stderr $ unlines $ map show $ filter (\m -> not $ isTextOut m) messages
 
     let textOutHandler =
           case () of
