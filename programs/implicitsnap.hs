@@ -15,7 +15,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (++), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, map, unlines, otherwise, filter, not)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (++), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, map, otherwise, filter, not)
 
 import Control.Applicative ((<|>))
 
@@ -204,7 +204,7 @@ executeAndExport content callback maybeFormat =
           if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
             then output3d ++ (callbackF True True w (scadMessages ++ unionWarning))
             else callbackS output2d (scadMessages ++ unionWarning)
-        ([], []         , _) -> callbackF False False 1 $ (unlines $ map show messages) ++ "Nothing to render."
-        _                    -> callbackF False False 1 $ (unlines $ map show messages) ++ "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
+        ([], []         , _) -> callbackF False False 1 $ intercalate "\n" [scadMessages, "Nothing to render."]
+        _                    -> callbackF False False 1 $ intercalate "\n" [scadMessages, "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"]
 
 
