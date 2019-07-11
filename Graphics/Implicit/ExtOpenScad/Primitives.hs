@@ -6,8 +6,11 @@
 
 -- This file provides primitive objects for the openscad parser.
 
--- FIXME: why are these required?
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Allow us to use type signatures in patterns.
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- Allow us to use shorter forms of Var and Name.
 {-# LANGUAGE PatternSynonyms #-}

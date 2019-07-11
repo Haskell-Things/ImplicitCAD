@@ -2,9 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- exports getContourMesh, which returns an array of triangles describing the interior of a 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 

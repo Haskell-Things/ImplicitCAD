@@ -2,14 +2,11 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- A module of math utilities.
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Num, Ord, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip)
+import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -105,9 +102,9 @@ pack ::
     -> ([(ℝ2, a)], [(Box2, a)] ) -- ^ Packed objects with their positions, objects that could be packed
 pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
     where
-        compareBoxesByY :: forall t t1 t2 t3 a. (Ord a, Num a) => ((t, a), (t1, a)) -> ((t2, a), (t3, a)) -> Ordering
+        compareBoxesByY :: Box2 -> Box2 -> Ordering
         compareBoxesByY  ((_, ay1), (_, ay2))  ((_, by1), (_, by2)) =
-                compare (abs $ by2-by1) (abs $ ay2 - ay1)
+                compare (abs $ by2-by1) (abs $ ay2-ay1)
 
         sortedObjs = sortBy
             (\(boxa, _) (boxb, _) -> compareBoxesByY boxa boxb )

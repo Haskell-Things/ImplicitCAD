@@ -2,9 +2,6 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Allow us to use a shorter form of Name.
 {-# LANGUAGE PatternSynonyms #-}
 

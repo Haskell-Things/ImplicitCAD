@@ -2,9 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Allow us to use the tearser parallel list comprehension syntax, to avoid having to call zip in the complicated comprehensions below.
 {-# LANGUAGE ParallelListComp #-}
 
@@ -44,8 +41,6 @@ import Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris)
 
 -- Each step on the Z axis is done in parallel using Control.Parallel.Strategies
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
-
-import Control.DeepSeq (NFData)
 
 -- The actual code is just a bunch of ugly argument passing.
 -- Utility functions can be found at the end.
@@ -96,7 +91,7 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
         forcesteps=32
 
         -- | Perform a given function on every point in a 3D grid.
-        par3DList :: forall t. NFData t => ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[[t]]]
+        par3DList :: ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> ℝ) -> [[[ℝ]]]
         par3DList lenx leny lenz f =
             [[[f
                 (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
@@ -205,7 +200,7 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
         forcesteps :: Int
         forcesteps=32
 
-        par2DList :: forall t. NFData t => ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> t) -> [[t]]
+        par2DList :: ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> ℝ) -> [[ℝ]]
         par2DList lenx leny f =
             [[ f
                 (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx

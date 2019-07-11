@@ -2,9 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
 
 import Prelude(Bool(True, False), Maybe(Just, Nothing), map, (.), filter, (==), last, reverse, ($), (++), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise)

@@ -3,9 +3,6 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Utilities
 module ParserSpec.Util
        ( (-->)
