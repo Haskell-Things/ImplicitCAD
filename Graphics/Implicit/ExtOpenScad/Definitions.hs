@@ -58,7 +58,7 @@ instance Monad ArgParser where
     -- ArgParser actually
     (AP str fallback d f) >>= g = AP str fallback d (f >=> g)
     (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
-    -- These next to is easy, they just pass the work along to their child
+    -- These next two are easy, they just pass the work along to their child
     (APExample str child) >>= g = APExample str (child >>= g)
     (APTest str tests child) >>= g = APTest str tests (child >>= g)
     -- And an ArgParserTerminator happily gives away the value it contains
