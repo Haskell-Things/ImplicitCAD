@@ -137,6 +137,7 @@ fromℝtoFloat = realToFrac
 {-# INLINABLE fromℝtoFloat #-}
 
 -- | add aditional instances to Show, for when we dump the intermediate form of objects.
+--   FIXME: store functions in a dumpable form!
 --   These instances cover functions
 instance Show (ℝ -> ℝ) where
     show _ = "<function ℝ>"
