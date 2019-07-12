@@ -8,9 +8,9 @@
 -- | Statement related hspec tests.
 module ParserSpec.Statement (statementSpec) where
 
-import Prelude (String, Maybe(Just), Bool(True), ($))
+import Prelude (String, Maybe(Just), Bool(True, False), ($))
 
-import Test.Hspec (Spec, Expectation, shouldBe, shouldSatisfy, it, pendingWith, describe)
+import Test.Hspec (Spec, Expectation, shouldBe, it, pendingWith, describe)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
@@ -19,31 +19,32 @@ import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
 -- Parse an ExtOpenScad program.
-import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
+import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
 -- New parser
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
 
 import Graphics.Implicit.Definitions (Fastℕ)
 
-import Data.Either (Either(Right), isLeft)
-
-import Graphics.Implicit.Definitions (Fastℕ)
-
-import Text.ParserCombinators.Parsec (Line, Column)
+import Data.Either (Either(Right))
 
 -- Let us use the old syntax when defining Vars and Names.
+pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
+pattern Name :: String -> Pattern
 pattern Name n = GIED.Name (Symbol n)
+
+-- A compile time flag, indicating whether we should use the original parser, or the alternative parse.
+altParser :: Bool
+altParser = False
 
 -- | an expectation that a string is equivalent to a statement.
 infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
-(-->) source stmts =
-    parseProgram "noname" source `shouldBe` Right stmts
-
--- | an expectation that a string generates an error.
-parsesAsError :: String -> Expectation
-parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
+(-->) source stmts = parseProgram "noname" source `shouldBe` Right stmts
+  where
+    parseProgram = if altParser
+                   then Alt.parseProgram
+                   else Orig.parseProgram
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]

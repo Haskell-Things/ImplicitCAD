@@ -25,8 +25,8 @@ Library
                   parallel,
                   containers,
                   deepseq,
-                  hspec,
                   vector-space,
+                  hspec,
                   text,
                   monads-tf,
                   bytestring,
@@ -47,9 +47,17 @@ Library
                 -feager-blackholing
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
-
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
     Exposed-modules:
                     Graphics.Implicit
                     Graphics.Implicit.Definitions
@@ -69,6 +77,7 @@ Library
                     Graphics.Implicit.Export.SymbolicObj3
                     -- These are exposed for implicitsnap.
                     Graphics.Implicit.Export.TriangleMeshFormats
+                    Graphics.Implicit.Export.NormedTriangleMeshFormats
                     Graphics.Implicit.Export.PolylineFormats
                     Graphics.Implicit.Export.DiscreteAproxable
                     -- These are exposed for docgen.
@@ -91,7 +100,6 @@ Library
                   Graphics.Implicit.ExtOpenScad.Util.StateC
                   Graphics.Implicit.Export.MarchingSquaresFill
                   Graphics.Implicit.Export.RayTrace
-                  Graphics.Implicit.Export.NormedTriangleMeshFormats
                   Graphics.Implicit.Export.SymbolicFormats
                   Graphics.Implicit.Export.Util
                   Graphics.Implicit.Export.TextBuilderUtils
@@ -112,10 +120,8 @@ Executable extopenscad
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 containers,
                  vector-space,
                  filepath,
-                 parallel,
                  optparse-applicative >= 0.10.0,
                  implicit
    Ghc-options:
@@ -128,8 +134,17 @@ Executable extopenscad
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable docgen
    main-is: docgen.hs
@@ -141,8 +156,17 @@ Executable docgen
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
@@ -150,11 +174,7 @@ Executable implicitsnap
    Build-depends:
                  base,
                  bytestring,
-                 containers,
                  implicit,
-                 parallel,
-                 parsec,
-                 silently,
                  snap-core,
                  snap-server,
                  text,
@@ -169,8 +189,17 @@ Executable implicitsnap
                -feager-blackholing
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Executable Benchmark
    Main-is: Benchmark.hs
@@ -185,17 +214,24 @@ Executable Benchmark
 --               -dynamic
                -- for debugging.
                -Wall
-               -Wextra
-               -Weverything
+               -Wcompat
+               -Wmonomorphism-restriction
+               -Wmissing-local-signatures
+               -Wmissing-export-lists
+               -Wmissing-import-lists
+               -Wmissing-home-modules
+               -Widentities
+               -Wimplicit-prelude
+               -Wredundant-constraints
+               -Wall-missed-specialisations
+               -Werror
 
 Test-suite test-implicit
     Type: exitcode-stdio-1.0
     Build-depends:
                   base,
-                  containers,
                   hspec,
                   implicit,
-                  mtl,
                   parsec
     Main-is: Main.hs
     Hs-source-dirs: tests
@@ -205,8 +241,17 @@ Test-suite test-implicit
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
@@ -214,7 +259,11 @@ Test-suite test-implicit
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
-    Build-depends: base, criterion, random, parsec, implicit
+    Build-depends:
+                  base,
+                  criterion,
+                  parsec,
+                  implicit
     Main-is: parser-bench.hs
     Hs-source-dirs: programs
     Ghc-options:
@@ -223,8 +272,17 @@ Benchmark parser-bench
 --                -dynamic
                 -- for debugging.
                 -Wall
-                -Wextra
-                -Weverything
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-local-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+                -Werror
 
 Source-repository head
     Type:            git

@@ -51,10 +51,6 @@ matchFalse :: GenParser Char st ()
 matchFalse = P.reserved lexer "false"
 matchUndef :: GenParser Char st ()
 matchUndef = P.reserved lexer "undef"
-matchInclude :: GenParser Char st ()
-matchInclude = P.reserved lexer "include"
-matchUse :: GenParser Char st ()
-matchUse = P.reserved lexer "use"
 
 number :: GenParser Char st (Either Integer Double)
 number =

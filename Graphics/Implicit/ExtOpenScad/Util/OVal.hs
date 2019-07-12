@@ -2,9 +2,14 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
 -- FIXME: required. why?
 {-# LANGUAGE ViewPatterns #-}
+
 {-# LANGUAGE ScopedTypeVariables #-}
+
 {-# LANGUAGE TypeSynonymInstances #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, toOObj, divideObjs, caseOType, oTypeStr, getErrors) where

@@ -30,6 +30,7 @@ import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 import Control.Arrow (second)
 
 -- Let us use the old syntax when defining Names.
+pattern Name :: String -> Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 patVars :: Pattern -> [String]

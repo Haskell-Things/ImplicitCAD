@@ -14,9 +14,6 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   SourcePosition(SourcePosition),
                                                   Message(Message),
                                                   MessageType(..),
-                                                  sourceLine,
-                                                  sourceColumn,
-                                                  sourceName,
                                                   openScadCompatibility,
                                                   alternateParser,
                                                   ScadOpts(ScadOpts),
@@ -71,7 +68,7 @@ instance Monad ArgParser where
     -- ArgParser actually
     (AP str fallback d f) >>= g = AP str fallback d (f >=> g)
     (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
-    -- These next to is easy, they just pass the work along to their child
+    -- These next two are easy, they just pass the work along to their child
     (APExample str child) >>= g = APExample str (child >>= g)
     (APTest str tests child) >>= g = APTest str tests (child >>= g)
     -- And an ArgParserTerminator happily gives away the value it contains
@@ -159,10 +156,9 @@ instance Show OVal where
 
 -- | In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
-    { sourceLine :: Fastℕ
-    , sourceColumn :: Fastℕ
-    , sourceName :: FilePath
-    }
+    Fastℕ -- sourceLine
+    Fastℕ -- sourceColumn
+    FilePath -- sourceName
     deriving (Eq)
 
 instance Show SourcePosition where
@@ -170,14 +166,10 @@ instance Show SourcePosition where
     show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
 
 -- | The types of messages the execution engine can send back to the application.
-data MessageType = Info
-                 | Debug
-                 | Trace
+data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
                  | Warning
                  | Error
                  | SyntaxError
-                 | Advice
-                 | Lint
                  | Compatibility
                  | Unimplemented
   deriving (Show, Eq)

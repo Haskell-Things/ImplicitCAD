@@ -9,10 +9,7 @@ module ParserSpec.Expr (exprSpec) where
 
 
 -- Be explicit about what we import.
-import Prelude (Bool(True, False), ($))
-
--- TODO remove tracing
-import Debug.Trace(trace)
+import Prelude (Bool(True, False), String, ($))
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
@@ -26,20 +23,19 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver, parseAltExpr, origParseExpr)
-
-import qualified Graphics.Implicit.ExtOpenScad.Parser.AltExpr as ALT (expr0)
-import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as ORIG (expr0)
-import Text.ParserCombinators.Parsec hiding (State)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
 -- Let us use the old syntax when defining Vars and Names.
+pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
+pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- to choose which expression parser to test, change enableAlternateParser to True or False
+enableAlternateParser :: Bool
 enableAlternateParser = True
 
 ternaryIssue :: Expectation -> Expectation
@@ -51,27 +47,19 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
 
-parseExpr = 
-    if enableAlternateParser
-    then trace ("altExpr") parseAltExpr
-    else trace ("origExpr") origParseExpr
-
-testParser =
-    if enableAlternateParser
-    then trace ("altExpr") ALT.expr0
-    else trace ("origExpr") ORIG.expr0
-
 originalParserAdditionAstStyle :: Expectation -> Expectation
 originalParserAdditionAstStyle a =
     if enableAlternateParser
     then pendingWith "original parser generates + expression trees differently than - expression trees. The experimental parser treats them the same."
     else a
 
+experimentalParserAstStyle :: Expectation -> Expectation
 experimentalParserAstStyle a =
     if enableAlternateParser
     then a
     else pendingWith "The test was written for the experimental parser's AST generation."
 
+experimentalFeature :: Expectation -> Expectation
 experimentalFeature a =
     if enableAlternateParser
     then a

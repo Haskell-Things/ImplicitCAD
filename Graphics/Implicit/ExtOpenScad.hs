@@ -32,7 +32,7 @@ import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages)
 
 import Control.Monad (mapM_)
 
-import Control.Monad.State (runStateT)
+import Control.Monad.State.Lazy (runStateT)
 
 import System.Directory (getCurrentDirectory)
 

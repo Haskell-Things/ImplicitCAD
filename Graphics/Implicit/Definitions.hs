@@ -131,12 +131,14 @@ fromFastℕtoℝ :: Fastℕ -> ℝ
 fromFastℕtoℝ (Fastℕ a) = fromIntegral a
 {-# INLINABLE fromFastℕtoℝ #-}
 
--- | Convert from our rational to a float, for output.
+-- | Convert from our rational to a float, for output to a file.
 fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac
 {-# INLINABLE fromℝtoFloat #-}
 
--- |add aditional instances to Show, for when we dump the intermediate form of objects.
+-- | add aditional instances to Show, for when we dump the intermediate form of objects.
+--   FIXME: store functions in a dumpable form!
+--   These instances cover functions
 instance Show (ℝ -> ℝ) where
     show _ = "<function ℝ>"
 
@@ -148,14 +150,6 @@ instance Show (ℝ2 -> ℝ) where
 
 instance Show (ℝ3 -> ℝ) where
     show _ = "<collapse ℝ3 -> ℝ>"
-
---instance Show BoxedObj2 where
---    show _ = "<BoxedObj2>"
-
---instance Show BoxedObj3 where
---    show _ = "<BoxedObj3>"
-
-
 
 -- TODO: Find a better way to do this?
 -- | Add multiply and divide operators for two ℝ2s or ℝ3s.
@@ -225,9 +219,13 @@ type Boxed3 a = (a, Box3)
 
 -- | A Boxed 2D object
 type BoxedObj2 = Boxed2 Obj2
+--instance Show BoxedObj2 where
+--    show _ = "<BoxedObj2>"
 
 -- | A Boxed 3D object
 type BoxedObj3 = Boxed3 Obj3
+--instance Show BoxedObj3 where
+--    show _ = "<BoxedObj3>"
 
 -- | A symbolic 2D object format.
 --   We want to have symbolic objects so that we can

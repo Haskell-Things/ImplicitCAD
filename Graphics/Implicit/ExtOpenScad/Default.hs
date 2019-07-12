@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(Info, Unimplemented), openScadCompatibility)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), openScadCompatibility)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
@@ -36,7 +36,7 @@ defaultObjects = VarLookup $ fromList $
 -- rand, lookup,
 
 defaultConstants :: [(Symbol, OVal)]
-defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
+defaultConstants = map (\(a,b) -> (a, toOObj (b :: ℝ) ))
     [((Symbol "pi"), pi),
      ((Symbol "PI"), pi)]
 
@@ -67,10 +67,10 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 defaultFunctions2 :: [(Symbol, OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
-        ((Symbol "max"), max),
-        ((Symbol "min"), min),
+        ((Symbol "max"),   max),
+        ((Symbol "min"),   min),
         ((Symbol "atan2"), atan2),
-        ((Symbol "pow"), (**))
+        ((Symbol "pow"),   (**))
     ]
 
 defaultFunctionsSpecial :: [(Symbol, OVal)]
@@ -97,7 +97,7 @@ varArgModules =
         -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
         executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         executeSuite name pos _ suite runSuite = do
-            addMessage Unimplemented pos $ "Module " ++ name ++ " not implemented"
+            addMessage Warning pos $ "Module " ++ name ++ " not implemented"
             runSuite suite
 
         echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
@@ -116,7 +116,7 @@ varArgModules =
                 openScadFormat = "ECHO: " ++ text args
                 extopenscadFormat = concatMap showe' args
                 formattedMessage = if compat then openScadFormat else extopenscadFormat
-            addMessage Info pos $ formattedMessage
+            addMessage TextOut pos $ formattedMessage
             runSuite suite
 
         for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()

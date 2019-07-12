@@ -42,7 +42,7 @@ toLazyText = toLazyTextWith defaultChunkSize
 
 -- | Serialize a float in full precision
 bf :: ℝ -> Builder
-bf value = formatRealFloat Exponent Nothing $ (fromℝtoFloat value)
+bf value = formatRealFloat Exponent Nothing $ fromℝtoFloat value
 
 -- | Serialize a float with four decimal places
 buildTruncFloat :: ℝ -> Builder

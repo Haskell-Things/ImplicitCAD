@@ -23,6 +23,7 @@ import Text.Parsec.Prim (ParsecT)
 import Data.Functor.Identity (Identity)
 
 -- Let us use the old syntax when defining Vars.
+pattern Var :: String -> Expr
 pattern Var n = GIED.Var (Symbol n)
 
 -- TODO use the more helpful parser combinators like option, optional, between.

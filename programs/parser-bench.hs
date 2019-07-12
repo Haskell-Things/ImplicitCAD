@@ -5,7 +5,6 @@ import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as Orig (expr0)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltExpr as Alt (expr0)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
-import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 import Text.ParserCombinators.Parsec (parse, SourceName, ParseError, GenParser)
 import Text.Printf (printf)
 

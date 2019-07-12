@@ -2,9 +2,6 @@
 -- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 module Graphics.Implicit.IntegralUtil (ℕ, toℕ, fromℕ) where
 
 import Prelude (Integral(toInteger, quot, rem, quotRem, div, mod, divMod), Num((+), (*), abs, negate, signum, fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int, Integer)
