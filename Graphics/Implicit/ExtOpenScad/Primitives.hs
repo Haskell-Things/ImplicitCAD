@@ -6,8 +6,11 @@
 
 -- This file provides primitive objects for the openscad parser.
 
--- FIXME: why are these required?
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
+-- Allow us to use explicit foralls when writing function type declarations.
+{-# LANGUAGE ExplicitForAll #-}
+
+-- Allow us to use type signatures in patterns.
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- Allow us to use shorter forms of Var and Name.
 {-# LANGUAGE PatternSynonyms #-}
@@ -114,6 +117,8 @@ cube = moduleWithoutSuite "cube" $ do
     test "cube(4);"
         `eulerCharacteristic` 2
     test "cube(size=[2,3,4]);"
+        `eulerCharacteristic` 2
+    test "cube([2,3,4]);" -- openscad syntax
         `eulerCharacteristic` 2
     addObj3 $ Prim.rect3R r (x1, y1, z1) (x2, y2, z2)
 

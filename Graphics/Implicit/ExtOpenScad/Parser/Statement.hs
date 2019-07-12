@@ -2,9 +2,6 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Allow us to use a shorter form of Name.
 {-# LANGUAGE PatternSynonyms #-}
 
@@ -34,6 +31,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- Let us use the old syntax when defining Names.
+pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]

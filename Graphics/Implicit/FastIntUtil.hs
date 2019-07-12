@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.FastIntUtil (Fastℕ(Fastℕ), toFastℕ, fromFastℕ) where
 
-import Prelude (Integral(toInteger, quot, rem, quotRem, div, mod, divMod), Num((+), (*), abs, negate, signum, fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show, ($), Read, Int)
+import Prelude (Integral(toInteger, quot, rem, quotRem, div, mod, divMod), Num((+), (*), abs, negate, signum, fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show(show), ($), Read, Int)
 
 import qualified Prelude as P ((+), (*), abs, negate, signum, fromInteger, succ, pred, toEnum, quotRem, divMod, toInteger)
 
@@ -28,11 +28,14 @@ instance FastN Fastℕ where
 
 -- System integers, meant to go fast, and have no chance of wrapping 2^31.
 newtype Fastℕ = Fastℕ Int
-  deriving (Show, Read, Eq, Ord)
+  deriving (Read, Eq, Ord)
 
 instance Real Fastℕ where
   toRational (Fastℕ a) = P.toInteger a :% 1
   {-# INLINABLE toRational #-}
+
+instance Show Fastℕ where
+  show (Fastℕ n) = show n
 
 fastℕBoth :: (Int, Int) -> (Fastℕ, Fastℕ)
 fastℕBoth (a, b) = (Fastℕ a, Fastℕ b)

@@ -2,15 +2,12 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- exports getContourMesh, which returns an array of triangles describing the interior of a 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
-import Prelude(Bool(True, False), fromIntegral, ($), (-), (+), (/), (*), (<=), ceiling, concat, max, div, floor)
+import Prelude(Bool(True, False), ($), (-), (+), (/), (*), (<=), ceiling, concat, max, div, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, both, Polytri(Polytri), Obj2, (⋯/), (⋯*))
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, both, Polytri(Polytri), Obj2, (⋯/), (⋯*), fromℕtoℝ, fromℕ)
 
 import Data.VectorSpace ((^-^),(^+^))
 
@@ -33,11 +30,11 @@ getContourMesh p1 p2 res obj =
 
         -- | A helper for calculating a position inside of the space.
         gridPos :: (ℕ,ℕ) -> (ℕ,ℕ) -> ℝ2
-        gridPos n' m = p1 ^+^ d ⋯* ((fromIntegral `both` m) ⋯/ (fromIntegral `both` n'))
+        gridPos n' m = p1 ^+^ d ⋯* ((fromℕtoℝ `both` m) ⋯/ (fromℕtoℝ `both` n'))
 
         -- | Alternate Grid mapping funcs
         toGrid :: ℝ2 -> (ℕ,ℕ)
-        toGrid f = floor `both` ((fromIntegral `both` n) ⋯* (f ^-^ p1) ⋯/ d)
+        toGrid f = floor `both` ((fromℕtoℝ `both` n) ⋯* (f ^-^ p1) ⋯/ d)
 
         -- | Evaluate obj on a grid, in parallel.
         valsOnGrid :: [[ℝ]]
@@ -49,7 +46,7 @@ getContourMesh p1 p2 res obj =
         -- | Compute the triangles.
         trisOnGrid :: [[[Polytri]]]
         trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) preEvaledObj
-             | mx <- [0.. nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromIntegral $ div ny 32) rdeepseq
+             | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromℕ $ div ny 32) rdeepseq
         -- FIXME: merge adjacent triangles.
         triangles = concat $ concat trisOnGrid
     in

@@ -8,7 +8,7 @@
 module ParserSpec.Expr (exprSpec) where
 
 -- Be explicit about what we import.
-import Prelude (Bool(True, False), ($))
+import Prelude (Bool(True, False), String, ($))
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
@@ -22,13 +22,15 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, modulo, power, divide, negate, and, or, not, gt, lt, ternary, append, index, lambda, parseWithLeftOver)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
 -- Let us use the old syntax when defining Vars and Names.
+pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
+pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 ternaryIssue :: Expectation -> Expectation

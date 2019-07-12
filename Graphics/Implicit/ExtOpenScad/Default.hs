@@ -14,9 +14,8 @@ import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map,
                 abs, signum, fromInteger, (.), floor, ceiling, round, max, min, flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, cos, sin, tan, acos, asin, atan, sinh, cosh, tanh, π, sqrt, exp, powℝℝ, atan2, log)
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol), SourcePosition, MessageType(Info, Unimplemented))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
 import Data.List (genericIndex, genericLength)
@@ -36,7 +35,7 @@ defaultObjects = VarLookup $ fromList $
 -- FIXME: what standard?
 
 defaultConstants :: [(Symbol, OVal)]
-defaultConstants = map (\(a,b) -> (a, toOObj (b::ℝ) ))
+defaultConstants = map (\(a,b) -> (a, toOObj (b :: ℝ) ))
     [((Symbol "pi"), π),
      ((Symbol "PI"), π)]
 
@@ -67,10 +66,10 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
 defaultFunctions2 :: [(Symbol, OVal)]
 defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
-        ((Symbol "max"), max),
-        ((Symbol "min"), min),
+        ((Symbol "max"),   max),
+        ((Symbol "min"),   min),
         ((Symbol "atan2"), atan2),
-        ((Symbol "pow"), powℝℝ)
+        ((Symbol "pow"),   powℝℝ)
     ]
 
 defaultFunctionsSpecial :: [(Symbol, OVal)]

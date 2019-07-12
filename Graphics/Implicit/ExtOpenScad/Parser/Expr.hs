@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- for a 'power' operator, from our math library.
 import Graphics.Implicit.Definitions (powℝ)
@@ -23,7 +23,9 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString, padChar)
 
 -- Let us use the old syntax when defining Vars and Names.
+pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
+pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 variable :: GenParser Char st Expr

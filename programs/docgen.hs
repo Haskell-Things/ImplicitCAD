@@ -10,7 +10,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, snd, sequence, (.), concat, head, tail, sequence, length, (>), (/=), (+))
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, snd, (.), head, tail, length, (/=), (+))
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol))
 
@@ -18,14 +18,17 @@ import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_, mapM)
 
 -- | Return true if the argument is of type ExampleDoc.
+isExample :: DocPart -> Bool
 isExample (ExampleDoc _ ) = True
 isExample _ = False
 
 -- | Return true if the argument is of type ArgumentDoc.
+isArgument :: DocPart -> Bool
 isArgument (ArgumentDoc _ _ _) = True
 isArgument _ = False
 
 -- | Return true if the argument is of type Branch.
+isBranch :: DocPart -> Bool
 isBranch (Branch _) = True
 isBranch _ = False
 
@@ -131,7 +134,7 @@ getArgParserDocs ::
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
 getArgParserDocs (AP  name fallback doc fnext) = do
-  otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(e :: Ex.SomeException) -> return [])
+  otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(_ :: Ex.SomeException) -> return [])
   if (otherDocs /= [Empty])
     then
         do
@@ -161,7 +164,7 @@ getArgParserDocs (APTerminator _) = return $ [(Empty)]
 -- This one confuses me.
 getArgParserDocs (APBranch children) = do
   putStrLn $ show $ length children
-  otherDocs <- Ex.catch (getArgParserDocs (APBranch $ tail children)) (\(e :: Ex.SomeException) -> return [])
+  otherDocs <- Ex.catch (getArgParserDocs (APBranch $ tail children)) (\(_ :: Ex.SomeException) -> return [])
   aResults <- getArgParserDocs $ head children
   if (otherDocs /= [(Empty)])
     then
