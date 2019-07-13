@@ -30,13 +30,17 @@ pattern Name n = GIED.Name (Symbol n)
 variable :: GenParser Char st Expr
 variable = fmap Var variableSymb
 
+-- | Parse a true or false value.
+boolean :: GenParser Char st Expr
+boolean = ("boolean" ?:) $ do
+  b  <-      (string "true"  >> return True )
+        *<|> (string "false" >> return False)
+  return . LitE $ OBool b
+
 -- FIXME: Parse int or float seperately, so that we can use it inside of scientific notation.
 literal :: GenParser Char st Expr
 literal = ("literal" ?:) $
-    "boolean" ?: do
-        b  <-      (string "true"  >> return True )
-              *<|> (string "false" >> return False)
-        return . LitE $ OBool b
+    boolean
     -- FIXME: this is a hack, implement something like exprN to replace this?
     *<|> "number" ?: (
          do
