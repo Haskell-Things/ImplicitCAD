@@ -168,13 +168,14 @@ instance Show Message where
   show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
 
 -- | Options changing the behavior of the extended OpenScad engine.
-newtype ScadOpts = ScadOpts
-    Bool -- openScadCompatibility 
+data ScadOpts = ScadOpts
+  Bool -- openScadCompatibility
+  Bool -- Imports allowed.
 
 instance Show ScadOpts where
-  show (ScadOpts openScadCompat) =
-    "ScadOpts openScadCompatibility: " ++
-    show openScadCompat
+  show (ScadOpts compat imports) =
+    "ScadOpts openScadCompatibility: " ++ (show compat)
+                       ++ " Imports: " ++ (show imports)
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
