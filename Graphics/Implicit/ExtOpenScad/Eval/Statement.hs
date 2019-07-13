@@ -140,14 +140,15 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
 
 -- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
-    name' <- getRelPath name
-    content <- liftIO $ readFile name'
     scadOpts <- scadOptions
     let
       allowInclude :: ScadOpts -> Bool
       allowInclude (ScadOpts _ allow) = allow
     if (allowInclude scadOpts)
-      then case parseProgram name' content of
+      then do
+      name' <- getRelPath name
+      content <- liftIO $ readFile name'
+      case parseProgram name' content of
         Left e -> errorC sourcePos $ "Error parsing " ++ name ++ ":" ++ show e
         Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
