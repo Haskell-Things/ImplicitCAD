@@ -11,7 +11,9 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- The parsec parsing library.
-import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
+import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, optional)
+
+import Text.Parsec.String (GenParser)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Symbol(Symbol))
 
