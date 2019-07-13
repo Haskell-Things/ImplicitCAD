@@ -1,11 +1,25 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 import Prelude (IO, String, Char, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
+
 import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
+
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Expr as Orig (expr0)
+
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
+
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltExpr as Alt (expr0)
+
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
-import Text.ParserCombinators.Parsec (parse, SourceName, ParseError, GenParser)
+
+import Text.Parsec (parse, SourceName, ParseError)
+
+import Text.Parsec.String (GenParser)
+
 import Text.Printf (printf)
 
 lineComment :: Int -> String
