@@ -30,6 +30,7 @@ pattern Name n = GIED.Name (Symbol n)
 variable :: GenParser Char st Expr
 variable = fmap Var variableSymb
 
+-- FIXME: Parse int or float seperately, so that we can use it inside of scientific notation.
 literal :: GenParser Char st Expr
 literal = ("literal" ?:) $
     "boolean" ?: do
@@ -41,6 +42,7 @@ literal = ("literal" ?:) $
          do
             a <- many1 digit
             _ <- char 'e'
+            _ <- optional $ char '+'
             b <- many1 digit
             return . LitE $ ONum $ read a * (10 ** read b)
         *<|>  do
@@ -48,16 +50,15 @@ literal = ("literal" ?:) $
             _ <- char '.'
             b <- many digit
             _ <- char 'e'
+            _ <- optional $ char '+'
             c <- many1 digit
             return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
         *<|>  do
             a <- many1 digit
-            _ <- char '.'
-            b <- many digit
             _ <- char 'e'
-            _ <- char '+'
-            c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
+            _ <- char '-'
+            b <- many1 digit
+            return . LitE $ ONum $ read a / (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -66,12 +67,6 @@ literal = ("literal" ?:) $
             _ <- char '-'
             c <- many1 digit
             return . LitE $ ONum $ read (a ++ "." ++ b) / (10 ** read c)
-        *<|>  do
-            a <- many1 digit
-            _ <- char 'e'
-            _ <- char '-'
-            b <- many1 digit
-            return . LitE $ ONum $ read a / (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
