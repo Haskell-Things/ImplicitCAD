@@ -1,3 +1,7 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2016, Kelvin Cookshaw (kelvin@cookshaw.com)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
 
 -- Enable explicit-forall syntax.
 {-# LANGUAGE ExplicitForAll #-}
@@ -16,7 +20,9 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 
-import Text.ParserCombinators.Parsec (GenParser, SourceName, ParseError, getPosition, between, skipMany1, sepBy, (<|>), try, sepEndBy, many, optionMaybe, many1, eof, parse)
+import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, many1, eof, parse)
+
+import Text.Parsec.String (GenParser)
 
 import Text.Parsec.Prim (ParsecT)
 

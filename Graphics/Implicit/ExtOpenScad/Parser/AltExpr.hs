@@ -1,3 +1,8 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2016, Kelvin Cookshaw (kelvin@cookshaw.com)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 -- Allow us to use a shorter form of Var.
 {-# LANGUAGE PatternSynonyms #-}
 
@@ -10,7 +15,9 @@ import Prelude (Char, String, Bool(True, False), Either(Left, Right), ($), retur
 
 import Control.Monad.Fix(fix)
 
-import Text.ParserCombinators.Parsec (GenParser, (<|>), sepBy, between, chainl1, chainr1)
+import Text.Parsec.String (GenParser)
+
+import Text.Parsec ((<|>), sepBy, between, chainl1, chainr1)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)), Symbol(Symbol), Pattern (Name), OVal(OBool, OUndefined, ONum, OString))
 
