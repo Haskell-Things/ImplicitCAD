@@ -18,8 +18,9 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.ParserCombinators.Parsec (SourceName, try, sepBy, GenParser, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf, (<|>), (<?>))
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf)
 import Text.Parsec.Prim (ParsecT)
+import Text.Parsec.String (GenParser)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
 

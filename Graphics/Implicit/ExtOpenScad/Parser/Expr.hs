@@ -11,7 +11,9 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- The parsec parsing library.
-import Text.ParserCombinators.Parsec (GenParser, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try)
+import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, optional)
+
+import Text.Parsec.String (GenParser)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Symbol(Symbol))
 
@@ -28,17 +30,23 @@ pattern Name n = GIED.Name (Symbol n)
 variable :: GenParser Char st Expr
 variable = fmap Var variableSymb
 
+-- | Parse a true or false value.
+boolean :: GenParser Char st Expr
+boolean = ("boolean" ?:) $ do
+  b  <-      (string "true"  >> return True )
+        *<|> (string "false" >> return False)
+  return . LitE $ OBool b
+
+-- FIXME: Parse int or float seperately, so that we can use it inside of scientific notation.
 literal :: GenParser Char st Expr
 literal = ("literal" ?:) $
-    "boolean" ?: do
-        b  <-      (string "true"  >> return True )
-              *<|> (string "false" >> return False)
-        return . LitE $ OBool b
+    boolean
     -- FIXME: this is a hack, implement something like exprN to replace this?
     *<|> "number" ?: (
          do
             a <- many1 digit
             _ <- char 'e'
+            _ <- optional $ char '+'
             b <- many1 digit
             return . LitE $ ONum $ read a * (10 ** read b)
         *<|>  do
@@ -46,16 +54,15 @@ literal = ("literal" ?:) $
             _ <- char '.'
             b <- many digit
             _ <- char 'e'
+            _ <- optional $ char '+'
             c <- many1 digit
             return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
         *<|>  do
             a <- many1 digit
-            _ <- char '.'
-            b <- many digit
             _ <- char 'e'
-            _ <- char '+'
-            c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
+            _ <- char '-'
+            b <- many1 digit
+            return . LitE $ ONum $ read a / (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'
@@ -64,12 +71,6 @@ literal = ("literal" ?:) $
             _ <- char '-'
             c <- many1 digit
             return . LitE $ ONum $ read (a ++ "." ++ b) / (10 ** read c)
-        *<|>  do
-            a <- many1 digit
-            _ <- char 'e'
-            _ <- char '-'
-            b <- many1 digit
-            return . LitE $ ONum $ read a / (10 ** read b)
         *<|>  do
             a <- many1 digit
             _ <- char '.'

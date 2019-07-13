@@ -12,9 +12,11 @@ module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), s
 
 import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
 
-import Text.ParserCombinators.Parsec (GenParser, SourcePos, many, oneOf, noneOf, (<|>), try, string, manyTill, anyChar, (<?>), char, many1, sepBy)
+import Text.Parsec (SourcePos, (<|>), (<?>), many, oneOf, noneOf, try, string, manyTill, anyChar, char, many1, sepBy)
 
-import qualified Text.ParserCombinators.Parsec as P (sourceLine, sourceColumn, sourceName)
+import Text.Parsec.String (GenParser)
+
+import qualified Text.Parsec as P (sourceLine, sourceColumn, sourceName)
 
 import Text.Parsec.Prim (ParsecT, Stream)
 

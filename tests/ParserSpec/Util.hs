@@ -41,7 +41,9 @@ import Graphics.Implicit.Definitions (ℝ)
 -- Expressions, symbols, and values in the OpenScad language.
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), Symbol(Symbol), OVal(ONum, OBool, OString), Pattern)
 
-import Text.ParserCombinators.Parsec (Parser, ParseError, parse, manyTill, anyChar, eof)
+import Text.Parsec (ParseError, parse, manyTill, anyChar, eof)
+
+import Text.Parsec.String (Parser)
 
 import Control.Applicative ((<$>), (<*>))
 
