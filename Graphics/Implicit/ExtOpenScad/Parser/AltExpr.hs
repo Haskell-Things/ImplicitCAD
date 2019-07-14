@@ -23,7 +23,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTok, identifier, matchTrue, matchFalse, matchUndef, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(matchTok, identifier, matchTrue, matchFalse, matchUndef, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet)
 
 import Text.Parsec.Prim (ParsecT)
 

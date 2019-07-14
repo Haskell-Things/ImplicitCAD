@@ -1,4 +1,9 @@
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (lexer, matchTok, matchTrue, matchFalse, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2016, Kelvin Cookshaw (kelvin@cookshaw.com)
+-- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchTrue, matchFalse, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
 
 -- Be explicit about what we import.
 import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
