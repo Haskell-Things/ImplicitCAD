@@ -75,9 +75,12 @@ literalSpec = do
   it "handles floats" $
     "23.42" --> num 23.42
   describe "E notation" $ do
-    it "accepts e with positive sign" $ "1e+1" --> num 10
-    it "accepts e with negative sign" $ "10e-1" --> num 1
-    it "accepts e with no sign" $ "1e1" --> num 10
+    it "accepts integer e with positive sign" $ "1e+1" --> num 10
+    it "accepts integer e with negative sign" $ "10e-1" --> num 1
+    it "accepts integer e with no sign" $ "1e1" --> num 10
+    it "accepts floating e with positive sign" $ "1.1e+1" --> num 11
+    it "accepts floating e with negative sign" $ "1.28e-1" --> num 0.128
+    it "accepts floating e with no sign" $ "1.1e1" --> num 11
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
