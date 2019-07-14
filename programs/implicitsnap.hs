@@ -141,6 +141,13 @@ isTextOut :: Message -> Bool
 isTextOut (Message (TextOut) _ _ ) = True
 isTextOut _                        = False
 
+-- | decide what options to send to the scad engine.
+generateScadOpts :: ScadOpts
+generateScadOpts = ScadOpts compat_flag import_flag
+  where
+    compat_flag = False -- Do not try to be extra compatible with openscad.
+    import_flag = False -- Do not honor include or use statements.
+
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
 executeAndExport :: String -> String -> Maybe String -> String
@@ -157,7 +164,7 @@ executeAndExport content callback maybeFormat =
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str          msg =
             callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
-        scadOptions = ScadOpts False
+        scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions content
     in
       unsafePerformIO $ do
