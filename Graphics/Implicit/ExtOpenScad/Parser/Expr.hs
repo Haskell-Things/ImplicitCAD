@@ -8,13 +8,13 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- for a 'power' operator, from our math library.
 import Graphics.Implicit.Definitions (powℝ)
 
 -- The parsec parsing library.
-import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, optional, option)
+import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
 
 import Text.Parsec.String (GenParser)
 
@@ -40,45 +40,35 @@ boolean = ("boolean" ?:) $ do
         *<|> (string "false" >> return False)
   return . LitE $ OBool b
 
--- FIXME: Parse int or float seperately, so that we can use it inside of scientific notation.
 literal :: GenParser Char st Expr
 literal = ("literal" ?:) $
-    boolean
-    -- FIXME: this is a hack, implement something like exprN to replace this?
-    *<|> "number" ?: (
+    "number" ?:
          do
             a <- many1 digit
             b <- option "" (
               do
                 _ <- char '.'
-                e <- many1 digit
-                return ("." ++ e)
+                c <- many1 digit
+                return ("." ++ c)
               )
-            _ <- char 'e'
-            _ <- optional $ char '+'
-            c <- many1 digit
-            return . LitE $ ONum $ read (a ++ b) * (10 `powℝ` read c)
-        *<|>  do
-            a <- many1 digit
-            b <- option "" (
+            d <- option "0" (
               do
-                _ <- char '.'
-                e <- many1 digit
-                return ("." ++ e)
+                _ <- char 'e'
+                exponent <- choice [
+                  ( do
+                      e <- char '-'
+                      f <- many1 digit
+                      return (e : f)
+                  ),
+                  ( do
+                      _ <- optional $ char '+'
+                      g <- many1 digit
+                      return g
+                  )]
+                return exponent
               )
-            _ <- string "e-"
-            c <- many1 digit
-            return . LitE $ ONum $ read (a ++ b) / (10 `powℝ` read c)
-        *<|>  do
-            a <- many1 digit
-            b <- option "" (
-              do
-                _ <- char '.'
-                e <- many1 digit
-                return ("." ++ e)
-              )
-            return . LitE $ ONum $ read (a ++ b)
-        )
+            return . LitE $ ONum $ read (a ++ b) * (10 `powℝ` read d)
+     *<|> boolean
      *<|> "string" ?: do
         _ <- char '"'
         strlit <-  many $ (string "\\\"" >> return '\"')
