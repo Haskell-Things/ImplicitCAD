@@ -18,7 +18,7 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf)
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, eof, string, ParseError, many, noneOf)
 import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
@@ -39,7 +39,7 @@ parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
-        sts <- many1 computation
+        sts <- many computation
         eof
         return sts
 

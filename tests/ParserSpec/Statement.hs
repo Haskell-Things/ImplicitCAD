@@ -10,7 +10,7 @@ module ParserSpec.Statement (statementSpec) where
 
 import Prelude (String, Maybe(Just), Bool(True), ($))
 
-import Test.Hspec (Spec, Expectation, shouldBe, it, pendingWith, describe)
+import Test.Hspec (Spec, Expectation, shouldBe, it, describe, pendingWith)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
@@ -84,8 +84,7 @@ emptyFileIssue _ = pendingWith "parser should probably allow empty files"
 statementSpec :: Spec
 statementSpec = do
   describe "empty file" $
-    it "returns an empty list" $
-      emptyFileIssue $ "" --> []
+    it "returns an empty list" $ "" --> []
   describe "assignment" assignmentSpec
   describe "if" ifSpec
   describe "line comment" $
