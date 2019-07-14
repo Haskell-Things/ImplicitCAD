@@ -91,15 +91,11 @@ literal = ("literal" ?:) $
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
   _ <- string "let"
-  _ <- genSpace
-  _ <- char '('
-  _ <- genSpace
+  _ <- padChar '('
   bindingPairs <- sepBy ( do
     _ <- genSpace
     boundName <- variableSymb
-    _ <- genSpace
-    _ <- char '='
-    _ <- genSpace
+    _ <- padChar '='
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
