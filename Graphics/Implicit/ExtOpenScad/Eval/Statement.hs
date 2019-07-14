@@ -18,12 +18,12 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
                                                   MessageType(TextOut),
-                                                  ScadOpts
+                                                  ScadOpts(ScadOpts),
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, modifyVarLookup, mapMaybeM, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, warnC, modifyVarLookup, mapMaybeM, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -141,10 +141,17 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 return []
         pushVals newVals
 
+-- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
-    name' <- getRelPath name
-    content <- liftIO $ readFile name'
-    case parseProgram name' content of
+    scadOpts <- scadOptions
+    let
+      allowInclude :: ScadOpts -> Bool
+      allowInclude (ScadOpts _ allow _) = allow
+    if (allowInclude scadOpts)
+      then do
+      name' <- getRelPath name
+      content <- liftIO $ readFile name'
+      case parseProgram name' content of
         Left e -> errorC sourcePos $ "Error parsing " ++ name ++ ":" ++ show e
         Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
@@ -152,6 +159,8 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
             runSuite sts
             vals' <- getVals
             if injectVals then putVals (vals' ++ vals) else putVals vals
+      else
+        warnC sourcePos $ "Not importing " ++ name ++ ": File import disabled."
 
 runStatementI (StatementI _ (Sequence suite)) =
     runSuite suite

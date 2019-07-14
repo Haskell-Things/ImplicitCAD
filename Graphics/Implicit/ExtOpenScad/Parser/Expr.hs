@@ -11,7 +11,7 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), (/), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
 
 -- The parsec parsing library.
-import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, optional)
+import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, optional, option)
 
 import Text.Parsec.String (GenParser)
 
@@ -45,40 +45,36 @@ literal = ("literal" ?:) $
     *<|> "number" ?: (
          do
             a <- many1 digit
-            _ <- char 'e'
-            _ <- optional $ char '+'
-            b <- many1 digit
-            return . LitE $ ONum $ read a * (10 ** read b)
-        *<|>  do
-            a <- many1 digit
-            _ <- char '.'
-            b <- many digit
+            b <- option "" (
+              do
+                _ <- char '.'
+                e <- many1 digit
+                return ("." ++ e)
+              )
             _ <- char 'e'
             _ <- optional $ char '+'
             c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) * (10 ** read c)
+            return . LitE $ ONum $ read (a ++ b) * (10 ** read c)
         *<|>  do
             a <- many1 digit
-            _ <- char 'e'
-            _ <- char '-'
-            b <- many1 digit
-            return . LitE $ ONum $ read a / (10 ** read b)
-        *<|>  do
-            a <- many1 digit
-            _ <- char '.'
-            b <- many digit
-            _ <- char 'e'
-            _ <- char '-'
+            b <- option "" (
+              do
+                _ <- char '.'
+                e <- many1 digit
+                return ("." ++ e)
+              )
+            _ <- string "e-"
             c <- many1 digit
-            return . LitE $ ONum $ read (a ++ "." ++ b) / (10 ** read c)
+            return . LitE $ ONum $ read (a ++ b) / (10 ** read c)
         *<|>  do
             a <- many1 digit
-            _ <- char '.'
-            b <- many digit
-            return . LitE $ ONum $ read (a ++ "." ++ b)
-        *<|>  do
-            a <- many1 digit
-            return . LitE $ ONum $ read a
+            b <- option "" (
+              do
+                _ <- char '.'
+                e <- many1 digit
+                return ("." ++ e)
+              )
+            return . LitE $ ONum $ read (a ++ b)
         )
      *<|> "string" ?: do
         _ <- char '"'
@@ -95,15 +91,11 @@ literal = ("literal" ?:) $
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
   _ <- string "let"
-  _ <- genSpace
-  _ <- char '('
-  _ <- genSpace
+  _ <- padChar '('
   bindingPairs <- sepBy ( do
     _ <- genSpace
     boundName <- variableSymb
-    _ <- genSpace
-    _ <- char '='
-    _ <- genSpace
+    _ <- padChar '='
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')

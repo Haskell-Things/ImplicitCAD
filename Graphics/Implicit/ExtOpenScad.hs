@@ -13,7 +13,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), alternateParser)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts(ScadOpts), Message(Message), MessageType(SyntaxError))
 
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
@@ -44,7 +44,8 @@ runOpenscad scadOpts source =
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
         rearrange (_, (CompState (varlookup, ovals, _, messages, _))) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
-        parseProgram = if alternateParser scadOpts then Alt.parseProgram else Orig.parseProgram
+        alternateParser (ScadOpts _ _ useAltParser) = useAltParser
+        parseProgram = if (alternateParser scadOpts) then Alt.parseProgram else Orig.parseProgram
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
         mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
     in case parseProgram "" source of

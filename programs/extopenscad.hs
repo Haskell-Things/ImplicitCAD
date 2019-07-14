@@ -68,6 +68,7 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , alternateParser :: Bool
     , openScadEcho :: Bool
     , rawEcho :: Bool
+    , noImport :: Bool
     , inputFile :: FilePath
     }
 
@@ -164,6 +165,10 @@ extOpenScadOpts = ExtOpenScadOpts
         (  long "fraw-echo"
            <> help "Do not use any prefix when displaying text output from the extended OpenSCAD code"
         )
+    <*> switch
+        (  long "fno-import"
+           <> help "Do not honor \"use\" and \"include\" statements, and instead generate a warning"
+        )
     <*> argument str
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
@@ -253,12 +258,16 @@ objectMessage dimensions infile outfile res box =
   "Rendering " ++ dimensions ++ " object from " ++ infile ++ " to " ++ outfile ++ " with resolution " ++ res ++ " in box " ++ box
 
 -- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
---processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts -> [Message]
+-- FIXME: allow processArgs to generate messages.
 processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts
-processArgs (ExtOpenScadOpts o f r e q compat alt echo rawecho file) =
-  ExtOpenScadOpts o f r e q compat alt echo_flag rawecho file
+processArgs (ExtOpenScadOpts o f r e q compat alt echo rawecho noimport file) =
+  ExtOpenScadOpts o f r e q compat alt echo_flag rawecho noimport file
   where
     echo_flag    = (compat || echo) && (not rawecho)
+
+-- | decide what options to send the scad engine based on the post-processed arguments passed to extopenscad.
+generateScadOpts :: ExtOpenScadOpts -> ScadOpts
+generateScadOpts args = ScadOpts (openScadCompatibility args) (not $ noImport args) (alternateParser args)
 
 -- | Interpret arguments, and render the object defined in the supplied input file.
 run :: ExtOpenScadOpts -> IO ()
@@ -278,7 +287,7 @@ run rawargs = do
                 _ | Just fmt <- outputFormat args -> Just fmt
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
-        scadOpts = ScadOpts (openScadCompatibility args) (alternateParser args)
+        scadOpts = generateScadOpts args
         openscadProgram = runOpenscad scadOpts content
 
     if (quiet args)

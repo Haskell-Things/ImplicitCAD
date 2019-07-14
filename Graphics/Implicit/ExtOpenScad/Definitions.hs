@@ -14,8 +14,6 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   SourcePosition(SourcePosition),
                                                   Message(Message),
                                                   MessageType(..),
-                                                  openScadCompatibility,
-                                                  alternateParser,
                                                   ScadOpts(ScadOpts),
                                                   StateC,
                                                   CompState(CompState),
@@ -183,17 +181,15 @@ instance Show Message where
 
 -- | Options changing the behavior of the extended OpenScad engine.
 data ScadOpts = ScadOpts
-    { openScadCompatibility :: Bool
-    , alternateParser :: Bool
-    }
+  Bool -- openScadCompatibility
+  Bool -- Imports allowed.
+  Bool -- Use the alternative parser.
 
 instance Show ScadOpts where
-  show (ScadOpts openScadCompat altParser) =
-    "ScadOpts openScadCompatibility: " ++
-    show openScadCompat ++
-    "alternateParser: " ++
-    show altParser
-    
+  show (ScadOpts compat imports altParser) =
+    "ScadOpts openScadCompatibility: " ++ (show compat)
+                       ++ " Imports: " ++ (show imports)
+                     ++ " AltParser: " ++ (show altParser)
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.

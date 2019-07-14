@@ -9,15 +9,16 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
 
 import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, StateC, CompState(CompState), ScadOpts, SourcePosition, Message(Message), MessageType(Error))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, StateC, CompState(CompState), SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts)
 
 import Data.Map (lookup)
 import Control.Monad.State (get, put, modify)
 import System.FilePath((</>))
+import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup
 getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get
@@ -81,7 +82,12 @@ errorC sourcePos err = do
       addMessage Error sourcePos err
 {-# INLINABLE errorC #-}
 
-mapMaybeM :: Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
+warnC :: SourcePosition -> String -> StateC ()
+warnC sourcePos err = do
+      addMessage Warning sourcePos err
+{-# INLINABLE warnC #-}
+
+mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do
     b <- f a
     return (Just b)

@@ -13,7 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, return, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), openScadCompatibility)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
@@ -112,10 +112,10 @@ varArgModules =
                 showe' (Nothing, OString arg) = arg
                 showe' (Just (Symbol var), arg) = var ++ " = " ++ showe' (Nothing, arg)
                 showe' a = show' a
-                compat = openScadCompatibility scadOpts
+                compat (ScadOpts compat_flag _ _) = compat_flag
                 openScadFormat = "ECHO: " ++ text args
                 extopenscadFormat = concatMap showe' args
-                formattedMessage = if compat then openScadFormat else extopenscadFormat
+                formattedMessage = if (compat scadOpts) then openScadFormat else extopenscadFormat
             addMessage TextOut pos $ formattedMessage
             runSuite suite
 
