@@ -18,7 +18,7 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, eof, string, ParseError, many, noneOf)
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, string, ParseError, many, noneOf)
 import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
@@ -26,7 +26,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb, sourcePosition)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb, sourcePosition)
 
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
@@ -51,29 +51,27 @@ parseProgram name s = parse program name s where
 computation :: GenParser Char st StatementI
 computation =
     do -- suite statements: no semicolon...
-        _ <- genSpace
         s <- tryMany [
             ifStatementI,
             forStatementI,
             throwAway,
             userModuleDeclaration
             ]
-        _ <- genSpace
+        _ <- whiteSpace
         return s
     *<|> do -- Non suite statements. Semicolon needed...
-        _ <- genSpace
         s <- tryMany [
             echo,
             include, -- also handles use
             function,
             assignment
             ]
-        _ <- stringGS " ; "
+        _ <- stringGS ";"
+        _ <- whiteSpace
         return s
     *<|> do -- Modules. no semicolon...
-        _ <- genSpace
         s <- userModule
-        _ <- genSpace
+        _ <- whiteSpace
         return s
 
 {-
@@ -95,9 +93,9 @@ computation =
 suite :: GenParser Char st [StatementI]
 suite = (fmap return computation <|> do
     _ <- char '{'
-    _ <- genSpace
+    _ <- whiteSpace
     stmts <- many (try computation)
-    _ <- genSpace
+    _ <- whiteSpace
     _ <- char '}'
     return stmts
     ) <?> " suite"
@@ -106,9 +104,8 @@ suite = (fmap return computation <|> do
 throwAway :: GenParser Char st StatementI
 throwAway = do
     pos <- sourcePos
-    _ <- genSpace
     _ <- oneOf "%*"
-    _ <- genSpace
+    _ <- whiteSpace
     _ <- computation
     return $ StatementI pos DoNothing
 
@@ -137,7 +134,7 @@ assignment = ("assignment " ?:) $ do
 function :: GenParser Char st StatementI
 function = ("function " ?:) $ do
     pos <- sourcePos
-    varSymb <- string "function" >> space >> genSpace >> variableSymb
+    varSymb <- string "function " >> whiteSpace >> variableSymb
     _ <- stringGS " ( "
     argVars <- sepBy patternMatcher (stringGS " , ")
     _ <- stringGS " ) = "
@@ -160,7 +157,7 @@ ifStatementI = "if " ?: do
     bexpr <- expr0
     _ <- stringGS " ) "
     sTrueCase <- suite
-    _ <- genSpace
+    _ <- whiteSpace
     sFalseCase <- (stringGS "else " >> suite ) *<|> return []
     return $ StatementI pos $ If bexpr sTrueCase sFalseCase
 
@@ -184,10 +181,10 @@ userModule :: GenParser Char st StatementI
 userModule = do
     pos <- sourcePos
     name <- variableSymb
-    _ <- genSpace
+    _ <- whiteSpace
     args <- moduleArgsUnit
-    _ <- genSpace
-    s <- suite *<|> (stringGS " ; " >> return [])
+    _ <- whiteSpace
+    s <- suite *<|> (stringGS ";" >> return [])
     return $ StatementI pos $ ModuleCall (Symbol name) args s
 
 -- | declare a module.
@@ -196,9 +193,9 @@ userModuleDeclaration = do
     pos <- sourcePos
     _ <- stringGS "module "
     newModuleName <- variableSymb
-    _ <- genSpace
+    _ <- whiteSpace
     args <- moduleArgsUnitDecl
-    _ <- genSpace
+    _ <- whiteSpace
     s <- suite
     return $ StatementI pos $ NewModule (Symbol newModuleName) args s
 
