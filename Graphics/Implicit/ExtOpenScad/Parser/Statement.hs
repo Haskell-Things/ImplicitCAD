@@ -18,7 +18,7 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, many1, eof, string, ParseError, many, noneOf)
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, space, char, getPosition, parse, eof, string, ParseError, many, noneOf)
 import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
@@ -31,6 +31,9 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
+-- The lexer.
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+
 -- Let us use the old syntax when defining Names.
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
@@ -39,8 +42,9 @@ parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
-        sts <- many1 computation
-        eof
+        _   <- whiteSpace
+        sts <- many computation
+        _   <- eof
         return sts
 
 -- | A computable block of code in our openscad-like programming language.
