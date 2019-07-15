@@ -97,10 +97,11 @@ suite = (fmap return computation <|> do
     stmts <- many (try computation)
     _ <- whiteSpace
     _ <- char '}'
+    _ <- whiteSpace
     return stmts
     ) <?> " suite"
 
--- | commenting out a comuptation: use % or * before the statement, and it will not be run.
+-- | commenting out a computation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
 throwAway = do
     pos <- sourcePos
@@ -146,8 +147,8 @@ echo :: GenParser Char st StatementI
 echo = do
     pos <- sourcePos
     _ <- stringGS "echo ( "
-    exprs <- expr0 `sepBy` stringGS " , "
-    _ <- stringGS " ) "
+    exprs <- expr0 `sepBy` stringGS ", "
+    _ <- stringGS ") "
     return $ StatementI pos $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
@@ -155,7 +156,7 @@ ifStatementI = "if " ?: do
     pos <- sourcePos
     _ <- stringGS "if ( "
     bexpr <- expr0
-    _ <- stringGS " ) "
+    _ <- stringGS ") "
     sTrueCase <- suite
     _ <- whiteSpace
     sFalseCase <- (stringGS "else " >> suite ) *<|> return []
@@ -172,7 +173,7 @@ forStatementI = "for " ?: do
     lvalue <- patternMatcher
     _ <- stringGS " = "
     vexpr <- expr0
-    _ <- stringGS " ) "
+    _ <- stringGS ") "
     loopContent <- suite
     return $ StatementI pos $ For lvalue vexpr loopContent
 
