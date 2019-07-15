@@ -19,7 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString, padChar)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), padString, padChar, stringGS)
+
+-- The lexer.
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -28,13 +31,17 @@ pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 variable :: GenParser Char st Expr
-variable = fmap Var variableSymb
+variable = ("variable" ?:) $ do
+  a <- fmap Var variableSymb
+  _ <- whiteSpace
+  return a
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
 boolean = ("boolean" ?:) $ do
   b  <-      (string "true"  >> return True )
         *<|> (string "false" >> return False)
+  _ <- whiteSpace
   return . LitE $ OBool b
 
 literal :: GenParser Char st Expr
@@ -64,6 +71,7 @@ literal = ("literal" ?:) $
                   )]
                 return exponent
               )
+            _ <- whiteSpace
             return . LitE $ ONum $ read (a ++ b) * (10 ** read d)
      *<|> boolean
      *<|> "string" ?: do
@@ -76,6 +84,7 @@ literal = ("literal" ?:) $
                       -- FIXME: no \u unicode support?
                      *<|> noneOf "\"\n"
         _ <- char '"'
+        _ <- whiteSpace
         return . LitE $ OString strlit
 
 letExpr :: GenParser Char st Expr
@@ -83,13 +92,14 @@ letExpr = "let expression" ?: do
   _ <- string "let"
   _ <- padChar '('
   bindingPairs <- sepBy ( do
-    _ <- genSpace
+    _ <- whiteSpace
     boundName <- variableSymb
     _ <- padChar '='
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
   _ <- char ')'
+  _ <- whiteSpace
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
       bindLets _ e = e
@@ -113,51 +123,65 @@ exprN A12 =
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )
         _ <- char '('
+        _ <- whiteSpace        
         expr <- expr0
         _ <- char ')'
+        _ <- whiteSpace
         return expr
     *<|> "vector/list" ?: (
         do
             -- eg. [ 3, a, a+1, b, a*b ]
             _ <- char '['
-            exprs <- sepBy expr0 (char ',' )
+            _ <- whiteSpace        
+            exprs <- sepBy expr0 (stringGS ", " )
             _ <- char ']'
+            _ <- whiteSpace
             return $ ListE exprs
         *<|> do
             -- eg. ( 1,2,3 )
             _ <- char '('
-            exprs <- sepBy expr0 (char ',' )
+            _ <- whiteSpace        
+            exprs <- sepBy expr0 (stringGS ", " )
             _ <- char ')'
+            _ <- whiteSpace
             return $ ListE exprs
         )
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         _ <- char '['
-        exprs <- sepBy expr0 (char ':' )
+        _ <- whiteSpace        
+        exprs <- sepBy expr0 (stringGS ": " )
         _ <- char ']'
+        _ <- whiteSpace
         return $ collector "list_gen" exprs
 
 exprN A11 =
     do
         obj <- exprN A12
-        _ <- genSpace
         mods <- many1 (
             "function application" ?: do
-                _ <- padChar '('
-                args <- sepBy expr0 (padChar ',')
-                _ <- padChar ')'
+                _ <- char '('
+                _ <- whiteSpace
+                args <- sepBy expr0 (stringGS ", " )
+                _ <- char ')'
+                _ <- whiteSpace
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
-                _ <- padChar '['
+                _ <- char '['
+                _ <- whiteSpace
                 i <- expr0
-                _ <- padChar ']'
+                _ <- char ']'
+                _ <- whiteSpace
                 return $ \l -> Var "index" :$ [l, i]
             *<|> "list splicing" ?: do
-                _ <- padChar '['
+                _ <- char '['
+                _ <- whiteSpace
                 start <- optionMaybe expr0
-                _ <- padChar ':'
+                _ <- char ':'
+                _ <- whiteSpace
                 end   <- optionMaybe expr0
-                _ <- padChar ']'
+                _ <- char ']'
+                _ <- whiteSpace
                 return $ case (start, end) of
                     (Nothing, Nothing) -> id
                     (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
@@ -170,11 +194,13 @@ exprN A11 =
 -- match a leading (+) or (-) operator.
 exprN A10 =
     "negation" ?: do
-        _ <- padChar '-'
+        _ <- char '-'
+        _ <- whiteSpace
         expr <- exprN A11
         return $ Var "negate" :$ [expr]
     *<|> do
-        _ <- padChar '+'
+        _ <- char '+'
+        _ <- whiteSpace
         exprN A11
     *<|> exprN A11
 
@@ -182,7 +208,8 @@ exprN A10 =
 exprN A9 =
     "exponentiation" ?: do
         a <- exprN A10
-        _ <- padChar '^'
+        _ <- char '^'
+        _ <- whiteSpace
         b <- exprN A9
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
@@ -254,7 +281,8 @@ exprN A4 =
 -- match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
-        _ <- padChar '!'
+        _ <- char '!'
+        _ <- whiteSpace
         a <- exprN A4
         return $ Var "!" :$ [a]
     *<|> exprN A4
@@ -273,19 +301,20 @@ exprN A2 =
 exprN A1 =
     "ternary" ?: do
         a <- exprN A2
-        _ <- padChar '?'
+        _ <- char '?'
+        _ <- whiteSpace
         b <- exprN A1
-        _ <- padChar ':'
+        _ <- char ':'
+        _ <- whiteSpace
         c <- exprN A1
         return $ Var "?" :$ [a,b,c]
     *<|> exprN A2
 
--- Match and throw away any white space around an expression.
+-- Match and throw away any white space following an expression.
 exprN A0 =
     do
-        _ <- genSpace
         expr <- exprN A1
-        _ <- genSpace
+        _ <- whiteSpace
         return expr
     *<|> exprN A1
 
