@@ -31,6 +31,9 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, tryMany, stringGS, (
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
+-- The lexer.
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+
 -- Let us use the old syntax when defining Names.
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
@@ -39,8 +42,9 @@ parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
+        _   <- whiteSpace
         sts <- many computation
-        eof
+        _   <- eof
         return sts
 
 -- | A computable block of code in our openscad-like programming language.

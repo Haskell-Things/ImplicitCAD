@@ -1,2 +1,4 @@
 // Example10.escad -- map!.
 echo(map(cos, [0, pi/2, pi]));
+cube(10);
+translate1 (10) cube(10);
