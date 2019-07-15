@@ -20,7 +20,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 
-import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, many1, eof, parse)
+import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, eof, parse)
 
 import Text.Parsec.String (GenParser)
 
@@ -39,15 +39,12 @@ parseProgram = parse program where
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
          -- This leaves us to deal only with the first spaces in the file.
         _    <- whiteSpace
-        prog <- input
+        prog <- many statement
         _    <- eof
         return prog
 
-input :: GenParser Char st [StatementI]
-input = many1 statement
-
 statements :: GenParser Char st [StatementI]
-statements = removeNoOps <$> many1 statement
+statements = removeNoOps <$> many statement
 
 statement :: GenParser Char st StatementI
 statement =
