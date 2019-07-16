@@ -8,11 +8,11 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Util (genSpace, pad, (*<|>), (?:), stringGS, padString, padChar, tryMany, variableSymb, patternMatcher, sourcePosition) where
+module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, variableSymb, patternMatcher, sourcePosition) where
 
-import Prelude (String, Char, ($), (++), foldl1, map, (>>), (.), return)
+import Prelude (String, Char, ($), foldl1, map, (>>), (.), return)
 
-import Text.Parsec (SourcePos, (<|>), (<?>), many, oneOf, noneOf, try, string, manyTill, anyChar, char, many1, sepBy)
+import Text.Parsec (SourcePos, (<|>), (<?>), noneOf, try, char, many1, sepBy)
 
 import Text.Parsec.String (GenParser)
 
@@ -26,29 +26,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), So
 
 import Graphics.Implicit.Definitions (toFastℕ)
 
+-- The lexer.
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+
 import Data.Kind (Type)
-
--- | Consume white space, including tabs, newlines and comments.
-genSpace :: ParsecT String u Identity String
-genSpace = many $
-    oneOf " \t\n\r"
-    <|> try ( do
-        _ <- string "//"
-        _ <- many ( noneOf "\n")
-        return ' '
-    ) <|> try ( do
-        _ <- string "/*"
-        _ <- manyTill anyChar (try $ string "*/")
-        return ' '
-    )
-
--- a padded ... parser?
-pad :: ParsecT String u Identity b -> ParsecT String u Identity b
-pad parser = do
-    _ <- genSpace
-    a <- parser
-    _ <- genSpace
-    return a
 
 infixr 1 *<|>
 (*<|>) :: forall u a tok. GenParser tok u a -> ParsecT [tok] u Identity a -> ParsecT [tok] u Identity a
@@ -57,33 +38,6 @@ a *<|> b = try a <|> b
 infixr 2 ?:
 (?:) :: forall s u (m :: Type -> Type) a. String -> ParsecT s u m a -> ParsecT s u m a
 l ?: p = p <?> l
-
-stringGS :: String -> ParsecT String u Identity String
-stringGS (' ':xs) = do
-    x'  <- genSpace
-    xs' <- stringGS xs
-    return (x' ++ xs')
-stringGS (x:xs) = do
-    x'  <- char x
-    xs' <- stringGS xs
-    return (x' : xs')
-stringGS "" = return ""
-
--- a padded string
-padString :: String -> ParsecT String u Identity String
-padString s = do
-    _ <- genSpace
-    s' <- string s
-    _ <- genSpace
-    return s'
-
--- a padded character
-padChar :: Char -> ParsecT String u Identity Char
-padChar s = do
-    _ <- genSpace
-    s' <- char s
-    _ <- genSpace
-    return s'
 
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . map try
@@ -108,10 +62,11 @@ patternMatcher =
         return $ Name (Symbol symb)
     ) <|> ( do
         _ <- char '['
-        _ <- genSpace
-        components <- patternMatcher `sepBy` try (genSpace >> char ',' >> genSpace)
-        _ <- genSpace
+        _ <- whiteSpace
+        components <- patternMatcher `sepBy` try (char ',' >> whiteSpace)
+        _ <- whiteSpace
         _ <- char ']'
+        _ <- whiteSpace
         return $ ListP components
     )
 
