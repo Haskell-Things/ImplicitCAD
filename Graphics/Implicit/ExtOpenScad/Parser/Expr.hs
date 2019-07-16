@@ -90,11 +90,14 @@ literal = ("literal" ?:) $
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
   _ <- string "let"
-  _ <- padChar '('
+  _ <- whiteSpace
+  _ <- char '('
   bindingPairs <- sepBy ( do
     _ <- whiteSpace
     boundName <- variableSymb
-    _ <- padChar '='
+    _ <- whiteSpace
+    _ <- char '='
+    _ <- whiteSpace
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
@@ -261,12 +264,13 @@ exprN A4 =
         firstExpr <- exprN A5
         otherComparisonsExpr <- many $ do
             comparisonSymb <-
-                     padString "=="
-                *<|> padString "!="
-                *<|> padString ">="
-                *<|> padString "<="
-                *<|> padString ">"
-                *<|> padString "<"
+                     string "=="
+                *<|> string "!="
+                *<|> string ">="
+                *<|> string "<="
+                *<|> string ">"
+                *<|> string "<"
+            _ <- whiteSpace
             expr <- exprN A5
             return (Var comparisonSymb, expr)
         let
@@ -291,8 +295,9 @@ exprN A3 =
 exprN A2 =
     "logical and/or" ?: do
         a <- exprN A3
-        symb <-      padString "&&"
-                *<|> padString "||"
+        symb <-      string "&&"
+                *<|> string "||"
+        _ <- whiteSpace
         b <- exprN A2
         return $ Var symb :$ [a,b]
     *<|> exprN A3
