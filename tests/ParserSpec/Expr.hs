@@ -22,7 +22,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, undefined, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
@@ -41,6 +41,9 @@ negationIssue _ = pendingWith "parser doesn't handle negation operator correctly
 
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
+
+undefinedIssue :: Expectation -> Expectation
+undefinedIssue _ = pendingWith "this errors, but the expecting is equal to the recieved. huh?"
 
 logicalSpec :: Spec
 logicalSpec = do
@@ -84,6 +87,8 @@ literalSpec = do
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
+  describe "undefined" $
+    it "accepts undef" $ undefinedIssue $ "undef" --> undefined
 
 letBindingSpec :: Spec
 letBindingSpec = do

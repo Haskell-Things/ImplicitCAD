@@ -10,6 +10,7 @@ module ParserSpec.Util
        , num
        , bool
        , stringLiteral
+       , undefined
        , fapp
        , plus
        , minus
@@ -37,7 +38,7 @@ import Prelude (Bool, String, Either, (<), ($), (.), (<*), otherwise)
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), Symbol(Symbol), OVal(ONum, OBool, OString), Pattern)
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LitE, (:$), Var, ListE, LamE), Symbol(Symbol), OVal(ONum, OBool, OString, OUndefined), Pattern)
 
 import Text.Parsec (ParseError, parse, manyTill, anyChar, eof)
 
@@ -78,6 +79,9 @@ bool = LitE . OBool
 
 stringLiteral :: String -> Expr
 stringLiteral = LitE . OString
+
+undefined :: Expr
+undefined = LitE $ OUndefined
 
 -- | Operators
 
