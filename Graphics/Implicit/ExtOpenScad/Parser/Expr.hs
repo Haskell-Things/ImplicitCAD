@@ -19,10 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), padString, padChar, stringGS)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -39,9 +39,8 @@ variable = ("variable" ?:) $ do
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
 boolean = ("boolean" ?:) $ do
-  b  <-      (string "true"  >> return True )
-        *<|> (string "false" >> return False)
-  _ <- whiteSpace
+  b  <-      (matchTrue  >> return True )
+        *<|> (matchFalse >> return False)
   return . LitE $ OBool b
 
 literal :: GenParser Char st Expr
@@ -86,6 +85,10 @@ literal = ("literal" ?:) $
         _ <- char '"'
         _ <- whiteSpace
         return . LitE $ OString strlit
+     *<|> "undefined" ?: do
+        _ <- string "undef"
+        _ <- whiteSpace
+        return . LitE $ OUndefined
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
@@ -136,7 +139,7 @@ exprN A12 =
             -- eg. [ 3, a, a+1, b, a*b ]
             _ <- char '['
             _ <- whiteSpace        
-            exprs <- sepBy expr0 (stringGS ", " )
+            exprs <- sepBy expr0 (char ',' >> whiteSpace)
             _ <- char ']'
             _ <- whiteSpace
             return $ ListE exprs
@@ -144,7 +147,7 @@ exprN A12 =
             -- eg. ( 1,2,3 )
             _ <- char '('
             _ <- whiteSpace        
-            exprs <- sepBy expr0 (stringGS ", " )
+            exprs <- sepBy expr0 (char ',' >> whiteSpace)
             _ <- char ')'
             _ <- whiteSpace
             return $ ListE exprs
@@ -153,7 +156,7 @@ exprN A12 =
         -- eg.  [ a : 1 : a + 10 ]
         _ <- char '['
         _ <- whiteSpace        
-        exprs <- sepBy expr0 (stringGS ": " )
+        exprs <- sepBy expr0 (char ':' >> whiteSpace)
         _ <- char ']'
         _ <- whiteSpace
         return $ collector "list_gen" exprs
@@ -165,7 +168,7 @@ exprN A11 =
             "function application" ?: do
                 _ <- char '('
                 _ <- whiteSpace
-                args <- sepBy expr0 (stringGS ", " )
+                args <- sepBy expr0 (char ',' >> whiteSpace)
                 _ <- char ')'
                 _ <- whiteSpace
                 return $ \f -> f :$ args
@@ -214,6 +217,7 @@ exprN A9 =
         _ <- char '^'
         _ <- whiteSpace
         b <- exprN A9
+        _ <- whiteSpace
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
 
@@ -224,8 +228,8 @@ exprN A8 =
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN A9) (try $ padChar '/' ))
-            (try $ padChar '*' )
+            (sepBy1 (exprN A9) (try $ char '/' >> whiteSpace))
+            (try $ char '*' >> whiteSpace )
         let div' a b = Var "/" :$ [a, b]
         return . collector "*" $ map (foldl1 div') exprs
     *<|> exprN A9
@@ -233,7 +237,7 @@ exprN A8 =
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN  A8) (try $ padChar '%')
+        exprs <- sepBy1 (exprN  A8) (try $ char '%' >> whiteSpace)
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
@@ -241,7 +245,7 @@ exprN A7 =
 -- match string addition (++) operator.
 exprN A6 =
     "append" ?: do
-        exprs <- sepBy1 (exprN A7) (try $ padString "++")
+        exprs <- sepBy1 (exprN A7) (try $ string "++" >> whiteSpace)
         return $ collector "++" exprs
     *<|> exprN A7
 
@@ -252,8 +256,8 @@ exprN A5 =
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN A6) (try $ padChar '-' ))
-            (try $ padChar '+' )
+            (sepBy1 (exprN A6) (try $ char '-' >> whiteSpace))
+            (try $ char '+' >> whiteSpace )
         let sub a b = Var "-" :$ [a, b]
         return . collector "+" $ map (foldl1 sub) exprs
     *<|> exprN A6
