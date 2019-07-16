@@ -8,10 +8,10 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==))
 
 -- The parsec parsing library.
-import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
+import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
 
 import Text.Parsec.String (GenParser)
 
@@ -30,6 +30,7 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
+-- | Parse a variable reference.
 variable :: GenParser Char st Expr
 variable = ("variable" ?:) $ do
   a <- fmap Var variableSymb
@@ -56,7 +57,7 @@ literal = ("literal" ?:) $
               )
             d <- option "0" (
               do
-                _ <- char 'e'
+                _ <- oneOf "eE"
                 exponent <- choice [
                   ( do
                       e <- char '-'
@@ -134,24 +135,16 @@ exprN A12 =
         _ <- char ')'
         _ <- whiteSpace
         return expr
-    *<|> "vector/list" ?: (
-        do
-            -- eg. [ 3, a, a+1, b, a*b ]
-            _ <- char '['
+    *<|> "vector/list" ?: do
+            -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
+            o <- oneOf "[("
             _ <- whiteSpace        
             exprs <- sepBy expr0 (char ',' >> whiteSpace)
-            _ <- char ']'
+            _ <- if (o == '[')
+                 then char ']'
+                 else char ')'
             _ <- whiteSpace
             return $ ListE exprs
-        *<|> do
-            -- eg. ( 1,2,3 )
-            _ <- char '('
-            _ <- whiteSpace        
-            exprs <- sepBy expr0 (char ',' >> whiteSpace)
-            _ <- char ')'
-            _ <- whiteSpace
-            return $ ListE exprs
-        )
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         _ <- char '['
@@ -217,7 +210,6 @@ exprN A9 =
         _ <- char '^'
         _ <- whiteSpace
         b <- exprN A9
-        _ <- whiteSpace
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
 
@@ -237,7 +229,7 @@ exprN A8 =
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN  A8) (try $ char '%' >> whiteSpace)
+        exprs <- sepBy1 (exprN A8) (try $ char '%' >> whiteSpace)
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
