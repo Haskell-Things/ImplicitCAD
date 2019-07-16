@@ -12,9 +12,9 @@ import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, matchLet, matchTok, identifier, matchModule, matchFunction, matchIf, matchElse, matchFor)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, matchTok, identifier)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor)
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 

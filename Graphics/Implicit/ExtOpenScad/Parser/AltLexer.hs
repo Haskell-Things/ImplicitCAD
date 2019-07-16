@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
 
 -- Be explicit about what we import.
 import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
@@ -36,18 +36,6 @@ lexer = makeTokenParser openScadStyle
 
 -- Deal with unicode later.
 
-matchModule :: GenParser Char st ()
-matchModule = P.reserved lexer "module"
-matchFunction :: GenParser Char st ()
-matchFunction = P.reserved lexer "function"
-matchIf :: GenParser Char st ()
-matchIf = P.reserved lexer "if"
-matchElse :: GenParser Char st ()
-matchElse = P.reserved lexer "else"
-matchLet :: GenParser Char st ()
-matchLet = P.reserved lexer "let"
-matchFor :: GenParser Char st ()
-matchFor = P.reserved lexer "for"
 matchEach :: GenParser Char st ()
 matchEach = P.reserved lexer "each"
 matchUndef :: GenParser Char st ()
