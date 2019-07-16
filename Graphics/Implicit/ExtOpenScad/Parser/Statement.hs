@@ -18,7 +18,7 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, string, ParseError, many, noneOf)
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, ParseError, many, noneOf)
 import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
@@ -32,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, (*<|>), (?:), pattern
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule)
 
 -- Let us use the old syntax when defining Names.
 pattern Name :: String -> GIED.Pattern
@@ -115,9 +115,8 @@ throwAway = do
 include :: GenParser Char st StatementI
 include = (do
     pos <- sourcePos
-    injectVals <-  (string "include" >> return True )
-               <|> (string "use"     >> return False)
-    _ <- whiteSpace
+    injectVals <-  (matchInclude >> return True )
+               <|> (matchUse     >> return False)
     _ <- char '<'
     -- FIXME: better definition of valid filename characters.
     filename <- many (noneOf "<> ")
@@ -141,7 +140,8 @@ assignment = ("assignment " ?:) $ do
 function :: GenParser Char st StatementI
 function = ("function " ?:) $ do
     pos <- sourcePos
-    varSymb <- string "function " >> whiteSpace >> variableSymb
+    _ <- matchFunction
+    varSymb <- variableSymb
     _ <- whiteSpace
     _ <- char '('
     _ <- whiteSpace
@@ -157,8 +157,7 @@ function = ("function " ?:) $ do
 echo :: GenParser Char st StatementI
 echo = do
     pos <- sourcePos
-    _ <- string "echo"
-    _ <- whiteSpace
+    _ <- matchEcho
     _ <- char '('
     _ <- whiteSpace
     exprs <- expr0 `sepBy` (char ',' >> whiteSpace)
@@ -169,8 +168,7 @@ echo = do
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = "if " ?: do
     pos <- sourcePos
-    _ <- string "if"
-    _ <- whiteSpace
+    _ <- matchIf
     _ <- char '('
     _ <- whiteSpace
     bexpr <- expr0
@@ -178,7 +176,7 @@ ifStatementI = "if " ?: do
     _ <- whiteSpace
     sTrueCase <- suite
     _ <- whiteSpace
-    sFalseCase <- (string "else" >> whiteSpace >> suite ) *<|> return []
+    sFalseCase <- (matchElse >> suite ) *<|> return []
     return $ StatementI pos $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
@@ -188,8 +186,7 @@ forStatementI = "for " ?: do
     --      for ( vsymb = vexpr   ) loops
     -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
     -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-    _ <- string "for"
-    _ <- whiteSpace
+    _ <- matchFor
     _ <- char '('
     _ <- whiteSpace
     lvalue <- patternMatcher
@@ -217,12 +214,10 @@ userModule = do
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
     pos <- sourcePos
-    _ <- string "module "
-    _ <- whiteSpace
+    _ <- matchModule
     newModuleName <- variableSymb
     _ <- whiteSpace
     args <- moduleArgsUnitDecl
-    _ <- whiteSpace
     s <- suite
     return $ StatementI pos $ NewModule (Symbol newModuleName) args s
 
