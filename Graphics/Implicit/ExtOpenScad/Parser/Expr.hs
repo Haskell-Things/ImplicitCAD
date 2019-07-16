@@ -22,7 +22,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -93,8 +93,7 @@ literal = ("literal" ?:) $
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
-  _ <- string "let"
-  _ <- whiteSpace
+  _ <- matchLet
   _ <- char '('
   bindingPairs <- sepBy ( do
     _ <- whiteSpace
