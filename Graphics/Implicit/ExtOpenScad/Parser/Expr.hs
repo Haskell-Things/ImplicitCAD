@@ -8,10 +8,10 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr)
+import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==))
 
 -- The parsec parsing library.
-import Text.Parsec (string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
+import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
 
 import Text.Parsec.String (GenParser)
 
@@ -19,7 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>), genSpace, padString, padChar)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
+
+-- The lexer.
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -27,14 +30,18 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
+-- | Parse a variable reference.
 variable :: GenParser Char st Expr
-variable = fmap Var variableSymb
+variable = ("variable" ?:) $ do
+  a <- fmap Var variableSymb
+  _ <- whiteSpace
+  return a
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
 boolean = ("boolean" ?:) $ do
-  b  <-      (string "true"  >> return True )
-        *<|> (string "false" >> return False)
+  b  <-      (matchTrue  >> return True )
+        *<|> (matchFalse >> return False)
   return . LitE $ OBool b
 
 literal :: GenParser Char st Expr
@@ -50,7 +57,7 @@ literal = ("literal" ?:) $
               )
             d <- option "0" (
               do
-                _ <- char 'e'
+                _ <- oneOf "eE"
                 exponent <- choice [
                   ( do
                       e <- char '-'
@@ -64,6 +71,7 @@ literal = ("literal" ?:) $
                   )]
                 return exponent
               )
+            _ <- whiteSpace
             return . LitE $ ONum $ read (a ++ b) * (10 ** read d)
      *<|> boolean
      *<|> "string" ?: do
@@ -76,20 +84,29 @@ literal = ("literal" ?:) $
                       -- FIXME: no \u unicode support?
                      *<|> noneOf "\"\n"
         _ <- char '"'
+        _ <- whiteSpace
         return . LitE $ OString strlit
+     *<|> "undefined" ?: do
+        _ <- string "undef"
+        _ <- whiteSpace
+        return . LitE $ OUndefined
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
   _ <- string "let"
-  _ <- padChar '('
+  _ <- whiteSpace
+  _ <- char '('
   bindingPairs <- sepBy ( do
-    _ <- genSpace
+    _ <- whiteSpace
     boundName <- variableSymb
-    _ <- padChar '='
+    _ <- whiteSpace
+    _ <- char '='
+    _ <- whiteSpace
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
   _ <- char ')'
+  _ <- whiteSpace
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
       bindLets _ e = e
@@ -113,51 +130,57 @@ exprN A12 =
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )
         _ <- char '('
+        _ <- whiteSpace        
         expr <- expr0
         _ <- char ')'
+        _ <- whiteSpace
         return expr
-    *<|> "vector/list" ?: (
-        do
-            -- eg. [ 3, a, a+1, b, a*b ]
-            _ <- char '['
-            exprs <- sepBy expr0 (char ',' )
-            _ <- char ']'
+    *<|> "vector/list" ?: do
+            -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
+            o <- oneOf "[("
+            _ <- whiteSpace        
+            exprs <- sepBy expr0 (char ',' >> whiteSpace)
+            _ <- if (o == '[')
+                 then char ']'
+                 else char ')'
+            _ <- whiteSpace
             return $ ListE exprs
-        *<|> do
-            -- eg. ( 1,2,3 )
-            _ <- char '('
-            exprs <- sepBy expr0 (char ',' )
-            _ <- char ')'
-            return $ ListE exprs
-        )
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         _ <- char '['
-        exprs <- sepBy expr0 (char ':' )
+        _ <- whiteSpace        
+        exprs <- sepBy expr0 (char ':' >> whiteSpace)
         _ <- char ']'
+        _ <- whiteSpace
         return $ collector "list_gen" exprs
 
 exprN A11 =
     do
         obj <- exprN A12
-        _ <- genSpace
         mods <- many1 (
             "function application" ?: do
-                _ <- padChar '('
-                args <- sepBy expr0 (padChar ',')
-                _ <- padChar ')'
+                _ <- char '('
+                _ <- whiteSpace
+                args <- sepBy expr0 (char ',' >> whiteSpace)
+                _ <- char ')'
+                _ <- whiteSpace
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
-                _ <- padChar '['
+                _ <- char '['
+                _ <- whiteSpace
                 i <- expr0
-                _ <- padChar ']'
+                _ <- char ']'
+                _ <- whiteSpace
                 return $ \l -> Var "index" :$ [l, i]
             *<|> "list splicing" ?: do
-                _ <- padChar '['
+                _ <- char '['
+                _ <- whiteSpace
                 start <- optionMaybe expr0
-                _ <- padChar ':'
+                _ <- char ':'
+                _ <- whiteSpace
                 end   <- optionMaybe expr0
-                _ <- padChar ']'
+                _ <- char ']'
+                _ <- whiteSpace
                 return $ case (start, end) of
                     (Nothing, Nothing) -> id
                     (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
@@ -170,11 +193,13 @@ exprN A11 =
 -- match a leading (+) or (-) operator.
 exprN A10 =
     "negation" ?: do
-        _ <- padChar '-'
+        _ <- char '-'
+        _ <- whiteSpace
         expr <- exprN A11
         return $ Var "negate" :$ [expr]
     *<|> do
-        _ <- padChar '+'
+        _ <- char '+'
+        _ <- whiteSpace
         exprN A11
     *<|> exprN A11
 
@@ -182,7 +207,8 @@ exprN A10 =
 exprN A9 =
     "exponentiation" ?: do
         a <- exprN A10
-        _ <- padChar '^'
+        _ <- char '^'
+        _ <- whiteSpace
         b <- exprN A9
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
@@ -194,8 +220,8 @@ exprN A8 =
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN A9) (try $ padChar '/' ))
-            (try $ padChar '*' )
+            (sepBy1 (exprN A9) (try $ char '/' >> whiteSpace))
+            (try $ char '*' >> whiteSpace )
         let div' a b = Var "/" :$ [a, b]
         return . collector "*" $ map (foldl1 div') exprs
     *<|> exprN A9
@@ -203,7 +229,7 @@ exprN A8 =
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN  A8) (try $ padChar '%')
+        exprs <- sepBy1 (exprN A8) (try $ char '%' >> whiteSpace)
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
@@ -211,7 +237,7 @@ exprN A7 =
 -- match string addition (++) operator.
 exprN A6 =
     "append" ?: do
-        exprs <- sepBy1 (exprN A7) (try $ padString "++")
+        exprs <- sepBy1 (exprN A7) (try $ string "++" >> whiteSpace)
         return $ collector "++" exprs
     *<|> exprN A7
 
@@ -222,8 +248,8 @@ exprN A5 =
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN A6) (try $ padChar '-' ))
-            (try $ padChar '+' )
+            (sepBy1 (exprN A6) (try $ char '-' >> whiteSpace))
+            (try $ char '+' >> whiteSpace )
         let sub a b = Var "-" :$ [a, b]
         return . collector "+" $ map (foldl1 sub) exprs
     *<|> exprN A6
@@ -234,12 +260,13 @@ exprN A4 =
         firstExpr <- exprN A5
         otherComparisonsExpr <- many $ do
             comparisonSymb <-
-                     padString "=="
-                *<|> padString "!="
-                *<|> padString ">="
-                *<|> padString "<="
-                *<|> padString ">"
-                *<|> padString "<"
+                     string "=="
+                *<|> string "!="
+                *<|> string ">="
+                *<|> string "<="
+                *<|> string ">"
+                *<|> string "<"
+            _ <- whiteSpace
             expr <- exprN A5
             return (Var comparisonSymb, expr)
         let
@@ -254,7 +281,8 @@ exprN A4 =
 -- match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
-        _ <- padChar '!'
+        _ <- char '!'
+        _ <- whiteSpace
         a <- exprN A4
         return $ Var "!" :$ [a]
     *<|> exprN A4
@@ -263,8 +291,9 @@ exprN A3 =
 exprN A2 =
     "logical and/or" ?: do
         a <- exprN A3
-        symb <-      padString "&&"
-                *<|> padString "||"
+        symb <-      string "&&"
+                *<|> string "||"
+        _ <- whiteSpace
         b <- exprN A2
         return $ Var symb :$ [a,b]
     *<|> exprN A3
@@ -273,19 +302,20 @@ exprN A2 =
 exprN A1 =
     "ternary" ?: do
         a <- exprN A2
-        _ <- padChar '?'
+        _ <- char '?'
+        _ <- whiteSpace
         b <- exprN A1
-        _ <- padChar ':'
+        _ <- char ':'
+        _ <- whiteSpace
         c <- exprN A1
         return $ Var "?" :$ [a,b,c]
     *<|> exprN A2
 
--- Match and throw away any white space around an expression.
+-- Match and throw away any white space following an expression.
 exprN A0 =
     do
-        _ <- genSpace
         expr <- exprN A1
-        _ <- genSpace
+        _ <- whiteSpace
         return expr
     *<|> exprN A1
 

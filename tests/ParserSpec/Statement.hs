@@ -10,7 +10,7 @@ module ParserSpec.Statement (statementSpec) where
 
 import Prelude (String, Maybe(Just), Bool(True, False), ($))
 
-import Test.Hspec (Spec, Expectation, shouldBe, it, describe, pendingWith)
+import Test.Hspec (Spec, Expectation, shouldBe, it, describe)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
@@ -81,9 +81,11 @@ assignmentSpec = do
     fooFunction = Name "foo" := LamE [Name "x", Name "y"]
                                 (mult [Var "x", Var "y"])
 
+{-
 -- | the parser fails on as empty file. This can't be right.
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
+-}
 
 -- | Our entry points. Test all of the statements.
 statementSpec :: Spec
@@ -93,7 +95,9 @@ statementSpec = do
   describe "assignment" assignmentSpec
   describe "if" ifSpec
   describe "line comment" $
-    it "parses as empty" $ emptyFileIssue $ "// foish bar\n" --> []
+    it "parses as empty" $ "// foish bar\n" --> []
+  describe "multiline comment" $
+    it "parses as empty" $ "/* foish bar\n*/" --> []
   describe "module call" $
     it "parses" $ "foo();" --> single (ModuleCall (Symbol "foo") [] [])
   describe "difference of two cylinders" $

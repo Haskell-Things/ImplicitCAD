@@ -1,0 +1,6 @@
+union() {
+    square([10, 10]);
+    translate([10, 5])
+        square([10, 20]);
+}
+		

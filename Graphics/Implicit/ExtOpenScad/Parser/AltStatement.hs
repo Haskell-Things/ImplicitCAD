@@ -12,7 +12,9 @@ import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, matchLet, matchTok, identifier, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, matchLet, matchTok, identifier, matchModule, matchFunction, matchIf, matchElse, matchFor)
+
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 
@@ -33,7 +35,7 @@ import Data.Functor.Identity (Identity)
 -- Or at least, that is the goal. exceptions are documented.
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
-parseProgram = parse program where
+parseProgram name s = parse program name s where
     program :: ParsecT String st Identity [StatementI]
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.

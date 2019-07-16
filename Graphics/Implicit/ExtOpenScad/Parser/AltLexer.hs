@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchTrue, matchFalse, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, whiteSpace, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchEach) where
 
 -- Be explicit about what we import.
 import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
@@ -11,7 +11,7 @@ import Control.Monad.Identity (Identity)
 import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 import Text.Parsec.String (GenParser)
 import Text.Parsec ((<|>), (<?>), char, letter, alphaNum, digit, many1, oneOf)
-import qualified Text.Parsec.Token as P (whiteSpace, reserved, naturalOrFloat, identifier, stringLiteral, reservedOp, lexeme, symbol)
+import qualified Text.Parsec.Token as P (reserved, naturalOrFloat, identifier, stringLiteral, reservedOp, lexeme, symbol)
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
 
@@ -36,8 +36,6 @@ lexer = makeTokenParser openScadStyle
 
 -- Deal with unicode later.
 
-whiteSpace :: GenParser Char st ()
-whiteSpace = P.whiteSpace lexer
 matchModule :: GenParser Char st ()
 matchModule = P.reserved lexer "module"
 matchFunction :: GenParser Char st ()
@@ -52,10 +50,6 @@ matchFor :: GenParser Char st ()
 matchFor = P.reserved lexer "for"
 matchEach :: GenParser Char st ()
 matchEach = P.reserved lexer "each"
-matchTrue :: GenParser Char st ()
-matchTrue = P.reserved lexer "true"
-matchFalse :: GenParser Char st ()
-matchFalse = P.reserved lexer "false"
 matchUndef :: GenParser Char st ()
 matchUndef = P.reserved lexer "undef"
 
