@@ -42,6 +42,8 @@ parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram name s = parse program name s where
     program :: ParsecT String u Identity [StatementI]
     program = do
+         -- all of the token parsers are lexemes which consume all trailing spaces nicely.
+         -- This leaves us to deal only with the first spaces in the file.
         _   <- whiteSpace
         sts <- many computation
         _   <- eof

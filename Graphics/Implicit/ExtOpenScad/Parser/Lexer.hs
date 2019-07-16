@@ -30,6 +30,7 @@ openScadStyle
     , nestedComments = True
     , identStart = letter <|> char '$' <|> char '_'
     , identLetter = alphaNum <|> char '_'
+    -- FIXME: add primitives here?
     , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef", "include", "use"]
     , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||"]
     , caseSensitive = True
