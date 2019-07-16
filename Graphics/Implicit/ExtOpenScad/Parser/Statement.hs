@@ -26,7 +26,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, stringGS, (*<|>), (?:), patternMatcher, variableSymb, sourcePosition)
+import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, (*<|>), (?:), patternMatcher, variableSymb, sourcePosition)
 
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
@@ -66,7 +66,7 @@ computation =
             function,
             assignment
             ]
-        _ <- stringGS ";"
+        _ <- char ';'
         _ <- whiteSpace
         return s
     *<|> do -- Modules. no semicolon...
@@ -95,7 +95,6 @@ suite = (fmap return computation <|> do
     _ <- char '{'
     _ <- whiteSpace
     stmts <- many (try computation)
-    _ <- whiteSpace
     _ <- char '}'
     _ <- whiteSpace
     return stmts
@@ -116,9 +115,12 @@ include = (do
     pos <- sourcePos
     injectVals <-  (string "include" >> return True )
                <|> (string "use"     >> return False)
-    _ <- stringGS " < "
+    _ <- whiteSpace
+    _ <- char '<'
+    -- FIXME: better definition of valid filename characters.
     filename <- many (noneOf "<> ")
-    _ <- stringGS " > "
+    _ <- char '>'
+    _ <- whiteSpace
     return $ StatementI pos $ Include filename injectVals
     ) <?> "include "
 
@@ -127,7 +129,9 @@ assignment :: GenParser Char st StatementI
 assignment = ("assignment " ?:) $ do
     pos <- sourcePos
     lvalue <- patternMatcher
-    _ <- stringGS " = "
+    _ <- whiteSpace
+    _ <- char '='
+    _ <- whiteSpace
     valExpr <- expr0
     return $ StatementI pos $ lvalue := valExpr
 
@@ -136,9 +140,14 @@ function :: GenParser Char st StatementI
 function = ("function " ?:) $ do
     pos <- sourcePos
     varSymb <- string "function " >> whiteSpace >> variableSymb
-    _ <- stringGS " ( "
-    argVars <- sepBy patternMatcher (stringGS " , ")
-    _ <- stringGS " ) = "
+    _ <- whiteSpace
+    _ <- char '('
+    _ <- whiteSpace
+    argVars <- sepBy patternMatcher (char ',' >> whiteSpace)
+    _ <- char ')'
+    _ <- whiteSpace
+    _ <- char '='
+    _ <- whiteSpace
     valExpr <- expr0
     return $ StatementI pos $ Name varSymb := LamE argVars valExpr
 
@@ -146,20 +155,28 @@ function = ("function " ?:) $ do
 echo :: GenParser Char st StatementI
 echo = do
     pos <- sourcePos
-    _ <- stringGS "echo ( "
-    exprs <- expr0 `sepBy` stringGS ", "
-    _ <- stringGS ") "
+    _ <- string "echo"
+    _ <- whiteSpace
+    _ <- char '('
+    _ <- whiteSpace
+    exprs <- expr0 `sepBy` (char ',' >> whiteSpace)
+    _ <- char ')'
+    _ <- whiteSpace
     return $ StatementI pos $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = "if " ?: do
     pos <- sourcePos
-    _ <- stringGS "if ( "
+    _ <- string "if"
+    _ <- whiteSpace
+    _ <- char '('
+    _ <- whiteSpace
     bexpr <- expr0
-    _ <- stringGS ") "
+    _ <- char ')'
+    _ <- whiteSpace
     sTrueCase <- suite
     _ <- whiteSpace
-    sFalseCase <- (stringGS "else " >> suite ) *<|> return []
+    sFalseCase <- (string "else" >> whiteSpace >> suite ) *<|> return []
     return $ StatementI pos $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
@@ -169,11 +186,17 @@ forStatementI = "for " ?: do
     --      for ( vsymb = vexpr   ) loops
     -- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
     -- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-    _ <- stringGS "for ( "
+    _ <- string "for"
+    _ <- whiteSpace
+    _ <- char '('
+    _ <- whiteSpace
     lvalue <- patternMatcher
-    _ <- stringGS " = "
+    _ <- whiteSpace
+    _ <- char '='
+    _ <- whiteSpace
     vexpr <- expr0
-    _ <- stringGS ") "
+    _ <- char ')'
+    _ <- whiteSpace
     loopContent <- suite
     return $ StatementI pos $ For lvalue vexpr loopContent
 
@@ -185,14 +208,15 @@ userModule = do
     _ <- whiteSpace
     args <- moduleArgsUnit
     _ <- whiteSpace
-    s <- suite *<|> (stringGS ";" >> return [])
+    s <- suite *<|> (char ';' >> whiteSpace >> return [])
     return $ StatementI pos $ ModuleCall (Symbol name) args s
 
 -- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = do
     pos <- sourcePos
-    _ <- stringGS "module "
+    _ <- string "module "
+    _ <- whiteSpace
     newModuleName <- variableSymb
     _ <- whiteSpace
     args <- moduleArgsUnitDecl
@@ -203,53 +227,74 @@ userModuleDeclaration = do
 -- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
 moduleArgsUnit = do
-    _ <- stringGS " ( "
+    _ <- char '('
+    _ <- whiteSpace
     args <- sepBy (
         do
             -- eg. a = 12
             symb <- variableSymb
-            _ <- stringGS " = "
+            _ <- whiteSpace
+            _ <- char '='
+            _ <- whiteSpace
             expr <- expr0
             return (Just (Symbol symb), expr)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- variableSymb
-            _ <- stringGS " ( "
-            argVars <- sepBy variableSymb (try $ stringGS " , ")
-            _ <- stringGS " ) = "
+            _ <- whiteSpace
+            _ <- char '('
+            _ <- whiteSpace
+            argVars <- sepBy variableSymb (try $ char ',' >> whiteSpace)
+            _ <- whiteSpace
+            _ <- char ')'
+            _ <- whiteSpace
+            _ <- char '='
+            _ <- whiteSpace
             expr <- expr0
             return (Just (Symbol symb), LamE (map Name argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
             return (Nothing, expr)
-        ) (try $ stringGS " , ")
-    _ <- stringGS " ) "
+        ) (try $ char ',' >> whiteSpace)
+    _ <- char ')'
+    _ <- whiteSpace
     return args
 
 -- | parse the arguments in the module declaration.
 moduleArgsUnitDecl ::  GenParser Char st [(Symbol, Maybe Expr)]
 moduleArgsUnitDecl = do
-    _ <- stringGS " ( "
+    _ <- char '('
+    _ <- whiteSpace
     argTemplate <- sepBy (
         do
             symb <- variableSymb;
-            _ <- stringGS " = "
+            _ <- whiteSpace
+            _ <- char '='
+            _ <- whiteSpace
             expr <- expr0
             return (Symbol symb, Just expr)
         *<|> do
             symb <- variableSymb;
-            _ <- stringGS " ( "
+            _ <- whiteSpace
+            _ <- char '('
+            _ <- whiteSpace
                  -- FIXME: why match this content, then drop it?
-            _ <- sepBy variableSymb (try $ stringGS " , ")
-            _ <- stringGS " ) = "
+            _ <- sepBy variableSymb (try $ char ',' >> whiteSpace)
+            _ <- whiteSpace
+            _ <- char ')'
+            _ <- whiteSpace
+            _ <- char '='
+            _ <- whiteSpace
             expr <- expr0
             return (Symbol symb, Just expr)
         *<|> do
             symb <- variableSymb
+            _ <- whiteSpace
             return (Symbol symb, Nothing)
-        ) (try $ stringGS " , ")
-    _ <- stringGS " ) "
+        ) (try $ char ',' >> whiteSpace)
+    _ <- char ')'
+    _ <- whiteSpace
     return argTemplate
 
 -- | Find the source position. Used when generating errors.
