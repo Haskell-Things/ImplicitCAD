@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet) where
 
 import Prelude (String, Char, Bool(True))
 
@@ -83,3 +83,7 @@ matchFor = P.reserved lexer "for"
 -- | Match the module keyword.
 matchModule :: GenParser Char st ()
 matchModule = P.reserved lexer "module"
+
+-- | Match the let keyword.
+matchLet :: GenParser Char st ()
+matchLet = P.reserved lexer "let"
