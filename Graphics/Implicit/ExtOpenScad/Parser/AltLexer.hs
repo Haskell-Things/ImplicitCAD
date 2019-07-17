@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchTok, matchUndef, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
 
 -- Be explicit about what we import.
 import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
@@ -11,7 +11,7 @@ import Control.Monad.Identity (Identity)
 import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 import Text.Parsec.String (GenParser)
 import Text.Parsec ((<|>), (<?>), char, letter, alphaNum, digit, many1, oneOf)
-import qualified Text.Parsec.Token as P (reserved, naturalOrFloat, identifier, stringLiteral, reservedOp, lexeme, symbol)
+import qualified Text.Parsec.Token as P (reserved, naturalOrFloat, identifier, stringLiteral, reservedOp)
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
 
@@ -38,8 +38,6 @@ lexer = makeTokenParser openScadStyle
 
 matchEach :: GenParser Char st ()
 matchEach = P.reserved lexer "each"
-matchUndef :: GenParser Char st ()
-matchUndef = P.reserved lexer "undef"
 
 number :: GenParser Char st (Either Integer Double)
 number =
@@ -81,6 +79,3 @@ matchOR = P.reservedOp lexer "||" >> return "||"
 matchCAT :: GenParser Char st String
 matchCAT = P.reservedOp lexer "++" >> return "++"
 
--- single character tokens can be handled fine in the main parser, just strip the trailing whitespace.
-matchTok :: Char -> GenParser Char st String
-matchTok tok = P.lexeme lexer $ P.symbol lexer [tok]

@@ -23,9 +23,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(matchTok, identifier, matchUndef, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(identifier, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok)
 
 import Text.Parsec.Prim (ParsecT)
 
