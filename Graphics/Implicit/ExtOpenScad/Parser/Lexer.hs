@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy) where
 
 import Prelude (String, Char, Bool(True), return)
 
@@ -19,7 +19,7 @@ import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
 import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, comma)
 
-import Text.Parsec (char)
+import Text.Parsec (char, between)
 
 -- The definition of openscad used by parsec.
 openScadStyle :: GenLanguageDef String u0 Identity
@@ -95,8 +95,14 @@ matchTok x = do
   return [y]
 --matchTok tok = lexeme lexer $ symbol lexer [tok]
 
+-- | match a colon.
 matchColon :: GenParser Char st String
 matchColon = colon lexer
 
+-- | match a comma.
 matchComma :: GenParser Char st String
 matchComma = comma lexer
+
+-- | match something between two ends.
+surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
+surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
