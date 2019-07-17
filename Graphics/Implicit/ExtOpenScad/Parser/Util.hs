@@ -18,7 +18,7 @@ import Text.Parsec.String (GenParser)
 
 import qualified Text.Parsec as P (sourceLine, sourceColumn, sourceName)
 
-import Text.Parsec.Prim (ParsecT, Stream)
+import Text.Parsec.Prim (ParsecT)
 
 import Data.Functor.Identity (Identity)
 
@@ -42,8 +42,11 @@ l ?: p = p <?> l
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . map try
 
-variableSymb :: forall s u (m :: Type -> Type). Stream s m Char => ParsecT s u m String
-variableSymb = many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=") <?> "variable"
+variableSymb :: forall u. ParsecT String u Identity String
+variableSymb = "variable" ?: do
+  ret <- many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=")
+  _ <- whiteSpace
+  return ret
 {-# INLINABLE variableSymb #-}
 
 patternMatcher :: GenParser Char st Pattern
@@ -59,6 +62,7 @@ patternMatcher =
             else Nothing
     ) <|> -} ( do
         symb <- variableSymb
+        _ <- whiteSpace
         return $ Name (Symbol symb)
     ) <|> ( do
         _ <- char '['

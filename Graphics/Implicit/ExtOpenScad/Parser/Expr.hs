@@ -22,7 +22,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -51,8 +51,7 @@ literal = ("literal" ?:) $
             a <- many1 digit
             b <- option "" (
               do
-                _ <- char '.'
-                c <- many1 digit
+                c <- char '.' >> many1 digit
                 return ("." ++ c)
               )
             d <- option "0" (
@@ -65,8 +64,7 @@ literal = ("literal" ?:) $
                       return (e : f)
                   ),
                   ( do
-                      _ <- optional $ char '+'
-                      g <- many1 digit
+                      g <- (optional $ char '+') >> many1 digit
                       return g
                   )]
                 return exponent
@@ -83,29 +81,23 @@ literal = ("literal" ?:) $
                      *<|> (string "\\\\" >> return '\\')
                       -- FIXME: no \u unicode support?
                      *<|> noneOf "\"\n"
-        _ <- char '"'
-        _ <- whiteSpace
+        _ <- matchTok '"'
         return . LitE $ OString strlit
      *<|> "undefined" ?: do
-        _ <- string "undef"
-        _ <- whiteSpace
+        _ <- matchUndef
         return . LitE $ OUndefined
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
-  _ <- matchLet
-  _ <- char '('
+  _ <- matchLet >> char '('
   bindingPairs <- sepBy ( do
+    boundName <- whiteSpace >> variableSymb
     _ <- whiteSpace
-    boundName <- variableSymb
-    _ <- whiteSpace
-    _ <- char '='
-    _ <- whiteSpace
+    _ <- matchTok '='
     boundExpr <- expr0
     return $ ListE [Var boundName, boundExpr])
     (char ',')
-  _ <- char ')'
-  _ <- whiteSpace
+  _ <- matchTok ')'
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
       bindLets _ e = e
@@ -128,29 +120,24 @@ exprN A12 =
     *<|> variable
     *<|> "bracketed expression" ?: do
         -- eg. ( 1 + 5 )
-        _ <- char '('
-        _ <- whiteSpace        
+        _ <- matchTok '('
         expr <- expr0
-        _ <- char ')'
-        _ <- whiteSpace
+        _ <- matchTok ')'
         return expr
     *<|> "vector/list" ?: do
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
             _ <- whiteSpace        
-            exprs <- sepBy expr0 (char ',' >> whiteSpace)
+            exprs <- sepBy expr0 (matchComma)
             _ <- if (o == '[')
-                 then char ']'
-                 else char ')'
-            _ <- whiteSpace
+                 then matchTok ']'
+                 else matchTok ')'
             return $ ListE exprs
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
-        _ <- char '['
-        _ <- whiteSpace        
-        exprs <- sepBy expr0 (char ':' >> whiteSpace)
-        _ <- char ']'
-        _ <- whiteSpace
+        _ <- matchTok '['
+        exprs <- sepBy expr0 (matchColon)
+        _ <- matchTok ']'
         return $ collector "list_gen" exprs
 
 exprN A11 =
@@ -158,28 +145,21 @@ exprN A11 =
         obj <- exprN A12
         mods <- many1 (
             "function application" ?: do
-                _ <- char '('
-                _ <- whiteSpace
-                args <- sepBy expr0 (char ',' >> whiteSpace)
-                _ <- char ')'
-                _ <- whiteSpace
+                _ <- matchTok '('
+                args <- sepBy expr0 (matchComma)
+                _ <- matchTok ')'
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
-                _ <- char '['
-                _ <- whiteSpace
+                _ <- matchTok '['
                 i <- expr0
-                _ <- char ']'
-                _ <- whiteSpace
+                _ <- matchTok ']'
                 return $ \l -> Var "index" :$ [l, i]
             *<|> "list splicing" ?: do
-                _ <- char '['
-                _ <- whiteSpace
+                _ <- matchTok '['
                 start <- optionMaybe expr0
-                _ <- char ':'
-                _ <- whiteSpace
+                _ <- matchColon
                 end   <- optionMaybe expr0
-                _ <- char ']'
-                _ <- whiteSpace
+                _ <- matchTok ']'
                 return $ case (start, end) of
                     (Nothing, Nothing) -> id
                     (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
@@ -192,23 +172,17 @@ exprN A11 =
 -- match a leading (+) or (-) operator.
 exprN A10 =
     "negation" ?: do
-        _ <- char '-'
-        _ <- whiteSpace
-        expr <- exprN A11
+        expr <- matchTok '-' >> exprN A11
         return $ Var "negate" :$ [expr]
     *<|> do
-        _ <- char '+'
-        _ <- whiteSpace
-        exprN A11
+        matchTok '+' >> exprN A11
     *<|> exprN A11
 
 -- match power-of (^) operator.
 exprN A9 =
     "exponentiation" ?: do
         a <- exprN A10
-        _ <- char '^'
-        _ <- whiteSpace
-        b <- exprN A9
+        b <- matchTok '^' >> exprN A9
         return $ Var "^" :$ [a,b]
     *<|> exprN A10
 
@@ -219,8 +193,8 @@ exprN A8 =
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN A9) (try $ char '/' >> whiteSpace))
-            (try $ char '*' >> whiteSpace )
+            (sepBy1 (exprN A9) (try $ matchTok '/'))
+            (try $ matchTok '*')
         let div' a b = Var "/" :$ [a, b]
         return . collector "*" $ map (foldl1 div') exprs
     *<|> exprN A9
@@ -228,7 +202,7 @@ exprN A8 =
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN A8) (try $ char '%' >> whiteSpace)
+        exprs <- sepBy1 (exprN A8) (try $ matchTok '%')
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
@@ -247,8 +221,8 @@ exprN A5 =
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN A6) (try $ char '-' >> whiteSpace))
-            (try $ char '+' >> whiteSpace )
+            (sepBy1 (exprN A6) (try $ matchTok '-'))
+            (try $ matchTok '+')
         let sub a b = Var "-" :$ [a, b]
         return . collector "+" $ map (foldl1 sub) exprs
     *<|> exprN A6
@@ -259,12 +233,12 @@ exprN A4 =
         firstExpr <- exprN A5
         otherComparisonsExpr <- many $ do
             comparisonSymb <-
-                     string "=="
-                *<|> string "!="
-                *<|> string ">="
-                *<|> string "<="
-                *<|> string ">"
-                *<|> string "<"
+                   string "=="
+              *<|> string "!="
+              *<|> string ">="
+              *<|> string "<="
+              *<|> string ">"
+              *<|> string "<"
             _ <- whiteSpace
             expr <- exprN A5
             return (Var comparisonSymb, expr)
@@ -280,8 +254,7 @@ exprN A4 =
 -- match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
-        _ <- char '!'
-        _ <- whiteSpace
+        _ <- matchTok '!'
         a <- exprN A4
         return $ Var "!" :$ [a]
     *<|> exprN A4
@@ -301,11 +274,9 @@ exprN A2 =
 exprN A1 =
     "ternary" ?: do
         a <- exprN A2
-        _ <- char '?'
-        _ <- whiteSpace
+        _ <- matchTok '?'
         b <- exprN A1
-        _ <- char ':'
-        _ <- whiteSpace
+        _ <- matchColon
         c <- exprN A1
         return $ Var "?" :$ [a,b,c]
     *<|> exprN A2
