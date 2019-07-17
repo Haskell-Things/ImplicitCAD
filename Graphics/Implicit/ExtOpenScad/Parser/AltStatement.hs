@@ -20,9 +20,9 @@ import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 
-import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+import Data.Maybe (Maybe(Just, Nothing))
 
-import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, eof, parse)
+import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, eof, parse, option)
 
 import Text.Parsec.String (GenParser)
 
@@ -82,8 +82,8 @@ ifStatement = do
     _          <- matchIf
     condition  <- surroundedBy '(' expression ')'
     trueScope  <- statements
-    falseMaybe <- optionMaybe $ matchElse >> statements
-    returnStatement $ If condition trueScope $ fromMaybe [] falseMaybe
+    falseScope <- option [] $ matchElse >> statements
+    returnStatement $ If condition trueScope falseScope
 
 -- Assignment and module instantiation both start with the same token, an identifier.
 -- So, in order to keep the parser predictive (for performance reasons),
