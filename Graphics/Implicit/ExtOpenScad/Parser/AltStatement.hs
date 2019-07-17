@@ -14,7 +14,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(L
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, identifier)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, surroundedBy)
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 
@@ -22,7 +22,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 
 import Data.Maybe (Maybe(Just, Nothing))
 
-import Text.Parsec (SourceName, ParseError, (<|>), getPosition, between, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, eof, parse, option)
+import Text.Parsec (SourceName, ParseError, (<|>), getPosition, skipMany1, sepBy, try, sepEndBy, many, optionMaybe, eof, parse, option)
 
 import Text.Parsec.String (GenParser)
 
@@ -264,9 +264,6 @@ lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
 oneOrMoreCommas :: GenParser Char st ()
 oneOrMoreCommas = skipMany1 $ matchTok ','
-
-surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
-surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
 
 returnDoNothing :: GenParser Char st StatementI
 returnDoNothing = returnStatement DoNothing
