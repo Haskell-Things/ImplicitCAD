@@ -17,9 +17,9 @@ import qualified Text.Parsec.Token as P (whiteSpace, reserved)
 
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
-import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive, colon, comma)
+import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, comma)
 
-import Text.Parsec ((<|>), char, letter, alphaNum)
+import Text.Parsec (char)
 
 -- The definition of openscad used by parsec.
 openScadStyle :: GenLanguageDef String u0 Identity
@@ -29,11 +29,6 @@ openScadStyle
     , commentEnd = "*/"
     , commentLine = "//"
     , nestedComments = True
-    , identStart = letter <|> char '$' <|> char '_'
-    , identLetter = alphaNum <|> char '_'
-    -- FIXME: add primitives here?
-    , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef", "include", "use", "echo"]
-    , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||"]
     , caseSensitive = True
     }
 
