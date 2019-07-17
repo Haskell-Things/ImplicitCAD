@@ -3,9 +3,9 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma) where
 
-import Prelude (String, Char, Bool(True))
+import Prelude (String, Char, Bool(True), return)
 
 import Control.Monad.Identity (Identity)
 
@@ -17,7 +17,7 @@ import qualified Text.Parsec.Token as P (whiteSpace, reserved)
 
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
-import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
+import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive, colon, comma)
 
 import Text.Parsec ((<|>), char, letter, alphaNum)
 
@@ -87,3 +87,21 @@ matchModule = P.reserved lexer "module"
 -- | Match the let keyword.
 matchLet :: GenParser Char st ()
 matchLet = P.reserved lexer "let"
+
+-- | Match the undef keyword.
+matchUndef :: GenParser Char st ()
+matchUndef = P.reserved lexer "undef"
+
+-- | match a single character token followed by whitespace.
+matchTok :: Char -> GenParser Char st String
+matchTok x = do
+  y <- char x
+  _ <- P.whiteSpace lexer
+  return [y]
+--matchTok tok = lexeme lexer $ symbol lexer [tok]
+
+matchColon :: GenParser Char st String
+matchColon = colon lexer
+
+matchComma :: GenParser Char st String
+matchComma = comma lexer
