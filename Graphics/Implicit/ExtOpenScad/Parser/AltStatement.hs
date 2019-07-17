@@ -51,7 +51,7 @@ statements = removeNoOps <$> many statement
 statement :: GenParser Char st StatementI
 statement =
         do
-        _ <- oneOrMoreSemis
+        _ <- matchTok ';'
         returnStatement DoNothing
     <|> do
         stmts <- surroundedBy '{' statements '}'
@@ -72,7 +72,7 @@ statement =
         argDecls   <- surroundedBy '(' argumentsDeclaration ')'
         _          <- matchTok '='
         funcExpr   <- expression
-        _          <- oneOrMoreSemis
+        _          <- matchTok ';'
         returnStatement $ NewFunction (Symbol funcName) argDecls funcExpr
     <|>
         ifStatement
@@ -111,7 +111,7 @@ assignment ident =
     do
     _     <- matchTok '='
     expr  <- expression
-    _     <- oneOrMoreSemis
+    _     <- matchTok ';'
     returnStatement $ Name ident := expr
 
 moduleFlag :: forall st b. Char -> ParsecT String st Identity b -> ParsecT String st Identity b
@@ -199,7 +199,7 @@ childStatements = removeNoOps <$> many innerChildStatement
 childStatement :: GenParser Char st StatementI
 childStatement =
         do
-        _ <- oneOrMoreSemis
+        _ <- matchTok ';'
         returnDoNothing
     <|> do
         subStatements <- surroundedBy '{' childStatements '}'
@@ -210,7 +210,7 @@ childStatement =
 innerChildStatement :: GenParser Char st StatementI
 innerChildStatement =
         do
-        _ <- oneOrMoreSemis
+        _ <- matchTok ';'
         returnDoNothing
     <|> do
         subStatements <- surroundedBy '{' childStatements '}'
@@ -264,9 +264,6 @@ lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
 -- Many are treated as one. The last parameter declaration can be followed by commas, which are ignored.
 oneOrMoreCommas :: GenParser Char st ()
 oneOrMoreCommas = skipMany1 $ matchTok ','
-
-oneOrMoreSemis :: GenParser Char st ()
-oneOrMoreSemis =  skipMany1 $ matchTok ';'
 
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
 surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
