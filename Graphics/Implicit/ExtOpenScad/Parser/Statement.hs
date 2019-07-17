@@ -18,7 +18,7 @@ import Data.Maybe(Maybe(Just, Nothing))
 import Data.Functor.Identity(Identity)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, ParseError, many, noneOf)
+import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, ParseError, many, noneOf, option)
 import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
@@ -32,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, (*<|>), (?:), pattern
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma, surroundedBy)
 
 -- Let us use the old syntax when defining Names.
 pattern Name :: String -> GIED.Pattern
@@ -91,10 +91,8 @@ computation =
 -}
 suite :: GenParser Char st [StatementI]
 suite = (fmap return computation <|> do
-    _ <- matchTok '{'
-    stmts <- many (try computation)
-    _ <- matchTok '}'
-    return stmts
+    stmts <- surroundedBy '{' (many (try computation)) '}'
+    return (removeNoOps stmts)
     ) <?> " suite"
 
 -- | commenting out a computation: use % or * before the statement, and it will not be run.
@@ -134,9 +132,7 @@ function = ("function " ?:) $ do
     pos <- sourcePos
     _ <- matchFunction
     varSymb <- variableSymb
-    _ <- matchTok '('
-    argVars <- sepBy patternMatcher (matchComma)
-    _ <- matchTok ')'
+    argVars <- surroundedBy '(' (sepBy patternMatcher (matchComma)) ')'
     _ <- matchTok '='
     valExpr <- expr0
     return $ StatementI pos $ Name varSymb := LamE argVars valExpr
@@ -146,20 +142,16 @@ echo :: GenParser Char st StatementI
 echo = do
     pos <- sourcePos
     _ <- matchEcho
-    _ <- matchTok '('
-    exprs <- expr0 `sepBy` (matchComma)
-    _ <- matchTok ')'
+    exprs <- surroundedBy '(' (expr0 `sepBy` (matchComma)) ')'
     return $ StatementI pos $ Echo exprs
 
-ifStatementI :: GenParser Char st StatementI
+ifStatementI :: ParsecT String u Identity StatementI
 ifStatementI = "if " ?: do
     pos <- sourcePos
     _ <- matchIf
-    _ <- matchTok '('
-    bexpr <- expr0
-    _ <- matchTok ')'
+    bexpr <- surroundedBy '(' expr0 ')'
     sTrueCase <- suite
-    sFalseCase <- (matchElse >> suite ) *<|> return []
+    sFalseCase <- option [] (matchElse >> suite)
     return $ StatementI pos $ If bexpr sTrueCase sFalseCase
 
 forStatementI :: GenParser Char st StatementI
@@ -211,9 +203,7 @@ moduleArgsUnit = do
         *<|> do
             -- eg. a(x,y) = 12
             symb <- variableSymb
-            _ <- matchTok '('
-            argVars <- sepBy variableSymb (try $ matchComma)
-            _ <- matchTok ')'
+            argVars <- surroundedBy '(' (sepBy variableSymb (try $ matchComma)) ')'
             _ <- matchTok '='
             expr <- expr0
             return (Just (Symbol symb), LamE (map Name argVars) expr)
@@ -256,3 +246,12 @@ sourcePos :: ParsecT s u Identity SourcePosition
 sourcePos = do
   pos <- getPosition
   return $ sourcePosition pos
+
+-- | Remove statements that do nothing.
+removeNoOps :: [StatementI] -> [StatementI]
+removeNoOps [] = []
+--removeNoOps (StatementI _ (Sequence []):sts) = removeNoOps sts
+--removeNoOps (StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
+removeNoOps (StatementI _ DoNothing:sts) = removeNoOps sts
+removeNoOps (st:sts) = st : removeNoOps sts
+
