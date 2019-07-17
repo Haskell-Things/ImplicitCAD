@@ -36,9 +36,6 @@ pattern Name n = GIED.Name (Symbol n)
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 
-negationIssue :: Expectation -> Expectation
-negationIssue _ = pendingWith "parser doesn't handle negation operator correctly"
-
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
 
@@ -49,8 +46,8 @@ logicalSpec :: Spec
 logicalSpec = do
   describe "not" $ do
     specify "single" $ "!foo" --> not [Var "foo"]
-    specify "multiple" $
-      negationIssue $ "!!!foo" --> not [not [not [Var "foo"]]]
+    specify "double" $ "!!foo" --> Var "foo"
+    specify "tripple" $ "!!!foo" --> not [Var "foo"]
   it "handles and/or" $ do
     "foo && bar" --> and [Var "foo", Var "bar"]
     "foo || bar" --> or [Var "foo", Var "bar"]
