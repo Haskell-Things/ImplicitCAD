@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==))
+import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
@@ -22,7 +22,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -107,10 +107,10 @@ letExpr = "let expression" ?: do
 -- by the ExprIdx argument, with A0 as the highest.
 
 expr0 :: GenParser Char st Expr
-expr0 = exprN A0
+expr0 = exprN A1
 
 -- what state in the expression parser tree we are inside of.
-data ExprIdx = A0 | A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12
+data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12
 
 exprN :: ExprIdx -> GenParser Char st Expr
 
@@ -118,12 +118,9 @@ exprN A12 =
          literal
     *<|> letExpr
     *<|> variable
-    *<|> "bracketed expression" ?: do
+    *<|> "bracketed expression" ?:
         -- eg. ( 1 + 5 )
-        _ <- matchTok '('
-        expr <- expr0
-        _ <- matchTok ')'
-        return expr
+        surroundedBy '(' expr0 ')'
     *<|> "vector/list" ?: do
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
@@ -145,14 +142,10 @@ exprN A11 =
         obj <- exprN A12
         mods <- many1 (
             "function application" ?: do
-                _ <- matchTok '('
-                args <- sepBy expr0 (matchComma)
-                _ <- matchTok ')'
+                args <- surroundedBy '(' (sepBy expr0 $ matchComma) ')'
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
-                _ <- matchTok '['
-                i <- expr0
-                _ <- matchTok ']'
+                i <- surroundedBy '[' expr0 ']'
                 return $ \l -> Var "index" :$ [l, i]
             *<|> "list splicing" ?: do
                 _ <- matchTok '['
@@ -254,9 +247,12 @@ exprN A4 =
 -- match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
-        _ <- matchTok '!'
-        a <- exprN A4
-        return $ Var "!" :$ [a]
+        a <- many1 $ matchTok '!'
+        b <- exprN A4
+        let c=length a
+        return $ if (c `mod` 2==0)
+                 then b
+                 else Var "!" :$ [b]
     *<|> exprN A4
 
 -- match the logical And and Or (&&,||) operators.
@@ -280,12 +276,4 @@ exprN A1 =
         c <- exprN A1
         return $ Var "?" :$ [a,b,c]
     *<|> exprN A2
-
--- Match and throw away any white space following an expression.
-exprN A0 =
-    do
-        expr <- exprN A1
-        _ <- whiteSpace
-        return expr
-    *<|> exprN A1
 
