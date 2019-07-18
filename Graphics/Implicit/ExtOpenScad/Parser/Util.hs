@@ -8,11 +8,11 @@
 -- FIXME: required. why?
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, variableSymb, patternMatcher, sourcePosition) where
+module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition) where
 
 import Prelude (String, Char, ($), foldl1, map, (>>), (.), return)
 
-import Text.Parsec (SourcePos, (<|>), (<?>), noneOf, try, char, many1, sepBy)
+import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy)
 
 import Text.Parsec.String (GenParser)
 
@@ -27,7 +27,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), So
 import Graphics.Implicit.Definitions (toFastℕ)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchIdentifier, matchTok)
 
 import Data.Kind (Type)
 
@@ -42,13 +42,6 @@ l ?: p = p <?> l
 tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . map try
 
-variableSymb :: forall u. ParsecT String u Identity String
-variableSymb = "variable" ?: do
-  ret <- many1 (noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=")
-  _ <- whiteSpace
-  return ret
-{-# INLINABLE variableSymb #-}
-
 patternMatcher :: GenParser Char st Pattern
 patternMatcher =
     (do
@@ -61,16 +54,12 @@ patternMatcher =
             then Just (Map.empty)
             else Nothing
     ) <|> -} ( do
-        symb <- variableSymb
-        _ <- whiteSpace
+        symb <- matchIdentifier
         return $ Name (Symbol symb)
     ) <|> ( do
-        _ <- char '['
-        _ <- whiteSpace
+        _ <- matchTok '['
         components <- patternMatcher `sepBy` try (char ',' >> whiteSpace)
-        _ <- whiteSpace
-        _ <- char ']'
-        _ <- whiteSpace
+        _ <- matchTok ']'
         return $ ListP components
     )
 
