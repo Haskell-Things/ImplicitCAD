@@ -17,7 +17,7 @@ import Control.Monad.Fix(fix)
 
 import Text.Parsec.String (GenParser)
 
-import Text.Parsec ((<|>), sepBy, between, chainl1, chainr1)
+import Text.Parsec ((<|>), sepBy, chainl1, chainr1)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)), Symbol(Symbol), Pattern (Name), OVal(OBool, OUndefined, ONum, OString))
 
@@ -25,7 +25,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(identifier, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok, surroundedBy)
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -218,6 +218,3 @@ assignment = do
 bindLets :: Expr -> Expr -> Expr
 bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name (Symbol boundName)] nestedExpr :$ [boundExpr]
 bindLets _ e = e
-
-surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
-surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
