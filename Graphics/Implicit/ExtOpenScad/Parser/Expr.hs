@@ -46,15 +46,23 @@ boolean = ("boolean" ?:) $ do
 
 literal :: GenParser Char st Expr
 literal = ("literal" ?:) $
-    "number" ?:
-         do
-            a <- many1 digit
-            b <- option "" (
-              do
-                c <- char '.' >> many1 digit
-                return ("." ++ c)
-              )
-            d <- option "0" (
+    "number" ?: do
+           h <- choice [
+               ( do
+                   a <- many1 digit
+                   b <- option "" (
+                     do
+                       c <- char '.' >> many1 digit
+                       return ("." ++ c)
+                     )
+                   return (a ++ b)
+               ),
+               ( do
+                   i <- char '.' >> many1 digit
+                   return ("0." ++ i)
+               )
+               ]
+           d <- option "0" (
               do
                 _ <- oneOf "eE"
                 exponent <- choice [
@@ -69,8 +77,10 @@ literal = ("literal" ?:) $
                   )]
                 return exponent
               )
-            _ <- whiteSpace
-            return . LitE $ ONum $ read (a ++ b) * (10 ** read d)
+           _ <- whiteSpace
+           return . LitE $ ONum $ if d == "0"
+                                  then read (h)
+                                  else read (h) * (10 ** read d)
      *<|> boolean
      *<|> "string" ?: do
         _ <- char '"'
@@ -104,7 +114,7 @@ letExpr = "let expression" ?: do
   return $ foldr bindLets expr bindingPairs
 
 -- We represent the priority or 'fixity' of different types of expressions
--- by the ExprIdx argument, with A0 as the highest.
+-- by the ExprIdx argument, with A1 as the highest.
 
 expr0 :: GenParser Char st Expr
 expr0 = exprN A1
@@ -125,16 +135,14 @@ exprN A12 =
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
             _ <- whiteSpace        
-            exprs <- sepBy expr0 (matchComma)
+            exprs <- sepBy expr0 matchComma
             _ <- if (o == '[')
                  then matchTok ']'
                  else matchTok ')'
             return $ ListE exprs
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
-        _ <- matchTok '['
-        exprs <- sepBy expr0 (matchColon)
-        _ <- matchTok ']'
+        exprs <- surroundedBy '[' (sepBy expr0 matchColon) ']'
         return $ collector "list_gen" exprs
 
 exprN A11 =
@@ -142,7 +150,7 @@ exprN A11 =
         obj <- exprN A12
         mods <- many1 (
             "function application" ?: do
-                args <- surroundedBy '(' (sepBy expr0 $ matchComma) ')'
+                args <- surroundedBy '(' (sepBy expr0 matchComma) ')'
                 return $ \f -> f :$ args
             *<|> "list indexing" ?: do
                 i <- surroundedBy '[' expr0 ']'
@@ -249,8 +257,7 @@ exprN A3 =
     "logical-not" ?: do
         a <- many1 $ matchTok '!'
         b <- exprN A4
-        let c=length a
-        return $ if (c `mod` 2==0)
+        return $ if ((length a) `mod` 2==0)
                  then b
                  else Var "!" :$ [b]
     *<|> exprN A4

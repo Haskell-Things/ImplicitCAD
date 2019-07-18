@@ -74,6 +74,8 @@ literalSpec = do
     "0000" --> num 0
   it "handles floats" $
     "23.42" --> num 23.42
+  it "handles floats with no whole component" $
+    ".2342" --> num 0.2342
   describe "E notation" $ do
     it "accepts integer e with positive sign" $ "1e+1" --> num 10
     it "accepts integer e with negative sign" $ "10e-1" --> num 1
