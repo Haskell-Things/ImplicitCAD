@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
+import Prelude (Char, Maybe(Nothing, Just), String, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
@@ -19,10 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
+import Graphics.Implicit.ExtOpenScad.Parser.Util ((?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -33,9 +33,8 @@ pattern Name n = GIED.Name (Symbol n)
 -- | Parse a variable reference.
 variable :: GenParser Char st Expr
 variable = ("variable" ?:) $ do
-  a <- fmap Var variableSymb
-  _ <- whiteSpace
-  return a
+  a <- matchIdentifier
+  return (Var a)
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
@@ -63,9 +62,7 @@ literal = ("literal" ?:) $
                )
                ]
            d <- option "0" (
-              do
-                _ <- oneOf "eE"
-                exponent <- choice [
+                oneOf "eE" >> choice [
                   ( do
                       e <- char '-'
                       f <- many1 digit
@@ -75,13 +72,11 @@ literal = ("literal" ?:) $
                       g <- (optional $ char '+') >> many1 digit
                       return g
                   )]
-                return exponent
               )
            _ <- whiteSpace
            return . LitE $ ONum $ if d == "0"
                                   then read (h)
                                   else read (h) * (10 ** read d)
-     *<|> boolean
      *<|> "string" ?: do
         _ <- char '"'
         strlit <-  many $ (string "\\\"" >> return '\"')
@@ -99,14 +94,12 @@ literal = ("literal" ?:) $
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
-  _ <- matchLet >> char '('
+  _ <- matchLet >> matchTok '('
   bindingPairs <- sepBy ( do
-    boundName <- whiteSpace >> variableSymb
-    _ <- whiteSpace
-    _ <- matchTok '='
-    boundExpr <- expr0
+    boundName <- matchIdentifier
+    boundExpr <- matchTok '=' >> expr0
     return $ ListE [Var boundName, boundExpr])
-    (char ',')
+    (matchComma)
   _ <- matchTok ')'
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
@@ -120,17 +113,20 @@ expr0 :: GenParser Char st Expr
 expr0 = exprN A1
 
 -- what state in the expression parser tree we are inside of.
-data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12
+data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12 | A13
 
 exprN :: ExprIdx -> GenParser Char st Expr
 
+exprN A13 =
+       literal
+  *<|> variable
+  *<|> boolean
+
 exprN A12 =
-         literal
-    *<|> letExpr
-    *<|> variable
+         letExpr
     *<|> "bracketed expression" ?:
-        -- eg. ( 1 + 5 )
-        surroundedBy '(' expr0 ')'
+         -- eg. ( 1 + 5 )
+         surroundedBy '(' expr0 ')'
     *<|> "vector/list" ?: do
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
@@ -144,10 +140,12 @@ exprN A12 =
         -- eg.  [ a : 1 : a + 10 ]
         exprs <- surroundedBy '[' (sepBy expr0 matchColon) ']'
         return $ collector "list_gen" exprs
+    *<|> exprN A13
 
+-- | match operations that start with a variable name.
 exprN A11 =
     do
-        obj <- exprN A12
+        obj <- variable
         mods <- many1 (
             "function application" ?: do
                 args <- surroundedBy '(' (sepBy expr0 matchComma) ')'
