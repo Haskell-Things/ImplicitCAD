@@ -3,15 +3,15 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, number, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, literalString, identifier, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
 
 -- Be explicit about what we import.
-import Prelude (String, Char, Either(Right), Integer, Double, return, (>>), Bool(True), ($), (++), read)
+import Prelude (String, Char, return, (>>), Bool(True))
 import Control.Monad.Identity (Identity)
 import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 import Text.Parsec.String (GenParser)
-import Text.Parsec ((<|>), (<?>), char, letter, alphaNum, digit, many1, oneOf)
-import qualified Text.Parsec.Token as P (reserved, naturalOrFloat, identifier, stringLiteral, reservedOp)
+import Text.Parsec ((<|>), char, letter, alphaNum)
+import qualified Text.Parsec.Token as P (reserved, identifier, stringLiteral, reservedOp)
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
 
@@ -39,22 +39,6 @@ lexer = makeTokenParser openScadStyle
 matchEach :: GenParser Char st ()
 matchEach = P.reserved lexer "each"
 
-number :: GenParser Char st (Either Integer Double)
-number =
-    do
-        _ <- char '.' <?> "" -- OpenSCAD supports floating point numbers that start with a decimal.
-        fractional <- many1 digit
-        expont <-
-            do
-                _ <- oneOf "eE"
-                sign <- (oneOf "-+" <?> "exponent") <|> return '+'
-                expo <- many1 digit <?> "exponent"
-                return $ 'e':sign:expo
-            <|>
-                return ""
-        return $ Right ((read $ "0." ++ fractional ++ expont) :: Double)
-    <|>
-        P.naturalOrFloat lexer
 
 identifier :: GenParser Char st String
 identifier = P.identifier lexer

@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0) where
 
-import Prelude (Char, String, Bool(True, False), Either(Left, Right), ($), return, id, foldr, fromIntegral)
+import Prelude (Char, String, Bool(True, False), ($), return, id, foldr)
 
 import Control.Monad.Fix(fix)
 
@@ -23,9 +23,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(identifier, number, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(identifier, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok, surroundedBy)
+
+import Graphics.Implicit.ExtOpenScad.Parser.Util(number)
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -52,11 +54,7 @@ nonAssociativeExpr = do -- boolean true
     <|> do -- undef
         _ <- matchUndef
         return $ LitE OUndefined
-    <|> do -- integer or double precision number
-        n <- number
-        case n of
-            Left integer -> return $ LitE $ ONum $ fromIntegral integer
-            Right double -> return $ LitE $ ONum double
+    <|> number -- integer or double precision number
     <|> do -- string literal
         str <- literalString
         return $ LitE $ OString str
