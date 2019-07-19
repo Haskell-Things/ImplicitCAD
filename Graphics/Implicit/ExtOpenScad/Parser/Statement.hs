@@ -44,8 +44,7 @@ parseProgram name s = parse program name s where
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
          -- This leaves us to deal only with the first spaces in the file.
-        _   <- whiteSpace
-        sts <- many computation
+        sts <- whiteSpace >> many computation
         _   <- eof
         return sts
 
@@ -106,7 +105,7 @@ throwAway = do
 
 -- | An include! Basically, inject another extopenscad file here...
 include :: GenParser Char st StatementI
-include = (do
+include = ("include " ?:) $ do
     pos <- sourcePos
     injectVals <-  (matchInclude >> return True )
                <|> (matchUse     >> return False)
@@ -115,7 +114,6 @@ include = (do
     filename <- many (noneOf "<> ")
     _ <- matchTok '>'
     return $ StatementI pos $ Include filename injectVals
-    ) <?> "include "
 
 -- | An assignment (parser)
 assignment :: GenParser Char st StatementI
@@ -139,7 +137,7 @@ function = ("function " ?:) $ do
 
 -- | An echo (parser)
 echo :: GenParser Char st StatementI
-echo = do
+echo = ("echo " ?:) $ do
     pos <- sourcePos
     _ <- matchEcho
     exprs <- surroundedBy '(' (sepBy expr0 (try matchComma)) ')'
@@ -203,7 +201,7 @@ moduleArgsUnit = do
         *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
-            argVars <- surroundedBy '(' (sepBy matchIdentifier (try $ matchComma)) ')'
+            argVars <- surroundedBy '(' (sepBy matchIdentifier (try matchComma)) ')'
             _ <- matchTok '='
             expr <- expr0
             return (Just (Symbol symb), LamE (map Name argVars) expr)
@@ -229,7 +227,7 @@ moduleArgsUnitDecl = do
             symb <- matchIdentifier
             _ <- matchTok '('
                  -- FIXME: why match this content, then drop it?
-            _ <- sepBy matchIdentifier (try $ matchComma)
+            _ <- sepBy matchIdentifier (try matchComma)
             _ <- matchTok ')'
             _ <- matchTok '='
             expr <- expr0
@@ -237,7 +235,7 @@ moduleArgsUnitDecl = do
         *<|> do
             symb <- matchIdentifier
             return (Symbol symb, Nothing)
-        ) (try $ matchComma)
+        ) (try matchComma)
     _ <- matchTok ')'
     return argTemplate
 
