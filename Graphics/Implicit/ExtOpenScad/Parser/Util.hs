@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition) where
 
-import Prelude (String, Char, ($), foldl1, map, (>>), (.), return)
+import Prelude (String, Char, ($), foldl1, map, (.), return)
 
 import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy)
 
@@ -27,7 +27,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), So
 import Graphics.Implicit.Definitions (toFastℕ)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchIdentifier, matchTok)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok)
 
 import Data.Kind (Type)
 
@@ -58,7 +58,7 @@ patternMatcher =
         return $ Name (Symbol symb)
     ) <|> ( do
         _ <- matchTok '['
-        components <- patternMatcher `sepBy` try (char ',' >> whiteSpace)
+        components <- patternMatcher `sepBy` try (matchTok ',')
         _ <- matchTok ']'
         return $ ListP components
     )
