@@ -1,5 +1,5 @@
 /* Example 13 - The rounded union of a cube and a sphere. */
-union {
+union () {
   cube ([0,0,0],[20,20,20]);
   translate ([20,20,20]) sphere (15);
 }
