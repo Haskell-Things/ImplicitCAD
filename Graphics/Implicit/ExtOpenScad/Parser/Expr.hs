@@ -8,94 +8,27 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
+import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
 
 -- The parsec parsing library.
-import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
+import Text.Parsec (oneOf, string, many1, many, sepBy, sepBy1, optionMaybe, try, option)
 
 import Text.Parsec.String (GenParser)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OString, OBool, OUndefined), collector, Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), collector, Symbol(Symbol))
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util ((?:), (*<|>))
+import Graphics.Implicit.ExtOpenScad.Parser.Util ((?:), (*<|>), number, boolean, scadString, scadUndefined, variable)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
-
--- | Parse a variable reference.
---   NOTE: abused by the parser for function calls.
-variable :: GenParser Char st Expr
-variable = ("variable" ?:) $ do
-  a <- matchIdentifier
-  return (Var a)
-
--- | Parse a true or false value.
-boolean :: GenParser Char st Expr
-boolean = ("boolean" ?:) $ do
-  b  <-      (matchTrue  >> return True )
-        *<|> (matchFalse >> return False)
-  return . LitE $ OBool b
-
--- | Parse a number.
-number :: GenParser Char st Expr
-number = ("number" ?:) $ do
-  h <- choice
-       [(
-           do
-             a <- many1 digit
-             b <- option "" (
-               do
-                 c <- char '.' >> many1 digit
-                 return ("." ++ c)
-               )
-             return (a ++ b)
-        ),
-        ( do
-            i <- char '.' >> many1 digit
-            return ("0." ++ i)
-        )]
-  d <- option "0"
-       (
-         oneOf "eE" >> choice
-         [( do
-              f <- char '-' >> many1 digit
-              return ("-" ++ f)
-          ),
-          (
-            (optional $ char '+') >> many1 digit
-          )]
-       )
-  _ <- whiteSpace
-  return . LitE $ ONum $ if d == "0"
-                         then read (h)
-                         else read (h) * (10 ** read d)
-
--- | Parse a quoted string.
---   FIXME: no \u unicode support?
-scadString :: GenParser Char st Expr
-scadString = ("string" ?:) $ do
-  _ <- char '"'
-  strlit <-  many $ (string "\\\"" >> return '\"')
-               *<|> (string "\\n" >> return '\n')
-               *<|> (string "\\r" >> return '\r')
-               *<|> (string "\\t" >> return '\t')
-               *<|> (string "\\\\" >> return '\\')
-               *<|>  noneOf "\"\n"
-  _ <- matchTok '"'
-  return . LitE $ OString strlit
-
-scadUndefined :: GenParser Char st Expr
-scadUndefined = ("undefined" ?:) $ do
-  _ <- matchUndef
-  return . LitE $ OUndefined
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
