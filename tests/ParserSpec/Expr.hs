@@ -102,6 +102,8 @@ literalSpec = do
     "0000" --> num 0
   it "handles floats" $
     "23.42" --> num 23.42
+  it "handles floats with no whole component" $
+    ".2342" --> num 0.2342
   describe "E notation" $ do
     it "accepts integer e with positive sign" $ "1e+1" --> num 10
     it "accepts integer e with negative sign" $ "10e-1" --> num 1
@@ -188,12 +190,10 @@ exprSpec = do
       "foo[23]" --> index [Var "foo", num 23]
     it "handles multiple indexes" $
       "foo[23][12]" --> Var "index" :$ [Var "index" :$ [Var "foo", num 23], num 12]
-    it "handles single function call with single argument" $
+    it "handles single function/module call with single argument" $
       "foo(1)" --> Var "foo" :$ [num 1]
-    it "handles single function call with multiple arguments" $
+    it "handles single function/module call with multiple arguments" $
       "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
-    it "handles multiple function calls" $
-      "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
   describe "arithmetic" $ do
     it "handles unary -" $
       "-42" --> num (-42)
@@ -276,11 +276,7 @@ exprSpec = do
         "foo ++ bar ++ baz" --> append [append [Var "foo", Var "bar"], Var "baz"]
   describe "logical operators" logicalSpec
   describe "let expressions" letBindingSpec
-  describe "application" $ do
+  describe "function/module application" $ do
     specify "base case" $ "foo(x)" --> Var "foo" :$ [Var "x"]
     specify "multiple arguments" $
       "foo(x, 1, 2)" --> Var "foo" :$ [Var "x", num 1, num 2]
-    specify "multiple" $
-      "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
-    specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"]

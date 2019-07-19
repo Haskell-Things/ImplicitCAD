@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma, matchIdentifier, surroundedBy) where
 
 import Prelude (String, Char, Bool(True), return)
 
@@ -13,13 +13,15 @@ import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 
 import Text.Parsec.String (GenParser)
 
-import qualified Text.Parsec.Token as P (whiteSpace, reserved)
+import qualified Text.Parsec.Token as P (whiteSpace, reserved, identifier)
 
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
-import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, comma)
+import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, comma, identStart, identLetter, reservedNames)
 
 import Text.Parsec (char, between)
+
+import Text.Parsec.Char (noneOf)
 
 -- The definition of openscad used by parsec.
 openScadStyle :: GenLanguageDef String u0 Identity
@@ -29,6 +31,9 @@ openScadStyle
     , commentEnd = "*/"
     , commentLine = "//"
     , nestedComments = True
+    , identStart =  noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=1234567890"
+    , identLetter = noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?="
+    , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef", "include", "use"]
     , caseSensitive = True
     }
 
@@ -106,3 +111,6 @@ matchComma = comma lexer
 -- | match something between two ends.
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
 surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
+
+matchIdentifier :: GenParser Char st String
+matchIdentifier = P.identifier lexer

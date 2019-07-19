@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, fmap, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
+import Prelude (Char, Maybe(Nothing, Just), String, ($), (.), (>>), return, Bool(True, False), read, (++), (*), (**), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, string, many1, digit, char, many, noneOf, sepBy, sepBy1, optionMaybe, try, option, optional, choice)
@@ -19,10 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (variableSymb, (?:), (*<|>))
+import Graphics.Implicit.ExtOpenScad.Parser.Util ((?:), (*<|>))
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier)
 
 -- Let us use the old syntax when defining Vars and Names.
 pattern Var :: String -> Expr
@@ -31,11 +31,11 @@ pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- | Parse a variable reference.
+--   NOTE: abused by the parser for function calls.
 variable :: GenParser Char st Expr
 variable = ("variable" ?:) $ do
-  a <- fmap Var variableSymb
-  _ <- whiteSpace
-  return a
+  a <- matchIdentifier
+  return (Var a)
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
@@ -44,59 +44,67 @@ boolean = ("boolean" ?:) $ do
         *<|> (matchFalse >> return False)
   return . LitE $ OBool b
 
-literal :: GenParser Char st Expr
-literal = ("literal" ?:) $
-    "number" ?:
-         do
-            a <- many1 digit
-            b <- option "" (
-              do
-                c <- char '.' >> many1 digit
-                return ("." ++ c)
-              )
-            d <- option "0" (
-              do
-                _ <- oneOf "eE"
-                exponent <- choice [
-                  ( do
-                      e <- char '-'
-                      f <- many1 digit
-                      return (e : f)
-                  ),
-                  ( do
-                      g <- (optional $ char '+') >> many1 digit
-                      return g
-                  )]
-                return exponent
-              )
-            _ <- whiteSpace
-            return . LitE $ ONum $ read (a ++ b) * (10 ** read d)
-     *<|> boolean
-     *<|> "string" ?: do
-        _ <- char '"'
-        strlit <-  many $ (string "\\\"" >> return '\"')
-                     *<|> (string "\\n" >> return '\n')
-                     *<|> (string "\\r" >> return '\r')
-                     *<|> (string "\\t" >> return '\t')
-                     *<|> (string "\\\\" >> return '\\')
-                      -- FIXME: no \u unicode support?
-                     *<|> noneOf "\"\n"
-        _ <- matchTok '"'
-        return . LitE $ OString strlit
-     *<|> "undefined" ?: do
-        _ <- matchUndef
-        return . LitE $ OUndefined
+-- | Parse a number.
+number :: GenParser Char st Expr
+number = ("number" ?:) $ do
+  h <- choice
+       [(
+           do
+             a <- many1 digit
+             b <- option "" (
+               do
+                 c <- char '.' >> many1 digit
+                 return ("." ++ c)
+               )
+             return (a ++ b)
+        ),
+        ( do
+            i <- char '.' >> many1 digit
+            return ("0." ++ i)
+        )]
+  d <- option "0"
+       (
+         oneOf "eE" >> choice
+         [( do
+              f <- char '-' >> many1 digit
+              return ("-" ++ f)
+          ),
+          (
+            (optional $ char '+') >> many1 digit
+          )]
+       )
+  _ <- whiteSpace
+  return . LitE $ ONum $ if d == "0"
+                         then read (h)
+                         else read (h) * (10 ** read d)
+
+-- | Parse a quoted string.
+--   FIXME: no \u unicode support?
+scadString :: GenParser Char st Expr
+scadString = ("string" ?:) $ do
+  _ <- char '"'
+  strlit <-  many $ (string "\\\"" >> return '\"')
+               *<|> (string "\\n" >> return '\n')
+               *<|> (string "\\r" >> return '\r')
+               *<|> (string "\\t" >> return '\t')
+               *<|> (string "\\\\" >> return '\\')
+               *<|>  noneOf "\"\n"
+  _ <- matchTok '"'
+  return . LitE $ OString strlit
+
+scadUndefined :: GenParser Char st Expr
+scadUndefined = ("undefined" ?:) $ do
+  _ <- matchUndef
+  return . LitE $ OUndefined
 
 letExpr :: GenParser Char st Expr
 letExpr = "let expression" ?: do
-  _ <- matchLet >> char '('
+  _ <- matchLet >> matchTok '('
   bindingPairs <- sepBy ( do
-    boundName <- whiteSpace >> variableSymb
-    _ <- whiteSpace
-    _ <- matchTok '='
-    boundExpr <- expr0
+    boundName <- matchIdentifier
+    boundExpr <- matchTok '=' >> expr0
     return $ ListE [Var boundName, boundExpr])
-    (char ',')
+    (matchComma)
   _ <- matchTok ')'
   expr <- expr0
   let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
@@ -104,28 +112,33 @@ letExpr = "let expression" ?: do
   return $ foldr bindLets expr bindingPairs
 
 -- We represent the priority or 'fixity' of different types of expressions
--- by the ExprIdx argument, with A0 as the highest.
+-- by the ExprIdx argument, with A1 as the highest.
 
 expr0 :: GenParser Char st Expr
 expr0 = exprN A1
 
 -- what state in the expression parser tree we are inside of.
-data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12
+data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12 | A13
 
 exprN :: ExprIdx -> GenParser Char st Expr
 
+exprN A13 =
+       number
+  *<|> boolean
+  *<|> scadString
+  *<|> scadUndefined
+
+-- | Parse parentheses, lists, vectors, and vector/list generators.
 exprN A12 =
-         literal
-    *<|> letExpr
-    *<|> variable
+         letExpr
     *<|> "bracketed expression" ?:
-        -- eg. ( 1 + 5 )
-        surroundedBy '(' expr0 ')'
+         -- eg. ( 1 + 5 )
+         surroundedBy '(' expr0 ')'
     *<|> "vector/list" ?: do
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
             _ <- whiteSpace        
-            exprs <- sepBy expr0 (matchComma)
+            exprs <- sepBy expr0 matchComma
             _ <- if (o == '[')
                  then matchTok ']'
                  else matchTok ')'
@@ -133,33 +146,45 @@ exprN A12 =
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         _ <- matchTok '['
-        exprs <- sepBy expr0 (matchColon)
+        expr1 <- expr0
+        _     <- matchColon
+        exprs <- (do
+                    expr2 <- expr0
+                    expr3 <- optionMaybe (matchColon >> expr0)
+                    return $ case expr3 of
+                      (Just n)  -> [expr2, n]
+                      (Nothing) -> [expr2]
+                 )
         _ <- matchTok ']'
-        return $ collector "list_gen" exprs
+        return $ collector "list_gen" ([expr1] ++ exprs)
+    *<|> exprN A13
 
+-- | parse operations that start with a variable name, including variable reference..
 exprN A11 =
     do
-        obj <- exprN A12
-        mods <- many1 (
-            "function application" ?: do
-                args <- surroundedBy '(' (sepBy expr0 $ matchComma) ')'
-                return $ \f -> f :$ args
-            *<|> "list indexing" ?: do
-                i <- surroundedBy '[' expr0 ']'
-                return $ \l -> Var "index" :$ [l, i]
-            *<|> "list splicing" ?: do
-                _ <- matchTok '['
-                start <- optionMaybe expr0
-                _ <- matchColon
-                end   <- optionMaybe expr0
-                _ <- matchTok ']'
-                return $ case (start, end) of
-                    (Nothing, Nothing) -> id
-                    (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
-                    (Nothing, Just e )  -> \l -> Var "splice" :$ [l, LitE $ ONum 0, e]
-                    (Just s,  Just e )  -> \l -> Var "splice" :$ [l, s, e]
-            )
-        return $ foldl (\a b -> b a) obj mods
+        obj <- variable
+        args <- option [] (
+          "function application" ?: do
+              args <- surroundedBy '(' (sepBy expr0 matchComma) ')'
+              return $ [\f -> f :$ args]
+          )
+        mods <- many (
+               "list indexing" ?: do
+                   i <- surroundedBy '[' expr0 ']'
+                   return $ \l -> Var "index" :$ [l, i]
+          *<|> "list splicing" ?: do
+                   _     <- matchTok '['
+                   start <- optionMaybe expr0
+                   _     <- matchColon
+                   end   <- optionMaybe expr0
+                   _     <- matchTok ']'
+                   return $ case (start, end) of
+                              (Nothing, Nothing) -> id
+                              (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined ]
+                              (Nothing, Just e )  -> \l -> Var "splice" :$ [l, LitE $ ONum 0, e]
+                              (Just s,  Just e )  -> \l -> Var "splice" :$ [l, s, e]
+                 )
+        return $ foldl (\a b -> b a) obj (args ++ mods)
     *<|> exprN A12
 
 -- match a leading (+) or (-) operator.
@@ -244,18 +269,17 @@ exprN A4 =
             _   -> collector "all" $ zipWith3 (\c e1 e2 -> c :$ [e1,e2]) comparisons exprs (tail exprs)
     *<|> exprN A5
 
--- match the logical negation operator.
+-- | Match the logical negation operator.
 exprN A3 =
     "logical-not" ?: do
         a <- many1 $ matchTok '!'
         b <- exprN A4
-        let c=length a
-        return $ if (c `mod` 2==0)
+        return $ if ((length a) `mod` 2==0)
                  then b
                  else Var "!" :$ [b]
     *<|> exprN A4
 
--- match the logical And and Or (&&,||) operators.
+-- | Match the logical And and Or (&&,||) operators.
 exprN A2 =
     "logical and/or" ?: do
         a <- exprN A3
