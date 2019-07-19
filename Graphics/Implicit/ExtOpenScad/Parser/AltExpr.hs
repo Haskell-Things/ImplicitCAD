@@ -23,9 +23,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(identifier, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchIdentifier, surroundedBy)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util(number)
 
@@ -59,7 +59,7 @@ nonAssociativeExpr = do -- boolean true
         str <- literalString
         return $ LitE $ OString str
     <|> do -- non-keyword identifier
-        ident <- identifier
+        ident <- matchIdentifier
         return $ Var ident
     <|> -- parenthesized expression
         surroundedBy '(' expr ')'
@@ -207,7 +207,7 @@ binaryOperation symbol left right = Var symbol :$ [left, right]
 -- an assignment expression within a let's bindings list
 assignment :: GenParser Char st Expr
 assignment = do
-    ident       <- identifier
+    ident       <- matchIdentifier
     _           <- matchTok '='
     expression  <- expr
     return $ ListE [Var ident, expression]

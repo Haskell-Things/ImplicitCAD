@@ -12,9 +12,9 @@ import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach, identifier)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, matchIdentifier, surroundedBy)
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 
@@ -62,13 +62,13 @@ statement =
         flaggedModuleInstantiation
     <|> do -- user module declaration, e.g. "module foo(a, b = [1,2]) { }
         _          <- matchModule
-        moduleName <- identifier
+        moduleName <- matchIdentifier
         argDecls   <- surroundedBy '(' moduleParametersDeclaration ')'
         stmt       <- statements
         returnStatement $ NewModule (Symbol moduleName) argDecls stmt
     <|> do -- user function declaration, e.g. "function foo(a, b = [1,2]) a;
         _          <- matchFunction
-        funcName   <- identifier
+        funcName   <- matchIdentifier
         argDecls   <- surroundedBy '(' argumentsDeclaration ')'
         _          <- matchTok '='
         funcExpr   <- expression
@@ -93,7 +93,7 @@ ifStatement = do
 -- parser.
 moduleInstantiationOrAssignment :: GenParser Char st StatementI
 moduleInstantiationOrAssignment = do
-        ident <- identifier
+        ident <- matchIdentifier
         moduleInstantiationTail ident <|> assignment (Symbol ident)
     <|> do
         _ <- matchFor
@@ -146,7 +146,7 @@ maybeFlaggedModuleInstantiation = do
         _ <- moduleFlag '*' maybeFlaggedModuleInstantiation
         returnDoNothing
     <|> do
-        moduleName <- identifier
+        moduleName <- matchIdentifier
         moduleInstantiationTail moduleName
     <|> do
         _ <- matchFor
@@ -172,7 +172,7 @@ moduleParametersDeclaration = sepEndBy moduleParameterDeclaration oneOrMoreComma
 
 moduleParameterDeclaration :: GenParser Char st (Symbol, Maybe Expr)
 moduleParameterDeclaration = do
-    parameterName <- identifier
+    parameterName <- matchIdentifier
     defaultExpr   <- optionMaybe defaultExpression
     return ((Symbol parameterName), defaultExpr)
     where
@@ -186,7 +186,7 @@ argumentsDeclaration = sepEndBy argumentDeclaration oneOrMoreCommas
 
 argumentDeclaration :: GenParser Char st (Symbol, Maybe Expr)
 argumentDeclaration = do
-    parameterName <- identifier
+    parameterName <- matchIdentifier
     defaultExpr   <- optionMaybe defaultValueExpression
     return ((Symbol parameterName), defaultExpr)
     where
@@ -233,7 +233,7 @@ moduleCallArgument =
         -- considering not supporting this exact syntax if favour of one that is more manageable with an LL1 grammar.
         -- it is less costly for the 'paramName = expression' syntax if it is a miss, as only one token will be
         -- rolled back.
-        paramName <- identifier
+        paramName <- matchIdentifier
         do
             _        <- matchTok '='
             argValue <- expression
@@ -257,7 +257,7 @@ lambdaFormalParameters = surroundedBy '(' (symbol `sepBy` matchTok ',') ')'
     where
         symbol :: ParsecT String st Identity Pattern
         symbol = do
-            ident <- identifier
+            ident <- matchIdentifier
             return $ Name (Symbol ident)
 
 -- Noteworthy: OpenSCAD allows one or more commas between the formal parameter declarations.
