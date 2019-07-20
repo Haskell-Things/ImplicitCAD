@@ -36,7 +36,7 @@ pattern Name n = GIED.Name (Symbol n)
 
 -- to choose which expression parser to test, change enableAlternateParser to True or False
 enableAlternateParser :: Bool
-enableAlternateParser = True
+enableAlternateParser = False
 
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
@@ -122,21 +122,12 @@ letBindingSpec = do
   it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
   it "handles multiple variable let" $ do
-    originalParserAdditionAstStyle $
-      "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-    experimentalParserAstStyle $
       "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles empty let" $
     "let () a" --> Var "a"
   it "handles nested let" $ do
-    originalParserAdditionAstStyle $
-      "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-    experimentalParserAstStyle $
       "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
   it "handles let on right side of an arithmatic operator" $ do
-    originalParserAdditionAstStyle $
-      "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
-    experimentalParserAstStyle $
       "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
   it "handles let on right side of a unary negation" $
     "- let(b = y) b" --> negate [lambda [Name "b"] (Var "b") [Var "y"]]
@@ -163,27 +154,12 @@ exprSpec = do
       listIssue $
       "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
-      originalParserAdditionAstStyle $
       "[ a : b ]" -->
-      fapp "list_gen" [Var "a", Var "b"]
-    it "handles generators" $
-      experimentalParserAstStyle $
-      "[ a : b ]" -->
-      fapp "list_gen" [Var "a", Var "b"]
+      fapp "list_gen" [Var "a", num 1, Var "b"]
     it "handles generators with expression" $
-      originalParserAdditionAstStyle $
       "[ a : b + 10 ]" -->
-      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
-    it "handles generators with expression" $
-      experimentalParserAstStyle $
-      "[ a : b + 10 ]" -->
-      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
+      fapp "list_gen" [Var "a", num 1, plus [Var "b", num 10]]
     it "handles increment generators" $
-      originalParserAdditionAstStyle $
-      "[ a : 3 : b + 10 ]" -->
-      fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
-    it "handles increment generators" $
-      experimentalParserAstStyle $
       "[ a : 3 : b + 10 ]" -->
       fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
     it "handles indexing" $
@@ -216,9 +192,6 @@ exprSpec = do
     it "handles unary + with string literal" $
       "+\"foo\"" --> stringLiteral "foo"
     it "handles 2 term +" $ do
-      originalParserAdditionAstStyle $
-        "1 + 2" --> plus [num 1, num 2]
-      experimentalParserAstStyle $
         "1 + 2" --> plus [num 1, num 2]
     it "handles > 2 term +" $ do
       originalParserAdditionAstStyle $
@@ -256,9 +229,6 @@ exprSpec = do
       experimentalParserAstStyle $
         "x ^ y ^ z" -->  power [power [Var "x", Var "y"], Var "z"]
     it "handles *" $ do
-      originalParserAdditionAstStyle $
-        "3 * 4" --> mult [num 3, num 4]
-      experimentalParserAstStyle $
         "3 * 4" --> mult [num 3, num 4]
     it "handles > 2 term *" $ do
       originalParserAdditionAstStyle $
