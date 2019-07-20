@@ -127,10 +127,10 @@ exprSpec = do
       "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : b ]" -->
-      fapp "list_gen" [Var "a", Var "b"]
+      fapp "list_gen" [Var "a", num 1, Var "b"]
     it "handles generators with expression" $
       "[ a : b + 10 ]" -->
-      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
+      fapp "list_gen" [Var "a", num 1, plus [Var "b", num 10]]
     it "handles increment generators" $
       "[ a : 3 : b + 10 ]" -->
       fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]

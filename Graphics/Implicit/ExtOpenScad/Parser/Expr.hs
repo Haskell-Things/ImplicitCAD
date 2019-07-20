@@ -55,6 +55,7 @@ data ExprIdx = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8 | A9 | A10 | A11 | A12 | A1
 
 exprN :: ExprIdx -> GenParser Char st Expr
 
+-- | Parse literals.
 exprN A13 =
        number
   *<|> boolean
@@ -86,7 +87,7 @@ exprN A12 =
                     expr3 <- optionMaybe (matchColon >> expr0)
                     return $ case expr3 of
                       (Just n)  -> [expr2, n]
-                      (Nothing) -> [expr2]
+                      (Nothing) -> [LitE $ ONum 1.0, expr2]
                  )
         _ <- matchTok ']'
         return $ collector "list_gen" ([expr1] ++ exprs)
