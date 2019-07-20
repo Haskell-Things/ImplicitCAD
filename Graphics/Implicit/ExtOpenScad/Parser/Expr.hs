@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod)
+import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod, head, (&&))
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, string, many1, many, sepBy, sepBy1, optionMaybe, try, option)
@@ -64,11 +64,7 @@ exprN A13 =
 
 -- | Parse parentheses, lists, vectors, and vector/list generators.
 exprN A12 =
-         letExpr
-    *<|> "bracketed expression" ?:
-         -- eg. ( 1 + 5 )
-         surroundedBy '(' expr0 ')'
-    *<|> "vector/list" ?: do
+         "vector/list/brackets" ?: do
             -- eg. [ 3, a, a+1, b, a*b] or ( 1, 2, 3)
             o <- oneOf "[("
             _ <- whiteSpace        
@@ -76,7 +72,9 @@ exprN A12 =
             _ <- if (o == '[')
                  then matchTok ']'
                  else matchTok ')'
-            return $ ListE exprs
+            return $ if (o == '(' && ((length exprs)==1))
+                     then head exprs
+                     else ListE exprs
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         _ <- matchTok '['
@@ -86,11 +84,12 @@ exprN A12 =
                     expr2 <- expr0
                     expr3 <- optionMaybe (matchColon >> expr0)
                     return $ case expr3 of
-                      (Just n)  -> [expr2, n]
-                      (Nothing) -> [LitE $ ONum 1.0, expr2]
+                      (Just n)  -> [expr1, expr2, n]
+                      (Nothing) -> [expr1, LitE $ ONum 1.0, expr2]
                  )
         _ <- matchTok ']'
-        return $ collector "list_gen" ([expr1] ++ exprs)
+        return $ collector "list_gen" exprs
+    *<|> letExpr
     *<|> exprN A13
 
 -- | parse operations that start with a variable name, including variable reference..
