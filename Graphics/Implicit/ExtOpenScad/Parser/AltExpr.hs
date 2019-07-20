@@ -11,23 +11,23 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0) where
 
-import Prelude (Char, String, Bool(True, False), ($), return, id, foldr)
+import Prelude (Char, String, ($), return, id, foldr)
 
 import Control.Monad.Fix(fix)
 
 import Text.Parsec.String (GenParser)
 
-import Text.Parsec ((<|>), sepBy, chainl1, chainr1)
+import Text.Parsec ((<|>), sepBy, chainl1, chainr1, oneOf)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)), Symbol(Symbol), Pattern (Name), OVal(OBool, OUndefined, ONum, OString))
+import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)), Symbol(Symbol), Pattern (Name), OVal(ONum))
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
+import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchTrue, matchFalse, matchLet, matchUndef, matchTok, matchIdentifier, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchLet, matchTok, matchIdentifier, surroundedBy, whiteSpace)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util(number)
+import Graphics.Implicit.ExtOpenScad.Parser.Util(number, variable, boolean, scadString, scadUndefined)
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -45,22 +45,12 @@ expr0 = expr
 -- parse expressions that don't associate, either because they are not operators or because they are operators
 -- that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
 nonAssociativeExpr :: GenParser Char st Expr
-nonAssociativeExpr = do -- boolean true
-        _ <- matchTrue
-        return $ LitE $ OBool True
-    <|> do -- boolean false
-        _ <- matchFalse
-        return $ LitE $ OBool False
-    <|> do -- undef
-        _ <- matchUndef
-        return $ LitE OUndefined
+nonAssociativeExpr = do
+        boolean
+    <|> scadUndefined
     <|> number -- integer or double precision number
-    <|> do -- string literal
-        str <- literalString
-        return $ LitE $ OString str
-    <|> do -- non-keyword identifier
-        ident <- matchIdentifier
-        return $ Var ident
+    <|> scadString
+    <|> variable
     <|> -- parenthesized expression
         surroundedBy '(' expr ')'
     <|>
@@ -106,13 +96,14 @@ expr = foldr ($) nonAssociativeExpr levels
 
           , \higher -> -- == and != operators
                 chainl1 higher (do
-                    op <-matchEQ <|> matchNE
+                    op <- matchEQ <|> matchNE
                     return $ binaryOperation op)
 
           , \higher -> -- + and - operators
                 chainl1 higher (do
-                    op <- matchTok '+' <|> matchTok '-'
-                    return $ binaryOperation op)
+                    op <- oneOf "+-"
+                    _  <- whiteSpace
+                    return $ binaryOperation (op:""))
 
           , \higher -> -- ++ string catenation operator. This is an ExtOpenScad operation that is not available in OpenSCAD.
                 chainl1 higher (do

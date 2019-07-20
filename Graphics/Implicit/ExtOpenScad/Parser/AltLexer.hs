@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, literalString, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.AltLexer (lexer, matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT, matchEach) where
 
 -- Be explicit about what we import.
 import Prelude (String, Char, return, (>>), Bool(True))
@@ -11,7 +11,7 @@ import Control.Monad.Identity (Identity)
 import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 import Text.Parsec.String (GenParser)
 import Text.Parsec ((<|>), char, letter, alphaNum)
-import qualified Text.Parsec.Token as P (reserved, stringLiteral, reservedOp)
+import qualified Text.Parsec.Token as P (reserved, reservedOp)
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, identStart, identLetter, reservedNames, reservedOpNames, caseSensitive)
 
@@ -38,9 +38,6 @@ lexer = makeTokenParser openScadStyle
 
 matchEach :: GenParser Char st ()
 matchEach = P.reserved lexer "each"
-
-literalString :: GenParser Char st String
-literalString = P.stringLiteral lexer -- not sure if the Parsec idea of string literal matches OpenSCAD. Consider unicode, \x hex codes
 
 -- single line comments, multiline comments and whitespace are consumed by the other token types, since the parser doesn't really need them to build the AST
 
