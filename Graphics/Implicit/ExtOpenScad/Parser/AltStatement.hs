@@ -12,9 +12,7 @@ import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer (matchEach)
-
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, matchIdentifier, surroundedBy)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, matchIdentifier, surroundedBy, matchSemi, matchEach)
 
 import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
 
@@ -51,7 +49,7 @@ statements = removeNoOps <$> many statement
 statement :: GenParser Char st StatementI
 statement =
         do
-        _ <- matchTok ';'
+        _ <- matchSemi
         returnStatement DoNothing
     <|> do
         stmts <- surroundedBy '{' statements '}'
@@ -72,7 +70,7 @@ statement =
         argDecls   <- surroundedBy '(' argumentsDeclaration ')'
         _          <- matchTok '='
         funcExpr   <- expression
-        _          <- matchTok ';'
+        _          <- matchSemi
         returnStatement $ NewFunction (Symbol funcName) argDecls funcExpr
     <|>
         ifStatement
@@ -111,7 +109,7 @@ assignment ident =
     do
     _     <- matchTok '='
     expr  <- expression
-    _     <- matchTok ';'
+    _     <- matchSemi
     returnStatement $ Name ident := expr
 
 moduleFlag :: forall st b. Char -> ParsecT String st Identity b -> ParsecT String st Identity b

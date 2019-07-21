@@ -23,11 +23,9 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, LitE, LamE, (:$)),
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var))
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltLexer(matchOR, matchAND, matchLE, matchGE, matchEQ, matchNE, matchCAT)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchLet, matchTok, matchIdentifier, surroundedBy, whiteSpace, matchOR, matchAND, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT)
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer(matchLet, matchTok, matchIdentifier, surroundedBy, whiteSpace)
-
-import Graphics.Implicit.ExtOpenScad.Parser.Util(number, variable, boolean, scadString, scadUndefined)
+import Graphics.Implicit.ExtOpenScad.Parser.Util(number, variable, boolean, scadString, scadUndefined, (?:))
 
 import Text.Parsec.Prim (ParsecT)
 
@@ -37,10 +35,13 @@ import Data.Functor.Identity (Identity)
 pattern Var :: String -> Expr
 pattern Var n = GIED.Var (Symbol n)
 
--- TODO use the more helpful parser combinators like option, optional, between.
-
 expr0 :: GenParser Char st Expr
 expr0 = expr
+
+-- | Parse an expression inside of parenthesis.
+parenthesizedExpr :: GenParser Char st Expr
+parenthesizedExpr = "parenthesized expression" ?:
+  surroundedBy '(' expr ')'
 
 -- parse expressions that don't associate, either because they are not operators or because they are operators
 -- that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
@@ -48,14 +49,11 @@ nonAssociativeExpr :: GenParser Char st Expr
 nonAssociativeExpr = do
         boolean
     <|> scadUndefined
-    <|> number -- integer or double precision number
+    <|> number
     <|> scadString
     <|> variable
-    <|> -- parenthesized expression
-        surroundedBy '(' expr ')'
-    <|>
-        matchVectorOrRange
---    <?> "an expression"
+    <|> parenthesizedExpr
+    <|> matchVectorOrRange
 
 -- Borrowed the pattern from http://compgroups.net/comp.lang.functional/parsing-ternary-operator-with-parsec/1052460
 -- In the levels list, the first element is the lowest precedent, and the last is the highest.
@@ -91,7 +89,7 @@ expr = foldr ($) nonAssociativeExpr levels
 
           , \higher -> -- <, <=, >=, > comparison operators
                 chainl1 higher (do
-                    op <- matchTok '<' <|> matchLE <|> matchGE <|> matchTok '>'
+                    op <- matchLE <|> matchLT <|> matchGE <|> matchGT
                     return $ binaryOperation op)
 
           , \higher -> -- == and != operators
