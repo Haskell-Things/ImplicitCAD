@@ -3,9 +3,9 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchComma, matchIdentifier, surroundedBy) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEach) where
 
-import Prelude (String, Char, Bool(True), return)
+import Prelude (String, Char, Bool(True), (>>), return)
 
 import Control.Monad.Identity (Identity)
 
@@ -13,11 +13,11 @@ import Text.Parsec.Token (GenTokenParser, makeTokenParser)
 
 import Text.Parsec.String (GenParser)
 
-import qualified Text.Parsec.Token as P (whiteSpace, reserved, identifier)
+import qualified Text.Parsec.Token as P (whiteSpace, reserved, identifier, reservedOp)
 
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
-import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, comma, identStart, identLetter, reservedNames)
+import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, semi, comma, identStart, identLetter, reservedNames, reservedOpNames)
 
 import Text.Parsec (char, between)
 
@@ -34,6 +34,7 @@ openScadStyle
     , identStart =  noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=1234567890"
     , identLetter = noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?="
     , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef", "include", "use"]
+    , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||"]
     , caseSensitive = True
     }
 
@@ -92,6 +93,10 @@ matchLet = P.reserved lexer "let"
 matchUndef :: GenParser Char st ()
 matchUndef = P.reserved lexer "undef"
 
+-- | Match the each keyword.
+matchEach :: GenParser Char st ()
+matchEach = P.reserved lexer "each"
+
 -- | match a single character token followed by whitespace.
 matchTok :: Char -> GenParser Char st String
 matchTok x = do
@@ -104,9 +109,34 @@ matchTok x = do
 matchColon :: GenParser Char st String
 matchColon = colon lexer
 
+-- | match a semicolon.
+matchSemi :: GenParser Char st String
+matchSemi = semi lexer
+
 -- | match a comma.
 matchComma :: GenParser Char st String
 matchComma = comma lexer
+
+-- | Match operators.
+matchLE :: GenParser Char st String
+matchLE = P.reservedOp lexer "<=" >> return "<="
+matchLT :: GenParser Char st String
+matchLT = matchTok '<'
+matchGE :: GenParser Char st String
+matchGE = P.reservedOp lexer ">=" >> return ">="
+matchGT :: GenParser Char st String
+matchGT = matchTok '>'
+matchEQ :: GenParser Char st String
+matchEQ = P.reservedOp lexer "==" >> return "=="
+matchNE :: GenParser Char st String
+matchNE = P.reservedOp lexer "!=" >> return "!="
+matchAND :: GenParser Char st String
+matchAND = P.reservedOp lexer "&&" >> return "&&"
+matchOR :: GenParser Char st String
+matchOR = P.reservedOp lexer "||" >> return "||"
+matchCAT :: GenParser Char st String
+matchCAT = P.reservedOp lexer "++" >> return "++"
+
 
 -- | match something between two ends.
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
