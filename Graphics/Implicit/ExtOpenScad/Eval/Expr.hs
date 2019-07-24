@@ -4,25 +4,47 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap)
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
-                                                  OVal(OList, OError, OFunc),
+                                                  OVal(OList, OError, OFunc, OUndefined),
                                                   Expr(LitE, ListE, LamE, Var, (:$)),
                                                   Symbol(Symbol),
-                                                  VarLookup(VarLookup))
+                                                  VarLookup(VarLookup),
+                                                  SourcePosition,
+                                                  Message(Message),
+                                                  MessageType(Error))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 
 import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
 
+import qualified Graphics.Implicit.ExtOpenScad.Util.StateC as GIEUS (addMessage)
+
 import Data.List (elemIndex)
+
 import Data.Map (fromList, lookup)
-import Control.Monad (zipWithM, mapM, forM)
+
+import Control.Monad (zipWithM, mapM, forM, mapM_)
+
 import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
-import Control.Arrow (second)
+newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
+type StateE = StateT ExprState IO
+
+addMesg :: Message -> StateE ()
+addMesg = modify . (\message (ExprState (a, b, messages, c)) -> (ExprState (a, b, messages ++ [message], c)))
+
+addMessage :: MessageType -> SourcePosition -> String -> StateE ()
+addMessage mtype pos text = addMesg $ Message mtype pos text
+
+errorE :: SourcePosition -> String -> StateE ()
+errorE sourcePos err = do
+      addMessage Error sourcePos err
+
+--epos :: ExprState -> SourcePosition
+--epos (ExprState (_, _, _, pos)) = pos
 
 patVars :: Pattern -> [String]
 patVars (Name  (Symbol name)) = [name]
@@ -43,21 +65,25 @@ matchPat pat val = do
     vals <- patMatch pat val
     return $ VarLookup $ fromList $ zip vars vals
 
-evalExpr :: Expr -> StateC OVal
-evalExpr expr = do
-    (VarLookup varlookup)  <- getVarLookup
-    (valf, _) <- liftIO $ runStateT (evalExpr' expr) ((VarLookup varlookup), [])
+evalExpr :: SourcePosition -> Expr -> StateC OVal
+evalExpr pos expr = do
+    varlookup <- getVarLookup
+    (valf, (ExprState (_, _, messages, _))) <- liftIO $ runStateT (evalExpr' expr) $ ExprState (varlookup, [], [], pos)
+    let
+      moveMessage (Message mtype mpos text) = GIEUS.addMessage mtype mpos text
+    mapM_ (moveMessage) messages
     return $ valf []
 
-evalExpr' :: Expr -> StateT (VarLookup, [String]) IO ([OVal] -> OVal)
+evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 
 evalExpr' (Var (Symbol name)) = do
-    ((VarLookup varlookup), namestack) <- get
-    return $
-        case (lookup (Symbol name) varlookup, elemIndex name namestack) of
-            (_, Just pos) -> (!! pos)
-            (Just val, _) -> const val
-            _             -> const $ OError ["Variable " ++ name ++ " not in scope" ]
+  (ExprState ((VarLookup varlookup), namestack, _, spos)) <- get
+  case (lookup (Symbol name) varlookup, elemIndex name namestack) of
+        (_, Just pos) -> return (!! pos)
+        (Just val, _) -> return $ const val
+        _             -> do
+          errorE spos ("Variable " ++ name ++ " not in scope")
+          return $ const OUndefined
 
 evalExpr' (LitE  val  ) = return $ const val
 
@@ -80,13 +106,19 @@ evalExpr' (fexpr :$ argExprs) = do
 
 evalExpr' (LamE pats fexpr) = do
     fparts <- forM pats $ \pat -> do
-        modify (second (patVars pat ++))
+        modify (\(ExprState (a,b,c,d)) -> ExprState (a, (patVars pat) ++ b,c,d))
         return $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs ++ xss)
             Nothing -> OError ["Pattern match failed"]
     fval <- evalExpr' fexpr
     return $ foldr ($) fval fparts
 
+{-
+evalExpr' _ = do
+  state <- get
+  errorE (epos state) "Fallthrough in expression parser."
+  return $ const OUndefined 
+-}
 
 --------------
 

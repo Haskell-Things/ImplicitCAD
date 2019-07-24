@@ -17,13 +17,14 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
+                                                  Message(Message),
                                                   MessageType(TextOut),
                                                   ScadOpts(ScadOpts),
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, warnC, modifyVarLookup, mapMaybeM, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, warnC, modifyVarLookup, mapMaybeM, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, getVarLookup)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -43,25 +44,24 @@ varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 runStatementI :: StatementI -> StateC ()
 
 runStatementI (StatementI sourcePos (pat := expr)) = do
-    val <- evalExpr expr
+    val <- evalExpr sourcePos expr
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
         (_, Just match) -> modifyVarLookup $ varUnion match
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
--- FIXME: take scadOptions into account.
 runStatementI (StatementI sourcePos (Echo exprs)) = do
     let
         show2 (OString s) = s
         show2 x = show x
-    vals <- mapM evalExpr exprs
+    vals <- mapM (evalExpr sourcePos) exprs
     case getErrors (OList vals) of
         Nothing  -> addMessage TextOut sourcePos $ concatMap show2 vals
         Just err -> errorC sourcePos err
 
 runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
-    val <- evalExpr expr
+    val <- evalExpr sourcePos expr
     case (getErrors val, val) of
         (Just err, _)      -> errorC sourcePos err
         (_, OList vals) -> forM_ vals $ \v ->
@@ -73,7 +73,7 @@ runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
         _ -> return ()
 
 runStatementI (StatementI sourcePos (If expr a b)) = do
-    val <- evalExpr expr
+    val <- evalExpr sourcePos expr
     case (getErrors val, val) of
         (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " ++ err)
         (_, OBool True )  -> runSuite a
@@ -82,7 +82,7 @@ runStatementI (StatementI sourcePos (If expr a b)) = do
 
 runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(name', defexpr) -> do
-        defval <- mapMaybeM evalExpr defexpr
+        defval <- mapMaybeM (evalExpr sourcePos) defexpr
         return (name', defval)
     (CompState (VarLookup varlookup, _, path, _, scadOpts)) <- get
 --  FIXME: \_? really?
@@ -110,18 +110,18 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             newNameVals' = newNameVals ++ [("children", children),("child", child), ("childBox", childBox)]
 -}
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals  = runSuiteCapture (VarLookup varlookup') path scadOpts suite
+            suiteVals = runSuiteCapturePure (VarLookup varlookup') path scadOpts suite
         return suiteVals
 
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
         maybeMod  <- lookupVar (Symbol name)
-        (CompState (varlookup, _, path, _, opts)) <- get
+        varlookup <- getVarLookup
         argsVal   <- forM argsExpr $ \(posName, expr) -> do
-            val <- evalExpr expr
+            val <- evalExpr sourcePos expr
             return (posName, val)
         newVals <- case maybeMod of
             Just (OModule mod') -> do
-              childVals <- fmap reverse $ liftIO $ runSuiteCapture varlookup path opts suite
+              childVals <- fmap reverse $ runSuiteCapture varlookup suite
               let
                 argparser = mod' childVals
                 ioNewVals = case fst $ argMap argsVal argparser of
@@ -164,9 +164,21 @@ runStatementI (StatementI _ DoNothing) = return ()
 runSuite :: [StatementI] -> StateC ()
 runSuite = mapM_ runStatementI
 
-runSuiteCapture :: VarLookup -> FilePath -> ScadOpts -> [StatementI] -> IO [OVal]
-runSuiteCapture varlookup path opts suite = do
-    (res, _) <- runStateT
+runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
+runSuiteCapture varlookup suite = do
+    (CompState (_ , _, path, _, opts)) <- get
+    (res, (CompState (_, _, _, messages, _))) <- liftIO $ runStateT
+        (runSuite suite >> getVals)
+        (CompState (varlookup, [], path, [], opts))
+    let
+      moveMessage (Message mtype mpos text) = addMessage mtype mpos text
+    mapM_ (moveMessage) messages
+    return res
+
+-- | because this runs in the IO monad, it can't backpropogate error messages.
+runSuiteCapturePure :: VarLookup -> FilePath -> ScadOpts -> [StatementI] -> IO [OVal]
+runSuiteCapturePure varlookup path opts suite = do
+    (res, _) <- liftIO $ runStateT
         (runSuite suite >> getVals)
         (CompState (varlookup, [], path, [], opts))
     return res
