@@ -87,7 +87,7 @@ expr = foldr ($) nonAssociativeExpr levels
                     op <- matchAND
                     return $ binaryOperation op)
 
-          , \higher -> -- <, <=, >=, > comparison operators
+          , \higher -> -- <=, <, >=, > comparison operators
                 chainl1 higher (do
                     op <- matchLE <|> matchLT <|> matchGE <|> matchGT
                     return $ binaryOperation op)
