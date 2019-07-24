@@ -30,20 +30,6 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
-letExpr :: GenParser Char st Expr
-letExpr = "let expression" ?: do
-  _ <- matchLet >> matchTok '('
-  bindingPairs <- sepBy ( do
-    boundName <- matchIdentifier
-    boundExpr <- matchTok '=' >> expr0
-    return $ ListE [Var boundName, boundExpr])
-    (matchComma)
-  _ <- matchTok ')'
-  expr <- expr0
-  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
-      bindLets _ e = e
-  return $ foldr bindLets expr bindingPairs
-
 -- We represent the priority or 'fixity' of different types of expressions
 -- by the ExprIdx argument, with A1 as the highest.
 
@@ -233,4 +219,18 @@ literals =
   *<|> boolean
   *<|> scadString
   *<|> scadUndefined
+
+letExpr :: GenParser Char st Expr
+letExpr = "let expression" ?: do
+  _ <- matchLet >> matchTok '('
+  bindingPairs <- sepBy ( do
+    boundName <- matchIdentifier
+    boundExpr <- matchTok '=' >> expr0
+    return $ ListE [Var boundName, boundExpr])
+    (matchComma)
+  _ <- matchTok ')'
+  expr <- expr0
+  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+      bindLets _ e = e
+  return $ foldr bindLets expr bindingPairs
 
