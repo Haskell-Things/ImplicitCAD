@@ -10,7 +10,7 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol))
@@ -18,7 +18,6 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
 import Data.Map (fromList)
 import Data.List (genericIndex, genericLength)
-import Control.Arrow (second)
 
 defaultObjects :: VarLookup
 defaultObjects = VarLookup $ fromList $
@@ -80,8 +79,9 @@ defaultFunctionsSpecial =
 
 defaultModules :: [(Symbol, OVal)]
 defaultModules =
-    map (second OModule) primitives
-
+  map makeModule primitives
+  where
+    makeModule a = (fst a, OModule (fst a) Nothing (snd a))
 -- more complicated ones:
 
 defaultPolymorphicFunctions :: [(Symbol, OVal)]

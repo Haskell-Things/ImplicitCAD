@@ -24,8 +24,14 @@ import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (=
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
+
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
+
 import Data.Map (Map, lookup)
+
+import Data.Maybe (fromMaybe)
+
+import Data.List (intercalate)
 
 -- | Handles parsing arguments to modules
 data ArgParser a
@@ -117,7 +123,7 @@ data OVal = OUndefined
          | OList [OVal]
          | OString String
          | OFunc (OVal -> OVal)
-         | OModule ([OVal] -> ArgParser (IO [OVal]))
+         | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -135,7 +141,11 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OModule _) = "module"
+    show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ (intercalate ", " $ map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg ((Symbol a), hasDefault) = if hasDefault
+                                           then a ++ "=..."
+                                           else a
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
