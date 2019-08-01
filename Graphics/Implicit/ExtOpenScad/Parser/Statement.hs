@@ -39,7 +39,7 @@ pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
-parseProgram name s = parse program name s where
+parseProgram = parse program where
     program :: ParsecT String u Identity [StatementI]
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
@@ -51,14 +51,13 @@ parseProgram name s = parse program name s where
 -- | A computable block of code in our openscad-like programming language.
 computation :: GenParser Char st StatementI
 computation =
-    do -- suite statements: no semicolon...
-        s <- tryMany [
+    -- suite statements: no semicolon...
+        tryMany [
             ifStatementI,
             forStatementI,
             throwAway,
             userModuleDeclaration
             ]
-        return s
     *<|> do -- Non suite statements. Semicolon needed...
         s <- tryMany [
             echo,
@@ -68,9 +67,8 @@ computation =
             ]
         _ <- matchTok ';'
         return s
-    *<|> do -- Modules. no semicolon...
-        s <- userModule
-        return s
+    *<|> -- Modules. no semicolon...
+        userModule
 
 {-
 -- | A suite of s!
@@ -209,7 +207,7 @@ moduleArgsUnit = do
             -- eg. 12
             expr <- expr0
             return (Nothing, expr)
-        ) (try $ matchComma)
+        ) (try matchComma)
     _ <- matchTok ')'
     return args
 

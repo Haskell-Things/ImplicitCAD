@@ -9,15 +9,13 @@ import Prelude (String, Char, Bool(True), (>>), return)
 
 import Control.Monad.Identity (Identity)
 
-import Text.Parsec.Token (GenTokenParser, makeTokenParser)
-
 import Text.Parsec.String (GenParser)
 
 import qualified Text.Parsec.Token as P (whiteSpace, reserved, identifier, reservedOp)
 
 import Text.Parsec.Language (GenLanguageDef, emptyDef)
 
-import Text.Parsec.Token (commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, semi, comma, identStart, identLetter, reservedNames, reservedOpNames)
+import Text.Parsec.Token (GenTokenParser, makeTokenParser, commentStart, commentEnd, commentLine, nestedComments, caseSensitive, colon, semi, comma, identStart, identLetter, reservedNames, reservedOpNames)
 
 import Text.Parsec (char, between)
 

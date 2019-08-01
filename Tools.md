@@ -13,4 +13,5 @@ My workflow consists of:
 ### meshlab
 
 ## Code Checking
-'weeder' is useful.
+'weeder' is useful for finding dead code
+'hlint -g' is also useful.

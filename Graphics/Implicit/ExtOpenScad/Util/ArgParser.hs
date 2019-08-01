@@ -12,7 +12,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, e
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
 import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, (&&))
-import qualified Prelude as Prelude (null)
+import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
 
@@ -22,7 +22,7 @@ import Graphics.Implicit.Definitions(ℕ)
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
 import Data.Map (fromList, lookup, delete)
-import qualified Data.Map as Map (null)
+import qualified Data.Map as DM (null)
 
 import Data.Maybe (isNothing, fromJust, isJust)
 
@@ -41,9 +41,9 @@ argument name =
             val :: Maybe desiredType
             val = fromOObj oObjVal
             errmsg = case oObjVal of
-                OError errs -> "error in computing value for argument " ++ (show name)
+                OError errs -> "error in computing value for argument " ++ show name
                              ++ ": " ++ concat errs
-                _   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ (show name)
+                _   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ show name
         -- Using /= Nothing would require Eq desiredType
         APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
 {-# INLINABLE argument #-}
@@ -105,12 +105,12 @@ argMap2 unnamedArgs (VarLookup namedArgs) (AP name fallback _ f) =
             x:xs -> argMap2 xs (VarLookup namedArgs) (f x)
             []   -> case fallback of
                 Just b  -> argMap2 [] (VarLookup namedArgs) (f b)
-                Nothing -> (Nothing, ["No value and no default for argument " ++ (show name)])
+                Nothing -> (Nothing, ["No value and no default for argument " ++ show name])
 
 -- FIXME: don't use map.null here, wrapp it in StateC.hs.
 -- FIXME: generate a warning.
 argMap2 a (VarLookup b) (APTerminator val) =
-    (Just val, ["unused arguments" | not (Prelude.null a && Map.null b)])
+    (Just val, ["unused arguments" | not (P.null a && DM.null b)])
 
 argMap2 a b (APFailIf testval err child) =
     if testval

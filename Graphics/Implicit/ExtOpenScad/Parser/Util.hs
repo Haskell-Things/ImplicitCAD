@@ -70,35 +70,34 @@ patternMatcher =
 number :: GenParser Char st Expr
 number = ("number" ?:) $ do
   h <- choice
-       [(
-           do
-             a <- many1 digit
-             b <- option "" (
-               do
-                 c <- char '.' >> many1 digit
-                 return ("." ++ c)
-               )
-             return (a ++ b)
-        ),
-        ( do
-            i <- char '.' >> many1 digit
-            return ("0." ++ i)
-        )]
+       [
+         do
+           a <- many1 digit
+           b <- option "" (
+             do
+               c <- char '.' >> many1 digit
+               return ("." ++ c)
+             )
+           return (a ++ b)
+        ,
+        do
+          i <- char '.' >> many1 digit
+          return ("0." ++ i)
+        ]
   d <- option "0"
        (
          oneOf "eE" >> choice
-         [( do
-              f <- char '-' >> many1 digit
-              return ("-" ++ f)
-          ),
-          (
-            (optional $ char '+') >> many1 digit
-          )]
+         [do
+             f <- char '-' >> many1 digit
+             return ('-':f)
+          ,
+            optional (char '+') >> many1 digit
+          ]
        )
   _ <- whiteSpace
   return . LitE $ ONum $ if d == "0"
-                         then read (h)
-                         else read (h) * (10 ** read d)
+                         then read h
+                         else read h * (10 ** read d)
 
 -- | Parse a variable reference.
 --   NOTE: abused by the parser for function calls.

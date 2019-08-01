@@ -34,14 +34,13 @@ newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
 type StateE = StateT ExprState IO
 
 addMesg :: Message -> StateE ()
-addMesg = modify . (\message (ExprState (a, b, messages, c)) -> (ExprState (a, b, messages ++ [message], c)))
+addMesg = modify . (\message (ExprState (a, b, messages, c)) -> ExprState (a, b, messages ++ [message], c))
 
 addMessage :: MessageType -> SourcePosition -> String -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
 
 errorE :: SourcePosition -> String -> StateE ()
-errorE sourcePos err = do
-      addMessage Error sourcePos err
+errorE = addMessage Error
 
 --epos :: ExprState -> SourcePosition
 --epos (ExprState (_, _, _, pos)) = pos
@@ -68,16 +67,16 @@ matchPat pat val = do
 evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
     varlookup <- getVarLookup
-    (valf, (ExprState (_, _, messages, _))) <- liftIO $ runStateT (evalExpr' expr) $ ExprState (varlookup, [], [], pos)
+    (valf, ExprState (_, _, messages, _)) <- liftIO $ runStateT (evalExpr' expr) $ ExprState (varlookup, [], [], pos)
     let
       moveMessage (Message mtype mpos text) = GIEUS.addMessage mtype mpos text
-    mapM_ (moveMessage) messages
+    mapM_ moveMessage messages
     return $ valf []
 
 evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 
 evalExpr' (Var (Symbol name)) = do
-  (ExprState ((VarLookup varlookup), namestack, _, spos)) <- get
+  (ExprState (VarLookup varlookup, namestack, _, spos)) <- get
   case (lookup (Symbol name) varlookup, elemIndex name namestack) of
         (_, Just pos) -> return (!! pos)
         (Just val, _) -> return $ const val
@@ -106,7 +105,7 @@ evalExpr' (fexpr :$ argExprs) = do
 
 evalExpr' (LamE pats fexpr) = do
     fparts <- forM pats $ \pat -> do
-        modify (\(ExprState (a,b,c,d)) -> ExprState (a, (patVars pat) ++ b,c,d))
+        modify (\(ExprState (a,b,c,d)) -> ExprState (a, patVars pat ++ b,c,d))
         return $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs ++ xss)
             Nothing -> OError ["Pattern match failed"]

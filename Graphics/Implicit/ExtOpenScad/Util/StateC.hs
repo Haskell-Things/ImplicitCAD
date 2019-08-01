@@ -77,19 +77,17 @@ scadOptions = do
   return opts
 
 addMesg :: Message -> StateC ()
-addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> (CompState (a, b, c, messages ++ [message], d)))
+addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> CompState (a, b, c, messages ++ [message], d))
 
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
 
 errorC :: SourcePosition -> String -> StateC ()
-errorC sourcePos err = do
-      addMessage Error sourcePos err
+errorC = addMessage Error
 {-# INLINABLE errorC #-}
 
 warnC :: SourcePosition -> String -> StateC ()
-warnC sourcePos err = do
-      addMessage Warning sourcePos err
+warnC = addMessage Warning
 {-# INLINABLE warnC #-}
 
 mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)

@@ -40,7 +40,7 @@ runOpenscad scadOpts source =
     let
         initial =  defaultObjects
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-        rearrange (_, (CompState (varlookup, ovals, _, messages, _))) = (varlookup, obj2s, obj3s, messages) where
+        rearrange (_, CompState (varlookup, ovals, _, messages, _)) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
         mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e

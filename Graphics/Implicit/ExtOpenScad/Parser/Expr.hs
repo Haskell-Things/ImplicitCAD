@@ -37,10 +37,10 @@ letExpr = "let expression" ?: do
     boundName <- matchIdentifier
     boundExpr <- matchTok '=' >> expr0
     return $ ListE [Var boundName, boundExpr])
-    (matchComma)
+    matchComma
   _ <- matchTok ')'
   expr <- expr0
-  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
       bindLets _ e = e
   return $ foldr bindLets expr bindingPairs
 
@@ -82,7 +82,7 @@ exprN A3 =
     "logical-not" ?: do
         a <- many1 $ matchTok '!'
         b <- exprN A4
-        return $ if ((length a) `mod` 2==0)
+        return $ if length a `mod` 2 == 0
                  then b
                  else Var "!" :$ [b]
     *<|> exprN A4
@@ -175,7 +175,7 @@ exprN A11 =
         args <- option [] (
           "function application" ?: do
               args <- surroundedBy '(' (sepBy expr0 matchComma) ')'
-              return $ [\f -> f :$ args]
+              return [(:$ args)]
           )
         mods <- many (
                "list indexing" ?: do
@@ -204,10 +204,10 @@ exprN A12 =
             o <- oneOf "[("
             _ <- whiteSpace
             exprs <- sepBy expr0 matchComma
-            _ <- if (o == '[')
+            _ <- if o == '['
                  then matchTok ']'
                  else matchTok ')'
-            return $ if (o == '(' && ((length exprs)==1))
+            return $ if o == '(' && length exprs == 1
                      then head exprs
                      else ListE exprs
     *<|> "vector/list generator" ?: do
@@ -215,13 +215,12 @@ exprN A12 =
         _ <- matchTok '['
         expr1 <- expr0
         _     <- matchColon
-        exprs <- (do
-                    expr2 <- expr0
-                    expr3 <- optionMaybe (matchColon >> expr0)
-                    return $ case expr3 of
-                      (Just n)  -> [expr1, expr2, n]
-                      (Nothing) -> [expr1, LitE $ ONum 1.0, expr2]
-                 )
+        exprs <- do
+                   expr2 <- expr0
+                   expr3 <- optionMaybe (matchColon >> expr0)
+                   return $ case expr3 of
+                      Just n  -> [expr1, expr2, n]
+                      Nothing -> [expr1, LitE $ ONum 1.0, expr2]
         _ <- matchTok ']'
         return $ collector "list_gen" exprs
     *<|> letExpr

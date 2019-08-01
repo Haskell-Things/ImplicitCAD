@@ -141,11 +141,11 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ (intercalate ", " $ map showArg (fromMaybe [] arguments)) ++ ") {}"
+    show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
       where
-        showArg ((Symbol a), hasDefault) = if hasDefault
-                                           then a ++ "=..."
-                                           else a
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
@@ -184,8 +184,8 @@ data ScadOpts = ScadOpts
 
 instance Show ScadOpts where
   show (ScadOpts compat imports) =
-    "ScadOpts openScadCompatibility: " ++ (show compat)
-                       ++ " Imports: " ++ (show imports)
+    "ScadOpts openScadCompatibility: " ++ show compat
+                       ++ " Imports: " ++ show imports
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.

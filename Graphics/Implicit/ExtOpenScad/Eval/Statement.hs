@@ -89,9 +89,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argNames <-  forM argTemplate $ \(argName, defexpr) -> do
       defval <- mapMaybeM (evalExpr sourcePos) defexpr
       let
-        hasDefault = case defval of
-          Just _  -> True
-          Nothing -> False
+        hasDefault = isJust defval
       return (argName, hasDefault)
     (CompState (VarLookup varlookup, _, path, _, scadOpts)) <- get
 --  FIXME: \_? really?
@@ -112,37 +110,36 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals <- case maybeMod of
             Just (OModule _ args mod') -> do
               -- Find what arguments are satisfied by a named parameter.
-              valSupplied <- forM argsExpr $ \(argName, _) -> do
+              valSupplied <- forM argsExpr $ \(argName, _) ->
                 case argName of
-                  Just symbol  ->
-                    case lookup symbol (fromMaybe [] args) of
+                  Just (Symbol symbol) ->
+                    case lookup (Symbol symbol) (fromMaybe [] args) of
                       Just _  -> do
-                        maybeVar <- lookupVar symbol
+                        maybeVar <- lookupVar (Symbol symbol)
                         case maybeVar of
                           Just _ -> do
-                            warnC sourcePos $ "supplied parameter shadows variable from the calling scope: " ++ (show symbol)
+                            warnC sourcePos $ "supplied parameter shadows variable from the calling scope: " ++ symbol
                             return ()
                           Nothing -> return ()
-                        return (Just symbol, True)
+                        return (Just (Symbol symbol), True)
                       Nothing ->
                         -- FIXME: maybe is a workaround here.
                         if isJust args
                           then do
-                          warnC sourcePos $ "supplied parameter not listed in module declaration: " ++ (show symbol)
+                          warnC sourcePos $ "supplied parameter not listed in module declaration: " ++ symbol
                           return (Nothing, False)
                           else return (Nothing, False)
                   Nothing -> return (Nothing, False)
               -- Find what arguments are satisfied by a default value.
-              valAvailable <- forM argsExpr $ \(argName, _) -> do
+              valAvailable <- forM argsExpr $ \(argName, _) ->
                 case argName of
                   Just symbol  ->
                     case lookup symbol (fromMaybe [] args) of
-                      Just hasDefault -> do
-                        return (Just symbol, hasDefault)
-                      Nothing -> return (Nothing, False)
+                      Just hasDefault -> return (Just symbol, hasDefault)
+                      Nothing         -> return (Nothing, False)
                   Nothing -> return (Nothing, False)
               -- Union the two sets:
-              valFound <- forM argsExpr $ \(argName, _) -> do
+              valFound <- forM argsExpr $ \(argName, _) ->
                 case argName of
                   Just symbol -> do
                     let
@@ -151,7 +148,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                     return (Just symbol, supplied || available)
                   Nothing -> return (Nothing, False)
               -- Find what unnamed parameters were passed in.
-              valUnnamed <- forM argsExpr $ \(argName, expr) -> do
+              valUnnamed <- forM argsExpr $ \(argName, expr) ->
                 case argName of
                   Just _  -> return Nothing
                   Nothing -> return $ Just expr
@@ -164,12 +161,10 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 valFoundCount = length $ filter isSatisfied valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
               -- FIXME: take into account the ordering of unnamed value application.
-              if valFoundCount < length args
-                then if valFoundCount + valUnnamedCount < length args
-                     then do
-                errorC sourcePos $ "Insufficient parameters. found " ++ (show valNamedCount) ++ " named parameters, and " ++ (show valUnnamedCount) ++ " un-named parameters. Expected " ++ (show $ length args) ++ " Parameters."
+              if valFoundCount + valUnnamedCount < length args
+                then do
+                errorC sourcePos $ "Insufficient parameters. found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show (length args) ++ " Parameters."
                 return ()
-                     else return ()
                 else return ()
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
@@ -180,9 +175,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               childVals <- fmap reverse $ runSuiteCapture varlookup suite
               let
                 argparser = mod' childVals
-                ioNewVals = case fst $ argMap argsVal argparser of
-                              Just iovals -> iovals
-                              Nothing     -> return []
+                ioNewVals = fromMaybe (return []) (fst $ argMap argsVal argparser)
               liftIO ioNewVals
             Just foo            -> do
                     case getErrors foo of
@@ -200,7 +193,7 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
     let
       allowInclude :: ScadOpts -> Bool
       allowInclude (ScadOpts _ allow) = allow
-    if (allowInclude scadOpts)
+    if allowInclude scadOpts
       then do
       name' <- getRelPath name
       content <- liftIO $ readFile name'
@@ -223,12 +216,12 @@ runSuite = mapM_ runStatementI
 runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
 runSuiteCapture varlookup suite = do
     (CompState (_ , _, path, _, opts)) <- get
-    (res, (CompState (_, _, _, messages, _))) <- liftIO $ runStateT
+    (res, CompState (_, _, _, messages, _)) <- liftIO $ runStateT
         (runSuite suite >> getVals)
         (CompState (varlookup, [], path, [], opts))
     let
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
-    mapM_ (moveMessage) messages
+    mapM_ moveMessage messages
     return res
 
 -- | because this runs in the IO monad, it can't backpropogate error messages.
