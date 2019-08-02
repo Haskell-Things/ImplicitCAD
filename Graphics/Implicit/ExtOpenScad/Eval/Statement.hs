@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, concatMap, return, (++), fmap, reverse, fst, readFile, filter, length, lookup, (+), (<), (||))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, concatMap, return, (++), fmap, reverse, fst, readFile, filter, length, lookup, (+), (<), (||), (>), (&&))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
@@ -118,7 +118,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                         maybeVar <- lookupVar (Symbol symbol)
                         case maybeVar of
                           Just _ -> do
-                            warnC sourcePos $ "supplied parameter shadows variable from the calling scope: " ++ symbol
+                            warnC sourcePos $ "Supplied parameter shadows variable from the calling scope: " ++ symbol
                             return ()
                           Nothing -> return ()
                         return (Just (Symbol symbol), True)
@@ -126,7 +126,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                         -- FIXME: maybe is a workaround here.
                         if isJust args
                           then do
-                          warnC sourcePos $ "supplied parameter not listed in module declaration: " ++ symbol
+                          warnC sourcePos $ "Supplied parameter not listed in module declaration: " ++ symbol
                           return (Nothing, False)
                           else return (Nothing, False)
                   Nothing -> return (Nothing, False)
@@ -160,10 +160,16 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 valNamedCount = length $ filter isSatisfied valSupplied
                 valFoundCount = length $ filter isSatisfied valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
+                noArgs = length (fromMaybe [] args)
               -- FIXME: take into account the ordering of unnamed value application.
-              if valFoundCount + valUnnamedCount < length args
+              if valFoundCount + valUnnamedCount < noArgs
                 then do
-                errorC sourcePos $ "Insufficient parameters. found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show (length args) ++ " Parameters."
+                errorC sourcePos $ "Insufficient parameters. Found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show noArgs ++ " Parameters."
+                return ()
+                else return ()
+              if valFoundCount + valUnnamedCount > noArgs && isJust args
+                then do
+                errorC sourcePos $ "Too many parameters. Found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show noArgs ++ " Parameters."
                 return ()
                 else return ()
               -- Evaluate all of the arguments.
