@@ -82,6 +82,7 @@ defaultModules =
   map makeModule primitives
   where
     makeModule a = (fst a, OModule (fst a) Nothing (snd a))
+
 -- more complicated ones:
 
 defaultPolymorphicFunctions :: [(Symbol, OVal)]

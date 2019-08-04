@@ -12,7 +12,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), CompState(CompState))
 
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -21,8 +21,6 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
-
-import Graphics.Implicit.ExtOpenScad.Util.StateC (CompState(CompState))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 

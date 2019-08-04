@@ -14,11 +14,13 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   VarLookup(VarLookup),
                                                   SourcePosition,
                                                   Message(Message),
-                                                  MessageType(Error))
+                                                  MessageType(Error),
+                                                  StateC
+                                                 )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, getVarLookup)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.StateC as GIEUS (addMessage)
 

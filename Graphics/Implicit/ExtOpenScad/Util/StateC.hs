@@ -9,21 +9,16 @@
 {-# LANGUAGE KindSignatures, FlexibleContexts #-}
 {-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, StateC, CompState(CompState), scadOptions) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, scadOptions) where
 
-import Prelude(FilePath, IO, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return)
+import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts)
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
 
 import Data.Map (lookup)
-import Control.Monad.State (StateT, get, put, modify)
+import Control.Monad.State (get, put, modify)
 import System.FilePath((</>))
 import Data.Kind (Type)
-
--- | This is the state of a computation. It contains a hash of variables, an array of OVals, a path, and messages.
-newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
-
-type StateC = StateT CompState IO
 
 getVarLookup :: StateC VarLookup
 getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get

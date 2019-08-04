@@ -8,10 +8,12 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule,OError, OObj2, OObj3),
-                                                  VarLookup(VarLookup),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
+                                                  StateC,
+                                                  CompState(CompState),
+                                                  VarLookup(VarLookup),
                                                   Message(Message),
                                                   MessageType(..),
                                                   ScadOpts(ScadOpts),
@@ -33,7 +35,14 @@ import Data.Maybe (fromMaybe)
 
 import Data.List (intercalate)
 
--- | Handles parsing arguments to modules
+import Control.Monad.State (StateT)
+
+-- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
+newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
+
+type StateC = StateT CompState IO
+
+-- | Handles parsing arguments to built-in modules
 data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
@@ -124,6 +133,7 @@ data OVal = OUndefined
          | OString String
          | OFunc (OVal -> OVal)
          | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
+         | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -142,6 +152,11 @@ instance Show OVal where
     show (OString s) = show s
     show (OFunc _) = "<function>"
     show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
+    show (OUModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
       where
         showArg (Symbol a, hasDefault) = if hasDefault
                                          then a ++ "=..."

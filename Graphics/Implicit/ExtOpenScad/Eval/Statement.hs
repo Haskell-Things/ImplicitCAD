@@ -7,24 +7,26 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), FilePath, IO, (.), ($), show, concatMap, return, (++), fmap, reverse, fst, readFile, filter, length, lookup, (+), (<), (||), (>), (&&))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), fmap, reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
                                                   Pattern(Name),
                                                   Expr(LitE),
-                                                  OVal(OString, OBool, OList, OModule),
+                                                  OVal(OString, OBool, OList, OModule, OUModule),
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
                                                   Message(Message),
                                                   MessageType(TextOut),
-                                                  ScadOpts(ScadOpts)
+                                                  ScadOpts(ScadOpts),
+                                                  StateC,
+                                                  CompState(CompState)
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
-import Graphics.Implicit.ExtOpenScad.Util.StateC (StateC, CompState(CompState), errorC, warnC, modifyVarLookup, mapMaybeM, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, getVarLookup)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC, modifyVarLookup, mapMaybeM, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, getVarLookup)
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -45,6 +47,7 @@ varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
 
+-- | Interpret variable assignment
 runStatementI (StatementI sourcePos (pat := expr)) = do
     val <- evalExpr sourcePos expr
     let posMatch = matchPat pat val
@@ -53,6 +56,7 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
         (_, Just match) -> modifyVarLookup $ varUnion match
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
+-- | Interpret an echo statement.
 runStatementI (StatementI sourcePos (Echo exprs)) = do
     let
         show2 (OString s) = s
@@ -82,6 +86,7 @@ runStatementI (StatementI sourcePos (If expr a b)) = do
         (_, OBool False)  -> runSuite b
         _                 -> return ()
 
+-- | Interpret a module declaration.
 runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
     argTemplate' <- forM argTemplate $ \(argName, defexpr) -> do
         defval <- mapMaybeM (evalExpr sourcePos) defexpr
@@ -91,9 +96,9 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
       let
         hasDefault = isJust defval
       return (argName, hasDefault)
-    (CompState (VarLookup varlookup, _, path, _, scadOpts)) <- get
+    (VarLookup varlookup) <- getVarLookup
 --  FIXME: \_? really?
-    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OModule name (Just argNames) $ \_ -> do
+    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OUModule name (Just argNames) $ \_ -> do
         newNameVals <- forM argTemplate' $ \(argName, maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument argName `defaultTo` def
@@ -101,14 +106,14 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             return (argName, val)
         let
             varlookup' = union (fromList newNameVals) varlookup
-            -- FIXME: what do we change to use runSuiteCapture here instead?
-            suiteVals = runSuiteCaptureIO (VarLookup varlookup') path scadOpts suite
+            suiteVals = runSuiteCapture (VarLookup varlookup') suite
         return suiteVals
 
+-- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
-        maybeMod  <- lookupVar (Symbol name)
-        newVals <- case maybeMod of
-            Just (OModule _ args mod') -> do
+        maybeMod <- lookupVar (Symbol name)
+        newVals  <- case maybeMod of
+            Just (OUModule _ args mod') -> do
               -- Find what arguments are satisfied by a named parameter.
               valSupplied <- forM argsExpr $ \(argName, _) ->
                 case argName of
@@ -161,15 +166,21 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 valFoundCount = length $ filter isSatisfied valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
                 noArgs = length (fromMaybe [] args)
+                parameterReport =  "Found " ++ show valNamedCount ++
+                  (if valNamedCount == 1 then " named parameter, and " else " named parameters, and ")
+                   ++ show valUnnamedCount ++
+                  (if valUnnamedCount == 1 then " un-amed parameter. Expected " else " un-named parameters. Expected ")
+                  ++ show noArgs ++
+                  (if noArgs == 1 then " parameter." else " parameters.")
               -- FIXME: take into account the ordering of unnamed value application.
               if valFoundCount + valUnnamedCount < noArgs
                 then do
-                errorC sourcePos $ "Insufficient parameters. Found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show noArgs ++ " Parameters."
+                errorC sourcePos $ "Insufficient parameters." ++ parameterReport
                 return ()
                 else return ()
               if valFoundCount + valUnnamedCount > noArgs && isJust args
                 then do
-                errorC sourcePos $ "Too many parameters. Found " ++ show valNamedCount ++ " named parameters, and " ++ show valUnnamedCount ++ " un-named parameters. Expected " ++ show noArgs ++ " Parameters."
+                errorC sourcePos $ "Too many parameters." ++ parameterReport
                 return ()
                 else return ()
               -- Evaluate all of the arguments.
@@ -180,8 +191,24 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- Run the function.
               childVals <- fmap reverse $ runSuiteCapture varlookup suite
               let
-                argparser = mod' childVals
-                ioNewVals = fromMaybe (return []) (fst $ argMap argsVal argparser)
+                argparser  = mod' childVals
+                argsMapped = argMap argsVal argparser
+              ioNewVals <- fromMaybe (return []) (fst argsMapped)
+              forM_ (snd argsMapped) $ errorC sourcePos
+              return ioNewVals
+            Just (OModule _ _ mod') -> do
+              -- Evaluate all of the arguments.
+              argsVal <- forM argsExpr $ \(posName, expr) -> do
+                val <- evalExpr sourcePos expr
+                return (posName, val)
+              varlookup <- getVarLookup
+              -- Run the function.
+              childVals <- fmap reverse $ runSuiteCapture varlookup suite
+              let
+                argparser  = mod' childVals
+                argsMapped = argMap argsVal argparser
+                ioNewVals  = fromMaybe (return []) (fst argsMapped)
+              forM_ (snd argsMapped) $ errorC sourcePos
               liftIO ioNewVals
             Just foo            -> do
                     case getErrors foo of
@@ -228,12 +255,4 @@ runSuiteCapture varlookup suite = do
     let
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
     mapM_ moveMessage messages
-    return res
-
--- | because this runs in the IO monad, it can't backpropogate error messages.
-runSuiteCaptureIO :: VarLookup -> FilePath -> ScadOpts -> [StatementI] -> IO [OVal]
-runSuiteCaptureIO varlookup path opts suite = do
-    (res, _) <- liftIO $ runStateT
-        (runSuite suite >> getVals)
-        (CompState (varlookup, [], path, [], opts))
     return res
