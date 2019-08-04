@@ -3,9 +3,6 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
-
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take)

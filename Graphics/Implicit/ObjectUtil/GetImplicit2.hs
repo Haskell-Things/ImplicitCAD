@@ -6,7 +6,10 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 

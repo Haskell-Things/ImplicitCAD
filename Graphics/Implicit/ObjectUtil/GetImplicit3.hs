@@ -138,14 +138,14 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
         scaleVec :: ℝ -> ℝ2 -> ℝ2
         scaleVec  s (x,y) = (x/s, y/s)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
-        rotateVec θ (x,y) = (x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ))
+        rotateVec θ (x,y) = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
         k :: ℝ
         k = pi/180
     in
         \(x,y,z) -> let h = height' (x,y) in
             rmax r
                 (obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a - translate' z) $ (x,y))
-                ((abs $ z - h/2) - h/2)
+                (abs (z - h/2) - h/2)
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
     let
         obj1 = getImplicit2 symbObj1

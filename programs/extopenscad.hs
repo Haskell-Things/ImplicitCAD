@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&))
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -207,8 +207,8 @@ getRes (vars, obj:objs, _, _) =
         (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
-        _                    -> min ((min x y)/2) (sqrt(x*y) / 30)
+        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
+        _                    -> min (min x y/2) (sqrt(x*y) / 30)
 -- | fallthrough value.
 getRes _ = 1
 
@@ -246,8 +246,8 @@ textOutBare :: Message -> String
 textOutBare (Message _ _ msg) = show msg
 
 isTextOut :: Message -> Bool
-isTextOut (Message (TextOut) _ _ ) = True
-isTextOut _                        = False
+isTextOut (Message TextOut _ _ ) = True
+isTextOut _                      = False
 
 objectMessage :: String -> String -> String -> String -> String -> String
 objectMessage dimensions infile outfile res box =
@@ -259,7 +259,7 @@ processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts
 processArgs (ExtOpenScadOpts o f r e q compat echo rawecho noimport file) =
   ExtOpenScadOpts o f r e q compat echo_flag rawecho noimport file
   where
-    echo_flag    = (compat || echo) && (not rawecho)
+    echo_flag    = (compat || echo) && not rawecho
 
 -- | decide what options to send the scad engine based on the post-processed arguments passed to extopenscad.
 generateScadOpts :: ExtOpenScadOpts -> ScadOpts
@@ -272,7 +272,7 @@ run rawargs = do
 
     hMessageOutput <- messageOutputHandle args
 
-    if (quiet args)
+    if quiet args
       then return ()
       else putStrLn "Loading File."
 
@@ -286,7 +286,7 @@ run rawargs = do
         scadOpts = generateScadOpts args
         openscadProgram = runOpenscad scadOpts content
 
-    if (quiet args)
+    if quiet args
       then return ()
       else putStrLn "Processing File."
 
@@ -302,21 +302,21 @@ run rawargs = do
         let output = fromMaybe
                      (basename ++ "." ++ fromMaybe "stl" posDefExt)
                      (outputFile args)
-            target = if (null objs)
+            target = if null objs
                      then obj
                      else UnionR3 0 (obj:objs)
 
-        if (quiet args)
+        if quiet args
           then return ()
           else putStrLn $ objectMessage "3D" (inputFile args) output (show res) $ show $ getBox3 target
 
         -- FIXME: construct and use a warning for this.
-        if (null objs)
+        if null objs
           then return ()
           else
             hPutStr stderr "WARNING: Multiple objects detected. Adding a Union around them.\n"
 
-        if (quiet args)
+        if quiet args
           then return ()
           else putStrLn $ show target
 
@@ -326,34 +326,34 @@ run rawargs = do
         let output = fromMaybe
                      (basename ++ "." ++ fromMaybe "svg" posDefExt)
                      (outputFile args)
-            target = if (null objs)
+            target = if null objs
                      then obj
                      else UnionR2 0 (obj:objs)
 
-        if (quiet args)
+        if quiet args
           then return ()
           else putStrLn $ objectMessage "2D" (inputFile args) output (show res) $ show $ getBox2 target
 
         -- FIXME: construct and use a warning for this.
-        if (null objs)
+        if null objs
           then return ()
           else
             hPutStr stderr "WARNING: Multiple objects detected. Adding a Union around them.\n"
 
-        if (quiet args)
+        if quiet args
           then return ()
           else putStrLn $ show target
 
         export2 format res output target
 
       ([], []) ->
-        if (quiet args)
+        if quiet args
           then return ()
           else putStrLn "No objects to render."
       _        -> hPutStr stderr "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
 
     -- | Always display our warnings, errors, and other non-textout messages on stderr.
-    hPutStr stderr $ unlines $ map show $ filter (\m -> not $ isTextOut m) messages
+    hPutStr stderr $ unlines $ map show $ filter (not . isTextOut) messages
 
     let textOutHandler =
           case () of

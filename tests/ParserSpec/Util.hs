@@ -81,7 +81,7 @@ stringLiteral :: String -> Expr
 stringLiteral = LitE . OString
 
 undefined :: Expr
-undefined = LitE $ OUndefined
+undefined = LitE OUndefined
 
 -- | Operators
 
