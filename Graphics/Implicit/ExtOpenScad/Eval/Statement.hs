@@ -112,6 +112,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
 -- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
         maybeMod <- lookupVar (Symbol name)
+        varlookup <- getVarLookup
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               -- Find what arguments are satisfied by a named parameter.
@@ -155,8 +156,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- ... and count them.
               let
                 isSatisfied :: (Maybe Symbol, Bool) -> Bool
-                isSatisfied (_, True) = True
-                isSatisfied (_, False) = False
+                isSatisfied = snd
                 valNamedCount = length $ filter isSatisfied valSupplied
                 valFoundCount = length $ filter isSatisfied valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
@@ -177,7 +177,6 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
-              varlookup <- getVarLookup
               -- Run the function.
               childVals <- fmap reverse $ runSuiteCapture varlookup suite
               let
@@ -191,7 +190,6 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
-              varlookup <- getVarLookup
               -- Run the function.
               childVals <- fmap reverse $ runSuiteCapture varlookup suite
               let
