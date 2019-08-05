@@ -34,7 +34,7 @@ import Data.Map (union, fromList)
 
 import Data.Maybe (isJust, fromMaybe)
 
-import Control.Monad (forM_, forM, mapM_)
+import Control.Monad (forM_, forM, mapM_, when)
 
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 
@@ -121,19 +121,14 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                     case lookup (Symbol symbol) (fromMaybe [] args) of
                       Just _  -> do
                         maybeVar <- lookupVar (Symbol symbol)
-                        case maybeVar of
-                          Just _ -> do
-                            warnC sourcePos $ "Supplied parameter shadows variable from the calling scope: " ++ symbol
-                            return ()
-                          Nothing -> return ()
+                        when (isJust maybeVar)
+                          (warnC sourcePos $ "Supplied parameter shadows variable from the calling scope: " ++ symbol)
                         return (Just (Symbol symbol), True)
-                      Nothing ->
+                      Nothing -> do
                         -- FIXME: maybe is a workaround here.
-                        if isJust args
-                          then do
-                          warnC sourcePos $ "Supplied parameter not listed in module declaration: " ++ symbol
-                          return (Nothing, False)
-                          else return (Nothing, False)
+                        when (isJust args)
+                          (warnC sourcePos $ "Supplied parameter not listed in module declaration: " ++ symbol)
+                        return (Nothing, False)
                   Nothing -> return (Nothing, False)
               -- Find what arguments are satisfied by a default value.
               valAvailable <- forM argsExpr $ \(argName, _) ->
@@ -172,17 +167,12 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   (if valUnnamedCount == 1 then " un-amed parameter. Expected " else " un-named parameters. Expected ")
                   ++ show noArgs ++
                   (if noArgs == 1 then " parameter." else " parameters.")
+              -- Check that the number of arguments match, and if they don't, error a report.
               -- FIXME: take into account the ordering of unnamed value application.
-              if valFoundCount + valUnnamedCount < noArgs
-                then do
-                errorC sourcePos $ "Insufficient parameters." ++ parameterReport
-                return ()
-                else return ()
-              if valFoundCount + valUnnamedCount > noArgs && isJust args
-                then do
-                errorC sourcePos $ "Too many parameters." ++ parameterReport
-                return ()
-                else return ()
+              when (valFoundCount + valUnnamedCount < noArgs)
+                (errorC sourcePos $ "Insufficient parameters." ++ parameterReport)
+              when (valFoundCount + valUnnamedCount > noArgs && isJust args) $
+                (errorC sourcePos $ "Too many parameters." ++ parameterReport)
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
@@ -210,7 +200,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 ioNewVals  = fromMaybe (return []) (fst argsMapped)
               forM_ (snd argsMapped) $ errorC sourcePos
               liftIO ioNewVals
-            Just foo            -> do
+            Just foo -> do
                     case getErrors foo of
                         Just err -> errorC sourcePos err
                         Nothing  -> errorC sourcePos $ "Object " ++ name ++ " is not a module!"
