@@ -5,13 +5,12 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- FIXME: required. why?
-{-# LANGUAGE KindSignatures, FlexibleContexts #-}
-{-# LANGUAGE RankNTypes, ScopedTypeVariables #-}
+-- For the signature of mapMaybeM.
+{-# LANGUAGE KindSignatures #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, scadOptions) where
 
-import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, fmap, (.), ($), (++), return)
+import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (++), return)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
 
@@ -21,7 +20,9 @@ import System.FilePath((</>))
 import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup
-getVarLookup = fmap (\(CompState (a,_,_,_,_)) -> a) get
+getVarLookup = do
+  (CompState (varlookup,_,_,_,_)) <- get
+  return varlookup
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
 modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
@@ -34,7 +35,7 @@ lookupVar name = do
     return $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals = modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, d, e))
+pushVals vals= modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, d, e))
 
 getVals :: StateC [OVal]
 getVals = do

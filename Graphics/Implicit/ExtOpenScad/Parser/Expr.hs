@@ -226,10 +226,10 @@ letExpr = "let expression" ?: do
     boundName <- matchIdentifier
     boundExpr <- matchTok '=' >> expr0
     return $ ListE [Var boundName, boundExpr])
-    (matchComma)
+    matchComma
   _ <- matchTok ')'
   expr <- expr0
-  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = (LamE [Name boundName] nestedExpr) :$ [boundExpr]
+  let bindLets (ListE [Var boundName, boundExpr]) nestedExpr = LamE [Name boundName] nestedExpr :$ [boundExpr]
       bindLets _ e = e
   return $ foldr bindLets expr bindingPairs
 
