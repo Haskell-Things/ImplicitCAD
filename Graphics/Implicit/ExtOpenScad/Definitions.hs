@@ -8,10 +8,12 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule,OError, OObj2, OObj3),
-                                                  VarLookup(VarLookup),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
+                                                  StateC,
+                                                  CompState(CompState),
+                                                  VarLookup(VarLookup),
                                                   Message(Message),
                                                   MessageType(..),
                                                   ScadOpts(ScadOpts),
@@ -24,10 +26,23 @@ import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (=
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
+
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
+
 import Data.Map (Map, lookup)
 
--- | Handles parsing arguments to modules
+import Data.Maybe (fromMaybe)
+
+import Data.List (intercalate)
+
+import Control.Monad.State (StateT)
+
+-- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
+newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
+
+type StateC = StateT CompState IO
+
+-- | Handles parsing arguments to built-in modules
 data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
@@ -117,7 +132,8 @@ data OVal = OUndefined
          | OList [OVal]
          | OString String
          | OFunc (OVal -> OVal)
-         | OModule ([OVal] -> ArgParser (IO [OVal]))
+         | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
+         | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -135,7 +151,16 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OModule _) = "module"
+    show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
+    show (OUModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
@@ -174,8 +199,8 @@ data ScadOpts = ScadOpts
 
 instance Show ScadOpts where
   show (ScadOpts compat imports) =
-    "ScadOpts openScadCompatibility: " ++ (show compat)
-                       ++ " Imports: " ++ (show imports)
+    "ScadOpts openScadCompatibility: " ++ show compat
+                       ++ " Imports: " ++ show imports
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.

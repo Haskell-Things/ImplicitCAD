@@ -203,8 +203,8 @@ cylinder = moduleWithoutSuite "cylinder" $ do
     -- based on the args.
     addObj3 $ if r1 == 1 && r2 == 1
         then let
-            obj2 = if sides < 0 then Prim.circle r else Prim.polygonR 0 $
-                [(r*cos θ, r*sin θ )| θ <- [2*π*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
+            obj2 = if sides < 0 then Prim.circle r else Prim.polygonR 0
+                [(r*cos θ, r*sin θ )| θ <- [2*π*fromℕtoℝ n/fromℕtoℝ sides | n <- [0 .. sides - 1]]]
             obj3 = Prim.extrudeR 0 obj2 dh
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
@@ -223,8 +223,8 @@ circle = moduleWithoutSuite "circle" $ do
         `eulerCharacteristic` 0
     addObj2 $ if sides < 3
         then Prim.circle r
-        else Prim.polygonR 0 $
-            [(r*cos θ, r*sin θ )| θ <- [2*π*(fromℕtoℝ n)/(fromℕtoℝ sides) | n <- [0 .. sides - 1]]]
+        else Prim.polygonR 0
+            [(r*cos θ, r*sin θ )| θ <- [2*π*fromℕtoℝ n/fromℕtoℝ sides | n <- [0 .. sides - 1]]]
 
 -- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
@@ -258,12 +258,10 @@ polygon = moduleWithoutSuite "polygon" $ do
           -- | Rectangles have no overlapping points,
           --   the distance on each side is equal to it's opposing side,
           --   and the distance between the pairs of opposing corners are equal.
-          in if ((p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
+          in if (p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
                  && (d1d2==d3d4 && d1d3==d2d4)
-                 && (d1d4==d2d3))
-             then if isGridAligned p1 p2
-                  then Prim.rectR 0 p1 p3
-                  else Prim.polygonR 0 pts
+                 && (d1d4==d2d3) && isGridAligned p1 p2
+             then Prim.rectR 0 p1 p3
              else Prim.polygonR 0 pts
         | otherwise = Prim.polygonR 0 points
     addObj2 $ addPolyOrSquare points
@@ -494,10 +492,10 @@ unit = moduleWithSuite "unit" $ \children -> do
 (<|>) = mplus
 
 moduleWithSuite :: String -> ([OVal] -> ArgParser (IO [OVal])) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
-moduleWithSuite name modArgMapper = ((Symbol name), modArgMapper)
+moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
 
 moduleWithoutSuite :: String -> ArgParser (IO [OVal]) -> (Symbol, b -> ArgParser (IO [OVal]))
-moduleWithoutSuite name modArgMapper = ((Symbol name), const modArgMapper)
+moduleWithoutSuite name modArgMapper = (Symbol name, const modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (IO [OVal])
 addObj2 x = return $ return [OObj2 x]

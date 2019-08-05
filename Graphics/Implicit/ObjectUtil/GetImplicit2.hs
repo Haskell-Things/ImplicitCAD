@@ -6,7 +6,10 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
@@ -26,10 +29,10 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) =
          (dx, dy) = (x2-x1, y2-y1)
     in
          if r == 0
-         then maximum [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2]
-         else rmaximum r [(abs $ x-dx/2-x1) - dx/2, (abs $ y-dy/2-y1) - dy/2]
+         then maximum [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         else rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
 getImplicit2 (Circle r) =
-    \(x,y) -> (sqrt $ x * x + y * y) - r
+    \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
 getImplicit2 (PolygonR _ points) =
     \p -> let
@@ -95,13 +98,13 @@ getImplicit2 (Rotate2 θ symbObj) =
     \(x,y) -> let
         obj = getImplicit2 symbObj
     in
-        obj ( x*(cos θ) + y*(sin θ), y*(cos θ) - x*(sin θ))
+        obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
 -- Boundary mods
 getImplicit2 (Shell2 w symbObj) =
     \p -> let
         obj = getImplicit2 symbObj
     in
-        (abs $ obj p) - w/2
+        abs (obj p) - w/2
 getImplicit2 (Outset2 d symbObj) =
     \p -> let
         obj = getImplicit2 symbObj

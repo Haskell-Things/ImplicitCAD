@@ -10,7 +10,7 @@ module ParserSpec.Statement (statementSpec) where
 
 import Prelude (String, Maybe(Just), Bool(True), ($))
 
-import Test.Hspec (Spec, Expectation, shouldBe, it, pendingWith, describe)
+import Test.Hspec (Spec, Expectation, shouldBe, it, describe)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
@@ -66,7 +66,7 @@ assignmentSpec = do
     "function foo(x, y) = x * y;" --> single fooFunction
   it "handles function with let expression" $
     "function withlet(b) = let (c = 5) b + c;" -->
-    (single $ (Name "withlet" := LamE [Name "b"] (LamE [Name "c"] (plus [Var "b", Var "c"]) :$ [num 5])))
+    single (Name "withlet" := LamE [Name "b"] (LamE [Name "c"] (plus [Var "b", Var "c"]) :$ [num 5]))
   it "handles nested indexing" $
     "x = [y[0] - z * 2];" -->
     single ( Name "x" := ListE [minus [index [Var "y", num 0],
@@ -76,20 +76,23 @@ assignmentSpec = do
     fooFunction = Name "foo" := LamE [Name "x", Name "y"]
                                 (mult [Var "x", Var "y"])
 
+{-
 -- | the parser fails on as empty file. This can't be right.
 emptyFileIssue :: Expectation -> Expectation
 emptyFileIssue _ = pendingWith "parser should probably allow empty files"
+-}
 
 -- | Our entry points. Test all of the statements.
 statementSpec :: Spec
 statementSpec = do
   describe "empty file" $
-    it "returns an empty list" $
-      emptyFileIssue $ "" --> []
+    it "returns an empty list" $ "" --> []
   describe "assignment" assignmentSpec
   describe "if" ifSpec
   describe "line comment" $
-    it "parses as empty" $ emptyFileIssue $ "// foish bar\n" --> []
+    it "parses as empty" $ "// foish bar\n" --> []
+  describe "multiline comment" $
+    it "parses as empty" $ "/* foish bar\n*/" --> []
   describe "module call" $
     it "parses" $ "foo();" --> single (ModuleCall (Symbol "foo") [] [])
   describe "difference of two cylinders" $

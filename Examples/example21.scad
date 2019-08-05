@@ -1,0 +1,14 @@
+union()
+{
+    cube([10,20,5]);
+    rotate(30)
+        translate([0,30,0])
+	{
+	    cube([10,20,5]);
+	    rotate(30)
+		translate([0,30,0])
+		{
+		    cube([10,20,5]);
+		}
+	}
+}

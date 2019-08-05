@@ -2,13 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: Document what these are for.
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
@@ -91,7 +84,7 @@ getBox2 (Scale2 s symbObj) =
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
-        rotate (x,y) = (x*(cos θ) - y*(sin θ), x*(sin θ) + y*(cos θ))
+        rotate (x,y) = (x*cos θ - y*sin θ, x*sin θ + y*cos θ)
     in
         pointsBox [ rotate (x1, y1)
                   , rotate (x1, y2)

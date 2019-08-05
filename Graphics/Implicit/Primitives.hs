@@ -6,7 +6,8 @@
 {-# LANGUAGE ExplicitForAll #-}
 
 -- FIXME: Required. why?
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (

@@ -62,7 +62,7 @@ cleanupTris tris =
 
         -- | Does this triangle fail because it is constrained on two axises?
         isDegenerateTri2Axis :: forall a. (Eq a) => ((a, a, a),(a, a, a),(a, a, a)) -> Bool
-        isDegenerateTri2Axis tri = ((ysame tri) && (xsame tri)) || ((zsame tri) && (ysame tri)) || ((zsame tri) && (xsame tri))
+        isDegenerateTri2Axis tri = (ysame tri && xsame tri) || (zsame tri && ysame tri) || (zsame tri && xsame tri)
           where
             same :: forall a. Eq a => (a, a, a) -> Bool
             same (n1, n2, n3) = n1 == n2 && n2 == n3
@@ -73,7 +73,7 @@ cleanupTris tris =
             zsame :: forall a. Eq a => ((a, a, a), (a, a, a), (a, a, a)) -> Bool
             zsame ((_,_,z1),(_,_,z2),(_,_,z3)) = same (z1, z2, z3)
         isDegenerateTri :: Triangle -> Bool
-        isDegenerateTri (Triangle (a, b, c)) = (isDegenerateTri2Axis $ floatTri)  -- || (isDegenerateTriLine $ floatTri) || (isDegenerateTriPoint $ floatTri) 
+        isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri  -- || (isDegenerateTriLine $ floatTri) || (isDegenerateTriPoint $ floatTri)
           where
             floatTri = (floatPoint a, floatPoint b, floatPoint c)
     in TriangleMesh $ filter (not . isDegenerateTri) (unmesh tris)
@@ -113,7 +113,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map t
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length $ unmesh $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
-          point :: (ℝ3) -> BI.Builder
+          point :: ℝ3 -> BI.Builder
           point (x,y,z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
           normalV ps = point $ normal ps
 

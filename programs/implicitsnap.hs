@@ -23,8 +23,8 @@ import Snap.Util.GZip (withCompression)
 -- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
 import Graphics.Implicit (runOpenscad, extrudeR)
 
--- Variable access functionality, so we can look up a requested resolution.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, ScadOpts(ScadOpts))
+-- Variable access functionality, so we can look up a requested resolution, along with message processing, and options into the scad engine.
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, Message(Message), MessageType(TextOut), ScadOpts(ScadOpts))
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -32,8 +32,6 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
 
 import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ, cbrt, sqrt, Polyline, TriangleMesh)
-
-import Graphics.Implicit.ExtOpenScad.Definitions (Message(Message), MessageType(TextOut))
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -110,8 +108,8 @@ getRes (vars, obj:objs, _, _) =
         (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0 -> min ((min x y)/2) (sqrt(x*y/qual) / 30)
-        _                    -> min ((min x y)/2) (sqrt(x*y) / 30)
+        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
+        _                    -> min (min x y/2) (sqrt(x*y) / 30)
 -- | fallthrough value.
 getRes _ = 1
 
@@ -134,12 +132,11 @@ getOutputHandler2 name
 getOutputHandler3 :: String -> (TriangleMesh -> Text)
 getOutputHandler3 name
   | name == "STL"                   = stl
---  | name == "OBJ"                   = obj
   | otherwise                       = jsTHREE
 
 isTextOut :: Message -> Bool
-isTextOut (Message (TextOut) _ _ ) = True
-isTextOut _                        = False
+isTextOut (Message TextOut _ _ ) = True
+isTextOut _                      = False
 
 -- | decide what options to send to the scad engine.
 generateScadOpts :: ScadOpts
@@ -175,39 +172,37 @@ executeAndExport content callback maybeFormat =
         resError = "Unreasonable resolution requested: "
                    ++ "the server imps revolt! "
                    ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
-        render = if res > 0
-                 then True
-                 else False
-        scadMessages = intercalate "\n" $
-                       (map show $ filter (\m -> not $ isTextOut m) messages) ++
-                       (map show $ filter isTextOut messages)
+        render = res > 0
+        scadMessages = intercalate "\n"
+                       (map show (filter (not . isTextOut) messages) ++
+                        map show (filter isTextOut messages))
 
       return $ case (obj2s, obj3s, render) of
         (_ ,        _, False) -> callbackF False False 1 resError
         ([], obj:objs, _    ) -> do
-          let target           = if (null objs)
+          let target           = if null objs
                                  then obj
                                  else UnionR3 0 (obj:objs)
               unionWarning :: String
-              unionWarning     = if (null objs)
+              unionWarning     = if null objs
                                  then ""
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
               output3d         = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
-          if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
-            then output3d ++ (callbackF True False w (scadMessages ++ unionWarning))
+          if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
+            then output3d ++ callbackF True False w (scadMessages ++ unionWarning)
             else callbackS output3d (scadMessages ++ unionWarning)
         (obj:objs, []   , _) -> do
-          let target          = if (null objs)
+          let target          = if null objs
                                 then obj
                                 else UnionR2 0 (obj:objs)
               unionWarning :: String
-              unionWarning    = if (null objs)
+              unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
               output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
               output2d        = TL.unpack $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
-          if (fromMaybe "jsTHREE" maybeFormat) == "jsTHREE"
-            then output3d ++ (callbackF True True w (scadMessages ++ unionWarning))
+          if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
+            then output3d ++ callbackF True True w (scadMessages ++ unionWarning)
             else callbackS output2d (scadMessages ++ unionWarning)
         ([], []         , _) -> callbackF False False 1 $ intercalate "\n" [scadMessages, "Nothing to render."]
         _                    -> callbackF False False 1 $ intercalate "\n" [scadMessages, "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"]

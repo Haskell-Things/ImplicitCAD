@@ -32,7 +32,7 @@ symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res sym
         obj = getImplicit2 symbObj
         -- FIXME: cowardly case handling.
         orient :: Polyline -> Polyline
-        orient (Polyline (points@(p1:p2:_))) =
+        orient (Polyline points@(p1:p2:_)) =
             let
                 v = (\(a,b) -> (b, -a)) (p2 - p1)
                 dv = v ^/ ((sqrt $ magnitudeSq v) / res / 0.1)
@@ -45,7 +45,7 @@ symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res sym
 symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
 symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [Polyline [ (x1,y1), (x2,y1), (x2,y2), (x1,y2), (x1,y1) ]]
 -- FIXME: magic number: 5
-symbolicGetContour res (Circle r) = [Polyline [ ( r*cos(2*π*(fromFastℕtoℝ m)/(fromFastℕtoℝ n)), r*sin(2*π*(fromFastℕtoℝ m)/(fromFastℕtoℝ n)) ) | m <- [0.. n] ]] where
+symbolicGetContour res (Circle r) = [Polyline [ ( r*cos(2*π*fromFastℕtoℝ m/fromFastℕtoℝ n), r*sin(2*π*fromFastℕtoℝ m/fromFastℕtoℝ n) ) | m <- [0.. n] ]] where
     n :: Fastℕ
     n = max 5 $ ceiling $ 2*π*r/res
 symbolicGetContour res (Translate2 v obj) = appOpPolylines (+ v) $ symbolicGetContour res obj
@@ -55,21 +55,21 @@ symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> getContour a b (res,res) obj'
 
 appOpPolylines :: (ℝ2 -> ℝ2) -> [Polyline] -> [Polyline]
-appOpPolylines op polylines = map (appOpPolyline op) polylines
+appOpPolylines op = map (appOpPolyline op)
 appOpPolyline :: (ℝ2 -> ℝ2) -> Polyline -> Polyline
 appOpPolyline op (Polyline xs) = Polyline $ map op xs
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [Polytri]
-symbolicGetContourMesh res (Translate2 v obj) = map (\(Polytri (a,b,c)) -> (Polytri (a + v, b + v, c + v)) )  $
+symbolicGetContourMesh res (Translate2 v obj) = map (\(Polytri (a,b,c)) -> Polytri (a + v, b + v, c + v) )  $
     symbolicGetContourMesh res obj
-symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(Polytri (c,d,e)) -> (Polytri (c ⋯* s, d ⋯* s, e ⋯* s)) )  $
+symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s) )  $
     symbolicGetContourMesh (res/sc) obj where sc = max a b
 symbolicGetContourMesh _ (RectR 0 (x1,y1) (x2,y2)) = [Polytri ((x1,y1), (x2,y1), (x2,y2)), Polytri ((x2,y2), (x1,y2), (x1,y1)) ]
 -- FIXME: magic number: 5
 symbolicGetContourMesh res (Circle r) =
     [ Polytri ((0,0),
-       (r*cos(2*π*(fromFastℕtoℝ m)/(fromFastℕtoℝ n)), r*sin(2*π*(fromFastℕtoℝ m)/(fromFastℕtoℝ n))),
-       (r*cos(2*π*((fromFastℕtoℝ m)+1)/(fromFastℕtoℝ n)), r*sin(2*π*((fromFastℕtoℝ m)+1)/(fromFastℕtoℝ n)))
+       (r*cos(2*π*fromFastℕtoℝ m/fromFastℕtoℝ n), r*sin(2*π*fromFastℕtoℝ m/fromFastℕtoℝ n)),
+       (r*cos(2*π*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n), r*sin(2*π*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n))
       )| m <- [0.. n-1] ]
     where
       n :: Fastℕ

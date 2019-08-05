@@ -106,7 +106,7 @@ shrinkLoop n path@(a:b:c:xs) res obj | n < genericLength path =
     if abs (obj (centroid [a,c])) < res/50
     then
         let (tris,remainder) = shrinkLoop 0 (a:c:xs) res obj
-        in ((Triangle (a,b,c)):tris, remainder)
+        in (Triangle (a,b,c):tris, remainder)
     else
         shrinkLoop (n+1) (b:c:xs ++ [a]) res obj
 

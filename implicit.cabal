@@ -89,6 +89,7 @@ Library
                   Graphics.Implicit.RationalFunctions
                   Graphics.Implicit.RationalUtil
                   Graphics.Implicit.ExtOpenScad.Default
+                  Graphics.Implicit.ExtOpenScad.Parser.Lexer
                   Graphics.Implicit.ExtOpenScad.Parser.Util
                   Graphics.Implicit.ExtOpenScad.Eval.Statement
                   Graphics.Implicit.ExtOpenScad.Eval.Expr

@@ -15,7 +15,7 @@ import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>)
 
 import Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
 
-import Data.List (intersperse, (++))
+import Data.List (intersperse)
 
 import Data.Function (fix)
 
@@ -97,7 +97,7 @@ buildS3 (ExtrudeRM r (Just twist) Nothing Nothing obj (Left height)) | r == 0 = 
                         callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
                                    buildS2 obj
                                   ]
-                        ] |  h <- take (floor (res / height)) $ fix (\f x -> [x] ++ f (x+res)) (0)
+                        ] |  h <- take (floor (res / height)) $ fix (\f x -> x : f (x+res)) 0
              ]
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?

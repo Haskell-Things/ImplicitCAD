@@ -13,9 +13,9 @@ object2 = squarePipe (10,10,10) 1 100
             $ map (\start-> translate start
                    $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
                   )
-            $ zip3 (map (\n->((fromIntegral n)/precision)*x) [0..100])
-                   (map (\n->((fromIntegral n)/precision)*y) [0..100])
-                   (map (\n->((fromIntegral n)/precision)*z) [0..100])
+            $ zip3 (map (\n->(fromIntegral n/precision)*x) [0..100])
+                   (map (\n->(fromIntegral n/precision)*y) [0..100])
+                   (map (\n->(fromIntegral n/precision)*z) [0..100])
 
 main = writeSTL 1 "example17.stl" object2
 

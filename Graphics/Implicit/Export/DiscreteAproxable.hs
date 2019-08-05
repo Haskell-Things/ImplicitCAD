@@ -51,6 +51,7 @@ instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
     discreteAprox res obj = NormedTriangleMesh $ map (normTriangle res (getImplicit3 obj)) $ unmesh $ symbolicGetMesh res obj
 
 -- FIXME: way too many magic numbers.
+-- FIXME: adjustable resolution!
 instance DiscreteAproxable SymbolicObj3 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where
@@ -63,13 +64,13 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             avY = av y1 y2
             avZ = av z1 z2
             deviation = maximum [abs $ y1 - avY, abs $ y2 - avY, abs $ z1 - avZ, abs $ z2 - avZ]
-            camera = Camera (x1-deviation*(2.2), avY, avZ) (0, -1, 0) (0,0, -1) 1.0
-            lights = [Light (x1-deviation*(1.5), y1 - (0.4)*(y2-y1), avZ) ((0.03)*deviation) ]
+            camera = Camera (x1-deviation*2.2, avY, avZ) (0, -1, 0) (0,0, -1) 1.0
+            lights = [Light (x1-deviation*1.5, y1 - 0.4*(y2-y1), avZ) (0.03*deviation) ]
             scene = Scene obj (Color 200 200 230 255) lights (Color 255 255 255 0)
             -- | passed to generateImage, it's external, and determines this type.
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer a b = renderScreen
-                ((fromIntegral a)/w - (0.5)) ((fromIntegral b)/h - (0.5))
+                (fromIntegral a/w - 0.5) (fromIntegral b/h - 0.5)
             renderScreen :: ℝ -> ℝ -> PixelRGBA8
             renderScreen a b =
                 colorToPixelRGBA8 $

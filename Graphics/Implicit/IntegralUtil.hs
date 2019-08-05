@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.IntegralUtil (ℕ, toℕ, fromℕ) where
 
-import Prelude (Integral(toInteger, quot, rem, quotRem, div, mod, divMod), Num((+), (*), abs, negate, signum, fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int, Integer)
+import Prelude (Integral(toInteger, quot, rem, quotRem, div, mod, divMod), Num((+), (*), abs, negate, signum, fromInteger), Eq, Ord, Enum(succ, pred, toEnum, fromEnum), Real(toRational), Show, ($), Read, fromIntegral, Int, Integer, (.))
 
 import qualified Prelude as P ((+), (*), abs, negate, signum, succ, pred, toEnum, fromEnum, quotRem, divMod)
 
@@ -21,19 +21,19 @@ class (Integral n) => N n where
 instance N Integer where
   fromℕ (ℕ a) = a
   {-# INLINABLE fromℕ #-}
-  toℕ a = ℕ a
+  toℕ = ℕ
   {-# INLINABLE toℕ #-}
 
 instance N Fastℕ where
   fromℕ (ℕ a) = Fastℕ $ fromIntegral a
   {-# INLINABLE fromℕ #-}
-  toℕ a = ℕ $ fromIntegral a
+  toℕ = ℕ . fromIntegral
   {-# INLINABLE toℕ #-}
 
 instance N Int where
   fromℕ (ℕ a) = fromIntegral a
   {-# INLINABLE fromℕ #-}
-  toℕ a = ℕ $ fromIntegral a
+  toℕ = ℕ . fromIntegral
   {-# INLINABLE toℕ #-}
 
 -- Arbitrary precision integers. To be used for anything countable, or in ratios.
@@ -50,15 +50,15 @@ bothℕ (a, b) = (ℕ a , ℕ b)
 instance Integral ℕ where
   toInteger (ℕ a)     = a
   {-# INLINABLE toInteger #-}
-  quot (ℕ n) (ℕ d)    = ℕ $ q where (q,_) = quotRem n d
+  quot (ℕ n) (ℕ d)    = ℕ q where (q,_) = quotRem n d
   {-# INLINABLE quot #-}
-  rem (ℕ n) (ℕ d)     = ℕ $ r where (_,r) = quotRem n d
+  rem (ℕ n) (ℕ d)     = ℕ r where (_,r) = quotRem n d
   {-# INLINABLE rem #-}
   quotRem (ℕ a) (ℕ b) = bothℕ $ P.quotRem a b 
   {-# INLINABLE quotRem #-}
-  div (ℕ n) (ℕ d)     = ℕ $ q where (q,_) = divMod n d
+  div (ℕ n) (ℕ d)     = ℕ q where (q,_) = divMod n d
   {-# INLINABLE div #-}
-  mod (ℕ n) (ℕ d)     = ℕ $ r where (_,r) = divMod n d
+  mod (ℕ n) (ℕ d)     = ℕ r where (_,r) = divMod n d
   {-# INLINABLE mod #-}
   divMod (ℕ n) (ℕ d)  = bothℕ $ P.divMod n d
   {-# INLINABLE divMod #-}
@@ -74,7 +74,7 @@ instance Num ℕ where
   {-# INLINABLE negate #-}
   signum (ℕ a)    = ℕ $ P.signum a
   {-# INLINABLE signum #-}
-  fromInteger a   = ℕ a
+  fromInteger     = ℕ
   {-# INLINABLE fromInteger #-}
 
 -- | Note that we do not implement all of the members of the typeclass here.

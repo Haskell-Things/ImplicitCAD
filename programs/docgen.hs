@@ -3,8 +3,6 @@
 
 -- FIXME: document why we need each of these.
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -42,7 +40,6 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
 
   if level /= 0
     then
-    do
       putStrLn $ "#" ++ moduleLabel
     else
     do
@@ -56,7 +53,7 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
     else
     do
       putStrLn "#Examples:\n"
-      forM_ examples $ \(ExampleDoc example) -> do
+      forM_ examples $ \(ExampleDoc example) ->
         putStrLn $ "   * `" ++ example ++ "`"
       putStrLn ""
 
@@ -76,9 +73,9 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
             putStrLn "#Shared Arguments:\n"
       forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
         case (posfallback, description) of
-          (Nothing, "") -> do
+          (Nothing, "") ->
             putStrLn $ "   * `" ++ name  ++ "`"
-          (Just fallback, "") -> do
+          (Just fallback, "") ->
             putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
           (Nothing, _) -> do
             putStrLn $ "   * `" ++ name ++ "`"
@@ -92,8 +89,8 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
     then
       return ()
     else
-      forM_ syntaxes $ \(Branch syntax) -> do
-        dumpPrimitive (Symbol $ "Syntax " ++ (show $ level+1)) syntax (level+1)
+      forM_ syntaxes $ \(Branch syntax) ->
+        dumpPrimitive (Symbol $ "Syntax " ++ show (level+1)) syntax (level+1)
 
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
@@ -108,7 +105,7 @@ main = do
         putStrLn (map (const '=') docname)
         putStrLn ""
         putStrLn ""
-        forM_ (zip names docs) $ \(moduleName, moduleDocList) -> do
+        forM_ (zip names docs) $ \(moduleName, moduleDocList) ->
           dumpPrimitive moduleName moduleDocList 0
 
 -- | the format we extract documentation into
@@ -130,46 +127,38 @@ data DocPart = ExampleDoc String
 -- | Extract Documentation from an ArgParser
 
 getArgParserDocs ::
-    (ArgParser a)      -- ^ ArgParser(s)
+    ArgParser a      -- ^ ArgParser(s)
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
 getArgParserDocs (AP  name fallback doc fnext) = do
   otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(_ :: Ex.SomeException) -> return [])
-  if (otherDocs /= [Empty])
+  if otherDocs /= [Empty]
     then
-        do
-          return $ [(ArgumentDoc name (fmap show fallback) doc)] ++ (otherDocs)
+          return $ ArgumentDoc name (fmap show fallback) doc : otherDocs
     else
-        do
-          return $ [(ArgumentDoc name (fmap show fallback) doc)]
+          return [ArgumentDoc name (fmap show fallback) doc]
 
-getArgParserDocs (APFailIf _ _ child) = do
-  childResults <- getArgParserDocs child
-  return $ childResults
+getArgParserDocs (APFailIf _ _ child) = getArgParserDocs child
 
 getArgParserDocs (APExample str child) = do
   childResults <- getArgParserDocs child
-  return $ (ExampleDoc str):(childResults)
+  return $ ExampleDoc str:childResults
 
 -- We try to look at as little as possible, to avoid the risk of triggering an error.
 -- Yay laziness!
 
-getArgParserDocs (APTest _ _ child) = do
-  childResults <- getArgParserDocs child
-  return $ childResults
+getArgParserDocs (APTest _ _ child) = getArgParserDocs child
 
 -- To look at this one would almost certainly be death (exception)
-getArgParserDocs (APTerminator _) = return $ [(Empty)]
+getArgParserDocs (APTerminator _) = return [Empty]
 
 -- This one confuses me.
 getArgParserDocs (APBranch children) = do
   putStrLn $ show $ length children
   otherDocs <- Ex.catch (getArgParserDocs (APBranch $ tail children)) (\(_ :: Ex.SomeException) -> return [])
   aResults <- getArgParserDocs $ head children
-  if (otherDocs /= [(Empty)])
+  if otherDocs /= [Empty]
     then
-        do
-          return $ [Branch ((aResults)++(otherDocs))]
+    return [Branch (aResults ++ otherDocs)]
     else
-        do
-          return aResults
+    return aResults

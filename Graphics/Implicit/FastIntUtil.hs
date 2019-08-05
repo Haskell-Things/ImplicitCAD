@@ -17,7 +17,7 @@ class FastN n where
 instance FastN Int where
   fromFastℕ (Fastℕ a) = a
   {-# INLINABLE fromFastℕ #-}
-  toFastℕ a = Fastℕ a
+  toFastℕ = Fastℕ
   {-# INLINABLE toFastℕ #-}
 
 instance FastN Fastℕ where
@@ -44,15 +44,15 @@ fastℕBoth (a, b) = (Fastℕ a, Fastℕ b)
 instance Integral Fastℕ where
   toInteger (Fastℕ a)         = P.toInteger a
   {-# INLINABLE toInteger #-}
-  quot (Fastℕ n) (Fastℕ d)    = Fastℕ $ q where (q,_) = quotRem n d
+  quot (Fastℕ n) (Fastℕ d)    = Fastℕ q where (q,_) = quotRem n d
   {-# INLINABLE quot #-}
-  rem (Fastℕ n) (Fastℕ d)     = Fastℕ $ r where (_,r) = quotRem n d
+  rem (Fastℕ n) (Fastℕ d)     = Fastℕ r where (_,r) = quotRem n d
   {-# INLINABLE rem #-}
   quotRem (Fastℕ a) (Fastℕ b) = fastℕBoth $ P.quotRem a b
   {-# INLINABLE quotRem #-}
-  div (Fastℕ n) (Fastℕ d)     = Fastℕ $ q where (q,_) = divMod n d
+  div (Fastℕ n) (Fastℕ d)     = Fastℕ q where (q,_) = divMod n d
   {-# INLINABLE div #-}
-  mod (Fastℕ n) (Fastℕ d)     = Fastℕ $ r where (_,r) = divMod n d
+  mod (Fastℕ n) (Fastℕ d)     = Fastℕ r where (_,r) = divMod n d
   {-# INLINABLE mod #-}
   divMod (Fastℕ n) (Fastℕ d)  = fastℕBoth $ P.divMod n d
   {-# INLINABLE divMod #-}

@@ -22,7 +22,7 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
+import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, undefined, plus, minus, mult, power, divide, negate, and, or, not, gt, ternary, append, index, lambda)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
@@ -36,18 +36,18 @@ pattern Name n = GIED.Name (Symbol n)
 ternaryIssue :: Expectation -> Expectation
 ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
 
-negationIssue :: Expectation -> Expectation
-negationIssue _ = pendingWith "parser doesn't handle negation operator correctly"
-
 listIssue :: Expectation -> Expectation
 listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
+
+undefinedIssue :: Expectation -> Expectation
+undefinedIssue _ = pendingWith "this errors, but the expecting is equal to the recieved. huh?"
 
 logicalSpec :: Spec
 logicalSpec = do
   describe "not" $ do
     specify "single" $ "!foo" --> not [Var "foo"]
-    specify "multiple" $
-      negationIssue $ "!!!foo" --> not [not [not [Var "foo"]]]
+    specify "double" $ "!!foo" --> Var "foo"
+    specify "tripple" $ "!!!foo" --> not [Var "foo"]
   it "handles and/or" $ do
     "foo && bar" --> and [Var "foo", Var "bar"]
     "foo || bar" --> or [Var "foo", Var "bar"]
@@ -74,6 +74,8 @@ literalSpec = do
     "0000" --> num 0
   it "handles floats" $
     "23.42" --> num 23.42
+  it "handles floats with no whole component" $
+    ".2342" --> num 0.2342
   describe "E notation" $ do
     it "accepts integer e with positive sign" $ "1e+1" --> num 10
     it "accepts integer e with negative sign" $ "10e-1" --> num 1
@@ -84,17 +86,19 @@ literalSpec = do
   describe "booleans" $ do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
+  describe "undefined" $
+    it "accepts undef" $ undefinedIssue $ "undef" --> undefined
 
 letBindingSpec :: Spec
 letBindingSpec = do
   it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
   it "handles multiple variable let" $
-    "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    "let (a = x, b = y) a + b" --> lambda [Name "a"] (lambda [Name "b"] (plus [Var "a", Var "b"]) [Var "y"]) [Var "x"]
   it "handles empty let" $
     "let () a" --> Var "a"
   it "handles nested let" $
-    "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+    "let(a=x) let(b = y) a + b" --> lambda [Name "a"] (lambda [Name "b"] (plus [Var "a", Var "b"]) [Var "y"]) [Var "x"]
   it "handles let on right side of an arithmetic operator" $
     "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
   it "handles let on right side of a unary negation" $
@@ -123,10 +127,10 @@ exprSpec = do
       "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : b ]" -->
-      fapp "list_gen" [Var "a", Var "b"]
+      fapp "list_gen" [Var "a", num 1, Var "b"]
     it "handles generators with expression" $
       "[ a : b + 10 ]" -->
-      fapp "list_gen" [Var "a", plus [Var "b", num 10]]
+      fapp "list_gen" [Var "a", num 1, plus [Var "b", num 10]]
     it "handles increment generators" $
       "[ a : 3 : b + 10 ]" -->
       fapp "list_gen" [Var "a", num 3, plus [Var "b", num 10]]
@@ -134,12 +138,10 @@ exprSpec = do
       "foo[23]" --> index [Var "foo", num 23]
     it "handles multiple indexes" $
       "foo[23][12]" --> Var "index" :$ [Var "index" :$ [Var "foo", num 23], num 12]
-    it "handles single function call with single argument" $
+    it "handles single function/module call with single argument" $
       "foo(1)" --> Var "foo" :$ [num 1]
-    it "handles single function call with multiple arguments" $
+    it "handles single function/module call with multiple arguments" $
       "foo(1, 2, 3)" --> Var "foo" :$ [num 1, num 2, num 3]
-    it "handles multiple function calls" $
-      "foo(1)(2)(3)" --> ((Var "foo" :$ [num 1]) :$ [num 2]) :$ [num 3]
   describe "arithmetic" $ do
     it "handles unary -" $
       "-42" --> num (-42)
@@ -190,11 +192,7 @@ exprSpec = do
       "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]
   describe "logical operators" logicalSpec
   describe "let expressions" letBindingSpec
-  describe "application" $ do
+  describe "function/module application" $ do
     specify "base case" $ "foo(x)" --> Var "foo" :$ [Var "x"]
     specify "multiple arguments" $
       "foo(x, 1, 2)" --> Var "foo" :$ [Var "x", num 1, num 2]
-    specify "multiple" $
-      "foo(x, 1, 2)(5)(y)" --> ((Var "foo" :$ [Var "x", num 1, num 2]) :$ [num 5]) :$ [Var "y"]
-    specify "multiple, with indexing" $
-      "foo(x)[0](y)" --> index [Var "foo" :$ [Var "x"], num 0] :$ [Var "y"]

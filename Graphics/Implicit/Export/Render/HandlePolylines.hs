@@ -23,13 +23,13 @@ joinSegs (Polyline present:remaining) =
         findNext (Polyline (p3:ps):segs)
             | p3 == last present      = (Just (Polyline (p3:ps)), segs)
             | last ps == last present = (Just (Polyline $ reverse $ p3:ps), segs)
-            | otherwise               = case findNext segs of (res1,res2) -> (res1,(Polyline (p3:ps)):res2)
+            | otherwise               = case findNext segs of (res1,res2) -> (res1,Polyline (p3:ps):res2)
         findNext [] = (Nothing, [])
         findNext (Polyline []:_) = (Nothing, [])
     in
         case findNext remaining of
             (Nothing, _) -> Polyline present: joinSegs remaining
-            (Just (Polyline match), others) -> joinSegs $ (Polyline (present ++ match)) : others
+            (Just (Polyline match), others) -> joinSegs $ (Polyline $ present ++ match) : others
 
 -- | Simplify and sort a polyline.
 reducePolyline :: Polyline -> Polyline
@@ -39,7 +39,7 @@ reducePolyline (Polyline ((x1,y1):(x2,y2):(x3,y3):others))
     | abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
       || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0) =
       reducePolyline (Polyline ((x1,y1):(x3,y3):others))
-    | otherwise = Polyline ((x1,y1) : (points $ reducePolyline (Polyline ((x2,y2):(x3,y3):others))))
+    | otherwise = Polyline ((x1,y1) : points (reducePolyline (Polyline ((x2,y2):(x3,y3):others))))
   where
     points (Polyline pts) = pts
 -- | remove duplicate points
