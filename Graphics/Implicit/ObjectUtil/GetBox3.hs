@@ -3,19 +3,16 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: required. why?
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
-
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take)
 
-import Data.Maybe(Maybe(Nothing, Just))
-
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
+
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
 
-import Data.Maybe (fromMaybe)
+import Data.Maybe(Maybe(Nothing, Just), fromMaybe)
+
 import Data.VectorSpace ((^-^), (^+^))
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
@@ -125,14 +122,14 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
         range = [0, 1 .. (samples-1)]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
-        (xrange, yrange) = ( map (\s -> x1+s*dx/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range, map (\s -> y1+s*dy/(fromFastℕtoℝ $ samples-1)) $ map fromFastℕtoℝ range )
+        (xrange, yrange) = ( map ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, map ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range )
         h = case eitherh of
               Left h' -> h'
               Right hf -> hmax + hfuzz*(hmax-hmin)
                 where
                     hs = [hf (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-        hrange = map (/(fromFastℕtoℝ $ samples-1)) $ map (h*) $ map fromFastℕtoℝ range
+        hrange = map ((/ fromFastℕtoℝ (samples-1)) . (h*) . fromFastℕtoℝ) range
         sval = case scale of
             Nothing -> 1
             Just scale' -> maximum $ map (abs . scale') hrange
@@ -168,9 +165,9 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
         yfuzz=0.1
         range :: [Fastℕ]
         range = [0, 1 .. (samples-1)]
-        step = rot/(fromFastℕtoℝ $ samples-1)
+        step = rot/fromFastℕtoℝ (samples-1)
         ((x1,y1),(x2,y2)) = getBox2 symbObj
-        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ map f $ map (step*) $ map fromFastℕtoℝ range
+        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ map (f . (step*) . fromFastℕtoℝ) range
         xmax = maximum xrange
         ymax = maximum yrange
         ymin = minimum yrange

@@ -81,9 +81,9 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
         (rx,ry,rz) = d ⋯/ (fromℕtoℝ `allthree` (nx,ny,nz))
 
         -- The positions we're rendering.
-        pXs = [ x1 + rx*(fromℕtoℝ n) | n <- [0.. nx] ]
-        pYs = [ y1 + ry*(fromℕtoℝ n) | n <- [0.. ny] ]
-        pZs = [ z1 + rz*(fromℕtoℝ n) | n <- [0.. nz] ]
+        pXs = [ x1 + rx*fromℕtoℝ n | n <- [0.. nx] ]
+        pYs = [ y1 + ry*fromℕtoℝ n | n <- [0.. ny] ]
+        pZs = [ z1 + rz*fromℕtoℝ n | n <- [0.. nz] ]
 
         -- | performance tuning.
         -- FIXME: magic number.

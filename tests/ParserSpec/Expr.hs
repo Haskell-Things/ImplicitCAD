@@ -121,14 +121,14 @@ letBindingSpec :: Spec
 letBindingSpec = do
   it "handles let with integer binding and spaces" $
     "let ( a = 1 ) a" --> lambda [Name "a"] (Var "a") [num 1]
-  it "handles multiple variable let" $ do
-      "let (a = x, b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
+  it "handles multiple variable let" $
+    "let (a = x, b = y) a + b" --> lambda [Name "a"] (lambda [Name "b"] (plus [Var "a", Var "b"]) [Var "y"]) [Var "x"]
   it "handles empty let" $
     "let () a" --> Var "a"
-  it "handles nested let" $ do
-      "let(a=x) let(b = y) a + b" --> lambda [Name "a"] ((lambda [Name "b"] (plus [Var "a", Var "b"])) [Var "y"]) [Var "x"]
-  it "handles let on right side of an arithmatic operator" $ do
-      "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
+  it "handles nested let" $
+    "let(a=x) let(b = y) a + b" --> lambda [Name "a"] (lambda [Name "b"] (plus [Var "a", Var "b"]) [Var "y"]) [Var "x"]
+  it "handles let on right side of an arithmetic operator" $
+    "1 + let(b = y) b" --> plus [num 1, lambda [Name "b"] (Var "b") [Var "y"]]
   it "handles let on right side of a unary negation" $
     "- let(b = y) b" --> negate [lambda [Name "b"] (Var "b") [Var "y"]]
 

@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode, dxf2) where
 
-import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, (++), unwords, map, mapM_, snd, compare, min, max, length, concat, foldl)
+import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, (++), unwords, map, mapM_, snd, compare, min, max, length, foldl, concatMap)
 
 import Graphics.Implicit.Definitions (Polyline(Polyline), ℝ, ℝ2)
 
@@ -29,8 +29,8 @@ svg plines = renderSvg . svg11 . svg' $ plines
       strokeWidth = 1
       (xmin, xmax, ymin, ymax) = (xmin' - margin, xmax' + margin, ymin' - margin, ymax' + margin)
            where margin = strokeWidth / 2
-                 ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)  
-                 (xs,ys) = unzip $ concat $ map pair plines
+                 ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)
+                 (xs,ys) = unzip $ concatMap pair plines
                  pair (Polyline a) = a
                  maxMinList :: [ℝ] -> (ℝ,ℝ)
                  maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
@@ -106,7 +106,7 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         mconcat [ buildVertex vertex | vertex <- singlePolyline ],
         "  0\n",   "SEQEND\n"
         ]
-      buildVertex :: (ℝ2) -> Builder
+      buildVertex :: ℝ2 -> Builder
       buildVertex (x1,y1) =
         mconcat [
         "  0\n",  "VERTEX\n",
@@ -115,13 +115,13 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         "  20\n",   buildTruncFloat y1, "\n"
         ]
       (dxfxmin, dxfxmax, dxfymin, dxfymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
-      (xs, ys) = unzip $ concat $ map pair plines
+      (xs, ys) = unzip $ concatMap pair plines
       pair :: Polyline -> [ℝ2]
       pair (Polyline x) = x
 
 orderPolylines :: [Polyline] -> [Polyline]
-orderPolylines plines =
-  map snd . sortBy (\(a,_) (b, _) -> compare a b) . map (\x -> (polylineRadius x, x)) $ plines
+orderPolylines =
+  map snd . sortBy (\(a,_) (b, _) -> compare a b) . map (\x -> (polylineRadius x, x))
   where
     polylineRadius :: Polyline -> ℝ
     polylineRadius polyline' = max (xmax' - xmin') (ymax' - ymin')
@@ -130,7 +130,7 @@ orderPolylines plines =
         polylineRadius' :: [Polyline] -> (ℝ2, ℝ2)
         polylineRadius' lines = (maxMinList xs,maxMinList ys)
           where
-            (xs,ys) = unzip $ concat $ map pair lines
+            (xs,ys) = unzip $ concatMap pair lines
             pair (Polyline a) = a
             maxMinList :: [ℝ] -> (ℝ,ℝ)
             maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others

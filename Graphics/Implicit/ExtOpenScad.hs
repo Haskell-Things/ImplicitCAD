@@ -13,7 +13,7 @@ import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts(ScadOpts), Message(Message), MessageType(SyntaxError))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts(ScadOpts), Message(Message), MessageType(SyntaxError), CompState(CompState))
 
 import qualified Graphics.Implicit.ExtOpenScad.Parser.Statement as Orig (parseProgram)
 import qualified Graphics.Implicit.ExtOpenScad.Parser.AltStatement as Alt (parseProgram)
@@ -23,8 +23,6 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
-
-import Graphics.Implicit.ExtOpenScad.Util.StateC (CompState(CompState))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
@@ -42,7 +40,7 @@ runOpenscad scadOpts source =
     let
         initial =  defaultObjects
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-        rearrange (_, (CompState (varlookup, ovals, _, messages, _))) = (varlookup, obj2s, obj3s, messages) where
+        rearrange (_, CompState (varlookup, ovals, _, messages, _)) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
         alternateParser (ScadOpts _ _ useAltParser) = useAltParser
         parseProgram = if (alternateParser scadOpts) then Alt.parseProgram else Orig.parseProgram

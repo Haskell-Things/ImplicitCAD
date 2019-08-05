@@ -8,34 +8,42 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OError, OVargsModule, OObj2, OObj3),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OVargsModule, OObj2, OObj3),
                                                   VarLookup(VarLookup),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
+                                                  StateC,
+                                                  CompState(CompState),
                                                   Message(Message),
                                                   MessageType(..),
                                                   ScadOpts(ScadOpts),
-                                                  StateC,
-                                                  CompState(CompState),
                                                   lookupVarIn,
                                                   collector) where
 
-import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude (Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
+
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
+
 import Data.Map (Map, lookup)
+
 import Control.Monad.State (StateT)
 
--- | This is the state of a computation. It contains a hash of variables, an array of OVals, a path, and messages.
+import Data.Maybe (fromMaybe)
+
+import Data.List (intercalate)
+
+
+-- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
 newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
 
 type StateC = StateT CompState IO
 
--- | Handles parsing arguments to modules
+-- | Handles parsing arguments to built-in modules
 data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
@@ -127,7 +135,8 @@ data OVal = OUndefined
          | OList [OVal]
          | OString String
          | OFunc (OVal -> OVal)
-         | OModule ([OVal] -> ArgParser (IO [OVal]))
+         | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
+         | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
          | OVargsModule String (String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
@@ -146,7 +155,16 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OModule _) = "module"
+    show (OModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
+    show (OUModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a ++ "=..."
+                                         else a
     show (OVargsModule name _) = "varargs module " ++ name
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
@@ -187,9 +205,9 @@ data ScadOpts = ScadOpts
 
 instance Show ScadOpts where
   show (ScadOpts compat imports altParser) =
-    "ScadOpts openScadCompatibility: " ++ (show compat)
-                       ++ " Imports: " ++ (show imports)
-                     ++ " AltParser: " ++ (show altParser)
+    "ScadOpts openScadCompatibility: " ++ show compat
+                       ++ " Imports: " ++ show imports
+                     ++ " AltParser: " ++ show altParser
 
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
