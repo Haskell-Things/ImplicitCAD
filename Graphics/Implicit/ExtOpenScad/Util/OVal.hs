@@ -161,7 +161,7 @@ divideObjs children =
     obj3s <- rseq [ x | OObj3 x <- children ]
     objs <- rpar (filter (not . isOObj) children)
     return (obj2s, obj3s, objs)
-        where
-            isOObj  (OObj2 _) = True
-            isOObj  (OObj3 _) = True
-            isOObj     _      = False
+      where
+        isOObj  (OObj2 _) = True
+        isOObj  (OObj3 _) = True
+        isOObj  _         = False

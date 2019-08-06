@@ -15,11 +15,8 @@ import Prelude(Char, Either, String, return, fmap, ($), (>>), Bool(False, True),
 
 import Data.Maybe(Maybe(Just, Nothing))
 
-import Data.Functor.Identity(Identity)
-
 -- We use parsec to parse.
 import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, ParseError, many, noneOf, option)
-import Text.Parsec.Prim (ParsecT)
 import Text.Parsec.String (GenParser)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
@@ -42,7 +39,7 @@ data CompIdx = A1 | A2
 
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
-    program :: ParsecT String u Identity [StatementI]
+    program :: GenParser Char st [StatementI]
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
          -- This leaves us to deal only with the first spaces in the file.
@@ -150,7 +147,7 @@ echo = ("echo " ?:) $ do
     exprs <- surroundedBy '(' (sepBy expr0 (try matchComma)) ')'
     return $ StatementI pos $ Echo exprs
 
-ifStatementI :: ParsecT String u Identity StatementI
+ifStatementI :: GenParser Char st StatementI
 ifStatementI = "if " ?: do
     pos <- sourcePos
     _ <- matchIf
@@ -255,8 +252,6 @@ sourcePos = do
 -- | Remove statements that do nothing.
 removeNoOps :: [StatementI] -> [StatementI]
 removeNoOps [] = []
---removeNoOps (StatementI _ (Sequence []):sts) = removeNoOps sts
---removeNoOps (StatementI _ (Sequence [st]):sts) = removeNoOps [st] ++ removeNoOps sts
 removeNoOps (StatementI _ DoNothing:sts) = removeNoOps sts
 removeNoOps (st:sts) = st : removeNoOps sts
 
