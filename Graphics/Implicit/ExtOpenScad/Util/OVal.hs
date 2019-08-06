@@ -120,17 +120,17 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
 
 -- A string representing each type.
 oTypeStr :: OVal -> String
-oTypeStr OUndefined = "Undefined"
-oTypeStr (OBool   _ ) = "Bool"
-oTypeStr (ONum    _ ) = "Number"
-oTypeStr (OList   _ ) = "List"
-oTypeStr (OString _ ) = "String"
-oTypeStr (OFunc   _ ) = "Function"
-oTypeStr (OModule _ _ _) = "Module"
-oTypeStr (OUModule _ _ _) = "User Defined Module"
-oTypeStr (OError  _ ) = "Error"
-oTypeStr (OObj2   _ ) = "2D Object"
-oTypeStr (OObj3   _ ) = "3D Object"
+oTypeStr OUndefined         = "Undefined"
+oTypeStr (OBool          _ ) = "Bool"
+oTypeStr (ONum           _ ) = "Number"
+oTypeStr (OList          _ ) = "List"
+oTypeStr (OString        _ ) = "String"
+oTypeStr (OFunc          _ ) = "Function"
+oTypeStr (OModule    _ _ _ ) = "Module"
+oTypeStr (OUModule   _ _ _ ) = "User Defined Module"
+oTypeStr (OError         _ ) = "Error"
+oTypeStr (OObj2          _ ) = "2D Object"
+oTypeStr (OObj3          _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
@@ -160,7 +160,7 @@ divideObjs children =
     obj3s <- rseq [ x | OObj3 x <- children ]
     objs <- rpar (filter (not . isOObj) children)
     return (obj2s, obj3s, objs)
-        where
-          isOObj  (OObj2 _) = True
-          isOObj  (OObj3 _) = True
-          isOObj  _         = False
+      where
+        isOObj  (OObj2 _) = True
+        isOObj  (OObj3 _) = True
+        isOObj  _         = False
