@@ -244,7 +244,7 @@ moduleArgsUnitDecl = do
     return argTemplate
 
 -- | Find the source position. Used when generating errors.
-sourcePos :: ParsecT s u Identity SourcePosition
+sourcePos :: GenParser Char st SourcePosition
 sourcePos = do
   pos <- getPosition
   return $ sourcePosition pos
