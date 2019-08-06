@@ -30,7 +30,7 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC, modifyVarLookup
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
-import Data.Map (union, fromList)
+import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe)
 
@@ -53,7 +53,12 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
-        (_, Just match) -> modifyVarLookup $ varUnion match
+        (_, Just (VarLookup match)) -> do
+          forM_ (toList match) $ \((Symbol varName), _) -> do
+            maybeVar <- lookupVar (Symbol varName)
+            when (isJust $ maybeVar)
+              (warnC sourcePos $ "redefining already defined variable: " ++ show varName)
+            modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
 -- | Interpret an echo statement.
@@ -164,15 +169,15 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 parameterReport =  "Found " ++ show valNamedCount ++
                   (if valNamedCount == 1 then " named parameter, and " else " named parameters, and ")
                    ++ show valUnnamedCount ++
-                  (if valUnnamedCount == 1 then " un-amed parameter. Expected " else " un-named parameters. Expected ")
+                  (if valUnnamedCount == 1 then " un-named parameter. Expected " else " un-named parameters. Expected ")
                   ++ show noArgs ++
                   (if noArgs == 1 then " parameter." else " parameters.")
               -- Check that the number of arguments match, and if they don't, error a report.
               -- FIXME: take into account the ordering of unnamed value application.
               when (valFoundCount + valUnnamedCount < noArgs)
-                (errorC sourcePos $ "Insufficient parameters." ++ parameterReport)
+                (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
               when (valFoundCount + valUnnamedCount > noArgs && isJust args) $
-                (errorC sourcePos $ "Too many parameters." ++ parameterReport)
+                (errorC sourcePos $ "Too many parameters. " ++ parameterReport)
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
