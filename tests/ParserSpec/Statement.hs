@@ -95,6 +95,8 @@ statementSpec = do
     it "parses as empty" $ "/* foish bar\n*/" --> []
   describe "module call" $
     it "parses" $ "foo();" --> single (ModuleCall (Symbol "foo") [] [])
+  describe "disabled module call" $
+    it "parses as empty" $ "% foo ();" --> []
   describe "difference of two cylinders" $
     it "parses correctly" $
       "difference(){ cylinder(r=5,h=20); cylinder(r=2,h=20); }"
