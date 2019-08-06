@@ -9,11 +9,11 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
                                                   OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OVargsModule, OObj2, OObj3),
-                                                  VarLookup(VarLookup),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
                                                   CompState(CompState),
+                                                  VarLookup(VarLookup),
                                                   Message(Message),
                                                   MessageType(..),
                                                   ScadOpts(ScadOpts),
@@ -31,12 +31,11 @@ import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, lift
 
 import Data.Map (Map, lookup)
 
-import Control.Monad.State (StateT)
-
 import Data.Maybe (fromMaybe)
 
 import Data.List (intercalate)
 
+import Control.Monad.State (StateT)
 
 -- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
 newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
