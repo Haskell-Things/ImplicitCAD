@@ -38,24 +38,30 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, ma
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
+data CompIdx = A1 | A2
+
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
     program :: ParsecT String u Identity [StatementI]
     program = do
          -- all of the token parsers are lexemes which consume all trailing spaces nicely.
          -- This leaves us to deal only with the first spaces in the file.
-        sts <- whiteSpace >> many computation
+        sts <- whiteSpace >> many (computation A1)
         _   <- eof
-        return sts
+        return (removeNoOps sts)
 
 -- | A computable block of code in our openscad-like programming language.
-computation :: GenParser Char st StatementI
-computation =
+computation :: CompIdx -> GenParser Char st StatementI
+computation A1 =
+  computation A2
+  *<|>
+  throwAway
+
+computation A2 =
     -- suite statements: no semicolon...
         tryMany [
             ifStatementI,
             forStatementI,
-            throwAway,
             userModuleDeclaration
             ]
     *<|> do -- Non suite statements. Semicolon needed...
@@ -87,10 +93,13 @@ computation =
 --  are in turn StatementI s.
 -}
 suite :: GenParser Char st [StatementI]
-suite = (fmap return computation <|> do
-    stmts <- surroundedBy '{' (many (try computation)) '}'
-    return (removeNoOps stmts)
-    ) <?> " suite"
+suite = (
+  fmap return (computation A1)
+  <|>
+    do
+      stmts <- surroundedBy '{' (many (computation A1)) '}'
+      return (removeNoOps stmts)
+  ) <?> " suite"
 
 -- | commenting out a computation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
@@ -98,7 +107,7 @@ throwAway = do
     pos <- sourcePos
     _ <- oneOf "%*"
     _ <- whiteSpace
-    _ <- computation
+    _ <- computation A2
     return $ StatementI pos DoNothing
 
 -- | An include! Basically, inject another extopenscad file here...
