@@ -87,10 +87,13 @@ computation =
 --  are in turn StatementI s.
 -}
 suite :: GenParser Char st [StatementI]
-suite = (fmap return computation <|> do
-    stmts <- surroundedBy '{' (many (try computation)) '}'
-    return (removeNoOps stmts)
-    ) <?> " suite"
+suite = (
+  fmap return computation
+  <|>
+    do
+      stmts <- surroundedBy '{' (many computation) '}'
+      return (removeNoOps stmts)
+  ) <?> " suite"
 
 -- | commenting out a computation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
