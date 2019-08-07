@@ -121,7 +121,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               -- Find what arguments are satisfied by a named parameter.
-              valSupplied <- forM argsExpr $ \(argName, _) ->
+              valNamed <- forM argsExpr $ \(argName, _) ->
                 case argName of
                   Just (Symbol symbol) ->
                     case lookup (Symbol symbol) (fromMaybe [] args) of
@@ -136,31 +136,25 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                           (warnC sourcePos $ "Supplied parameter not listed in module declaration: " ++ symbol)
                         return (Nothing, False)
                   Nothing -> return (Nothing, False)
-              -- Find what arguments are satisfied by a default value.
-              valAvailable <- forM argsExpr $ \(argName, _) ->
-                case argName of
-                  Just symbol  ->
-                    case lookup symbol (fromMaybe [] args) of
-                      Just hasDefault -> return (Just symbol, hasDefault)
-                      Nothing         -> return (Nothing, False)
-                  Nothing -> return (Nothing, False)
-              -- Union the two sets:
+              -- Find what arguments are satisfied by a default value, or were given in a named parameter..
               valFound <- forM argsExpr $ \(argName, _) ->
                 case argName of
-                  Just symbol -> do
-                    let
-                      supplied = fromMaybe False $ lookup (Just symbol) valSupplied
-                      available = fromMaybe False $ lookup (Just symbol) valAvailable
-                    return (Just symbol, supplied || available)
+                  Just symbol  -> do
+                    let supplied = fromMaybe False $ lookup (Just symbol) valNamed
+                    case lookup symbol (fromMaybe [] args) of
+                      Just hasDefault -> return (Just symbol, hasDefault || supplied)
+                      Nothing         -> if supplied
+                                         then return (Just symbol, supplied)
+                                         else return (Nothing, False)
                   Nothing -> return (Nothing, False)
               -- Find what unnamed parameters were passed in.
               valUnnamed <- forM argsExpr $ \(argName, expr) ->
                 case argName of
                   Just _  -> return Nothing
                   Nothing -> return $ Just expr
-              -- ... and count them.
               let
-                valNamedCount = length $ filter snd valSupplied
+                -- ... and count them.
+                valNamedCount = length $ filter snd valNamed
                 valFoundCount = length $ filter snd valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
                 noArgs = length (fromMaybe [] args)
