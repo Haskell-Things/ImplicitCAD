@@ -2,8 +2,8 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
+-- For the definition of centroid.
+{-# LANGUAGE FlexibleContexts #-}
 
 -- Functions to make meshes/polylines finer.
 

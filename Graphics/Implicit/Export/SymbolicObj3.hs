@@ -5,9 +5,6 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- FIXME: why are these needed?
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
-
 -- The purpose of this function is to symbolicaly compute triangle meshes using the symbolic system where possible.
 -- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
 
