@@ -91,13 +91,9 @@ computation A2 =
 -}
 suite :: GenParser Char st [StatementI]
 suite = (
-  do
-  stmt <- computation A1
-  return (removeNoOps [stmt])
+    removeNoOps . (:[]) <$> computation A1
   *<|>
-    do
-      stmts <- surroundedBy '{' (many (computation A1)) '}'
-      return (removeNoOps stmts)
+    removeNoOps <$> surroundedBy '{' (many (computation A1)) '}'
   ) <?> "suite"
 
 -- | commenting out a computation: use % or * before the statement, and it will not be run.
@@ -144,8 +140,7 @@ echo :: GenParser Char st StatementI
 echo = ("echo " ?:) $ do
     pos <- sourcePos
     _ <- matchEcho
-    exprs <- surroundedBy '(' (sepBy expr0 matchComma) ')'
-    return $ StatementI pos $ Echo exprs
+    StatementI pos . Echo <$> surroundedBy '(' (sepBy expr0 matchComma) ')'
 
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = "if " ?: do
@@ -177,8 +172,7 @@ userModule = do
     pos <- sourcePos
     name <- matchIdentifier
     args <- moduleArgsUnit
-    s <- suite *<|> (matchSemi >> return [])
-    return $ StatementI pos $ ModuleCall (Symbol name) args s
+    StatementI pos . ModuleCall (Symbol name) args <$> (suite *<|> (matchSemi >> return []))
 
 -- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
