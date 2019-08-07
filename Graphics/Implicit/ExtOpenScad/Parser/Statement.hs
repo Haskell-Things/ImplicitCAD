@@ -11,12 +11,12 @@
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, return, fmap, ($), (>>), Bool(False, True), map, (<$>), (.))
+import Prelude(Char, Either, String, return, ($), (>>), Bool(False, True), (<$>), (.), map)
 
 import Data.Maybe(Maybe(Just, Nothing))
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<|>), (<?>), try, sepBy, oneOf, char, getPosition, parse, eof, ParseError, many, noneOf, option)
+import Text.Parsec (SourceName, (<?>), sepBy, oneOf, getPosition, parse, eof, ParseError, many, noneOf, option)
 import Text.Parsec.String (GenParser)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
@@ -29,7 +29,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, (*<|>), (?:), pattern
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma, surroundedBy, matchIdentifier)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma, matchSemi, surroundedBy, matchIdentifier)
 
 -- Let us use the old syntax when defining Names.
 pattern Name :: String -> GIED.Pattern
@@ -68,7 +68,7 @@ computation A2 =
             function,
             assignment
             ]
-        _ <- matchTok ';'
+        _ <- matchSemi
         return s
     *<|> -- Modules. no semicolon...
         userModule
@@ -91,12 +91,14 @@ computation A2 =
 -}
 suite :: GenParser Char st [StatementI]
 suite = (
-  fmap return (computation A1)
-  <|>
+  do
+  stmt <- computation A1
+  return (removeNoOps [stmt])
+  *<|>
     do
       stmts <- surroundedBy '{' (many (computation A1)) '}'
       return (removeNoOps stmts)
-  ) <?> " suite"
+  ) <?> "suite"
 
 -- | commenting out a computation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
@@ -111,12 +113,10 @@ throwAway = do
 include :: GenParser Char st StatementI
 include = ("include " ?:) $ do
     pos <- sourcePos
-    injectVals <-  (matchInclude >> return True )
-               <|> (matchUse     >> return False)
-    _ <- char '<'
+    injectVals  <-  (matchInclude >> return True )
+               *<|> (matchUse     >> return False)
     -- FIXME: better definition of valid filename characters.
-    filename <- many (noneOf "<> ")
-    _ <- matchTok '>'
+    filename <- surroundedBy '<' (many (noneOf "<> ")) '>'
     return $ StatementI pos $ Include filename injectVals
 
 -- | An assignment (parser)
@@ -134,7 +134,7 @@ function = ("function " ?:) $ do
     pos <- sourcePos
     _ <- matchFunction
     varSymb <- matchIdentifier
-    argVars <- surroundedBy '(' (sepBy patternMatcher (try matchComma)) ')'
+    argVars <- surroundedBy '(' (sepBy patternMatcher matchComma) ')'
     _ <- matchTok '='
     valExpr <- expr0
     return $ StatementI pos $ Name varSymb := LamE argVars valExpr
@@ -144,7 +144,7 @@ echo :: GenParser Char st StatementI
 echo = ("echo " ?:) $ do
     pos <- sourcePos
     _ <- matchEcho
-    exprs <- surroundedBy '(' (sepBy expr0 (try matchComma)) ')'
+    exprs <- surroundedBy '(' (sepBy expr0 matchComma) ')'
     return $ StatementI pos $ Echo exprs
 
 ifStatementI :: GenParser Char st StatementI
@@ -177,7 +177,7 @@ userModule = do
     pos <- sourcePos
     name <- matchIdentifier
     args <- moduleArgsUnit
-    s <- suite *<|> (matchTok ';' >> return [])
+    s <- suite *<|> (matchSemi >> return [])
     return $ StatementI pos $ ModuleCall (Symbol name) args s
 
 -- | declare a module.
@@ -194,24 +194,24 @@ moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
 moduleArgsUnit = do
     _ <- matchTok '('
     args <- sepBy (
-        do
+      do
             -- eg. a = 12
             symb <- matchIdentifier
             _ <- matchTok '='
             expr <- expr0
             return (Just (Symbol symb), expr)
-        *<|> do
+      *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
-            argVars <- surroundedBy '(' (sepBy matchIdentifier (try matchComma)) ')'
+            argVars <- surroundedBy '(' (sepBy matchIdentifier matchComma) ')'
             _ <- matchTok '='
             expr <- expr0
             return (Just (Symbol symb), LamE (map Name argVars) expr)
-        *<|> do
+      *<|> do
             -- eg. 12
             expr <- expr0
             return (Nothing, expr)
-        ) (try matchComma)
+        ) matchComma
     _ <- matchTok ')'
     return args
 
@@ -227,17 +227,8 @@ moduleArgsUnitDecl = do
             return (Symbol symb, Just expr)
         *<|> do
             symb <- matchIdentifier
-            _ <- matchTok '('
-                 -- FIXME: why match this content, then drop it?
-            _ <- sepBy matchIdentifier (try matchComma)
-            _ <- matchTok ')'
-            _ <- matchTok '='
-            expr <- expr0
-            return (Symbol symb, Just expr)
-        *<|> do
-            symb <- matchIdentifier
             return (Symbol symb, Nothing)
-        ) (try matchComma)
+        ) matchComma
     _ <- matchTok ')'
     return argTemplate
 
