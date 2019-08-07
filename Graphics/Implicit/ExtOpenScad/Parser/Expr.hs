@@ -11,7 +11,7 @@ module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod, head, (&&))
 
 -- The parsec parsing library.
-import Text.Parsec (oneOf, string, many1, many, sepBy, sepBy1, optionMaybe, try, option)
+import Text.Parsec (oneOf, string, many1, many, sepBy, sepBy1, optionMaybe, option)
 
 import Text.Parsec.String (GenParser)
 
@@ -103,8 +103,8 @@ exprN A5 =
         -- eg. "1+2+3-4-5+6-7"
         --     [[1],[2],[3,4,5],[6,7]]
         exprs <- sepBy1
-            (sepBy1 (exprN A6) (try $ matchTok '-'))
-            (try $ matchTok '+')
+            (sepBy1 (exprN A6) (matchTok '-'))
+            (matchTok '+')
         let sub a b = Var "-" :$ [a, b]
         return . collector "+" $ map (foldl1 sub) exprs
     *<|> exprN A6
@@ -112,14 +112,14 @@ exprN A5 =
 -- match string addition (++) operator.
 exprN A6 =
     "append" ?: do
-        exprs <- sepBy1 (exprN A7) (try $ string "++" >> whiteSpace)
+        exprs <- sepBy1 (exprN A7) (string "++" >> whiteSpace)
         return $ collector "++" exprs
     *<|> exprN A7
 
 -- match remainder (%) operator.
 exprN A7 =
     "modulo" ?: do
-        exprs <- sepBy1 (exprN A8) (try $ matchTok '%')
+        exprs <- sepBy1 (exprN A8) (matchTok '%')
         let mod' a b = Var "%" :$ [a, b]
         return $ foldl1 mod' exprs
     *<|> exprN A8
@@ -131,8 +131,8 @@ exprN A8 =
         -- eg. "1*2*3/4/5*6*7/8"
         --     [[1],[2],[3,4,5],[6],[7,8]]
         exprs <- sepBy1
-            (sepBy1 (exprN A9) (try $ matchTok '/'))
-            (try $ matchTok '*')
+            (sepBy1 (exprN A9) (matchTok '/'))
+            (matchTok '*')
         let div' a b = Var "/" :$ [a, b]
         return . collector "*" $ map (foldl1 div') exprs
     *<|> exprN A9
