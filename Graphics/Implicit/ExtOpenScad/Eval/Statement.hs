@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==), (<$>))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
@@ -111,8 +111,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             return (argName, val)
         let
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals = runSuiteCapture (VarLookup varlookup') suite
-        return suiteVals
+        return $ runSuiteCapture (VarLookup varlookup') suite
 
 -- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
@@ -175,24 +174,21 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- reverse <$> runSuiteCapture varlookup suite
+              childVals <- runSuiteCapture varlookup suite
               let
-                argparser  = mod' childVals
-                argsMapped = argMap argsVal argparser
-              ioNewVals <- fromMaybe (return []) (fst argsMapped)
+                argsMapped = argMap argsVal $ mod' childVals
               forM_ (snd argsMapped) $ errorC sourcePos
-              return ioNewVals
+              fromMaybe (return []) (fst argsMapped)
             Just (OModule _ _ mod') -> do
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- reverse <$> runSuiteCapture varlookup suite
+              childVals <- runSuiteCapture varlookup suite
               let
-                argparser  = mod' childVals
-                argsMapped = argMap argsVal argparser
-                ioNewVals  = fromMaybe (return []) (fst argsMapped)
+                argsMapped = argMap argsVal $ mod' childVals
+                ioNewVals = fromMaybe (return []) (fst argsMapped)
               forM_ (snd argsMapped) $ errorC sourcePos
               liftIO ioNewVals
             Just foo -> do
@@ -240,4 +236,4 @@ runSuiteCapture varlookup suite = do
     let
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
     mapM_ moveMessage messages
-    return res
+    return $ reverse res
