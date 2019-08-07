@@ -160,10 +160,8 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   Nothing -> return $ Just expr
               -- ... and count them.
               let
-                isSatisfied :: (Maybe Symbol, Bool) -> Bool
-                isSatisfied = snd
-                valNamedCount = length $ filter isSatisfied valSupplied
-                valFoundCount = length $ filter isSatisfied valFound
+                valNamedCount = length $ filter snd valSupplied
+                valFoundCount = length $ filter snd valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
                 noArgs = length (fromMaybe [] args)
                 parameterReport =  "Found " ++ show valNamedCount ++
