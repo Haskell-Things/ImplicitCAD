@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), fmap, reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==), (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
@@ -53,10 +53,10 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
-        (_, Just (VarLookup match)) -> do
-          forM_ (toList match) $ \((Symbol varName), _) -> do
+        (_, Just (VarLookup match)) ->
+          forM_ (toList match) $ \(Symbol varName, _) -> do
             maybeVar <- lookupVar (Symbol varName)
-            when (isJust $ maybeVar)
+            when (isJust maybeVar)
               (warnC sourcePos $ "redefining already defined variable: " ++ show varName)
             modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
@@ -176,14 +176,14 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- FIXME: take into account the ordering of unnamed value application.
               when (valFoundCount + valUnnamedCount < noArgs)
                 (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
-              when (valFoundCount + valUnnamedCount > noArgs && isJust args) $
+              when (valFoundCount + valUnnamedCount > noArgs && isJust args)
                 (errorC sourcePos $ "Too many parameters. " ++ parameterReport)
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- fmap reverse $ runSuiteCapture varlookup suite
+              childVals <- reverse <$> runSuiteCapture varlookup suite
               let
                 argparser  = mod' childVals
                 argsMapped = argMap argsVal argparser
@@ -196,7 +196,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- fmap reverse $ runSuiteCapture varlookup suite
+              childVals <- reverse <$> runSuiteCapture varlookup suite
               let
                 argparser  = mod' childVals
                 argsMapped = argMap argsVal argparser

@@ -11,7 +11,7 @@
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, return, fmap, ($), (>>), Bool(False, True), map)
+import Prelude(Char, Either, String, return, fmap, ($), (>>), Bool(False, True), map, (<$>), (.))
 
 import Data.Maybe(Maybe(Just, Nothing))
 
@@ -169,8 +169,7 @@ forStatementI = "for " ?: do
     _ <- matchTok '='
     vexpr <- expr0
     _ <- matchTok ')'
-    loopContent <- suite
-    return $ StatementI pos $ For lvalue vexpr loopContent
+    StatementI pos . For lvalue vexpr <$> suite
 
 -- | parse a call to a module.
 userModule :: GenParser Char st StatementI
@@ -188,8 +187,7 @@ userModuleDeclaration = do
     _ <- matchModule
     newModuleName <- matchIdentifier
     args <- moduleArgsUnitDecl
-    s <- suite
-    return $ StatementI pos $ NewModule (Symbol newModuleName) args s
+    StatementI pos . NewModule (Symbol newModuleName) args <$> suite
 
 -- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
@@ -245,9 +243,7 @@ moduleArgsUnitDecl = do
 
 -- | Find the source position. Used when generating errors.
 sourcePos :: GenParser Char st SourcePosition
-sourcePos = do
-  pos <- getPosition
-  return $ sourcePosition pos
+sourcePos = sourcePosition <$> getPosition
 
 -- | Remove statements that do nothing.
 removeNoOps :: [StatementI] -> [StatementI]

@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
-import Prelude (String, Char, ($), foldl1, map, (.), return, (>>), Bool(True, False), read, (**), (*), (==), (++))
+import Prelude (String, Char, ($), foldl1, map, (.), return, (>>), Bool(True, False), read, (**), (*), (==), (++), (<$>))
 
 import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, optional, choice, option, oneOf)
 
@@ -48,16 +48,8 @@ patternMatcher =
     (do
         _ <- char '_'
         return Wild
-    ) <|> {-( do
-        a <- literal
-        return $ \obj ->
-            if obj == (a undefined)
-            then Just (Map.empty)
-            else Nothing
-    ) <|> -} ( do
-        symb <- matchIdentifier
-        return $ Name (Symbol symb)
-    ) <|> ( do
+    ) <|> ( Name . Symbol <$> matchIdentifier)
+      <|> ( do
         _ <- matchTok '['
         components <- patternMatcher `sepBy` try (matchTok ',')
         _ <- matchTok ']'
@@ -102,9 +94,8 @@ number = ("number" ?:) $ do
 -- | Parse a variable reference.
 --   NOTE: abused by the parser for function calls.
 variable :: GenParser Char st Expr
-variable = ("variable" ?:) $ do
-  a <- matchIdentifier
-  return (Var (Symbol a))
+variable = ("variable" ?:) $
+  Var . Symbol <$> matchIdentifier
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
