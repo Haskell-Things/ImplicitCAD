@@ -27,7 +27,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Pattern(Wild, Name, ListP), So
 import Graphics.Implicit.Definitions (toFastℕ)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok, matchUndef, matchTrue, matchFalse, whiteSpace)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchUndef, matchTrue, matchFalse, whiteSpace, surroundedBy, matchComma)
 
 import Data.Kind (Type)
 
@@ -49,12 +49,7 @@ patternMatcher =
         _ <- char '_'
         return Wild
     ) <|> ( Name . Symbol <$> matchIdentifier)
-      <|> ( do
-        _ <- matchTok '['
-        components <- patternMatcher `sepBy` try (matchTok ',')
-        _ <- matchTok ']'
-        return $ ListP components
-    )
+      <|> ( ListP <$> surroundedBy '[' (patternMatcher `sepBy` (matchComma)) ']' )
 
 -- expression parsers
 
@@ -68,7 +63,7 @@ number = ("number" ?:) $ do
            b <- option "" (
              do
                c <- char '.' >> many1 digit
-               return ("." ++ c)
+               return ('.':c)
              )
            return (a ++ b)
         ,
