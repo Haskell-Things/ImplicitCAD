@@ -8,7 +8,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod, head, (&&))
+import Prelude (Char, Maybe(Nothing, Just), String, (.), (>>), return, ($), (++), id, foldl, map, foldl1, unzip, tail, zipWith3, foldr, (==), length, mod, head, (&&), (<$>))
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, string, many1, many, sepBy, sepBy1, optionMaybe, option)
@@ -111,9 +111,8 @@ exprN A5 =
 
 -- match string addition (++) operator.
 exprN A6 =
-    "append" ?: do
-        exprs <- sepBy1 (exprN A7) (string "++" >> whiteSpace)
-        return $ collector "++" exprs
+    "append" ?:
+        collector "++" <$> sepBy1 (exprN A7) (string "++" >> whiteSpace)
     *<|> exprN A7
 
 -- match remainder (%) operator.

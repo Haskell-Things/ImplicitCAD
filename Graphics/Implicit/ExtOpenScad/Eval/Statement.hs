@@ -21,7 +21,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(TextOut),
                                                   ScadOpts(ScadOpts),
                                                   StateC,
-                                                  CompState(CompState)
+                                                  CompState(CompState),
+                                                  varUnion
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
@@ -39,10 +40,6 @@ import Control.Monad (forM_, forM, mapM_, when)
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
-
--- helper, to use union on VarLookups.
-varUnion :: VarLookup -> VarLookup -> VarLookup
-varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
