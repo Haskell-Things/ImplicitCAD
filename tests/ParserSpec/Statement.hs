@@ -82,7 +82,7 @@ ifSpec = do
 
 -- | Test a for loop.
 forSpec :: Spec
-forSpec = do
+forSpec =
   it "parses" $
     "for (i = [ 1 : 10 ] ) { } " --> single (For (Name "i") (Var "list_gen" :$ [ListE [num 1, num 1, num 10]]) [])
 
