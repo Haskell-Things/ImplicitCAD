@@ -161,7 +161,7 @@ executeAndExport content callback maybeFormat =
         callbackS str          msg =
             callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
         scadOptions = generateScadOpts
-        openscadProgram = runOpenscad scadOptions content
+        openscadProgram = runOpenscad scadOptions [] content
     in
       unsafePerformIO $ do
       s@(_, obj2s, obj3s, messages) <- openscadProgram
