@@ -38,6 +38,7 @@ class OTypeMirror a where
 
 instance OTypeMirror OVal where
     fromOObj = Just
+    {-# INLINABLE fromOObj #-}
     toOObj a = a
 
 instance OTypeMirror ℝ where
