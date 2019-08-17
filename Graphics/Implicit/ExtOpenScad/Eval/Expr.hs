@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.))
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.), (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -54,17 +54,12 @@ patVars _ = []
 
 patMatch :: Pattern -> OVal -> Maybe [OVal]
 patMatch (Name _) val = Just [val]
-patMatch (ListP pats) (OList vals) = do
-    matches <- zipWithM patMatch pats vals
-    return $ concat matches
+patMatch (ListP pats) (OList vals) = concat <$> zipWithM patMatch pats vals
 patMatch Wild _ = Just []
 patMatch _ _ = Nothing
 
 matchPat :: Pattern -> OVal -> Maybe VarLookup
-matchPat pat val = do
-    let vars = map Symbol $ patVars pat
-    vals <- patMatch pat val
-    return $ VarLookup $ fromList $ zip vars vals
+matchPat pat val = VarLookup . fromList . zip (map Symbol $ patVars pat) <$> patMatch pat val
 
 evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
