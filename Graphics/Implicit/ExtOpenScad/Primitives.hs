@@ -495,7 +495,8 @@ unit = moduleWithSuite "unit" $ \children -> do
 
 moduleWithSuite :: String -> ([OVal] -> ArgParser (IO [OVal])) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
 moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
-moduleWithoutSuite :: String -> ArgParser (IO [OVal]) -> (Symbol, b -> ArgParser (IO [OVal]))
+
+moduleWithoutSuite :: String -> ArgParser (IO [OVal]) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
 moduleWithoutSuite name modArgMapper = (Symbol name, const modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (IO [OVal])
