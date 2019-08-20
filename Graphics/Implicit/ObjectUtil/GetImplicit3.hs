@@ -3,17 +3,14 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, (==), minimum, ($), maximum, (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, Num)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail)--, maximum, (>), (==), (&&), (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅))
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅)) --, minℝ)
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
 
@@ -37,7 +34,7 @@ getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) =
     \(x,y,z) -> let (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
                 in
                   rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
-getImplicit3 (Sphere r ) =
+getImplicit3 (Sphere r) =
     \(x,y,z) -> sqrt (x*x + y*y + z*z) - r
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     let
@@ -55,26 +52,20 @@ getImplicit3 (UnionR3 r symbObjs) =
     let
         objs = map getImplicit3 symbObjs
     in
-        if r == 0
-        then \p -> minimum $ map ($p) objs
-        else \p -> rminimum r $ map ($p) objs
+        \p -> rminimum r $ map ($p) objs
 getImplicit3 (IntersectR3 r symbObjs) =
     let
         objs = map getImplicit3 symbObjs
     in
-        if r == 0
-        then \p -> maximum $ map ($p) objs
-        else \p -> rmaximum r $ map ($p) objs
+        \p -> rmaximum r $ map ($p) objs
 getImplicit3 (DifferenceR3 r symbObjs) =
     let
         objs = map getImplicit3 symbObjs
         obj = head objs
-        complement :: forall a t. Num a => (t -> a) -> t -> a
+        complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in
-        if r == 0
-        then \p -> maximum $ map ($p) $ obj:map complement (tail objs)
-        else \p -> rmaximum r $ map ($p) $ obj:map complement (tail objs)
+      \p -> rmaximum r $ map ($p) $ obj:map complement (tail objs)
 -- Simple transforms
 getImplicit3 (Translate3 v symbObj) =
     let
