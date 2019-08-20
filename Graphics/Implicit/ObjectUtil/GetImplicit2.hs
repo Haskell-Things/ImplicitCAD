@@ -25,9 +25,7 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) =
     \(x,y) -> let
          (dx, dy) = (x2-x1, y2-y1)
     in
-         if r == 0
-         then maximum [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
-         else rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -59,9 +57,7 @@ getImplicit2 (UnionR2 r symbObjs) =
     \p -> let
         objs = map getImplicit2 symbObjs
     in
-        if r == 0
-        then minimum $ map ($p) objs
-        else rminimum r $ map ($p) objs
+        rminimum r $ map ($p) objs
 getImplicit2 (DifferenceR2 r symbObjs) =
     let
         objs = map getImplicit2 symbObjs
@@ -69,16 +65,12 @@ getImplicit2 (DifferenceR2 r symbObjs) =
         complement :: Obj2 -> ℝ2 -> ℝ
         complement obj' p = - obj' p
     in
-        if r == 0
-        then \p -> maximum . map ($p) $ obj:map complement (tail objs)
-        else \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
+        \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
 getImplicit2 (IntersectR2 r symbObjs) =
     \p -> let
         objs = map getImplicit2 symbObjs
     in
-        if r == 0
-        then maximum $ map ($p) objs
-        else rmaximum r $ map ($p) objs
+        rmaximum r $ map ($p) objs
 -- Simple transforms
 getImplicit2 (Translate2 v symbObj) =
     \p -> let
