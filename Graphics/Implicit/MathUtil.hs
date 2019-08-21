@@ -74,6 +74,7 @@ rmaximum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round maximum
     -> ℝ   -- ^ resulting number
+rmaximum _ [] = 0
 rmaximum _ [a] = a
 rmaximum r [a,b]
   | r == 0    = max a b
@@ -91,6 +92,7 @@ rminimum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round minimum
     -> ℝ   -- ^ resulting number
+rminimum _ [] = 0
 rminimum _ [a] = a
 rminimum r [a,b]
   | r > 0     = rmin r a b
