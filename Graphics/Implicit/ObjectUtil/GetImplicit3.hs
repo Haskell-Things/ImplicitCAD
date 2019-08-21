@@ -5,12 +5,12 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, (>), (&&), (<))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅))
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅), minℝ)
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
 
@@ -60,12 +60,18 @@ getImplicit3 (IntersectR3 r symbObjs) =
         \p -> rmaximum r $ map ($p) objs
 getImplicit3 (DifferenceR3 r symbObjs) =
     let
-        objs = map getImplicit3 symbObjs
-        obj = head objs
+        tailObjs = map getImplicit3 $ tail symbObjs
+        headObj = getImplicit3 $ head symbObjs
         complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in
-      \p -> rmaximum r $ map ($p) $ obj:map complement (tail objs)
+      \p -> do
+        let
+          maxTail = rmaximum r $ map ($p) $ map complement tailObjs
+        if maxTail > -minℝ && maxTail < minℝ
+          then rmax r (headObj p) minℝ
+          else rmax r (headObj p) maxTail
+
 -- Simple transforms
 getImplicit3 (Translate3 v symbObj) =
     let
