@@ -11,7 +11,6 @@ lineComment width = "//" ++ ['x' | _ <- [1..width]] ++ "\n"
 
 lineComments :: Int -> String
 lineComments n = concat [lineComment 80 | _ <- [1..n]]
-                 ++ assignments 1 -- to avoid empty file
 
 blockComment :: Int -> Int -> String
 blockComment lineCount width =
@@ -19,10 +18,15 @@ blockComment lineCount width =
 
 blockComments :: Int -> Int -> String
 blockComments lineCount n = concat [blockComment lineCount 40 | _ <- [1..n]]
-                            ++ assignments 1 -- to avoid empty file
 
 assignments :: Int -> String
 assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
+
+include :: Int -> String
+include n = concat ["include <header.escad>;" | _ <- [1..n]]
+
+use :: Int -> String
+use n = concat ["use <header.escad>;" | _ <- [1..n]]
 
 intList :: Int -> String
 intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
@@ -57,6 +61,10 @@ main =
     , run "block" parseStatements (blockComments 10 500)
     ]
   , run "assignments" parseStatements (assignments 100)
+  , bgroup "includes"
+    [ run "include" parseStatements (include 5000)
+    , run "use" parseStatements (use 5000)
+    ]
   , run "int list" parseExpr (intList 1000)
   , run "deep arithmetic" parseExpr (deepArithmetic 3)
   ]
