@@ -37,8 +37,15 @@ functionDeclarations n = concat ["function functionname(arg, arg2) = sin(arg*arg
 echos :: Int -> String
 echos n = concat ["echo(" ++ show x ++ ");" | x <- [1..n]]
 
+ifs :: Int -> String
+ifs n = concat ["if (true) {cube (10);} else {cube (20);}" | _ <- [1..n]]
+
+fors :: Int -> String
+fors n = concat ["for (i=[0:1:10]) {cube (i);}" | _ <- [1..n]]
+
 moduleDeclarations :: Int -> String
 moduleDeclarations n = concat ["module modulename(arg, arg2=10) { cube(arg2); }" | _ <- [1..n]]
+
 
 intList :: Int -> String
 intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
@@ -72,15 +79,17 @@ main =
     [ run "line" parseStatements (lineComments 5000)
     , run "block" parseStatements (blockComments 10 500)
     ]
-  , run "throwAway" parseStatements (throwAway 1000)
+  , run "throwAway" parseStatements (throwAway 500)
   , bgroup "includes"
     [ run "include" parseStatements (include 5000)
     , run "use" parseStatements (use 5000)
     ]
-  , run "assignments" parseStatements (assignments 100)
+  , run "assignments" parseStatements (assignments 50)
   , run "function declarations" parseStatements (functionDeclarations 100)
   , run "echos" parseStatements (echos 1000)
+  , run "ifs" parseStatements (ifs 250)
+  , run "fors" parseStatements (fors 50)
   , run "module declarations" parseStatements (moduleDeclarations 500)
-  , run "int list" parseExpr (intList 1000)
+  , run "int list" parseExpr (intList 250)
   , run "deep arithmetic" parseExpr (deepArithmetic 3)
   ]
