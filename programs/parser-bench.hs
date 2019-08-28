@@ -78,22 +78,28 @@ run name func input =
 main :: IO ()
 main =
   defaultMain
-  [ bgroup "comments"
-    [ run "line" parseStatements (lineComments 5000)
-    , run "block" parseStatements (blockComments 10 500)
+  [ bgroup "lexer" [
+      bgroup "comments"
+      [ run "line" parseStatements (lineComments 5000)
+      , run "block" parseStatements (blockComments 10 500)
+      ]
     ]
-  , run "throwAway" parseStatements (throwAway 500)
-  , bgroup "includes"
-    [ run "include" parseStatements (include 5000)
-    , run "use" parseStatements (use 5000)
-    ]
-  , run "assignments" parseStatements (assignments 50)
-  , run "function declarations" parseStatements (functionDeclarations 100)
-  , run "echos" parseStatements (echos 1000)
-  , run "ifs" parseStatements (ifs 250)
-  , run "fors" parseStatements (fors 50)
-  , run "module calls" parseStatements (moduleCalls 500)
-  , run "module declarations" parseStatements (moduleDeclarations 500)
-  , run "int list" parseExpr (intList 250)
-  , run "deep arithmetic" parseExpr (deepArithmetic 3)
+  , bgroup "statement" [
+      run "throwAway" parseStatements (throwAway 500)
+      , bgroup "includes"
+        [ run "include" parseStatements (include 5000)
+        , run "use" parseStatements (use 5000)
+        ]
+      , run "assignments" parseStatements (assignments 50)
+      , run "function declarations" parseStatements (functionDeclarations 100)
+      , run "echos" parseStatements (echos 1000)
+      , run "ifs" parseStatements (ifs 250)
+      , run "fors" parseStatements (fors 50)
+      , run "module calls" parseStatements (moduleCalls 500)
+      , run "module declarations" parseStatements (moduleDeclarations 500)
+      ]
+  , bgroup "expression" [
+        run "int list" parseExpr (intList 250)
+      , run "deep arithmetic" parseExpr (deepArithmetic 3)
+      ]
   ]
