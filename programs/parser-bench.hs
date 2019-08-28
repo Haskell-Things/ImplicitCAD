@@ -19,14 +19,26 @@ blockComment lineCount width =
 blockComments :: Int -> Int -> String
 blockComments lineCount n = concat [blockComment lineCount 40 | _ <- [1..n]]
 
-assignments :: Int -> String
-assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
+throwAway :: Int -> String
+throwAway n = concat ["%cube (10);*cube (10);" | _ <- [1..n]]
 
 include :: Int -> String
 include n = concat ["include <header.escad>;" | _ <- [1..n]]
 
 use :: Int -> String
 use n = concat ["use <header.escad>;" | _ <- [1..n]]
+
+assignments :: Int -> String
+assignments n = concat ["x = (foo + bar);\n" | _ <- [1..n]]
+
+functionDeclarations :: Int -> String
+functionDeclarations n = concat ["function functionname(arg, arg2) = sin(arg*arg2);" | _ <- [1..n]]
+
+echos :: Int -> String
+echos n = concat ["echo(" ++ show x ++ ");" | x <- [1..n]]
+
+moduleDeclarations :: Int -> String
+moduleDeclarations n = concat ["module modulename(arg, arg2=10) { cube(arg2); }" | _ <- [1..n]]
 
 intList :: Int -> String
 intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
@@ -60,11 +72,15 @@ main =
     [ run "line" parseStatements (lineComments 5000)
     , run "block" parseStatements (blockComments 10 500)
     ]
-  , run "assignments" parseStatements (assignments 100)
+  , run "throwAway" parseStatements (throwAway 1000)
   , bgroup "includes"
     [ run "include" parseStatements (include 5000)
     , run "use" parseStatements (use 5000)
     ]
+  , run "assignments" parseStatements (assignments 100)
+  , run "function declarations" parseStatements (functionDeclarations 100)
+  , run "echos" parseStatements (echos 1000)
+  , run "module declarations" parseStatements (moduleDeclarations 500)
   , run "int list" parseExpr (intList 1000)
   , run "deep arithmetic" parseExpr (deepArithmetic 3)
   ]
