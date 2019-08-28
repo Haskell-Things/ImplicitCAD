@@ -43,6 +43,9 @@ ifs n = concat ["if (true) {cube (10);} else {cube (20);}" | _ <- [1..n]]
 fors :: Int -> String
 fors n = concat ["for (i=[0:1:10]) {cube (i);}" | _ <- [1..n]]
 
+moduleCalls :: Int -> String
+moduleCalls n = concat ["moduleno" ++ show x ++ " (" ++ show x ++ ");" | x <- [1..n]]
+
 moduleDeclarations :: Int -> String
 moduleDeclarations n = concat ["module modulename(arg, arg2=10) { cube(arg2); }" | _ <- [1..n]]
 
@@ -89,6 +92,7 @@ main =
   , run "echos" parseStatements (echos 1000)
   , run "ifs" parseStatements (ifs 250)
   , run "fors" parseStatements (fors 50)
+  , run "module calls" parseStatements (moduleCalls 500)
   , run "module declarations" parseStatements (moduleDeclarations 500)
   , run "int list" parseExpr (intList 250)
   , run "deep arithmetic" parseExpr (deepArithmetic 3)
