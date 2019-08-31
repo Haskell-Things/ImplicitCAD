@@ -1,4 +1,9 @@
-import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), concat, error)
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2016, Kelvin Cookshaw (kelvin@cookshaw.com)
+-- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
+import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), mod, concat, error)
 import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
@@ -49,9 +54,45 @@ moduleCalls n = concat ["moduleno" ++ show x ++ " (" ++ show x ++ ");" | x <- [1
 moduleDeclarations :: Int -> String
 moduleDeclarations n = concat ["module modulename(arg, arg2=10) { cube(arg2); }" | _ <- [1..n]]
 
+ternary :: Int -> String
+ternary n = concat ["true?1:" | _ <- [1..n]] ++ "2"
+
+lets :: Int -> String
+lets n = concat ["let (a=1) " | _ <- [1..n]] ++ " a"
 
 intList :: Int -> String
 intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
+
+intParList :: Int -> String
+intParList n = "(" ++ concat [show i ++ "," | i <- [1..n]] ++ "0)"
+
+parExpr :: Int -> String
+parExpr n = concat ["(a+" ++ show i ++ "+" | i <- [0..n]] ++ "0)" ++ concat ["+" ++ show i ++ ")" | i <- [1..n]]
+
+genList :: Int -> String
+genList n = concat ["[1:1:" ++ show i ++ "] ++ " | i <- [1..n]] ++ "0"
+
+stringList :: Int -> String
+stringList n = "[" ++ concat ["\"" ++ show i ++ "\", " | i <- [1..n]] ++ " \"something\"]"
+
+boolList :: Int -> String
+boolList n = "[" ++ concat [trueOrFalse i ++ "," | i <- [1..n]] ++ "false]"
+  where
+    trueOrFalse :: Int -> String
+    trueOrFalse x = if x `mod` 2 == 1
+                    then "true"
+                    else "false"
+
+
+undefinedList :: Int -> String
+undefinedList n = "[" ++ concat ["undef, " | _ <- [1..n]] ++ "undef]"
+
+deepArithmetic :: Int -> String
+deepArithmetic n
+  | n == 0 = "1"
+  | otherwise = printf "%s + %s * (%s - %s)" d d d d
+                where
+                  d = deepArithmetic (n - 1)
 
 parseExpr :: String -> Expr
 parseExpr s = case parse expr0 "src" s of
@@ -62,13 +103,6 @@ parseStatements :: String -> [StatementI]
 parseStatements s = case parseProgram "noname" s of
                      Left err -> error (show err)
                      Right e -> e
-
-deepArithmetic :: Int -> String
-deepArithmetic n
-  | n == 0 = "1"
-  | otherwise = printf "%s + %s * (%s - %s)" d d d d
-                where
-                  d = deepArithmetic (n - 1)
 
 run :: String -> (String -> a) -> String -> Benchmark
 run name func input =
@@ -99,7 +133,15 @@ main =
       , run "module declarations" parseStatements (moduleDeclarations 500)
       ]
   , bgroup "expression" [
-        run "int list" parseExpr (intList 250)
+        run "ternary operators" parseExpr (ternary 500)
+      , run "let statements" parseExpr (lets 3)
+      , run "int list" parseExpr (intList 100)
+      , run "parenthesized int list" parseExpr (intParList 100)
+      , run "parenthesized expression" parseExpr (parExpr 2)
+      , run "generated list" parseExpr (genList 50)
+      , run "string list" parseExpr (stringList 100)
+      , run "bool list" parseExpr (boolList 100)
+      , run "undefined list" parseExpr (undefinedList 100)
       , run "deep arithmetic" parseExpr (deepArithmetic 3)
       ]
   ]
