@@ -33,15 +33,11 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
--- We represent the priority or 'fixity' of different types of expressions
--- by the ExprIdx argument, with A1 as the highest.
-
-expr0 :: GenParser Char st Expr
-
 -- Borrowed the pattern from http://compgroups.net/comp.lang.functional/parsing-ternary-operator-with-parsec/1052460
 -- In the levels list, the first element is the lowest precedent, and the last is the highest.
 -- "higher" represents the higher precedence parser, ie. the next one in the levels list.
 -- "fix $ \self ->..." is used to consume all expressions in the same level, "self" being the current level.
+expr0 :: GenParser Char st Expr
 expr0 = foldr ($) nonAssociativeExpr levels
   where
     levels :: [GenParser Char st Expr -> GenParser Char st Expr]
@@ -75,7 +71,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
           chainl1 higher (do
                              op <- oneOf "+-" <* whiteSpace
                              return $ binaryOperation [op])
-      , \higher -> -- ++ string/list concatenation operator. This is an ExtOpenScad operation that is not available in OpenSCAD.
+      , \higher -> -- ++ string/list concatenation operator. This is not available in OpenSCAD.
           chainl1 higher (do
                              op <- matchCAT
                              return $ binaryOperation op)
@@ -88,7 +84,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
                              op <- oneOf "*/%" <* whiteSpace
                              return $ binaryOperation [op])
       , \higher ->
-          fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'. I think the semantics are the same. Requires extensive testing.
+          fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'.
                   do
                     op <- matchTok '!'
                     right <- self
@@ -179,18 +175,17 @@ vectorListParentheses =
           <* matchTok ']'
         return $ collector "list_gen" exprs
 
-
 -- | Apply a symbolic operator to a list of expressions, returning one big expression.
 --   Accepts a string for the operator, to simplify callers.
 collector :: String -> [Expr] -> Expr
 collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
 
--- | combine left and right operands with an binary operator
+-- | Apply a symbolic operator to two expressions, combining left and right operands with an binary operator
 binaryOperation :: String -> Expr -> Expr -> Expr
 binaryOperation symbol left right = Var symbol :$ [left, right]
 
--- | an assignment expression within a let's bindings list
+-- | An assignment expression within a let's bindings list
 assignment :: GenParser Char st Expr
 assignment = do
     ident       <- matchIdentifier
