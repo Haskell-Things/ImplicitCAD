@@ -89,6 +89,7 @@ plus,minus,mult,modulo,power,divide,negate,and,or,not,gt,lt,ternary,append,index
 minus = oapp "-"
 modulo = oapp "%"
 power = oapp "^"
+mult = oapp "*"
 divide = oapp "/"
 and = oapp "&&"
 or = oapp "||"
@@ -98,9 +99,8 @@ lt = oapp "<"
 ternary = oapp "?"
 negate = oapp "negate"
 index = oapp "index"
-plus = fapp "+"
-mult = fapp "*"
-append = fapp "++"
+append = oapp "++"
+plus = oapp "+"
 
 -- | We need two different kinds of application functions, one for operators, and one for functions.
 oapp,fapp :: String -> [Expr] -> Expr

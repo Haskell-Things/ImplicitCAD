@@ -35,32 +35,35 @@ import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
 type StateE = StateT ExprState IO
 
-addMesg :: Message -> StateE ()
-addMesg = modify . (\message (ExprState (a, b, messages, c)) -> ExprState (a, b, messages ++ [message], c))
-
+-- Add a message to our list of messages contained in the StatE monad.
 addMessage :: MessageType -> SourcePosition -> String -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
+  where
+    addMesg :: Message -> StateE ()
+    addMesg = modify . (\message (ExprState (a, b, messages, c)) -> ExprState (a, b, messages ++ [message], c))
 
+-- Log an error condition.
 errorE :: SourcePosition -> String -> StateE ()
 errorE = addMessage Error
 
---epos :: ExprState -> SourcePosition
---epos (ExprState (_, _, _, pos)) = pos
-
+-- | Return the names of all of the patterns in the given pattern.
 patVars :: Pattern -> [String]
 patVars (Name  (Symbol name)) = [name]
 patVars (ListP pats) = concatMap patVars pats
-patVars _ = []
+patVars Wild = []
 
+-- | Match patterns and ovals, returning a list of all of the OVals matched.
 patMatch :: Pattern -> OVal -> Maybe [OVal]
 patMatch (Name _) val = Just [val]
 patMatch (ListP pats) (OList vals) = concat <$> zipWithM patMatch pats vals
 patMatch Wild _ = Just []
 patMatch _ _ = Nothing
 
+-- | Construct a VarLookup from the given Pattern and OVal, if possible.
 matchPat :: Pattern -> OVal -> Maybe VarLookup
 matchPat pat val = VarLookup . fromList . zip (map Symbol $ patVars pat) <$> patMatch pat val
 
+-- | The entry point from StateC. evaluates an expression, returning the result, and moving any error messages generated into the calling StateC.
 evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
     varlookup <- getVarLookup
@@ -70,8 +73,10 @@ evalExpr pos expr = do
     mapM_ moveMessage messages
     return $ valf []
 
+-- The expression evaluators.
 evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 
+-- Evaluate a variable lookup.
 evalExpr' (Var (Symbol name)) = do
   (ExprState (VarLookup varlookup, namestack, _, spos)) <- get
   case (lookup (Symbol name) varlookup, elemIndex name namestack) of
@@ -81,12 +86,15 @@ evalExpr' (Var (Symbol name)) = do
           errorE spos ("Variable " ++ name ++ " not in scope")
           return $ const OUndefined
 
-evalExpr' (LitE  val  ) = return $ const val
+-- Evaluate a literal value.
+evalExpr' (LitE  val) = return $ const val
 
+-- Evaluate a list of expressions.
 evalExpr' (ListE exprs) = do
     valFuncs <- mapM evalExpr' exprs
-    return $ \s -> OList $ map ($s) valFuncs
+    return $ \s -> OList $ ($s) <$> valFuncs
 
+-- Evaluate application of a function.
 evalExpr' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
     argValFuncs <- mapM evalExpr' argExprs
@@ -100,6 +108,7 @@ evalExpr' (fexpr :$ argExprs) = do
                 (Just err, _     ) -> OError [err]
                 (_,      Just err) -> OError [err]
 
+-- Evaluate a lambda function.
 evalExpr' (LamE pats fexpr) = do
     fparts <- forM pats $ \pat -> do
         modify (\(ExprState (a,b,c,d)) -> ExprState (a, patVars pat ++ b,c,d))
@@ -109,25 +118,3 @@ evalExpr' (LamE pats fexpr) = do
     fval <- evalExpr' fexpr
     return $ foldr ($) fval fparts
 
-{-
-evalExpr' _ = do
-  state <- get
-  errorE (epos state) "Fallthrough in expression parser."
-  return $ const OUndefined 
--}
-
---------------
-
-{-
-simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
-    let
-        split b l = (filter b l, filter (not.b) l)
-        args' = map simplifyExpr args
-        (numArgs, nonNumArgs) = split (\x -> case x of LitE (ONum n) -> True; _ -> False) args'
-        numArgs' = map (\(LitE (ONum n)) -> n) numArgs
-    in case f of
-        "+" -> (LitE $ ONum $ sum  numArgs'):nonNumArgs
-        "*" -> (LitE $ ONum $ product numArgs'):nonNumArgs
-        _ -> args'
-simplifyExpr x = x
--}
