@@ -33,12 +33,6 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
-ternaryIssue :: Expectation -> Expectation
-ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
-
-listIssue :: Expectation -> Expectation
-listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
-
 undefinedIssue :: Expectation -> Expectation
 undefinedIssue _ = pendingWith "this errors, but the expecting is equal to the recieved. huh?"
 
@@ -57,10 +51,13 @@ logicalSpec = do
     specify "with parenthesized comparison" $
       "(1 > 0) ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position" $
-      ternaryIssue $ "1 > 0 ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
+      "1 > 0 ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position, and addition in tail" $
-      ternaryIssue $ "1 > 0 ? 5 : 1 + 2" -->
-        ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
+      "1 > 0 ? 5 : 1 + 2" -->
+              ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
+    specify "nested in true and false expressions" $
+      "c0 ? c1 ? t1 : f1 : c2 ? t2 : f2" -->
+      ternary [Var "c0", ternary [Var "c1",Var "t1",Var "f1"], ternary [Var "c2",Var "t2",Var "f2"]]
 
 literalSpec :: Spec
 literalSpec = do
@@ -123,7 +120,6 @@ exprSpec = do
     it "handles nested vectors" $
       "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
-      listIssue $
       "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : b ]" -->
@@ -178,8 +174,9 @@ exprSpec = do
       "x ^ y" --> power [Var "x", Var "y"]
     it "handles multiple exponentiations" $
       "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
-    it "handles *" $ do
+    it "handles *" $
       "3 * 4" --> mult [num 3, num 4]
+    it "handles > 2 term *" $
       "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
     it "handles /" $
       "4.2 / 2.3" --> divide [num 4.2, num 2.3]
