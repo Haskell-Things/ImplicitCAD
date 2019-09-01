@@ -120,12 +120,17 @@ defaultPolymorphicFunctions =
         prod = OFunc $ \x -> case x of
             (OList (y:ys)) -> foldl mult y ys
             (OList [])     -> ONum 1
-            _              -> OError ["Product takes a list"]
+            (ONum a)       -> OFunc $ \y -> case y of
+                (OList []) -> ONum a
+                (OList n)  -> mult (ONum a) (OList n)
+                (ONum b)   -> mult (ONum a) (ONum b)
+                _          -> OError ["prod takes two lists or nums"]
+            _              -> OError ["prod takes two lists or nums"]
 
         mult (ONum a)  (ONum b)  = ONum  (a*b)
         mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
         mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
-        mult a         b         = errorAsAppropriate "multiply" a b
+        mult a         b         = errorAsAppropriate "product" a b
 
         divide = OFunc $ \x -> case x of
             (ONum a) -> OFunc $ \y -> case y of
@@ -139,16 +144,16 @@ defaultPolymorphicFunctions =
         div' a         b        = errorAsAppropriate "divide" a b
 
         omod (ONum a) (ONum b) = ONum . fromInteger $ mod (floor a) (floor b)
-        omod a        b        = errorAsAppropriate "modulo" a b
-
-        append (OList   a) (OList   b) = OList   $ a++b
-        append (OString a) (OString b) = OString $ a++b
-        append a           b           = errorAsAppropriate "append" a b
+        omod a        b        = errorAsAppropriate "mod" a b
 
         concatenate = OFunc $ \x -> case x of
             (OList (y:ys)) -> foldl append y ys
             (OList [])     -> OList []
             _              -> OError ["concat takes a list"]
+
+        append (OList   a) (OList   b) = OList   $ a++b
+        append (OString a) (OString b) = OString $ a++b
+        append a           b           = errorAsAppropriate "concat" a b
 
         sumtotal = OFunc $ \x -> case x of
             (OList (y:ys)) -> foldl add y ys
