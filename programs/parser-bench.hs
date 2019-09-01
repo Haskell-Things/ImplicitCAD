@@ -66,6 +66,14 @@ intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
 intParList :: Int -> String
 intParList n = "(" ++ concat [show i ++ "," | i <- [1..n]] ++ "0)"
 
+intPosNegList :: Int -> String
+intPosNegList n = "[" ++ concat [posOrNeg i ++ show i ++ "," | i <- [1..n]] ++ "0]"
+  where
+    posOrNeg :: Int -> String
+    posOrNeg x = if x `mod` 2 == 1
+                 then "+"
+                 else "-"
+
 parExpr :: Int -> String
 parExpr n = concat ["(a+" ++ show i ++ "+" | i <- [0..n]] ++ "0)" ++ concat ["+" ++ show i ++ ")" | i <- [1..n]]
 
@@ -82,7 +90,6 @@ boolList n = "[" ++ concat [trueOrFalse i ++ "," | i <- [1..n]] ++ "false]"
     trueOrFalse x = if x `mod` 2 == 1
                     then "true"
                     else "false"
-
 
 undefinedList :: Int -> String
 undefinedList n = "[" ++ concat ["undef, " | _ <- [1..n]] ++ "undef]"
@@ -139,6 +146,7 @@ main =
       , run "parenthesized int list" parseExpr (intParList 100)
       , run "parenthesized expression" parseExpr (parExpr 2)
       , run "generated list" parseExpr (genList 50)
+      , run "list of positive or negative integers" parseExpr (intPosNegList 100)
       , run "string list" parseExpr (stringList 100)
       , run "bool list" parseExpr (boolList 100)
       , run "undefined list" parseExpr (undefinedList 100)
