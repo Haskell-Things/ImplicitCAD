@@ -7,10 +7,10 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.))
+import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.), (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Pattern(ListP, Wild),
+                                                  Pattern(ListP, Wild, Name),
                                                   OVal(OList, OError, OFunc, OUndefined),
                                                   Expr(LitE, ListE, LamE, Var, (:$)),
                                                   Symbol(Symbol),
@@ -20,8 +20,6 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(Error),
                                                   StateC
                                                  )
-
-import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 
@@ -40,41 +38,35 @@ import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
 type StateE = StateT ExprState IO
 
-addMesg :: Message -> StateE ()
-addMesg = modify . (\message (ExprState (a, b, messages, c)) -> ExprState (a, b, messages ++ [message], c))
-
+-- Add a message to our list of messages contained in the StatE monad.
 addMessage :: MessageType -> SourcePosition -> String -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
+  where
+    addMesg :: Message -> StateE ()
+    addMesg = modify . (\message (ExprState (a, b, messages, c)) -> ExprState (a, b, messages ++ [message], c))
 
+-- Log an error condition.
 errorE :: SourcePosition -> String -> StateE ()
 errorE = addMessage Error
 
---epos :: ExprState -> SourcePosition
---epos (ExprState (_, _, _, pos)) = pos
-
--- Let us use the old syntax when defining Names.
-pattern Name :: String -> Pattern
-pattern Name n = GIED.Name (Symbol n)
-
+-- | Return the names of all of the patterns in the given pattern.
 patVars :: Pattern -> [String]
-patVars (Name  name) = [name]
+patVars (Name (Symbol name)) = [name]
 patVars (ListP pats) = concatMap patVars pats
-patVars _ = []
+patVars Wild = []
 
+-- | Match patterns and ovals, returning a list of all of the OVals matched.
 patMatch :: Pattern -> OVal -> Maybe [OVal]
 patMatch (Name _) val = Just [val]
-patMatch (ListP pats) (OList vals) = do
-    matches <- zipWithM patMatch pats vals
-    return $ concat matches
+patMatch (ListP pats) (OList vals) = concat <$> zipWithM patMatch pats vals
 patMatch Wild _ = Just []
 patMatch _ _ = Nothing
 
+-- | Construct a VarLookup from the given Pattern and OVal, if possible.
 matchPat :: Pattern -> OVal -> Maybe VarLookup
-matchPat pat val = do
-    let vars = map Symbol $ patVars pat
-    vals <- patMatch pat val
-    return $ VarLookup $ fromList $ zip vars vals
+matchPat pat val = VarLookup . fromList . zip (map Symbol $ patVars pat) <$> patMatch pat val
 
+-- | The entry point from StateC. evaluates an expression, returning the result, and moving any error messages generated into the calling StateC.
 evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
     varlookup <- getVarLookup
@@ -84,8 +76,10 @@ evalExpr pos expr = do
     mapM_ moveMessage messages
     return $ valf []
 
+-- The expression evaluators.
 evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 
+-- Evaluate a variable lookup.
 evalExpr' (Var (Symbol name)) = do
   (ExprState (VarLookup varlookup, namestack, _, spos)) <- get
   case (lookup (Symbol name) varlookup, elemIndex name namestack) of
@@ -95,37 +89,16 @@ evalExpr' (Var (Symbol name)) = do
           errorE spos ("Variable " ++ name ++ " not in scope")
           return $ const OUndefined
 
-evalExpr' (LitE  val  ) = return $ const val
+-- Evaluate a literal value.
+evalExpr' (LitE  val) = return $ const val
 
+-- Evaluate a list of expressions.
 evalExpr' (ListE exprs) = do
     valFuncs <- mapM evalExpr' exprs
-    return $ \s -> OList $ map ($s) valFuncs
+    return $ \s -> OList $ ($s) <$> valFuncs
 
-evalExpr' (Var (Symbol "+") :$ [ListE argExprs]) =
-    evalExpr'' $ Var (Symbol "+") :$ [ListE argExprs]
-
-evalExpr' (Var (Symbol "+") :$ argExprs) =
-    evalExpr'' $ Var (Symbol "+") :$ [ListE argExprs]
-
-evalExpr' (Var (Symbol "*") :$ [ListE argExprs]) =
-    evalExpr'' $ Var (Symbol "*") :$ [ListE argExprs]
-
-evalExpr' (Var (Symbol "*") :$ argExprs) =
-    evalExpr'' $ Var (Symbol "*") :$ [ListE argExprs]
-
-evalExpr' (fexpr :$ argExprs) = evalExpr'' (fexpr :$ argExprs)
-
-evalExpr' (LamE pats fexpr) = do
-    fparts <- forM pats $ \pat -> do
-        modify (\(ExprState (a,b,c,d)) -> ExprState (a, patVars pat ++ b,c,d))
-        return $ \f xss -> OFunc $ \val -> case patMatch pat val of
-            Just xs -> f (xs ++ xss)
-            Nothing -> OError ["Pattern match failed"]
-    fval <- evalExpr' fexpr
-    return $ foldr ($) fval fparts
-
-evalExpr'' :: Expr -> StateE ([OVal] -> OVal)
-evalExpr'' (fexpr :$ argExprs) = do
+-- Evaluate application of a function.
+evalExpr' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
     argValFuncs <- mapM evalExpr' argExprs
     return $ \s -> app (fValFunc s) (map ($s) argValFuncs)
@@ -138,21 +111,13 @@ evalExpr'' (fexpr :$ argExprs) = do
                 (Just err, _     ) -> OError [err]
                 (_,      Just err) -> OError [err]
 
-evalExpr'' _ = do
-    return $ \_ -> OError ["Fallthrough in expression parser."]
+-- Evaluate a lambda function.
+evalExpr' (LamE pats fexpr) = do
+    fparts <- forM pats $ \pat -> do
+        modify (\(ExprState (a,b,c,d)) -> ExprState (a, patVars pat ++ b,c,d))
+        return $ \f xss -> OFunc $ \val -> case patMatch pat val of
+            Just xs -> f (xs ++ xss)
+            Nothing -> OError ["Pattern match failed"]
+    fval <- evalExpr' fexpr
+    return $ foldr ($) fval fparts
 
---------------
-
-{-
-simplifyExpr ((simplifyExpr -> Var f) :$ args) = (Var f :$) $
-    let
-        split b l = (filter b l, filter (not.b) l)
-        args' = map simplifyExpr args
-        (numArgs, nonNumArgs) = split (\x -> case x of LitE (ONum n) -> True; _ -> False) args'
-        numArgs' = map (\(LitE (ONum n)) -> n) numArgs
-    in case f of
-        "+" -> (LitE $ ONum $ sum  numArgs'):nonNumArgs
-        "*" -> (LitE $ ONum $ product numArgs'):nonNumArgs
-        _ -> args'
-simplifyExpr x = x
--}

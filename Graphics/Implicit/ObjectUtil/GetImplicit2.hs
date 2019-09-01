@@ -2,9 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- FIXME: required. why?
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -13,7 +10,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(Num, abs, (-), (/), sqrt, (*), (+), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (==), maximum, max, cos, sin, head, tail, (.))
+import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2))
 
@@ -28,9 +25,7 @@ getImplicit2 (RectR r (x1,y1) (x2,y2)) =
     \(x,y) -> let
          (dx, dy) = (x2-x1, y2-y1)
     in
-         if r == 0
-         then maximum [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
-         else rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -62,26 +57,20 @@ getImplicit2 (UnionR2 r symbObjs) =
     \p -> let
         objs = map getImplicit2 symbObjs
     in
-        if r == 0
-        then minimum $ map ($p) objs
-        else rminimum r $ map ($p) objs
+        rminimum r $ map ($p) objs
 getImplicit2 (DifferenceR2 r symbObjs) =
     let
         objs = map getImplicit2 symbObjs
         obj = head objs
-        complement :: forall a t. Num a => (t -> a) -> t -> a
+        complement :: Obj2 -> ℝ2 -> ℝ
         complement obj' p = - obj' p
     in
-        if r == 0
-        then \p -> maximum . map ($p) $ obj:map complement (tail objs)
-        else \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
+        \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
 getImplicit2 (IntersectR2 r symbObjs) =
     \p -> let
         objs = map getImplicit2 symbObjs
     in
-        if r == 0
-        then maximum $ map ($p) objs
-        else rmaximum r $ map ($p) objs
+        rmaximum r $ map ($p) objs
 -- Simple transforms
 getImplicit2 (Translate2 v symbObj) =
     \p -> let

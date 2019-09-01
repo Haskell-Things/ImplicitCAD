@@ -103,7 +103,7 @@ dist: $(TARGETS)
 
 # Generate examples.
 examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $(SCADOPTS) $$each $(RTSOPTS); } done
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { echo $$each ; ../$(EXTOPENSCAD) $(SCADOPTS) $$each $(RTSOPTS); } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; cd ..; $(GHC) Examples/$$filename.hs -o Examples/$$filename; cd Examples; echo $$filename; $$filename +RTS -t ; } done
 
 # Generate images from the examples, so we can upload the images to our website.

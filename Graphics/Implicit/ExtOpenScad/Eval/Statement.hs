@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), fmap, reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), Echo, For, If, NewFunction, NewModule, ModuleCall, Sequence, DoNothing),
@@ -21,7 +21,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(TextOut),
                                                   ScadOpts(ScadOpts),
                                                   StateC,
-                                                  CompState(CompState)
+                                                  CompState(CompState),
+                                                  varUnion
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
@@ -30,7 +31,7 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC, modifyVarLookup
 import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
-import Data.Map (union, fromList)
+import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe)
 
@@ -39,10 +40,6 @@ import Control.Monad (forM_, forM, mapM_, when)
 import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
-
--- helper, to use union on VarLookups.
-varUnion :: VarLookup -> VarLookup -> VarLookup
-varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 
 -- Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
@@ -53,7 +50,12 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
-        (_, Just match) -> modifyVarLookup $ varUnion match
+        (_, Just (VarLookup match)) ->
+          forM_ (toList match) $ \(Symbol varName, _) -> do
+            maybeVar <- lookupVar (Symbol varName)
+            when (isJust maybeVar)
+              (warnC sourcePos $ "redefining already defined variable: " ++ show varName)
+            modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
 -- | Interpret an echo statement.
@@ -106,8 +108,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             return (argName, val)
         let
             varlookup' = union (fromList newNameVals) varlookup
-            suiteVals = runSuiteCapture (VarLookup varlookup') suite
-        return suiteVals
+        return $ runSuiteCapture (VarLookup varlookup') suite
 
 -- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
@@ -116,7 +117,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               -- Find what arguments are satisfied by a named parameter.
-              valSupplied <- forM argsExpr $ \(argName, _) ->
+              valNamed <- forM argsExpr $ \(argName, _) ->
                 case argName of
                   Just (Symbol symbol) ->
                     case lookup (Symbol symbol) (fromMaybe [] args) of
@@ -131,71 +132,60 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                           (warnC sourcePos $ "Supplied parameter not listed in module declaration: " ++ symbol)
                         return (Nothing, False)
                   Nothing -> return (Nothing, False)
-              -- Find what arguments are satisfied by a default value.
-              valAvailable <- forM argsExpr $ \(argName, _) ->
-                case argName of
-                  Just symbol  ->
-                    case lookup symbol (fromMaybe [] args) of
-                      Just hasDefault -> return (Just symbol, hasDefault)
-                      Nothing         -> return (Nothing, False)
-                  Nothing -> return (Nothing, False)
-              -- Union the two sets:
+              -- Find what arguments are satisfied by a default value, or were given in a named parameter..
               valFound <- forM argsExpr $ \(argName, _) ->
                 case argName of
-                  Just symbol -> do
-                    let
-                      supplied = fromMaybe False $ lookup (Just symbol) valSupplied
-                      available = fromMaybe False $ lookup (Just symbol) valAvailable
-                    return (Just symbol, supplied || available)
+                  Just symbol  -> do
+                    let supplied = fromMaybe False $ lookup (Just symbol) valNamed
+                    case lookup symbol (fromMaybe [] args) of
+                      Just hasDefault -> return (Just symbol, hasDefault || supplied)
+                      Nothing         -> if supplied
+                                         then return (Just symbol, supplied)
+                                         else return (Nothing, False)
                   Nothing -> return (Nothing, False)
               -- Find what unnamed parameters were passed in.
               valUnnamed <- forM argsExpr $ \(argName, expr) ->
                 case argName of
                   Just _  -> return Nothing
                   Nothing -> return $ Just expr
-              -- ... and count them.
               let
-                isSatisfied :: (Maybe Symbol, Bool) -> Bool
-                isSatisfied = snd
-                valNamedCount = length $ filter isSatisfied valSupplied
-                valFoundCount = length $ filter isSatisfied valFound
+                -- ... and count them.
+                valNamedCount = length $ filter snd valNamed
+                valFoundCount = length $ filter snd valFound
                 valUnnamedCount = length $ filter isJust valUnnamed
                 noArgs = length (fromMaybe [] args)
                 parameterReport =  "Found " ++ show valNamedCount ++
                   (if valNamedCount == 1 then " named parameter, and " else " named parameters, and ")
                    ++ show valUnnamedCount ++
-                  (if valUnnamedCount == 1 then " un-amed parameter. Expected " else " un-named parameters. Expected ")
+                  (if valUnnamedCount == 1 then " un-named parameter. Expected " else " un-named parameters. Expected ")
                   ++ show noArgs ++
                   (if noArgs == 1 then " parameter." else " parameters.")
               -- Check that the number of arguments match, and if they don't, error a report.
               -- FIXME: take into account the ordering of unnamed value application.
               when (valFoundCount + valUnnamedCount < noArgs)
-                (errorC sourcePos $ "Insufficient parameters." ++ parameterReport)
-              when (valFoundCount + valUnnamedCount > noArgs && isJust args) $
-                (errorC sourcePos $ "Too many parameters." ++ parameterReport)
+                (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
+              when (valFoundCount + valUnnamedCount > noArgs && isJust args)
+                (errorC sourcePos $ "Too many parameters. " ++ parameterReport)
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- fmap reverse $ runSuiteCapture varlookup suite
+              childVals <- runSuiteCapture varlookup suite
               let
-                argparser  = mod' childVals
-                argsMapped = argMap argsVal argparser
-              ioNewVals <- fromMaybe (return []) (fst argsMapped)
+                argsMapped = argMap argsVal $ mod' childVals
               forM_ (snd argsMapped) $ errorC sourcePos
-              return ioNewVals
+              fromMaybe (return []) (fst argsMapped)
             Just (OModule _ _ mod') -> do
               -- Evaluate all of the arguments.
               argsVal <- forM argsExpr $ \(posName, expr) -> do
                 val <- evalExpr sourcePos expr
                 return (posName, val)
               -- Run the function.
-              childVals <- fmap reverse $ runSuiteCapture varlookup suite
+              childVals <- runSuiteCapture varlookup suite
               let
-                argparser  = mod' childVals
-                argsMapped = argMap argsVal argparser
-                ioNewVals  = fromMaybe (return []) (fst argsMapped)
+                argsMapped = argMap argsVal $ mod' childVals
+                ioNewVals = fromMaybe (return []) (fst argsMapped)
               forM_ (snd argsMapped) $ errorC sourcePos
               liftIO ioNewVals
             Just (OVargsModule modname mod') -> do
@@ -257,4 +247,4 @@ runSuiteCapture varlookup suite = do
     let
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
     mapM_ moveMessage messages
-    return res
+    return $ reverse res

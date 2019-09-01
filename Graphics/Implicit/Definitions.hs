@@ -97,7 +97,7 @@ type ℝ = Double
 type ℝ2 = (ℝ,ℝ)
 type ℝ3 = (ℝ,ℝ,ℝ)
 
--- | A give up point for dividing ℝs
+-- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
 minℝ :: ℝ
 -- for Doubles.
 minℝ = 0.0000000000000002

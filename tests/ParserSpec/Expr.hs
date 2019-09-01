@@ -191,36 +191,17 @@ exprSpec = do
       "-\"foo\"" --> negate [stringLiteral "foo"]
     it "handles unary + with string literal" $
       "+\"foo\"" --> stringLiteral "foo"
-    it "handles 2 term +" $ do
-        "1 + 2" --> plus [num 1, num 2]
-    it "handles > 2 term +" $ do
-      originalParserAdditionAstStyle $
-        "1 + 2 + 3" --> plus [num 1, num 2, num 3]
-      experimentalParserAstStyle $
-        "1 + 2 + 3" --> plus [plus [num 1, num 2], num 3]
+    it "handles +" $ do
+      "1 + 2" --> plus [num 1, num 2]
+      "1 + 2 + 3" --> plus [plus [num 1, num 2], num 3]
     it "handles -" $ do
       "1 - 2" --> minus [num 1, num 2]
       "1 - 2 - 3" --> minus [minus [num 1, num 2], num 3]
     it "handles +/- in combination" $ do
-      originalParserAdditionAstStyle $
-        "1 + 2 - 3" --> plus [num 1, minus [num 2, num 3]]
-      experimentalParserAstStyle $
-        "1 + 2 - 3" --> minus [plus [num 1, num 2], num 3]
-      originalParserAdditionAstStyle $
-        "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
-      experimentalParserAstStyle $
-        "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
-      originalParserAdditionAstStyle $
-        "1 + 2 - 3 + 4" --> plus [num 1, minus [num 2, num 3], num 4]
-      experimentalParserAstStyle $
-        "1 + 2 - 3 + 4" --> plus [minus [plus [num 1, num 2], num 3], num 4]
-      originalParserAdditionAstStyle $
-        "1 + 2 - 3 + 4 - 5 - 6" --> plus [num 1,
-                                           minus [num 2, num 3],
-                                           minus [minus [num 4, num 5],
-                                                     num 6]]
-      experimentalParserAstStyle $
-        "1 + 2 - 3 + 4 - 5 - 6" --> minus [minus [plus [minus [plus [num 1, num 2], num 3], num 4], num 5], num 6]
+      "1 + 2 - 3" --> minus [plus [num 1, num 2], num 3]
+      "2 - 3 + 4" --> plus [minus [num 2, num 3], num 4]
+      "1 + 2 - 3 + 4" --> plus [minus [ plus [num 1, num 2], num 3], num 4]
+      "1 + 2 - 3 + 4 - 5 - 6" --> minus [minus [plus [minus [plus [num 1, num 2], num 3], num 4], num 5], num 6]
     it "handles exponentiation" $
       "x ^ y" --> power [Var "x", Var "y"]
     it "handles multiple exponentiations" $ do
@@ -229,21 +210,15 @@ exprSpec = do
       experimentalParserAstStyle $
         "x ^ y ^ z" -->  power [power [Var "x", Var "y"], Var "z"]
     it "handles *" $ do
-        "3 * 4" --> mult [num 3, num 4]
+      "3 * 4" --> mult [num 3, num 4]
     it "handles > 2 term *" $ do
-      originalParserAdditionAstStyle $
-        "3 * 4 * 5" --> mult [num 3, num 4, num 5]
-      experimentalParserAstStyle $
-        "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
+      "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
     it "handles /" $
       "4.2 / 2.3" --> divide [num 4.2, num 2.3]
     it "handles precedence" $
       "1 + 2 / 3 * 5" --> plus [num 1, mult [divide [num 2, num 3], num 5]]
-    it "handles append" $ do
-      originalParserAdditionAstStyle $
-        "foo ++ bar ++ baz" --> append [Var "foo", Var "bar", Var "baz"]
-      experimentalParserAstStyle $
-        "foo ++ bar ++ baz" --> append [append [Var "foo", Var "bar"], Var "baz"]
+    it "handles append" $
+      "foo ++ bar ++ baz" --> append [append [Var "foo", Var "bar"], Var "baz"]
   describe "logical operators" logicalSpec
   describe "let expressions" letBindingSpec
   describe "function/module application" $ do

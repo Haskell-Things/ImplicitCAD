@@ -140,5 +140,6 @@ matchCAT = P.reservedOp lexer "++" >> return "++"
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a
 surroundedBy leftTok middle rightTok = between (matchTok leftTok) (matchTok rightTok) middle
 
+-- | match an identifier. variable name, function name, module name, etc.
 matchIdentifier :: GenParser Char st String
 matchIdentifier = P.identifier lexer

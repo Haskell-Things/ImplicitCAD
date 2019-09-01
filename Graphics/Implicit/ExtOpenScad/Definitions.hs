@@ -18,7 +18,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   MessageType(..),
                                                   ScadOpts(ScadOpts),
                                                   lookupVarIn,
-                                                  collector) where
+                                                  varUnion
+                                                  ) where
 
 import Prelude (Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
@@ -29,7 +30,7 @@ import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 
 import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
 
-import Data.Map (Map, lookup)
+import Data.Map (Map, lookup, union)
 
 import Data.Maybe (fromMaybe)
 
@@ -100,14 +101,14 @@ newtype VarLookup = VarLookup (Map Symbol OVal)
 data Pattern = Name Symbol
              | ListP [Pattern]
              | Wild
-             | Symbol :@ Pattern
     deriving (Show, Eq)
 
+-- | An expression.
 data Expr = Var Symbol
-          | LitE OVal
-          | ListE [Expr]
-          | LamE [Pattern] Expr
-          | Expr :$ [Expr]
+          | LitE OVal -- A literal value.
+          | ListE [Expr] -- A list of expressions.
+          | LamE [Pattern] Expr -- A lambda expression.
+          | Expr :$ [Expr] -- application of a function.
     deriving (Show, Eq)
 
 -- | A statement, along with the line, column number, and file it is found at.
@@ -202,18 +203,9 @@ data ScadOpts = ScadOpts
   Bool -- Imports allowed.
   Bool -- Use the alternative parser.
 
-instance Show ScadOpts where
-  show (ScadOpts compat imports altParser) =
-    "ScadOpts openScadCompatibility: " ++ show compat
-                       ++ " Imports: " ++ show imports
-                     ++ " AltParser: " ++ show altParser
-
--- | Apply a symbolic operator to a list of expressions, returning one big expression.
---   Accepts a string for the operator, to simplify callers.
-collector :: String -> [Expr] -> Expr
-collector _ [x] = x
-collector s  l  = Var (Symbol s) :$ [ListE l]
-{-# INLINABLE collector #-}
+-- helper, to use union on VarLookups.
+varUnion :: VarLookup -> VarLookup -> VarLookup
+varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 
 -- | For programs using this API to perform variable lookups, after execution of an escad has completed.
 lookupVarIn :: String -> VarLookup -> Maybe OVal

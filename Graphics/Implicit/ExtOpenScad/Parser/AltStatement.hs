@@ -14,7 +14,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(L
 
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, matchIdentifier, surroundedBy, matchSemi, matchEach)
 
-import Graphics.Implicit.ExtOpenScad.Parser.AltExpr (expr0)
+import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 

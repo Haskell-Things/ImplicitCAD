@@ -2,9 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: why is all of this needed?
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, TypeSynonymInstances, UndecidableInstances #-}
-
 -- This file symbolicaly renders contours and contour fillings.
 -- If it can't, it passes the puck to a marching-squares-like
 -- algorithm...

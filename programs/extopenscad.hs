@@ -40,7 +40,7 @@ import Data.AffineSpace ((.-.))
 -- For defining the <> operator.
 import Data.Monoid (Monoid, mappend)
 
-import Control.Applicative ((<$>), (<*>))
+import Control.Applicative ((<$>), (<*>), many)
 
 -- NOTE: make sure we don't import (<>) in new versions.
 import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption, switch)
@@ -69,6 +69,7 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , openScadEcho :: Bool
     , rawEcho :: Bool
     , noImport :: Bool
+    , rawDefines :: [String]
     , inputFile :: FilePath
     }
 
@@ -107,7 +108,6 @@ guessOutputFormat fileName =
         (_,ext) = splitExtension fileName
 
 -- | The parser for our command line arguments.
--- FIXME: -q for quiet.
 extOpenScadOpts :: Parser ExtOpenScadOpts
 extOpenScadOpts = ExtOpenScadOpts
     <$> optional (
@@ -169,6 +169,12 @@ extOpenScadOpts = ExtOpenScadOpts
         (  long "fno-import"
            <> help "Do not honor \"use\" and \"include\" statements, and instead generate a warning"
         )
+    <*> many (
+      strOption
+        (  short 'D'
+           <> help "define variable KEY equal to variable VALUE when running extended OpenSCAD code"
+        )
+      )
     <*> argument str
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
@@ -225,7 +231,7 @@ export3 posFmt res output obj =
         Just OBJ  -> writeOBJ res output obj
         Just PNG  -> writePNG3 res output obj
         Nothing   -> writeBinSTL res output obj
-        Just fmt  -> putStrLn $ "Unrecognized 3D format: "<>show fmt
+        Just fmt  -> putStrLn $ "Unrecognized 3D format: " <> show fmt
 
 -- | Output a file containing a 2D object.
 export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
@@ -237,7 +243,7 @@ export2 posFmt res output obj =
         Just PNG   -> writePNG2 res output obj
         Just GCode -> writeGCodeHacklabLaser res output obj
         Nothing    -> writeSVG res output obj
-        Just fmt   -> putStrLn $ "Unrecognized 2D format: "<>show fmt
+        Just fmt   -> putStrLn $ "Unrecognized 2D format: " <> show fmt
 
 -- | Determine where to direct the text output of running the extopenscad program.
 messageOutputHandle :: ExtOpenScadOpts -> IO Handle
@@ -260,10 +266,10 @@ objectMessage dimensions infile outfile res box =
 -- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
 -- FIXME: allow processArgs to generate messages.
 processArgs :: ExtOpenScadOpts -> ExtOpenScadOpts
-processArgs (ExtOpenScadOpts o f r e q compat alt echo rawecho noimport file) =
-  ExtOpenScadOpts o f r e q compat alt echo_flag rawecho noimport file
+processArgs (ExtOpenScadOpts o f r e q compat alt echo rawecho noimport defines file) =
+  ExtOpenScadOpts o f r e q compat alt echo_flag rawecho noimport defines file
   where
-    echo_flag    = (compat || echo) && not rawecho
+    echo_flag = (compat || echo) && not rawecho
 
 -- | decide what options to send the scad engine based on the post-processed arguments passed to extopenscad.
 generateScadOpts :: ExtOpenScadOpts -> ScadOpts
@@ -288,7 +294,7 @@ run rawargs = do
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
         scadOpts = generateScadOpts args
-        openscadProgram = runOpenscad scadOpts content
+        openscadProgram = runOpenscad scadOpts (rawDefines args) content
 
     if quiet args
       then return ()

@@ -9,7 +9,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
+import Prelude(String, Either(Left, Right), IO, ($), fmap, return, (++))
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -22,7 +22,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (sourcePosition)
 
 import Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI)
 
-import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
+import Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants)
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
@@ -35,10 +35,9 @@ import Control.Monad.State.Lazy (runStateT)
 import System.Directory (getCurrentDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: ScadOpts -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-runOpenscad scadOpts source =
+runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+runOpenscad scadOpts constants source =
     let
-        initial =  defaultObjects
         rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
         rearrange (_, CompState (varlookup, ovals, _, messages, _)) = (varlookup, obj2s, obj3s, messages) where
                                   (obj2s, obj3s, _) = divideObjs ovals
@@ -46,11 +45,13 @@ runOpenscad scadOpts source =
         parseProgram = if (alternateParser scadOpts) then Alt.parseProgram else Orig.parseProgram
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
         mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
-    in case parseProgram "" source of
-        Left e -> return (initial, [], [], [mesg e])
+    in do
+      (initialObjects, initialMessages) <- addConstants constants
+      case parseProgram "" source of
+        Left e -> return (initialObjects, [], [], [mesg e] ++ initialMessages)
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
-                runStateT sts' $ CompState (initial, [], path, [], scadOpts)
+                runStateT sts' $ CompState (initialObjects, [], path, initialMessages, scadOpts)
             )
             $ mapM_ runStatementI sts

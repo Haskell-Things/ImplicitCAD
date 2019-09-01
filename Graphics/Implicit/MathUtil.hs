@@ -6,7 +6,7 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip)
+import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -50,10 +50,11 @@ rmax ::
     -> ℝ  -- ^ first number to round maximum
     -> ℝ  -- ^ second number to round maximum
     -> ℝ  -- ^ resulting number
-rmax r x y =  if abs (x-y) < r
-    then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
-    else max x y
-
+rmax r x y
+  | r == 0    = max x y
+  | otherwise = if abs (x-y) < r
+                then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
+                else max x y
 
 -- | Rounded minimum
 rmin ::
@@ -73,9 +74,14 @@ rmaximum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round maximum
     -> ℝ   -- ^ resulting number
+rmaximum _ [] = 0
 rmaximum _ [a] = a
-rmaximum r [a,b] = rmax r a b
-rmaximum r l =
+rmaximum r [a,b]
+  | r == 0    = max a b
+  | otherwise = rmax r a b
+rmaximum r l
+  | r == 0    = maximum l
+  | otherwise =
     let
         tops = sortBy (flip compare) l
     in
@@ -86,13 +92,18 @@ rminimum ::
     ℝ      -- ^ radius
     -> [ℝ] -- ^ numbers to take round minimum
     -> ℝ   -- ^ resulting number
+rminimum _ [] = 0
 rminimum _ [a] = a
-rminimum r [a,b] = rmin r a b
-rminimum r l =
+rminimum r [a,b]
+  | r > 0     = rmin r a b
+  | otherwise = min a b
+rminimum r l
+  | r > 0 =
     let
         tops = sort l
     in
         rmin r (head tops) (tops !! 1)
+  | otherwise = minimum l
 
 -- | Pack the given objects in a box the given size.
 pack ::
