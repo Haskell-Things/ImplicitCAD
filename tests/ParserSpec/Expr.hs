@@ -1,4 +1,4 @@
- -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
@@ -6,7 +6,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 
 module ParserSpec.Expr (exprSpec) where
-
 
 -- Be explicit about what we import.
 import Prelude (Bool(True, False), String, ($))
@@ -34,36 +33,8 @@ pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
--- to choose which expression parser to test, change enableAlternateParser to True or False
-enableAlternateParser :: Bool
-enableAlternateParser = False
-
-ternaryIssue :: Expectation -> Expectation
-ternaryIssue _ = pendingWith "parser doesn't handle ternary operator correctly"
-
-listIssue :: Expectation -> Expectation
-listIssue _ = pendingWith "the list construct does not exist in OpenSCAD and provides no syntactic or semantic advantage, and may make the parser more complex."
-
 undefinedIssue :: Expectation -> Expectation
 undefinedIssue _ = pendingWith "this errors, but the expecting is equal to the recieved. huh?"
-
-originalParserAdditionAstStyle :: Expectation -> Expectation
-originalParserAdditionAstStyle a =
-    if enableAlternateParser
-    then pendingWith "original parser generates + expression trees differently than - expression trees. The experimental parser treats them the same."
-    else a
-
-experimentalParserAstStyle :: Expectation -> Expectation
-experimentalParserAstStyle a =
-    if enableAlternateParser
-    then a
-    else pendingWith "The test was written for the experimental parser's AST generation."
-
-experimentalFeature :: Expectation -> Expectation
-experimentalFeature a =
-    if enableAlternateParser
-    then a
-    else pendingWith "This tests a feature of the experimental parser that does not work in the original parser."
 
 logicalSpec :: Spec
 logicalSpec = do
@@ -80,13 +51,11 @@ logicalSpec = do
     specify "with parenthesized comparison" $
       "(1 > 0) ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position" $
-      ternaryIssue $ "1 > 0 ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
+      "1 > 0 ? 5 : -5" --> ternary [gt [num 1, num 0], num 5, num (-5)]
     specify "with comparison in head position, and addition in tail" $
-      originalParserAdditionAstStyle $ ternaryIssue $
       "1 > 0 ? 5 : 1 + 2" -->
-        ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
+              ternary [gt [num 1, num 0], num 5, plus [num 1, num 2]]
     specify "nested in true and false expressions" $
-     experimentalFeature $
       "c0 ? c1 ? t1 : f1 : c2 ? t2 : f2" -->
       ternary [Var "c0", ternary [Var "c1",Var "t1",Var "f1"], ternary [Var "c2",Var "t2",Var "f2"]]
 
@@ -151,7 +120,6 @@ exprSpec = do
     it "handles nested vectors" $
       "[ 1, [2, 7], [3, 4, 5, 6] ]" --> ListE [num 1, ListE [num 2, num 7], ListE [num 3, num 4, num 5, num 6]]
     it "handles lists" $
-      listIssue $
       "( 1, 2, 3 )" --> ListE [num 1, num 2, num 3]
     it "handles generators" $
       "[ a : b ]" -->
@@ -204,14 +172,11 @@ exprSpec = do
       "1 + 2 - 3 + 4 - 5 - 6" --> minus [minus [plus [minus [plus [num 1, num 2], num 3], num 4], num 5], num 6]
     it "handles exponentiation" $
       "x ^ y" --> power [Var "x", Var "y"]
-    it "handles multiple exponentiations" $ do
-      originalParserAdditionAstStyle $
-        "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
-      experimentalParserAstStyle $
-        "x ^ y ^ z" -->  power [power [Var "x", Var "y"], Var "z"]
-    it "handles *" $ do
+    it "handles multiple exponentiations" $
+      "x ^ y ^ z" --> power [Var "x", power [Var "y", Var "z"]]
+    it "handles *" $
       "3 * 4" --> mult [num 3, num 4]
-    it "handles > 2 term *" $ do
+    it "handles > 2 term *" $
       "3 * 4 * 5" --> mult [mult [num 3, num 4], num 5]
     it "handles /" $
       "4.2 / 2.3" --> divide [num 4.2, num 2.3]

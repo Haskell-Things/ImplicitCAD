@@ -2,15 +2,12 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use a shorter form of Name and Var.
-{-# LANGUAGE PatternSynonyms #-}
-
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
 import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.), (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Pattern(ListP, Wild, Name),
+                                                  Pattern(Name, ListP, Wild),
                                                   OVal(OList, OError, OFunc, OUndefined),
                                                   Expr(LitE, ListE, LamE, Var, (:$)),
                                                   Symbol(Symbol),

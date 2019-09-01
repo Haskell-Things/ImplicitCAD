@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, id, filter, not, null, (||), (&&), (.))
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -301,7 +301,7 @@ run rawargs = do
       else putStrLn "Processing File."
 
     s@(_, obj2s, obj3s, messages) <- openscadProgram
-    let res = maybe (getRes s) id (resolution args)
+    let res = fromMaybe (getRes s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
         posDefExt = case format of
                       Just f  -> Prelude.lookup f (map swap formatExtensions)
