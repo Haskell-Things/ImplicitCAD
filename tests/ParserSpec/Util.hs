@@ -50,7 +50,7 @@ import Test.Hspec (Expectation, shouldBe)
 
 import Data.Either (Either(Right))
 
--- the expression parser entry point.
+-- The expression parser entry point.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- An operator for expressions for "the left side should parse to the right side."
