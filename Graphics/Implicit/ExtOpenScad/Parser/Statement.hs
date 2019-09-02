@@ -19,7 +19,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Util (tryMany, (*<|>), patternMatcher, sourcePosition)
+import Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), patternMatcher, sourcePosition)
 
 -- the top level of the expression parser.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
@@ -28,7 +28,8 @@ import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma, matchSemi, surroundedBy, matchIdentifier)
 
 -- We use parsec to parse.
-import Text.Parsec (SourceName, (<?>), sepBy, oneOf, getPosition, parse, eof, ParseError, many, noneOf, option, between, char)
+import Text.Parsec (SourceName, (<?>), sepBy, oneOf, getPosition, parse, eof, ParseError, many, noneOf, option, between, char, optionMaybe)
+
 import Text.Parsec.String (GenParser)
 
 import Control.Applicative ((<*), (<|>))
@@ -53,25 +54,29 @@ parseProgram = parse program where
 computation :: CompIdx -> GenParser Char st StatementI
 computation A1 =
   computation A2
-  *<|>
+  <|>
   throwAway
 
 computation A2 =
-    -- suite statements: no semicolon...
-        tryMany [
-            ifStatementI,
-            forStatementI,
-            userModuleDeclaration
-            ]
-    *<|> do -- Non suite statements. Semicolon needed...
-        tryMany [
-            echo,
-            include, -- also handles use
-            function,
-            assignment
-            ] <* matchSemi
-    *<|> -- Modules. no semicolon...
-        userModule
+  -- suite statements: no semicolon...
+  userModule
+  <|>
+  ifStatementI
+  <|>
+  forStatementI
+  <|>
+  userModuleDeclaration
+  <|> -- Non suite statements. Semicolon needed...
+  ( echo
+    <|>
+    include
+    <|>
+    function
+  ) <* matchSemi
+  *<|>
+  (
+    assignment
+  ) <* matchSemi
 
 -- | A suite of s!
 --   What's a suite? Consider:
@@ -117,9 +122,7 @@ assignment :: GenParser Char st StatementI
 assignment = statementI p <?> "assignment"
   where
     p :: GenParser Char st (Statement StatementI)
-    p = (:=)
-      <$> patternMatcher <* matchTok '='
-      <*> expr0
+    p = (:=) <$> patternMatcher <* matchTok '=' <*> expr0
 
 -- | A function declaration (parser)
 function :: GenParser Char st StatementI
@@ -199,12 +202,9 @@ moduleArgsUnitDecl =
     surroundedBy '('
       (sepBy (
         do
-            symb <- matchIdentifier
-            expr <- matchTok '=' *> expr0
-            return (Symbol symb, Just expr)
-        *<|> do
-            symb <- matchIdentifier
-            return (Symbol symb, Nothing)
+          symb <- matchIdentifier
+          expr <- optionMaybe (matchTok '=' *> expr0)
+          return (Symbol symb, expr)
       ) matchComma)
       ')'
 
