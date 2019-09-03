@@ -10,9 +10,9 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
-import Prelude (String, Char, ($), foldl1, map, (.), return, (>>), Bool(True, False), read, (**), (*), (==), (++), (<$>))
+import Prelude (String, Char, ($), foldl1, map, (.), return, (>>), Bool(True, False), read, (**), (*), (==), (++), (<$>), (<$))
 
-import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, optional, choice, option, oneOf)
+import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, optional, choice, option, oneOf, between)
 
 import Text.Parsec.String (GenParser)
 
@@ -29,6 +29,8 @@ import Graphics.Implicit.Definitions (toFastℕ)
 -- The lexer.
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok, matchUndef, matchTrue, matchFalse, whiteSpace, surroundedBy, matchComma)
 
+import Data.Functor (($>))
+
 import Data.Kind (Type)
 
 infixr 1 *<|>
@@ -44,11 +46,9 @@ tryMany = foldl1 (<|>) . map try
 
 -- | A pattern parser
 patternMatcher :: GenParser Char st Pattern
-patternMatcher =
-    (do
-        _ <- char '_'
-        return Wild
-    ) <|> ( Name . Symbol <$> matchIdentifier)
+patternMatcher = "pattern" ?:
+          (Wild <$ char '_')
+      <|> ( Name . Symbol <$> matchIdentifier)
       <|> ( ListP <$> surroundedBy '[' (patternMatcher `sepBy` matchComma) ']' )
 
 -- expression parsers
@@ -60,26 +60,20 @@ number = ("number" ?:) $ do
        [
          do
            a <- many1 digit
-           b <- option "" (
-             do
-               c <- char '.' >> many1 digit
-               return ('.':c)
-             )
+           b <- option "" ( ('.':) <$> (char '.' >> many1 digit) )
            return (a ++ b)
         ,
         do
-          i <- char '.' >> many1 digit
-          return ("0." ++ i)
+          ("0."++) <$> (char '.' >> many1 digit)
         ]
   d <- option "0"
        (
          oneOf "eE" >> choice
-         [do
-             f <- char '-' >> many1 digit
-             return ('-':f)
-          ,
-            optional (char '+') >> many1 digit
-          ]
+         [
+           ('-':) <$> (char '-' >> many1 digit)
+         ,
+           optional (char '+') >> many1 digit
+         ]
        )
   _ <- whiteSpace
   return . LitE $ ONum $ if d == "0"
@@ -89,34 +83,33 @@ number = ("number" ?:) $ do
 -- | Parse a variable reference.
 --   NOTE: abused by the parser for function calls.
 variable :: GenParser Char st Expr
-variable = ("variable" ?:) $
+variable = "variable" ?:
   Var . Symbol <$> matchIdentifier
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
-boolean = ("boolean" ?:) $ do
-  b  <-      (matchTrue  >> return True )
-        *<|> (matchFalse >> return False)
-  return . LitE $ OBool b
+boolean = "boolean" ?:
+  LitE . OBool <$> (matchTrue $> True <|> matchFalse $> False)
 
 -- | Parse a quoted string.
 --   FIXME: no \u unicode support?
 scadString :: GenParser Char st Expr
-scadString = ("string" ?:) $ do
-  _ <- char '"'
-  strlit <-  many $ (string "\\\"" >> return '\"')
-               *<|> (string "\\n" >> return '\n')
-               *<|> (string "\\r" >> return '\r')
-               *<|> (string "\\t" >> return '\t')
-               *<|> (string "\\\\" >> return '\\')
-               *<|>  noneOf "\"\n"
-  _ <- matchTok '"'
-  return . LitE $ OString strlit
+scadString = "string" ?: LitE . OString <$>
+    between
+      (char '"')
+      (matchTok '"')
+      (many $
+        (string "\\\"" $> '\"') *<|>
+        (string "\\n"  $> '\n') *<|>
+        (string "\\r"  $> '\r') *<|>
+        (string "\\t"  $> '\t') *<|>
+        (string "\\\\" $> '\\') *<|>
+        noneOf "\"\n"
+      )
 
 scadUndefined :: GenParser Char st Expr
-scadUndefined = ("undefined" ?:) $ do
-  _ <- matchUndef
-  return . LitE $ OUndefined
+scadUndefined = "undefined" ?:
+  LitE OUndefined <$ matchUndef
 
 sourcePosition :: SourcePos -> SourcePosition
 sourcePosition pos = SourcePosition (toFastℕ $ P.sourceLine pos) (toFastℕ $ P.sourceColumn pos) (P.sourceName pos)
