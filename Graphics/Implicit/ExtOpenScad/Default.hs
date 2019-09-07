@@ -10,14 +10,16 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, fst, snd)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal(OList, ONum, OString, OUndefined, OError, OModule, OFunc), Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
-import Data.Map (fromList)
-import Data.List (genericIndex, genericLength)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
+import Data.Map (Map, fromList, insert)
+import Data.List (genericIndex, genericLength, intercalate, concatMap)
+import Control.Monad.State (forM_)
 
 defaultObjects :: VarLookup
 defaultObjects = VarLookup $ fromList $
@@ -26,6 +28,7 @@ defaultObjects = VarLookup $ fromList $
     ++ defaultFunctions2
     ++ defaultFunctionsSpecial
     ++ defaultModules
+    ++ varArgModules
     ++ defaultPolymorphicFunctions
 
 -- Missing standard ones:
@@ -82,6 +85,63 @@ defaultModules =
   map makeModule primitives
   where
     makeModule a = (fst a, OModule (fst a) Nothing (snd a))
+
+varArgModules :: [(Symbol, OVal)]
+varArgModules =
+    [
+        modVal "echo" echo
+       ,modVal "for" for
+       ,modVal "color" executeSuite
+    ] where
+        modVal name func = ((Symbol name), OVargsModule name func)
+
+        -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
+        executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        executeSuite name pos _ suite runSuite = do
+            addMessage Warning pos $ "Module " ++ name ++ " not implemented"
+            runSuite suite
+
+        echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        echo _ pos args suite runSuite = do
+            scadOpts <- scadOptions
+            let
+                text :: [(Maybe Symbol, OVal)] -> String
+                text a = intercalate ", " $ map show' a
+                show' :: (Maybe Symbol, OVal) -> String
+                show' (Nothing, arg) = show arg
+                show' (Just (Symbol var), arg) = var ++ " = " ++ show arg
+                showe' (Nothing, OString arg) = arg
+                showe' (Just (Symbol var), arg) = var ++ " = " ++ showe' (Nothing, arg)
+                showe' a = show' a
+                compat (ScadOpts compat_flag _) = compat_flag
+                openScadFormat = "ECHO: " ++ text args
+                extopenscadFormat = concatMap showe' args
+                formattedMessage = if (compat scadOpts) then openScadFormat else extopenscadFormat
+            addMessage TextOut pos $ formattedMessage
+            runSuite suite
+
+        for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        for _ _ args suite runSuite =
+            forM_ (iterator args) $ \iter -> do
+                modifyVarLookup iter
+                runSuite suite
+
+        -- convert the loop iterator variable's expression value to a list (possibly of one value)
+        valsList :: OVal -> [OVal]
+        valsList v@(OBool _) = [v]
+        valsList v@(ONum _) = [v]
+        valsList v@(OString _) = [v]
+        valsList (OList vs) = vs
+        valsList _ = []
+
+        -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
+        iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
+        iterator [] = [id]
+        iterator ((Nothing, _):iterators) = [outer | outer <- iterator iterators]
+        iterator ((Just var, vals):iterators) = [outer . (varify inner) | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
+
+        varify :: (Map Symbol OVal -> Map Symbol OVal) -> VarLookup -> VarLookup
+        varify f (VarLookup v) = VarLookup $ f v
 
 -- more complicated ones:
 

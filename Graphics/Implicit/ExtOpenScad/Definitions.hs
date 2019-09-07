@@ -7,8 +7,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Pattern(Wild, Name, ListP),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
-                                                  Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OObj2, OObj3),
+                                                  Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OVargsModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
@@ -117,8 +117,6 @@ data StatementI = StatementI SourcePosition (Statement StatementI)
 
 data Statement st = Include String Bool
                | Pattern :=  Expr
-               | Echo [Expr]
-               | For Pattern Expr [st]
                | If Expr [st] [st]
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
                | ModuleCall Symbol [(Maybe Symbol, Expr)] [st]
@@ -135,6 +133,7 @@ data OVal = OUndefined
          | OFunc (OVal -> OVal)
          | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
          | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
+         | OVargsModule String (String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -162,6 +161,7 @@ instance Show OVal where
         showArg (Symbol a, hasDefault) = if hasDefault
                                          then a ++ "=..."
                                          else a
+    show (OVargsModule name _) = "varargs module " ++ name
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
     show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"

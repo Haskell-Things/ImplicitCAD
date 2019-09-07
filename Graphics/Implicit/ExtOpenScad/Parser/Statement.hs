@@ -15,7 +15,7 @@ import Prelude(Char, Either, String, return, ($), (*>), Bool(False, True), (<$>)
 
 import Data.Maybe(Maybe(Just, Nothing))
 
-import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, Echo, If, For, ModuleCall,(:=)),Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
+import Graphics.Implicit.ExtOpenScad.Definitions (Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)), Expr(LamE), StatementI(StatementI), Symbol(Symbol), SourcePosition)
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Pattern(Name))
 
@@ -25,7 +25,7 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), patternMatcher, source
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchTok, matchComma, matchSemi, surroundedBy, matchIdentifier)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchFunction, matchInclude, matchUse, matchIf, matchElse, matchModule, matchTok, matchComma, matchSemi, surroundedBy, matchIdentifier)
 
 -- We use parsec to parse.
 import Text.Parsec (SourceName, (<?>), sepBy, oneOf, getPosition, parse, eof, ParseError, many, noneOf, option, between, char, optionMaybe)
@@ -63,13 +63,9 @@ computation A2 =
   <|>
   ifStatementI
   <|>
-  forStatementI
-  <|>
   userModuleDeclaration
   <|> -- Non suite statements. Semicolon needed...
-  ( echo
-    <|>
-    include
+  ( include
     <|>
     function
   ) <* matchSemi
@@ -135,29 +131,12 @@ function = statementI p <?> "function"
     rval :: GenParser Char st Expr
     rval = LamE <$> surroundedBy '(' (sepBy patternMatcher matchComma) ')' <*> (matchTok '=' *> expr0)
 
--- | An echo (parser)
-echo :: GenParser Char st StatementI
-echo = statementI p <?> "echo"
-  where
-    p :: GenParser Char st (Statement StatementI)
-    p = Echo <$> (matchEcho *> surroundedBy '(' (sepBy expr0 matchComma) ')')
-
 -- | An if statement (parser)
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = statementI p <?> "if"
   where
     p :: GenParser Char st (Statement StatementI)
     p = If <$> (matchIf *> surroundedBy '(' expr0 ')') <*> suite <*> option [] (matchElse *> suite)
-
--- | a for loop is of the form:
---      for ( vsymb = vexpr   ) loops
--- eg.  for ( a     = [1,2,3] ) {echo(a);   echo "lol";}
--- eg.  for ( [a,b] = [[1,2]] ) {echo(a+b); echo "lol";}
-forStatementI :: GenParser Char st StatementI
-forStatementI = statementI p <?> "for"
-  where
-    p :: GenParser Char st (Statement StatementI)
-    p = For <$> (matchFor *> matchTok '(' *> patternMatcher) <*> (matchTok '=' *> expr0) <*> (matchTok ')' *> suite)
 
 -- | parse a call to a module.
 userModule :: GenParser Char st StatementI

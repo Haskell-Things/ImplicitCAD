@@ -48,7 +48,7 @@ errorE = addMessage Error
 
 -- | Return the names of all of the patterns in the given pattern.
 patVars :: Pattern -> [String]
-patVars (Name  (Symbol name)) = [name]
+patVars (Name (Symbol name)) = [name]
 patVars (ListP pats) = concatMap patVars pats
 patVars Wild = []
 

@@ -7,18 +7,17 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, concatMap, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, lookup, (+), (<), (||), (>), (&&), (==))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Statement(Include, (:=), Echo, For, If, NewModule, ModuleCall, DoNothing),
+                                                  Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
                                                   Pattern(Name),
                                                   Expr(LitE),
-                                                  OVal(OString, OBool, OList, OModule, OUModule),
+                                                  OVal(OBool, OModule, OUModule, OVargsModule),
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
                                                   Message(Message),
-                                                  MessageType(TextOut),
                                                   ScadOpts(ScadOpts),
                                                   StateC,
                                                   CompState(CompState),
@@ -37,7 +36,7 @@ import Data.Maybe (isJust, fromMaybe)
 
 import Control.Monad (forM_, forM, mapM_, when)
 
-import Control.Monad.State (get, liftIO, mapM, runStateT, (>>))
+import Control.Monad.State (get, liftIO, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
 
@@ -58,28 +57,7 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
             modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
--- | Interpret an echo statement.
-runStatementI (StatementI sourcePos (Echo exprs)) = do
-    let
-        show2 (OString s) = s
-        show2 x = show x
-    vals <- mapM (evalExpr sourcePos) exprs
-    case getErrors (OList vals) of
-        Nothing  -> addMessage TextOut sourcePos $ concatMap show2 vals
-        Just err -> errorC sourcePos err
-
-runStatementI (StatementI sourcePos (For pat expr loopContent)) = do
-    val <- evalExpr sourcePos expr
-    case (getErrors val, val) of
-        (Just err, _)      -> errorC sourcePos err
-        (_, OList vals) -> forM_ vals $ \v ->
-            case matchPat pat v of
-                Just match -> do
-                    modifyVarLookup $ varUnion match
-                    runSuite loopContent
-                Nothing -> return ()
-        _ -> return ()
-
+-- | Interpret an if conditional statement.
 runStatementI (StatementI sourcePos (If expr a b)) = do
     val <- evalExpr sourcePos expr
     case (getErrors val, val) of
@@ -188,6 +166,14 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 ioNewVals = fromMaybe (return []) (fst argsMapped)
               forM_ (snd argsMapped) $ errorC sourcePos
               liftIO ioNewVals
+            Just (OVargsModule modname mod') -> do
+              -- Evaluate all of the arguments.
+              argsVal <- forM argsExpr $ \(posName, expr) -> do
+                val <- evalExpr sourcePos expr
+                return (posName, val)
+              -- Run the function
+              _ <- mod' modname sourcePos argsVal suite runSuite -- no values are returned
+              return []
             Just foo -> do
                     case getErrors foo of
                         Just err -> errorC sourcePos err

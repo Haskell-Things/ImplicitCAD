@@ -3,7 +3,7 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchEcho, matchIf, matchElse, matchFor, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchIf, matchElse, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEach) where
 
 import Prelude (String, Char, Bool(True), (>>), return)
 
@@ -31,7 +31,7 @@ openScadStyle
     , nestedComments = True
     , identStart =  noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=1234567890"
     , identLetter = noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?="
-    , reservedNames = ["module", "function", "if", "else", "let", "for", "each", "true", "false", "undef", "include", "use"]
+    , reservedNames = ["module", "function", "if", "else", "let", "each", "true", "false", "undef", "include", "use"]
     , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||"]
     , caseSensitive = True
     }
@@ -63,10 +63,6 @@ matchInclude = P.reserved lexer "include"
 matchUse :: GenParser Char st ()
 matchUse = P.reserved lexer "use"
 
--- | Match the echo keyword.
-matchEcho :: GenParser Char st ()
-matchEcho = P.reserved lexer "echo"
-
 -- | Match the if keyword.
 matchIf :: GenParser Char st ()
 matchIf = P.reserved lexer "if"
@@ -74,10 +70,6 @@ matchIf = P.reserved lexer "if"
 -- | Match the else keyword.
 matchElse :: GenParser Char st ()
 matchElse = P.reserved lexer "else"
-
--- | Match the for keyword.
-matchFor :: GenParser Char st ()
-matchFor = P.reserved lexer "for"
 
 -- | Match the module keyword.
 matchModule :: GenParser Char st ()

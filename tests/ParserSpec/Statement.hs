@@ -14,7 +14,7 @@ import Test.Hspec (Spec, Expectation, shouldBe, it, describe)
 
 import ParserSpec.Util (bool, num, minus, plus, mult, index)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol(Symbol), Expr(ListE, LamE, (:$)), Statement(NewModule, ModuleCall, If, For, (:=)), Pattern(ListP), SourcePosition(SourcePosition))
+import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Symbol(Symbol), Expr(ListE, LamE, (:$)), Statement(NewModule, ModuleCall, If, (:=)), Pattern(ListP), SourcePosition(SourcePosition))
 
 import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), Pattern(Name))
 
@@ -80,12 +80,6 @@ ifSpec = do
     "if ( true ) { a ( ) ; } else {b();}" -->
     single ( If (bool True) [call "a" 15 [] []] [call "b" 31 [] []])
 
--- | Test a for loop.
-forSpec :: Spec
-forSpec =
-  it "parses" $
-    "for (i = [ 1 : 10 ] ) { } " --> single (For (Name "i") (Var "list_gen" :$ [ListE [num 1, num 1, num 10]]) [])
-
 -- | Our entry point. Test all of the statements.
 statementSpec :: Spec
 statementSpec = do
@@ -93,7 +87,6 @@ statementSpec = do
     it "returns an empty list" $ "" --> []
   describe "assignment" assignmentSpec
   describe "if" ifSpec
-  describe "for" forSpec
   describe "line comment" $
     it "parses as empty" $ "// foish bar \n " --> []
   describe "multiline comment" $
