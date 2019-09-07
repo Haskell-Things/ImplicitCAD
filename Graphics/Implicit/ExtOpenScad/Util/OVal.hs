@@ -133,7 +133,6 @@ oTypeStr (OVargsModule _ _ ) = "VargsModule"
 oTypeStr (OError         _ ) = "Error"
 oTypeStr (OObj2          _ ) = "2D Object"
 oTypeStr (OObj3          _ ) = "3D Object"
-oTypeStr (OVargsModule _ _ ) = "VargsModule"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
