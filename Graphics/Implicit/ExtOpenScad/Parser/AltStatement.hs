@@ -12,7 +12,7 @@ import Prelude(Char, String, Either, ($), (++), return, (<$>), (>>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (StatementI(StatementI), Expr(LamE), Statement(Sequence, ModuleCall, NewModule, NewFunction, If, DoNothing, (:=)), Symbol(Symbol), Pattern(Name))
 
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchFor, matchTok, matchIdentifier, surroundedBy, matchSemi, matchEach)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchModule, matchFunction, matchIf, matchElse, matchTok, matchIdentifier, surroundedBy, matchSemi, matchEach)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
@@ -94,9 +94,6 @@ moduleInstantiationOrAssignment = do
         ident <- matchIdentifier
         moduleInstantiationTail ident <|> assignment (Symbol ident)
     <|> do
-        _ <- matchFor
-        moduleInstantiationTail "for"
-    <|> do
         _ <- matchEach
         moduleInstantiationTail "each"
     <|> do
@@ -146,9 +143,6 @@ maybeFlaggedModuleInstantiation = do
     <|> do
         moduleName <- matchIdentifier
         moduleInstantiationTail moduleName
-    <|> do
-        _ <- matchFor
-        moduleInstantiationTail "for"
     <|> do
         _ <- matchEach
         moduleInstantiationTail "each"

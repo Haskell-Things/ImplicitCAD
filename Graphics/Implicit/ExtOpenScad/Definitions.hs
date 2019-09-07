@@ -7,8 +7,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Pattern(Wild, Name, ListP),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
-                                                  Statement(DoNothing, NewFunction, NewModule, Sequence, Include, Echo, If, For, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OError, OVargsModule, OObj2, OObj3),
+                                                  Statement(DoNothing, NewFunction, NewModule, Sequence, Include, If, ModuleCall, (:=)),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OVargsModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
@@ -117,8 +117,6 @@ data StatementI = StatementI SourcePosition (Statement StatementI)
 
 data Statement st = Include String Bool
                | Pattern :=  Expr
-               | Echo [Expr]
-               | For Pattern Expr [st]
                | If Expr [st] [st]
                | NewFunction Symbol [(Symbol, Maybe Expr)] Expr
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
