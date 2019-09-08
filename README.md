@@ -285,7 +285,7 @@ Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.0.1, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.0.3/doc/html/Graphics-Implicit.html) (for some reason the latest version doesn't seem to have built).
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.2.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.2.0/doc/html/Graphics-Implicit.html). 
 
 In Implicit CAD, we consider objects as functions of `outwardness'. The boundary is 0, negative is the interior and positive the exterior. The magnitude is how far out or in. A description of the mathematical ideas underpinning ImplicitCAD are in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post. You can also look at the [0.0.3 relase notes](http://christopherolah.wordpress.com/2012/02/06/implicitcad-0-0-3-release/).
 
@@ -294,11 +294,11 @@ Status
 
 ImplicitCAD is very much a work in progress.
 
-What works (July 31, 2015 -- regressions are possible if not probable):
+What works (August 9th, 2019 -- regressions are possible if not probable):
 
  - CSG, bevelled CSG, shells.
- - 2D output (svg).
- - 3D output (stl).
+ - 2D output (svg, png, dxf).
+ - 3D output (stl, png, obj).
  - gcode generation for 2D to hacklab laser cutter. Not configurable.
 
 What still needs to be done:
@@ -310,5 +310,4 @@ And a wishlist of things further in the future:
 
  - More optimisation.
  - Less bugs.
- - openGL viewer?
- - openCL acceleration?
+ - Multi-material support.
