@@ -6,7 +6,6 @@
 -- Utilities
 module ParserSpec.Util
        ( (-->)
-       , (-->+)
        , num
        , bool
        , stringLiteral
@@ -58,12 +57,6 @@ infixr 1 -->
 (-->) :: String -> Expr -> Expectation
 (-->) source expr =
   parse (expr0 <* eof) "<expr>" source `shouldBe` Right expr
-
--- An operator for expressions for "the left side should parse to the right side, and some should be left over".
-infixr 1 -->+
-(-->+) :: String -> (Expr, String) -> Expectation
-(-->+) source (result, leftover) =
-  parseWithLeftOver expr0 source `shouldBe` Right (result, leftover)
 
 -- | Types
 
