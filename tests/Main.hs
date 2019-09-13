@@ -8,15 +8,20 @@ import Prelude (($), IO)
 -- our testing engine.
 import Test.Hspec(hspec, describe)
 
--- the test forstatements.
+-- the parser test for statements.
 import ParserSpec.Statement(statementSpec)
 
--- the test for expressions.
+-- the parser test for expressions.
 import ParserSpec.Expr(exprSpec)
+
+-- the execution test for expressions.
+import ExecSpec.Expr(exprExec)
 
 main :: IO ()
 main = hspec $ do
-  -- run tests against the expression engine.
-  describe "expressions" exprSpec
-  -- and now, against the statement engine.
-  describe "statements" statementSpec
+  -- run tests against the expression parsing engine.
+  describe "expression parsing" exprSpec
+  -- and now, against the statement parsing engine.
+  describe "statements parsing" statementSpec
+  -- run tests against the expression execution engine.
+  describe "expression execution" exprExec
