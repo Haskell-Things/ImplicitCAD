@@ -184,12 +184,13 @@ defaultPolymorphicFunctions =
                 (OList []) -> ONum a
                 (OList n)  -> mult (ONum a) (OList n)
                 (ONum b)   -> mult (ONum a) (ONum b)
-                _          -> OError ["prod takes two lists or nums"]
-            _              -> OError ["prod takes two lists or nums"]
+                _          -> OError ["prod takes only lists or nums"]
+            _              -> OError ["prod takes only lists or nums"]
 
         mult (ONum a)  (ONum b)  = ONum  (a*b)
         mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
         mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
+        mult (OList a) (OList b) = OList $ zipWith mult a b
         mult a         b         = errorAsAppropriate "product" a b
 
         divide = OFunc $ \x -> case x of
@@ -218,9 +219,16 @@ defaultPolymorphicFunctions =
         sumtotal = OFunc $ \x -> case x of
             (OList (y:ys)) -> foldl add y ys
             (OList [])     -> ONum 0
-            _              -> OError ["Sum takes a list"]
+            (ONum a)       -> OFunc $ \y -> case y of
+                (OList []) -> ONum a
+                (OList n)  -> add (ONum a) (OList n)
+                (ONum b)   -> add (ONum a) (ONum b)
+                _          -> OError ["sum takes two lists or nums"]
+            _              -> OError ["sum takes two lists or nums"]
 
         add (ONum a) (ONum b) = ONum (a+b)
+        add (ONum a)  (OList b) = OList (map (add (ONum a)) b)
+        add (OList a) (ONum b)  = OList (map (add (ONum b)) a)
         add (OList a) (OList b) = OList $ zipWith add a b
         add a b = errorAsAppropriate "add" a b
 
