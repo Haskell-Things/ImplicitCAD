@@ -18,7 +18,7 @@ PARSERBENCH=dist/build/parser-bench/parser-bench
 # The location of the created test binary, for running haskell test cases.
 TESTSUITE=dist/build/test-implicit/test-implicit
 # The location of it's source.
-TESTFILES=$(shell find tests/ParserSpec -name '*.hs')
+TESTFILES=$(shell find tests/ -name '*.hs')
 # The location of the documentation generator. for documenting (some of) the extopenscad language.
 DOCGEN=dist/build/docgen/docgen
 
