@@ -6,13 +6,13 @@ module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
 import Prelude(return, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (++), head, (*), abs, (>), (&&), (+), concatMap)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), (⋅), Triangle(Triangle))
+import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
-import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.VectorSpace (normalized, (^-^), (^+^), magnitude, (^/), (^*))
+import Data.VectorSpace ((^-^), (^+^), magnitude, (^/), (^*))
 
 import Data.List (genericLength)
 
@@ -50,14 +50,16 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
    #__#
 -}
 
--- NOTE: colah thought this was broken.
+-- FIXME: this function is definately broken, resulting in floating squares. see https://github.com/colah/ImplicitCAD/issues/98
 
+{-
 tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
     let
         b1 = normalized $ a ^-^ b
         b2 = normalized $ c ^-^ b
         b3 = b1 `cross3` b2
     in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
+-}
 
 {-
    #__#      #__#
