@@ -24,7 +24,7 @@
 -- Export one set containing all of the primitive object's patern matches.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fmap, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn, otherwise)
+import Prelude(String, IO, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn, otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -39,11 +39,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
 
-import Data.Maybe (isNothing)
-
 import Control.Monad (mplus)
-
-import Data.VectorSpace (VectorSpace, Scalar, (*^))
 
 import Data.AffineSpace (distanceSq)
 
@@ -226,6 +222,7 @@ circle = moduleWithoutSuite "circle" $ do
         else Prim.polygonR 0
             [(r*cos θ, r*sin θ) | θ <- [2*pi*fromℕtoℝ n/fromℕtoℝ sides | n <- [0 .. sides - 1]]]
 
+-- | FIXME: 3D Polygons?
 -- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
@@ -321,6 +318,7 @@ deg2rad x = x / 180 * pi
 
 -- This is mostly insane
 -- | FIXME: rotating a module that is not found returns no geometry, instead of an error.
+-- + FIXME: rotate(y=90) would be nice.
 rotate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 rotate = moduleWithSuite "rotate" $ \children -> do
     a <- argument "a"
@@ -356,6 +354,7 @@ scale = moduleWithSuite "scale" $ \children -> do
         Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
         Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
+-- | FIXME: allow the user to pass in the box around this object, to avoid the approximation in getBox3.
 extrude :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 extrude = moduleWithSuite "linear_extrude" $ \children -> do
     example "linear_extrude(10) square(5);"
@@ -363,39 +362,48 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
         `doc` "height to extrude to..."
     center :: Bool <- argument "center" `defaultTo` False
         `doc` "center? (the z component)"
-    twist  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "twist"  `defaultTo` Nothing
+    twistArg  :: Either ℝ (ℝ  -> ℝ) <- argument "twist"  `defaultTo` Left 0
         `doc` "twist as we extrude, either a total amount to twist or a function..."
-    scaleArg  :: Maybe (Either ℝ (ℝ  -> ℝ)) <- argument "scale"  `defaultTo` Nothing
+    scaleArg  :: Either ℝ (ℝ  -> ℝ) <- argument "scale"  `defaultTo` Left 1
         `doc` "scale according to this funciton as we extrude..."
-    translateArg :: Maybe (Either ℝ2 (ℝ -> ℝ2)) <- argument "translate"  `defaultTo` Nothing
+    translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate"  `defaultTo` (Left (0,0))
         `doc` "translate according to this funciton as we extrude..."
     r      :: ℝ   <- argument "r"      `defaultTo` 0
-        `doc` "round the top?"
+        `doc` "round the top/bottom."
     let
         heightn = case height of
                 Left  h -> h
                 Right f -> f 0 0
 
         height' = case height of
+            Left a  -> Left a
             Right f -> Right $ uncurry f
-            Left a -> Left a
         shiftAsNeeded :: SymbolicObj3 -> SymbolicObj3
         shiftAsNeeded =
             if center
             then Prim.translate (0,0,-heightn/2.0)
             else id
-        funcify :: (VectorSpace a, s ~ (Scalar a), s ~ ℝ) => Either a (ℝ -> a) -> ℝ -> a
-        funcify (Left val) h = (h/heightn) *^ val
-        funcify (Right f ) h = f h
-        twist' = fmap funcify twist
-        scale' = fmap funcify scaleArg
-        translate' = fmap funcify translateArg
+        isTwistID = case twistArg of
+                      Left constant -> if constant == 0
+                                       then True
+                                       else False
+                      Right _       -> False
+        isScaleID = case scaleArg of
+                      Left constant -> if constant == 1
+                                       then True
+                                       else False
+                      Right _       -> False
+        isTransID = case translateArg of
+                      Left constant -> if constant == (0,0)
+                                       then True
+                                       else False
+                      Right _       -> False
     return $ return $ obj2UpMap (
         \obj -> case height of
-            Left constHeight | isNothing twist && isNothing scaleArg && isNothing translateArg ->
+            Left constHeight | isTwistID && isScaleID && isTransID ->
                 shiftAsNeeded $ Prim.extrudeR r obj constHeight
             _ ->
-                shiftAsNeeded $ Prim.extrudeRM r twist' scale' translate' obj height'
+                shiftAsNeeded $ Prim.extrudeRM r twistArg scaleArg translateArg obj height'
         ) children
 
 rotateExtrude :: (Symbol, [OVal] -> ArgParser (IO [OVal]))

@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, const, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, (>), (&&), (<))
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, (>), (&&), (<), (==), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
@@ -126,23 +126,49 @@ getImplicit3 (ExtrudeR r symbObj h) =
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
     let
         obj = getImplicit2 symbObj
-        twist' = fromMaybe (const 0) twist
-        scale' = fromMaybe (const 1) scale
-        translate' = fromMaybe (const (0,0)) translate
         height' (x,y) = case height of
             Left n -> n
             Right f -> f (x,y)
-        scaleVec :: ℝ -> ℝ2 -> ℝ2
-        scaleVec  s (x,y) = (x/s, y/s)
+        -- FIXME: twist functions should have access to height, if height is allowed to vary.
+        twistVal :: Either ℝ (ℝ -> ℝ) -> ℝ -> ℝ -> ℝ
+        twistVal twist' z h =
+          case twist' of
+                   Left twval  -> if twval == 0
+                                  then 0
+                                  else twval * (z / h)
+                   Right twfun -> twfun z
+        translatePos :: Either ℝ2 (ℝ -> ℝ2) -> ℝ -> ℝ2 -> ℝ2
+        translatePos trans z (x, y) = (x - xTrans, y - yTrans)
+          where
+            (xTrans, yTrans) = case trans of
+                                 Left  tval -> tval
+                                 Right tfun -> tfun z
+        scaleVec :: Either ℝ (ℝ -> ℝ) -> ℝ -> ℝ2 -> ℝ2
+        scaleVec scale' s (x,y) =
+          case scale' of
+            Left sval  -> if sval == 1
+                          then (x,y)
+                          else (x/sval    , y/sval)
+            Right sfun ->      (x/(sfun s), y/(sfun s))
         rotateVec :: ℝ -> ℝ2 -> ℝ2
-        rotateVec θ (x,y) = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
+        rotateVec θ (x,y)
+          | θ == 0    = (x,y)
+          | otherwise = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
         k :: ℝ
         k = pi/180
     in
-        \(x,y,z) -> let h = height' (x,y) in
-            rmax r
-                (obj . rotateVec (-k*twist' z) . scaleVec (scale' z) . (\a -> a - translate' z) $ (x,y))
+        \(x,y,z) ->
+          let
+            h = height' (x,y)
+            res = rmax r
+                (obj
+                 . rotateVec (-k*(twistVal twist z h))
+                 . scaleVec scale z
+                 . translatePos translate z
+                 $ (x,y))
                 (abs (z - h/2) - h/2)
+          in
+            res
 getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
     let
         obj1 = getImplicit2 symbObj1
@@ -202,6 +228,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                     (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
                     (obj rz_pos)
                 else obj rz_pos
+
 -- FIXME: implement this, or implement a fallthrough function.
 --getImplicit3 (ExtrudeRotateR) =
 getImplicit3 ExtrudeRotateR{} = error "ExtrudeRotateR unimplimented!"

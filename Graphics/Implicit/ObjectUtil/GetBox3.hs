@@ -5,13 +5,11 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
 
-import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2)
-
-import Data.Maybe(Maybe(Nothing, Just), fromMaybe)
+import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import Data.VectorSpace ((^-^), (^+^))
 
@@ -111,39 +109,58 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         ((bx1,by1),(bx2,by2)) = getBox2 symbObj2
     in
         ((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
--- FIXME: magic numbers.
-getBox3 (ExtrudeRM _ twist scale translate symbObj eitherh) =
+-- FIXME: magic numbers: 0.2 and 11.
+-- FIXME: this may use an approximation for height, based on sampling the function.
+-- FIXME: generate a warning if the approximation part of this function is used.
+-- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
+getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
     let
-        samples :: Fastℕ
-        samples=11
-        hfuzz :: ℝ
-        hfuzz = 0.2
-        range :: [Fastℕ]
-        range = [0, 1 .. (samples-1)]
         ((x1,y1),(x2,y2)) = getBox2 symbObj
         (dx,dy) = (x2 - x1, y2 - y1)
-        (xrange, yrange) = ( map ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, map ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range )
-        h = case eitherh of
-              Left h' -> h'
-              Right hf -> hmax + hfuzz*(hmax-hmin)
+
+        samples :: Fastℕ
+        samples = 11
+        range :: [Fastℕ]
+        range = [0, 1 .. (samples-1)]
+        (xrange, yrange) = ( map ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, map ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range)
+
+        -- FIXME: shouldn't this fuzz value be the same as the resolution?
+        hfuzz :: ℝ
+--        hfuzz = 0.2
+        hfuzz = 0.0
+        h = case height of
+              Left hval -> hval
+              Right hfun -> hmax + hfuzz*(hmax-hmin)
                 where
-                    hs = [hf (x,y) | x <- xrange, y <- yrange]
+                    hs = [hfun (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
         hrange = map ((/ fromFastℕtoℝ (samples-1)) . (h*) . fromFastℕtoℝ) range
-        sval = case scale of
-            Nothing -> 1
-            Just scale' -> maximum $ map (abs . scale') hrange
-        (twistXmin, twistYmin, twistXmax, twistYmax) = case twist of
-            Nothing -> (smin x1, smin y1, smax x2, smax y2)
-                where
-                    smin y = min y (sval * y)
-                    smax y = max y (sval * y)
-            Just _  -> (-d, -d, d, d)
-                where d = sval * getDist2 (0,0) symbObj
-        translate' = fromMaybe (const (0,0)) translate
-        (tvalsx, tvalsy) = unzip $ map (translate' . (h*)) hrange
-        (tminx, tminy) = (minimum tvalsx, minimum tvalsy)
-        (tmaxx, tmaxy) = (maximum tvalsx, maximum tvalsy)
+
+        (twistXmin, twistYmin, twistXmax, twistYmax) =
+          let
+            scale' = case scale of
+                       Left  sval -> sval
+                       Right sfun -> maximum $ map (abs . sfun) hrange
+            smin v = min v (scale' * v)
+            smax v = max v (scale' * v)
+            -- FIXME: assumes minimums are negative, and maximums are positive.
+            scaleVal d = scale' * d
+            scaleEach ((d1, d2),(d3, d4)) = (scaleVal d1, scaleVal d2, scaleVal d3, scaleVal d4) 
+          in case twist of
+            Left twval -> if twval == 0
+                          then (smin x1, smin y1, smax x2, smax y2)
+                          else scaleEach $ getBox2R symbObj twval
+            Right _  -> scaleEach $ getBox2R symbObj 360 -- we can't range functions yet, so assume a full circle.
+
+        (tminx, tmaxx, tminy, tmaxy) =
+          let
+            tvalsx :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
+            tvalsx tfun = fst $ unzip $ map tfun hrange
+            tvalsy :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
+            tvalsy tfun = snd $ unzip $ map tfun hrange
+          in case translate of
+            Left  (tvalx, tvaly) -> (tvalx, tvalx, tvaly, tvaly)
+            Right tfun -> (minimum $ tvalsx tfun, maximum $ tvalsx tfun, minimum $ tvalsy tfun, maximum $ tvalsy tfun)
     in
         ((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 -- Note: Assumes x2 is always greater than x1.
@@ -155,12 +172,17 @@ getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
 -- FIXME: magic numbers.
+-- FIXME: this is an approximation, based on sampling the function.
+-- FIXME: generate a warning if the approximation part of this function is used.
+-- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
         samples :: Fastℕ
         samples = 11
+        -- FIXME: shouldn't this fuzz value be the same as the resolution?
         xfuzz :: ℝ
         xfuzz = 1.1
+        -- FIXME: shouldn't this fuzz value be the same as the resolution?
         yfuzz :: ℝ
         yfuzz=0.1
         range :: [Fastℕ]

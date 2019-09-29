@@ -7,7 +7,9 @@ module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 import Prelude(concatMap, (++), ($))
 
 import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
+
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+
 import Data.VectorSpace ((^*), (*^), (^+^))
 
 -- Disable square merging temporarily, while we hunt down mesh problems.
@@ -143,7 +145,6 @@ squareToTri (Sq (b1,b2,b3) z (x1,x2) (y1,y2)) =
         d = zV ^+^ x2V ^+^ y2V
     in
         [Triangle (a,b,c), Triangle (c,b,d)]
-
 squareToTri (Tris t) = unmesh t
   where
     unmesh (TriangleMesh a) = a

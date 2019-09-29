@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Maybe(Just, Nothing), Either(Left), fromIntegral, (++))
+import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Either(Left, Right), fromIntegral, (++))
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
@@ -36,7 +36,7 @@ obj2d_1 =
 
 -- | An extruded version of obj2d_1, should be identical to the website's example, and example5.escad.
 object1 :: SymbolicObj3
-object1 = extrudeRM 0 (Just twist) Nothing Nothing obj2d_1 (Left 40)
+object1 = extrudeRM 0 (Right twist) (Left 1) (Left (0,0)) obj2d_1 (Left 40)
     where
       twist :: ℝ -> ℝ
       twist h = 35*cos(h*2*pi/60)

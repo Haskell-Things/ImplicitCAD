@@ -247,9 +247,9 @@ extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeRotateR = ExtrudeRotateR
 
 extrudeRM :: ℝ
-    -> Maybe (ℝ -> ℝ)
-    -> Maybe (ℝ -> ℝ)
-    -> Maybe (ℝ -> ℝ2)
+    -> Either ℝ (ℝ -> ℝ)
+    -> Either ℝ (ℝ -> ℝ)
+    -> Either ℝ2 (ℝ -> ℝ2)
     -> SymbolicObj2
     -> Either ℝ (ℝ2 -> ℝ)
     -> SymbolicObj3

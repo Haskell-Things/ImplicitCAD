@@ -2,15 +2,17 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getDist2) where
+module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head)
+import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), fst, snd, (++), pi, atan2, (>=), (==), (>), (&&))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2))
 
 import Data.VectorSpace (magnitude, (^-^), (^+^))
+
+import Data.Fixed (mod')
 
 -- | Is a Box2 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
@@ -98,6 +100,85 @@ getBox2 (Outset2 d symbObj) =
     outsetBox d $ getBox2 symbObj
 -- Misc
 getBox2 (EmbedBoxedObj2 (_,box)) = box
+
+-- Define a Box2 around the given object, and the space it occupies while rotating.
+getBox2R :: SymbolicObj2 -> ℝ -> Box2
+-- FIXME: more implementations.
+--getBox2R (RectR _ a b) deg = (a,b)
+getBox2R (Circle r) _ = ((-r, -r),(r,r))
+getBox2R (PolygonR r points) deg =
+  let
+    pointRBoxes = [ pointRBox point deg | point <- points ]
+    pointValsMin = map fst pointRBoxes
+    pointValsMax = map snd pointRBoxes
+    (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
+  in
+    ((r + (minimum pointValsX), r + (minimum pointValsY)),(r + (maximum pointValsX), r + (maximum pointValsY)))
+-- Fallthrough: use getDist2 to overestimate.
+getBox2R symbObj _ = ((-d, -d), (d, d))
+  where
+    d = getDist2 (0,0) symbObj
+
+-- | put a box around a point, and all of the locations it's been during an x degree arc around (0,0).
+pointRBox :: ℝ2 -> ℝ -> Box2
+pointRBox (x,y) arc =
+  let
+    k :: ℝ
+    k = pi/180
+    -- our target, radian-style.
+    distance = sqrt $ x*x + y*y
+    θstart = atan2 y x
+    rot = arc * k
+    θstop = θstart + rot
+    (xStop, yStop) = (distance*cos(θstop), distance*sin(θstop))
+    (minX, minY, maxX, maxY) = (min x xStop, min y yStop, max x xStop, max y yStop)
+    absrad :: ℝ -> ℝ
+    absrad rad =
+      if rad >= 0
+      then rad `mod'` (360*k)
+      else -((abs rad) `mod'` (360*k)) + (360*k)
+    crossOne rad = ((min minX crossX, min minY crossY), (max maxX crossX, max maxY crossY))
+      where
+        (crossX, crossY) = case absrad rad of
+                             radians | radians <  (90*k) -> (distance,0)
+                                     | radians < (180*k) -> (0, -distance)
+                                     | radians < (270*k) -> (-distance,0)
+                             _                           -> (0, distance)
+    crossTwo rad = ((min minX crossMinX, min minY crossMinY), (max maxX crossMaxX, max maxY crossMaxY))
+      where
+        (crossMinX, crossMinY, crossMaxX, crossMaxY) = case absrad rad of
+                                                         radians | radians <  (90*k) -> (0, -distance,  distance, 0)
+                                                                 | radians < (180*k) -> (-distance, -distance, 0, 0)
+                                                                 | radians < (270*k) -> (-distance, 0,  0, distance)
+                                                         _                           -> (0, 0,  distance,  distance)
+    crossThree rad = ((min minX crossMinX, min minY crossMinY), (max maxX crossMaxX, max maxY crossMaxY))
+      where
+        (crossMinX, crossMinY, crossMaxX, crossMaxY) = case absrad rad of
+                                                         radians | radians <  (90*k) -> (-distance, -distance,  distance, 0)
+                                                                 | radians < (180*k) -> (-distance, -distance, 0,  distance)
+                                                                 | radians < (270*k) -> (-distance, 0,  distance,  distance)
+                                                         _                           -> (0, -distance,  distance,  distance)
+  in
+    -- FIXME: more cases. cover negative rotation.
+    case arc of
+      degrees | degrees <  90 && arc > 0 ->
+                  if θstop `mod'` 90*k == θstop
+                  then ((minX, minY), (maxX, maxY))
+                  else crossOne θstart
+              | degrees < 180 && arc > 0 ->
+                  if θstop `mod'` 180*k == θstop `mod'` 90*k
+                  then crossOne θstart
+                  else crossTwo θstart
+              | degrees < 270 && arc > 0 ->
+                  if θstop `mod'` 270*k == θstop `mod'` 180*k
+                  then crossTwo θstart
+                  else crossThree θstart
+              | degrees < 360 && arc > 0 ->
+                  if θstop `mod'` 360*k == θstop `mod'` 270*k
+                  then crossThree θstart
+                  else ((-distance, -distance), (distance, distance))
+      _                                  ->
+                  ((-distance, -distance), (distance, distance))
 
 -- Get the maximum distance (read upper bound) an object is from a point.
 -- Sort of a circular

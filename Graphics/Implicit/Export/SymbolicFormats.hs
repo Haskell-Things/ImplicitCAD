@@ -8,7 +8,7 @@
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Prelude(Maybe(Just, Nothing), Either(Left), ($), (.), (*), map, ($!), (-), (/), pi, error, (+), (==), take, floor)
+import Prelude(Either(Left, Right), ($), (.), (*), map, ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const)
 
 import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>), mconcat, fromLazyText, bf)
@@ -89,11 +89,16 @@ buildS3 (ExtrudeR r obj h) | r == 0 = callNaked "linear_extrude" ["height = " <>
 
 buildS3 (ExtrudeRotateR r twist obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
-buildS3 (ExtrudeRM r (Just twist) Nothing Nothing obj (Left height)) | r == 0 = do
+-- FIXME: handle scale, center.
+buildS3 (ExtrudeRM r twist (Left scale) (Left translate) obj (Left height)) | r == 0 && scale == 1 && translate == (0,0) = do
   res <- ask
+  let
+    twist' = case twist of
+               Left twval  -> const twval
+               Right twfun -> twfun
   call "union" [] [
-             call "rotate" ["0","0", bf $ twist h] [
-                        callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist (h+res) - twist h)][
+             call "rotate" ["0","0", bf $ twist' h] [
+                        callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist' (h+res) - twist' h)][
                                    buildS2 obj
                                   ]
                        ] |  h <- take (floor (res / height)) $ fix (\f x -> x : f (x+res)) 0
