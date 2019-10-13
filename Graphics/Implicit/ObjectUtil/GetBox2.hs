@@ -4,15 +4,17 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), fst, snd, (++), pi, atan2, (>=), (==), (>), (&&))
+import Prelude(Bool, Fractional, Eq, Show, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), (++), pi, atan2, (==), (>), (++), show, String, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2))
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
 
 import Data.VectorSpace (magnitude, (^-^), (^+^))
 
 import Data.Fixed (mod')
+
+import Debug.Trace (trace)
 
 -- | Is a Box2 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
@@ -109,8 +111,7 @@ getBox2R (Circle r) _ = ((-r, -r),(r,r))
 getBox2R (PolygonR r points) deg =
   let
     pointRBoxes = [ pointRBox point deg | point <- points ]
-    pointValsMin = map fst pointRBoxes
-    pointValsMax = map snd pointRBoxes
+    (pointValsMin, pointValsMax) = unzip pointRBoxes
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
     ((r + (minimum pointValsX), r + (minimum pointValsY)),(r + (maximum pointValsX), r + (maximum pointValsY)))
@@ -119,66 +120,202 @@ getBox2R symbObj _ = ((-d, -d), (d, d))
   where
     d = getDist2 (0,0) symbObj
 
--- | put a box around a point, and all of the locations it's been during an x degree arc around (0,0).
+data Quadrant  = UpperRight | UpperLeft | LowerRight | LowerLeft
+  deriving Eq
+data Axis      = PosX | PosY | NegX | NegY
+  deriving Eq
+data Position  = OnAxis Axis | InQuadrant Quadrant | CenterPoint
+data HasRotation = Rotation Direction | None
+  deriving (Eq, Show)
+data Direction = Clockwise | CounterClockwise
+  deriving (Eq, Show)
+
+-- | put a box around a point, and all of the locations it will be at during an x degree arc around (0,0).
 pointRBox :: ℝ2 -> ℝ -> Box2
-pointRBox (x,y) arc =
+pointRBox (xStart, yStart) travel =
   let
     k :: ℝ
     k = pi/180
-    -- our target, radian-style.
-    distance = sqrt $ x*x + y*y
-    θstart = atan2 y x
-    rot = arc * k
-    θstop = θstart + rot
-    (xStop, yStop) = (distance*cos(θstop), distance*sin(θstop))
-    (minX, minY, maxX, maxY) = (min x xStop, min y yStop, max x xStop, max y yStop)
+    -- distance betwen (0,0) and our target.
+    distance = sqrt $ xStart*xStart + yStart*yStart
+    -- radian starting position.
+    θstart = atan2 yStart xStart
+    -- logical starting position
+    startPosition = positionOf distance θstart
+    -- how far we should rotate our point
+    rotationAmount = travel * k
+    -- what direction are we rotating
+    rotationDirection = case travel of
+      polarity | polarity > 0  -> Rotation CounterClockwise
+               | polarity == 0 -> None
+      _                        -> Rotation Clockwise
+    -- stopping position of our point, in abs(rad).
+    θstop = absrad $ θstart + rotationAmount
+    stopPosition = positionOf distance θstop
+    (xStop, yStop) =
+      case positionOf distance θstop of
+        CenterPoint -> (0,0)
+        OnAxis PosX -> (distance,0)
+        OnAxis PosY -> (0,distance)
+        OnAxis NegX -> (-distance,0)
+        OnAxis NegY -> (0,-distance)
+        InQuadrant _ -> ( distance*cos(θstop), distance*sin(θstop))
+    (minX, minY, maxX, maxY) = (min xStart xStop, min yStart yStop, max xStart xStop, max yStart yStop)
+    rt :: String -> Box2 -> Box2
+    rt point value = trace ("point: " ++ show point ++ " distance: " ++ show distance ++ " x: " ++ show xStart ++ " y: " ++ show yStart ++ " xStop: " ++ show xStop ++ " yStop: " ++ show yStop ++ " θstart(in degrees): " ++ show (θstart/k) ++ " θstop(in degrees): " ++ show (θstop/k) ++ " returning: " ++ show value ++ " rotation direction: " ++ show rotationDirection ) $ value
+    positionOf :: ℝ -> ℝ -> Position
+    positionOf d θpos
+      | d < minℝ                      = CenterPoint
+      | θpos == 0 || θpos == 360*k    = OnAxis PosX
+      | θpos == 90*k                  = OnAxis PosY
+      | θpos == 180*k || θpos == -0   = OnAxis NegX
+      | θpos == 270*k                 = OnAxis NegY
+      | θpos > 0 && θpos < 90*k       = InQuadrant UpperRight
+      | θpos > 90*k && θpos < 180*k   = InQuadrant UpperLeft
+      | θpos > 180*k && θpos < 270*k  = InQuadrant LowerLeft
+      | θpos > 270*k && θpos < 360*k  = InQuadrant LowerRight
+      | otherwise                     = error $ "illegal position in positionOf: " ++ show (θpos*k)
+    -- returns position around a circle in radians, from 0 to 2pi.
     absrad :: ℝ -> ℝ
-    absrad rad =
-      if rad >= 0
-      then rad `mod'` (360*k)
-      else -((abs rad) `mod'` (360*k)) + (360*k)
-    crossOne rad = ((min minX crossX, min minY crossY), (max maxX crossX, max maxY crossY))
-      where
-        (crossX, crossY) = case absrad rad of
-                             radians | radians <  (90*k) -> (distance,0)
-                                     | radians < (180*k) -> (0, -distance)
-                                     | radians < (270*k) -> (-distance,0)
-                             _                           -> (0, distance)
-    crossTwo rad = ((min minX crossMinX, min minY crossMinY), (max maxX crossMaxX, max maxY crossMaxY))
-      where
-        (crossMinX, crossMinY, crossMaxX, crossMaxY) = case absrad rad of
-                                                         radians | radians <  (90*k) -> (0, -distance,  distance, 0)
-                                                                 | radians < (180*k) -> (-distance, -distance, 0, 0)
-                                                                 | radians < (270*k) -> (-distance, 0,  0, distance)
-                                                         _                           -> (0, 0,  distance,  distance)
-    crossThree rad = ((min minX crossMinX, min minY crossMinY), (max maxX crossMaxX, max maxY crossMaxY))
-      where
-        (crossMinX, crossMinY, crossMaxX, crossMaxY) = case absrad rad of
-                                                         radians | radians <  (90*k) -> (-distance, -distance,  distance, 0)
-                                                                 | radians < (180*k) -> (-distance, -distance, 0,  distance)
-                                                                 | radians < (270*k) -> (-distance, 0,  distance,  distance)
-                                                         _                           -> (0, -distance,  distance,  distance)
+    absrad rad
+      | rad > (360*k) = rad `mod'` (360*k)
+      | rad < 0       = absrad (360*k)+rad
+      | otherwise     = rad
+    noAxis :: Quadrant -> Quadrant -> Direction -> ℝ -> Box2
+    noAxis q1 q2 dir amount
+      | q1 == q2 && amount < 90*k && amount > -90*k = rt "SameQuadrant" $ ((minX, minY), (maxX, maxY))
+      | dir == Clockwise && q1 == UpperLeft  = oneAxis PosY q2 dir amount
+      | dir == Clockwise && q1 == LowerRight = oneAxis PosX q2 dir amount
+      | dir == Clockwise && q1 == LowerLeft  = oneAxis NegY q2 dir amount
+      | dir == Clockwise && q1 == UpperRight = oneAxis NegX q2 dir amount
+      | dir == CounterClockwise && q1 == UpperRight = oneAxis PosX q2 dir amount
+      | dir == CounterClockwise && q1 == UpperLeft  = oneAxis PosY q2 dir amount
+      | dir == CounterClockwise && q1 == LowerLeft  = oneAxis NegX q2 dir amount
+      | dir == CounterClockwise && q1 == LowerRight = oneAxis NegY q2 dir amount
+    noAxis _ _ _ _ = rt "quadout5" ((-distance, -distance), (distance, distance))
+    oneAxis :: Axis -> Quadrant -> Direction -> ℝ -> Box2
+    oneAxis axis quadrant dir amount
+      | dir == Clockwise &&
+        amount < 90*k && amount > -90*k &&
+        ((axis == PosX && quadrant == LowerRight) ||
+         (axis == NegY && quadrant == LowerLeft)  ||
+         (axis == NegX && quadrant == UpperLeft)  ||
+         (axis == PosY && quadrant == UpperRight))  = rt "ReturnOneCW" $ ((minX, minY), (maxX, maxY))
+      | dir == CounterClockwise &&
+        amount < 90*k && amount > -90*k &&
+        ((axis == PosX && quadrant == UpperRight) ||
+         (axis == PosY && quadrant == UpperLeft)  ||
+         (axis == NegX && quadrant == LowerLeft)  ||
+         (axis == NegY && quadrant == LowerRight))  = rt "ReturnOneCC" $ ((minX, minY), (maxX, maxY))
+      | dir == Clockwise &&
+        ((axis == PosX && quadrant == LowerLeft)  ||
+         (axis == NegY && quadrant == UpperLeft)  ||
+         (axis == NegX && quadrant == UpperRight) ||
+         (axis == PosY && quadrant == LowerRight))  = crossOne axis dir
+      | dir == CounterClockwise &&
+        ((axis == PosX && quadrant == UpperLeft)  ||
+         (axis == PosY && quadrant == LowerLeft)  ||
+         (axis == NegX && quadrant == LowerRight) ||
+         (axis == NegY && quadrant == UpperRight))  = crossOne axis dir
+      | dir == Clockwise &&
+        ((axis == PosX && quadrant == UpperLeft)  ||
+         (axis == PosY && quadrant == LowerLeft)  ||
+         (axis == NegX && quadrant == LowerRight) ||
+         (axis == NegY && quadrant == UpperRight))  = crossTwo axis dir
+      | dir == CounterClockwise &&
+        ((axis == PosX && quadrant == LowerLeft)  ||
+         (axis == NegY && quadrant == UpperLeft)  ||
+         (axis == NegX && quadrant == UpperRight) ||
+         (axis == PosY && quadrant == LowerRight))  = crossTwo axis dir
+      | dir == Clockwise &&
+        ((axis == PosX && quadrant == UpperRight) ||
+         (axis == PosY && quadrant == UpperLeft)  ||
+         (axis == NegX && quadrant == LowerLeft)  ||
+         (axis == NegY && quadrant == LowerRight))  = crossThree axis
+      | dir == CounterClockwise &&
+        ((axis == PosX && quadrant == LowerRight) ||
+         (axis == NegY && quadrant == LowerLeft)  ||
+         (axis == NegX && quadrant == UpperLeft)  ||
+         (axis == PosY && quadrant == UpperRight))  = crossThree axis
+      | otherwise = rt "fullrotate" ((-distance, -distance), (distance, distance))
+    twoAxis :: Axis -> Axis -> Direction -> Box2
+    twoAxis start stop dir
+      | dir == Clockwise &&
+        ((start == PosX && stop == NegY) ||
+         (start == NegY && stop == NegX) ||
+         (start == NegX && stop == PosY) ||
+         (start == PosY && stop == PosX)) = rt "ReturnTwoCW" $ ((minX, minY), (maxX, maxY))
+      | dir == CounterClockwise &&
+        ((start == PosX && stop == PosY) ||
+         (start == PosY && stop == NegX) ||
+         (start == NegX && stop == NegY) ||
+         (start == NegY && stop == PosX)) = rt "ReturnTwoCC" $ ((minX, minY), (maxX, maxY))
+      | (start == PosX && stop == NegX) ||
+        (start == PosY && stop == NegY) || 
+        (start == NegX && stop == PosX) ||
+        (start == NegY && stop == PosY)   = crossOne start dir
+      | dir == Clockwise &&
+        ((start == PosX && stop == PosY) ||
+         (start == NegY && stop == PosX) ||
+         (start == NegX && stop == NegY) ||
+         (start == PosY && stop == NegX)) = crossTwo start dir
+      | dir == CounterClockwise &&
+        ((start == PosX && stop == NegY) ||
+         (start == PosY && stop == PosX) ||
+         (start == NegX && stop == PosY) ||
+         (start == NegY && stop == NegX)) = crossTwo start dir
+      | otherwise = rt "quadout3" ((-distance, -distance), (distance, distance))
+    crossOne :: Axis -> Direction -> Box2
+    crossOne start dir
+      | (start == PosX && dir == Clockwise)        ||
+        (start == NegX && dir == CounterClockwise)  = mixWith [(0,-distance)]
+      | (start == NegY && dir == Clockwise)        ||
+        (start == PosY && dir == CounterClockwise)  = mixWith [(-distance, 0)]
+      | (start == NegX && dir == Clockwise)        ||
+        (start == PosX && dir == CounterClockwise)  = mixWith [(0, distance)]
+      | (start == PosY && dir == Clockwise)        ||
+        (start == NegY && dir == CounterClockwise)  = mixWith [(-distance, 0)]
+      | otherwise = rt "quadout1" ((-distance, -distance), (distance, distance))
+    crossTwo :: Axis -> Direction -> Box2
+    crossTwo start dir
+      | (start == PosX && dir == Clockwise)        ||
+        (start == PosY && dir == CounterClockwise)  = mixWith [(-distance, 0), ( 0,-distance)]
+      | (start == PosY && dir == Clockwise)        ||
+        (start == NegX && dir == CounterClockwise)  = mixWith [( distance, 0), ( 0,-distance)]
+      | (start == NegX && dir == Clockwise)        ||
+        (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0), ( 0, distance)]
+      | (start == NegY && dir == Clockwise)        ||
+        (start == PosX && dir == CounterClockwise)  = mixWith [(-distance, 0), ( 0, distance)]
+      | otherwise = rt "quadout2" ((-distance, -distance), (distance, distance))
+    crossThree :: Axis -> Box2
+    crossThree PosX = mixWith [( 0, distance), (-distance, 0), ( 0,-distance)]
+    crossThree PosY = mixWith [(-distance, 0), ( 0,-distance), ( distance, 0)]
+    crossThree NegX = mixWith [( 0,-distance), ( distance, 0), ( 0, distance)]
+    crossThree NegY = mixWith [( distance, 0), ( 0, distance), (-distance, 0)]
+    mixWith :: [ℝ2] -> Box2
+    mixWith points = rt "mixWith" ((minimum xPoints, minimum yPoints), (maximum xPoints, maximum yPoints))
+                     where
+                       (xPoints, yPoints) = unzip $ points ++ [(xStart, yStart), (xStop, yStop)] 
+    invertRotation :: Direction -> Direction
+    invertRotation Clockwise = CounterClockwise
+    invertRotation CounterClockwise = Clockwise
   in
-    -- FIXME: more cases. cover negative rotation.
-    case arc of
-      degrees | degrees <  90 && arc > 0 ->
-                  if θstop `mod'` 90*k == θstop
-                  then ((minX, minY), (maxX, maxY))
-                  else crossOne θstart
-              | degrees < 180 && arc > 0 ->
-                  if θstop `mod'` 180*k == θstop `mod'` 90*k
-                  then crossOne θstart
-                  else crossTwo θstart
-              | degrees < 270 && arc > 0 ->
-                  if θstop `mod'` 270*k == θstop `mod'` 180*k
-                  then crossTwo θstart
-                  else crossThree θstart
-              | degrees < 360 && arc > 0 ->
-                  if θstop `mod'` 360*k == θstop `mod'` 270*k
-                  then crossThree θstart
-                  else ((-distance, -distance), (distance, distance))
-      _                                  ->
-                  ((-distance, -distance), (distance, distance))
+    case rotationDirection of
+      None -> rt "No Rotation" ((xStart, yStart),(xStart, yStart))
+      Rotation dir -> case rotationAmount of
+                 amount | amount < 360*k && amount > -360*k ->
+                          case startPosition of
+                            CenterPoint -> rt "Center Point" ((0,0),(0,0))
+                            OnAxis axis -> case stopPosition of
+                                             OnAxis stopaxis         -> twoAxis axis stopaxis dir
+                                             InQuadrant stopquadrant -> oneAxis axis stopquadrant dir amount
+                                             CenterPoint -> rt "Center Point" ((0,0),(0,0))
+                            InQuadrant quadrant -> case stopPosition of
+                                             OnAxis stopaxis         -> oneAxis stopaxis quadrant (invertRotation dir) (-amount)
+                                             InQuadrant stopquadrant -> noAxis quadrant stopquadrant dir travel
+                                             CenterPoint -> rt "Center Point" ((0,0),(0,0))
+                 _                         ->
+                            rt "Complete Rotation" ((-distance, -distance), (distance, distance))
 
 -- Get the maximum distance (read upper bound) an object is from a point.
 -- Sort of a circular
