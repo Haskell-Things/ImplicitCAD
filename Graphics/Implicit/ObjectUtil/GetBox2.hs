@@ -112,7 +112,7 @@ getBox2R (PolygonR r points) deg =
     (pointValsMin, pointValsMax) = unzip pointRBoxes
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
-    ((r + (minimum pointValsX), r + (minimum pointValsY)),(r + (maximum pointValsX), r + (maximum pointValsY)))
+    ((r + minimum pointValsX, r + minimum pointValsY),(r + maximum pointValsX, r + maximum pointValsY))
 -- Fallthrough: use getDist2 to overestimate.
 getBox2R symbObj _ = ((-d, -d), (d, d))
   where
@@ -157,7 +157,7 @@ pointRBox (xStart, yStart) travel =
         OnAxis PosY -> (0,distance)
         OnAxis NegX -> (-distance,0)
         OnAxis NegY -> (0,-distance)
-        InQuadrant _ -> ( distance*cos(θstop), distance*sin(θstop))
+        InQuadrant _ -> ( distance*cos θstop, distance*sin θstop)
     (minX, minY, maxX, maxY) = (min xStart xStop, min yStart yStop, max xStart xStop, max yStart yStop)
     positionOf :: ℝ -> ℝ -> Position
     positionOf d θpos
@@ -270,7 +270,7 @@ pointRBox (xStart, yStart) travel =
       | (start == NegX && dir == Clockwise)        ||
         (start == PosX && dir == CounterClockwise)  = mixWith [(0, distance)]
       | (start == PosY && dir == Clockwise)        ||
-        (start == NegY && dir == CounterClockwise)  = mixWith [(-distance, 0)]
+        (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0)]
       | otherwise = ((-distance, -distance), (distance, distance))
     crossTwo :: Axis -> Direction -> Box2
     crossTwo start dir

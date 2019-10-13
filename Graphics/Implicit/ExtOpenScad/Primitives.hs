@@ -225,6 +225,7 @@ circle = moduleWithoutSuite "circle" $ do
 -- | FIXME: 3D Polygons?
 -- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
+-- | FIXME: polygons have to have more than two points, or do not generate geometry, and generate an error.
 polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
 polygon = moduleWithoutSuite "polygon" $ do
     example "polygon ([(0,0), (0,10), (10,0)]);"
