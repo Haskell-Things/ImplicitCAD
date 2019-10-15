@@ -113,7 +113,7 @@ getBox2R (PolygonR _ points) deg =
 getBox2R (Complement2 symObj) _ = getBox2 symObj
 getBox2R (UnionR2 r symObjs) deg =
   let
-    boxes = [ getBox2R obj 0 | obj <- symObjs ]
+    boxes = [ getBox2 obj | obj <- symObjs ]
     points = concat [ boxPoints box | box <- boxes ]
   in
     outsetBox r $ getBox2R (PolygonR r points) deg
