@@ -4,13 +4,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error, concat)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error, concat)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
 
-import Data.VectorSpace (magnitude, (^-^), (^+^))
+import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
 
@@ -26,6 +26,10 @@ pointsBox points =
         (xs, ys) = unzip points
     in
         ((minimum xs, minimum ys), (maximum xs, maximum ys))
+
+-- | Decompose a box into it's four corners.
+boxPoints :: Box2 -> [ℝ2]
+boxPoints ((x1,y1),(x2,y2)) = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
 -- | Define a Box2 around all of the given boxes.
 unionBoxes :: [Box2] -> Box2
@@ -60,15 +64,8 @@ getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
 getBox2 (IntersectR2 r symbObjs) =
     let
         boxes = map getBox2 symbObjs
-        (leftbot, topright) = unzip boxes
-        (lefts, bots) = unzip leftbot
-        (rights, tops) = unzip topright
-        left = maximum lefts
-        bot = maximum bots
-        right = minimum rights
-        top = minimum tops
     in
-        ((left-r,bot-r),(right+r,top+r))
+        outsetBox r $ unionBoxes boxes
 -- Simple transforms
 getBox2 (Translate2 v symbObj) =
     let
@@ -105,31 +102,29 @@ getBox2 (EmbedBoxedObj2 (_,box)) = box
 -- Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 -- FIXME: more implementations.
-getBox2R (RectR r (x1,y1) (x2,y2)) deg =
-  let
-    points = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
-  in
-    getBox2R (PolygonR r points) deg
-getBox2R (Circle r) _ = ((-r, -r),(r,r))
-getBox2R (PolygonR r points) deg =
+getBox2R (Circle r) _ = getBox2 $ Circle r
+getBox2R (PolygonR _ points) deg =
   let
     pointRBoxes = [ pointRBox point deg | point <- points ]
     (pointValsMin, pointValsMax) = unzip pointRBoxes
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
-    outsetBox r ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
-getBox2R (UnionR2 r objs) deg =
+    ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
+getBox2R (Complement2 symObj) _ = getBox2 symObj
+getBox2R (UnionR2 r symObjs) deg =
   let
-    boxes = [ getBox2R obj 0 | obj <- objs ]
-    boxpoints :: Box2 -> [ℝ2]
-    boxpoints ((x1,y1),(x2,y2)) = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
-    points = concat [ boxpoints box | box <- boxes ]
+    boxes = [ getBox2R obj 0 | obj <- symObjs ]
+    points = concat [ boxPoints box | box <- boxes ]
   in
-    getBox2R (PolygonR r points) deg
--- Fallthrough: use getDist2 to overestimate.
-getBox2R symbObj _ = ((-d, -d), (d, d))
-  where
-    d = getDist2 (0,0) symbObj
+    outsetBox r $ getBox2R (PolygonR r points) deg
+getBox2R (DifferenceR2 _ symObjs) deg = getBox2R (head symObjs) deg
+-- Fallthrough: rotate the points of the containing box.
+getBox2R symObj deg =
+  let
+    origBox = getBox2 symObj
+    points  = boxPoints origBox
+  in
+    getBox2R (PolygonR 0 points) deg
 
 data Quadrant  = UpperRight | UpperLeft | LowerRight | LowerLeft
   deriving Eq
@@ -318,30 +313,4 @@ pointRBox (xStart, yStart) travel =
                                              CenterPoint -> ((0,0),(0,0))
                  _                         ->
                             ((-distance, -distance), (distance, distance))
-
--- Get the maximum distance (read upper bound) an object is from a point.
--- Sort of a circular
-getDist2 :: ℝ2 -> SymbolicObj2 -> ℝ
--- Real implementations
-getDist2 p (Circle r) =  magnitude p + r
-getDist2 p (PolygonR r points) = r + maximum [magnitude (p ^-^ p') | p' <- points]
--- Transform implementations
-getDist2 p (UnionR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
-getDist2 p (DifferenceR2 r objs) = r + getDist2 p (head objs)
-getDist2 p (IntersectR2 r objs) = r + maximum [getDist2 p obj | obj <- objs ]
--- FIXME: isn't this wrong? should we be returning distance inside of the object?
-getDist2 _ (Complement2 _) = 1/0
-getDist2 p (Translate2 v obj) = getDist2 (p ^+^ v) obj
--- FIXME: write optimized functions for the rest of the SymbObjs.
--- Fallthrough: use getBox2 to check the distance a box is from the point.
-getDist2 (x,y) symbObj =
-    let
-        ((x1,y1), (x2,y2)) = getBox2 symbObj
-    in
-        sqrt (
-              max (abs (x1 - x)) (abs (x2 - x)) *
-              max (abs (x1 - x)) (abs (x2 - x)) +
-              max (abs (y1 - y)) (abs (y2 - y)) *
-              max (abs (y1 - y)) (abs (y2 - y))
-             )
 
