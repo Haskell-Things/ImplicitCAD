@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, abs, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error, concat)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
@@ -27,7 +27,7 @@ pointsBox points =
     in
         ((minimum xs, minimum ys), (maximum xs, maximum ys))
 
--- | Define a box that fits around the given boxes.
+-- | Define a Box2 around all of the given boxes.
 unionBoxes :: [Box2] -> Box2
 unionBoxes boxes =
     let
@@ -37,6 +37,7 @@ unionBoxes boxes =
     in
         ((minimum lefts, minimum bots), (maximum rights, maximum tops))
 
+-- | Increase a boxes size by a rounding value.
 outsetBox :: ℝ -> Box2 -> Box2
 outsetBox r (a,b) =
         (a ^-^ (r,r), b ^+^ (r,r))
@@ -104,7 +105,11 @@ getBox2 (EmbedBoxedObj2 (_,box)) = box
 -- Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 -- FIXME: more implementations.
---getBox2R (RectR _ a b) deg = (a,b)
+getBox2R (RectR r (x1,y1) (x2,y2)) deg =
+  let
+    points = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+  in
+    getBox2R (PolygonR r points) deg
 getBox2R (Circle r) _ = ((-r, -r),(r,r))
 getBox2R (PolygonR r points) deg =
   let
@@ -113,6 +118,14 @@ getBox2R (PolygonR r points) deg =
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
     ((r + minimum pointValsX, r + minimum pointValsY),(r + maximum pointValsX, r + maximum pointValsY))
+getBox2R (UnionR2 r objs) deg =
+  let
+    boxes = [ getBox2R obj 0 | obj <- objs ]
+    boxpoints :: Box2 -> [ℝ2]
+    boxpoints ((x1,y1),(x2,y2)) = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
+    points = concat [ boxpoints box | box <- boxes ]
+  in
+    getBox2R (PolygonR r points) deg
 -- Fallthrough: use getDist2 to overestimate.
 getBox2R symbObj _ = ((-d, -d), (d, d))
   where
