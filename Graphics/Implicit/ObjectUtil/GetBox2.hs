@@ -101,7 +101,7 @@ getBox2 (Outset2 d symbObj) =
 -- Misc
 getBox2 (EmbedBoxedObj2 (_,box)) = box
 
--- Define a Box2 around the given object, and the space it occupies while rotating.
+-- Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 -- FIXME: more implementations.
 --getBox2R (RectR _ a b) deg = (a,b)
@@ -140,14 +140,14 @@ pointRBox (xStart, yStart) travel =
     θstart = atan2 yStart xStart
     -- logical starting position
     startPosition = positionOf distance θstart
-    -- how far we should rotate our point
+    -- how far we should rotate our point.
     rotationAmount = travel * k
-    -- what direction are we rotating
+    -- what direction are we rotating.
     rotationDirection = case travel of
       polarity | polarity > 0  -> Rotation CounterClockwise
                | polarity == 0 -> None
       _                        -> Rotation Clockwise
-    -- stopping position of our point, in abs(rad).
+    -- stopping position of our point.
     θstop = absrad $ θstart + rotationAmount
     stopPosition = positionOf distance θstop
     (xStop, yStop) =
@@ -236,31 +236,24 @@ pointRBox (xStart, yStart) travel =
       | otherwise = ((-distance, -distance), (distance, distance))
     twoAxis :: Axis -> Axis -> Direction -> Box2
     twoAxis start stop dir
-      | dir == Clockwise &&
-        ((start == PosX && stop == NegY) ||
-         (start == NegY && stop == NegX) ||
-         (start == NegX && stop == PosY) ||
-         (start == PosY && stop == PosX)) = ((minX, minY), (maxX, maxY))
-      | dir == CounterClockwise &&
-        ((start == PosX && stop == PosY) ||
-         (start == PosY && stop == NegX) ||
-         (start == NegX && stop == NegY) ||
-         (start == NegY && stop == PosX)) = ((minX, minY), (maxX, maxY))
       | (start == PosX && stop == NegX) ||
         (start == PosY && stop == NegY) || 
         (start == NegX && stop == PosX) ||
-        (start == NegY && stop == PosY)   = crossOne start dir
-      | dir == Clockwise &&
-        ((start == PosX && stop == PosY) ||
-         (start == NegY && stop == PosX) ||
-         (start == NegX && stop == NegY) ||
-         (start == PosY && stop == NegX)) = crossTwo start dir
-      | dir == CounterClockwise &&
-        ((start == PosX && stop == NegY) ||
-         (start == PosY && stop == PosX) ||
-         (start == NegX && stop == PosY) ||
-         (start == NegY && stop == NegX)) = crossTwo start dir
-      | otherwise = ((-distance, -distance), (distance, distance))
+        (start == NegY && stop == PosY)  = crossOne start dir
+    twoAxis start stop dir
+      | (start == PosX && stop == NegY) ||
+        (start == NegY && stop == NegX) ||
+        (start == NegX && stop == PosY) ||
+        (start == PosY && stop == PosX)  = if dir == Clockwise
+                                           then ((minX, minY), (maxX, maxY))
+                                           else crossTwo start dir
+      | (start == PosX && stop == PosY) ||
+        (start == PosY && stop == NegX) ||
+        (start == NegX && stop == NegY) ||
+        (start == NegY && stop == PosX)  = if dir == CounterClockwise
+                                           then ((minX, minY), (maxX, maxY))
+                                           else crossTwo start dir
+    twoAxis _ _ _ = ((-distance, -distance), (distance, distance))
     crossOne :: Axis -> Direction -> Box2
     crossOne start dir
       | (start == PosX && dir == Clockwise)        ||
