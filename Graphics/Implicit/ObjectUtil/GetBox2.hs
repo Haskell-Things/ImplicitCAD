@@ -117,7 +117,7 @@ getBox2R (PolygonR r points) deg =
     (pointValsMin, pointValsMax) = unzip pointRBoxes
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
-    ((r + minimum pointValsX, r + minimum pointValsY),(r + maximum pointValsX, r + maximum pointValsY))
+    outsetBox r ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
 getBox2R (UnionR2 r objs) deg =
   let
     boxes = [ getBox2R obj 0 | obj <- objs ]
@@ -152,7 +152,7 @@ pointRBox (xStart, yStart) travel =
     -- radian starting position.
     θstart = atan2 yStart xStart
     -- logical starting position
-    startPosition = positionOf distance θstart
+    startPosition = positionOf distance $ absrad θstart
     -- how far we should rotate our point.
     rotationAmount = travel * k
     -- what direction are we rotating.
@@ -183,7 +183,7 @@ pointRBox (xStart, yStart) travel =
       | θpos > 90*k && θpos < 180*k   = InQuadrant UpperLeft
       | θpos > 180*k && θpos < 270*k  = InQuadrant LowerLeft
       | θpos > 270*k && θpos < 360*k  = InQuadrant LowerRight
-      | otherwise                     = error $ "illegal position in positionOf: " ++ show (θpos*k)
+      | otherwise                     = error $ "illegal position in positionOf: " ++ show (θpos*k) ++ " pos: " ++ show θpos ++ " d: " ++ show d
     -- returns position around a circle in radians, from 0 to 2pi.
     absrad :: ℝ -> ℝ
     absrad rad
