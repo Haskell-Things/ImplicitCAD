@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error, concat)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
@@ -41,6 +41,16 @@ unionBoxes boxes =
     in
         ((minimum lefts, minimum bots), (maximum rights, maximum tops))
 
+-- | Define a Box2 that is the intersection of all of the given Box2s.
+intersectBoxes :: [Box2] -> Box2
+intersectBoxes [] = error "Tried to intersect no boxes?"
+intersectBoxes [x] = x
+intersectBoxes (x:xs) =
+  ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2)) 
+  where
+    ((xmin1, ymin1), (xmax1, ymax1)) = x
+    ((xmin2, ymin2), (xmax2, ymax2)) = intersectBoxes xs
+
 -- | Increase a boxes size by a rounding value.
 outsetBox :: ℝ -> Box2 -> Box2
 outsetBox r (a,b) =
@@ -59,13 +69,10 @@ getBox2 (Complement2 _) =
           infty :: (Fractional t) => t
           infty = 1/0
 getBox2 (UnionR2 r symbObjs) =
-    outsetBox r $ unionBoxes (map getBox2 symbObjs)
+  outsetBox r $ unionBoxes (map getBox2 symbObjs)
 getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
 getBox2 (IntersectR2 r symbObjs) =
-    let
-        boxes = map getBox2 symbObjs
-    in
-        outsetBox r $ unionBoxes boxes
+  outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ map getBox2 symbObjs
 -- Simple transforms
 getBox2 (Translate2 v symbObj) =
     let
@@ -99,9 +106,9 @@ getBox2 (Outset2 d symbObj) =
 -- Misc
 getBox2 (EmbedBoxedObj2 (_,box)) = box
 
--- Define a Box2 around the given object, and the space it occupies while rotating about the center point.
+-- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
+--   Note: No implementations for RectR, Translate2, or Scale2 as they would be identical to the fallthrough.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
--- FIXME: more implementations.
 getBox2R (Circle r) _ = getBox2 $ Circle r
 getBox2R (PolygonR _ points) deg =
   let
@@ -110,15 +117,20 @@ getBox2R (PolygonR _ points) deg =
     (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
   in
     ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
-getBox2R (Complement2 symObj) _ = getBox2 symObj
+getBox2R (Complement2 symObj) _ = getBox2 $ Complement2 symObj
 getBox2R (UnionR2 r symObjs) deg =
   let
-    boxes = [ getBox2 obj | obj <- symObjs ]
-    points = concat [ boxPoints box | box <- boxes ]
+    boxes = [ getBox2R obj deg| obj <- symObjs ]
   in
-    outsetBox r $ getBox2R (PolygonR r points) deg
+    outsetBox r $ unionBoxes boxes
 getBox2R (DifferenceR2 _ symObjs) deg = getBox2R (head symObjs) deg
--- Fallthrough: rotate the points of the containing box.
+getBox2R (IntersectR2 r symObjs) deg =
+  let
+    boxes = [ getBox2R obj deg| obj <- symObjs ]
+  in
+    outsetBox r $ intersectBoxes boxes
+-- FIXME: implement Rotate2.
+-- Fallthrough: rotate the points of the containing box. no rounding.
 getBox2R symObj deg =
   let
     origBox = getBox2 symObj
