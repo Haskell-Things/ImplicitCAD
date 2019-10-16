@@ -14,6 +14,10 @@ import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
 
+-- | An empty box.
+emptyBox :: Box2
+emptyBox = ((0, 0), (0, 0))
+
 -- | Is a Box2 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: Box2 -> Bool
@@ -43,11 +47,13 @@ unionBoxes boxes =
 
 -- | Define a Box2 that is the intersection of all of the given Box2s.
 intersectBoxes :: [Box2] -> Box2
-intersectBoxes [] = error "Tried to intersect no boxes?"
+intersectBoxes [] = emptyBox
 intersectBoxes [x] = x
-intersectBoxes (x:xs) =
-  ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2)) 
+intersectBoxes (x:xs) = if nmaxx > nminx && nmaxy > nminy
+                        then ((nminx, nminy), (nmaxx, nmaxy))
+                        else emptyBox
   where
+    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2)) 
     ((xmin1, ymin1), (xmax1, ymax1)) = x
     ((xmin2, ymin2), (xmax2, ymax2)) = intersectBoxes xs
 
@@ -79,7 +85,7 @@ getBox2 (Translate2 v symbObj) =
         (a,b) = getBox2 symbObj
     in
         if isEmpty (a,b)
-        then ((0,0),(0,0))
+        then emptyBox
         else (a^+^v, b^+^v)
 getBox2 (Scale2 s symbObj) =
     let
@@ -314,15 +320,15 @@ pointRBox (xStart, yStart) travel =
       Rotation dir -> case rotationAmount of
                  amount | amount < 360*k && amount > -360*k ->
                           case startPosition of
-                            CenterPoint -> ((0,0),(0,0))
+                            CenterPoint -> emptyBox
                             OnAxis axis -> case stopPosition of
                                              OnAxis stopaxis         -> twoAxis axis stopaxis dir
                                              InQuadrant stopquadrant -> oneAxis axis stopquadrant dir amount
-                                             CenterPoint -> ((0,0),(0,0))
+                                             CenterPoint -> emptyBox
                             InQuadrant quadrant -> case stopPosition of
                                              OnAxis stopaxis         -> oneAxis stopaxis quadrant (invertRotation dir) (-amount)
                                              InQuadrant stopquadrant -> noAxis quadrant stopquadrant dir travel
-                                             CenterPoint -> ((0,0),(0,0))
+                                             CenterPoint -> emptyBox
                  _                         ->
                             ((-distance, -distance), (distance, distance))
 
