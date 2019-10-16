@@ -36,7 +36,7 @@ getBox3 (Complement3 _) =
         where
           infty :: (Fractional t) => t
           infty = 1/0
-getBox3 (UnionR3 r symbObjs) = ((left-r,bot-r,inward-r), (right+r,top+r,out+r))
+getBox3 (UnionR3 r symbObjs) = outsetBox r $ ((left,bot,inward), (right,top,out))
     where
         boxes = map getBox3 symbObjs
         (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
