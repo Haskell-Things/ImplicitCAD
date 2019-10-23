@@ -22,19 +22,21 @@
 {-# LANGUAGE PatternGuards #-}
 
 -- Export one set containing all of the primitive object's patern matches.
-module Graphics.Implicit.ExtOpenScad.Primitives (primitives) where
+module Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives, newPrimitiveModules) where
 
-import Prelude(String, IO, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, map, (++), putStrLn, otherwise)
+import Prelude(String, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, map, (++), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3), ArgParser, Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule), ArgParser, Symbol(Symbol), StateC, SourcePosition)
 
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, example, test, eulerCharacteristic)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.ArgParser as GIEUA (argument)
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideObjs, (<||>))
+
+import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
@@ -49,16 +51,52 @@ default (ℝ)
 argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
--- | The only thing exported here. basically, a list of functions, which accept OVal arguments and return an ArgParser ?
+-- | The only thing exported here. basically, a list of modules.
 -- | FIXME: allow for these to fail, and return a failure condition.
-primitives :: [(Symbol, [OVal] -> ArgParser (IO [OVal]))]
-primitives = [ sphere, cube, square, cylinder, circle, polygon, union, difference, intersect, translate, scale, rotate, extrude, pack, shell, rotateExtrude, unit ]
+oldprimitives :: [(Symbol, [OVal] -> ArgParser (StateC [OVal]))]
+oldprimitives = []
 
+newPrimitiveModules :: [(Symbol, OVal)]
+newPrimitiveModules =
+  [
+    onModIze sphere [([("r", noDefault)], noSuite)]
+  , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault)], noSuite)]
+  , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault)], noSuite)]
+  , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
+  , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite)]
+  , onModIze polygon [([("points", noDefault)], noSuite)]
+  , onModIze union [([("r", hasDefault)], requiredSuite)]
+  , onModIze intersect [([("r", hasDefault)], requiredSuite)]
+  , onModIze difference [([("r", hasDefault)], requiredSuite)]
+  , onModIze translate [([("x", noDefault), ("y", noDefault), ("z", noDefault)], requiredSuite), ([("v", noDefault)], requiredSuite)]
+  , onModIze rotate [([("a", noDefault), ("v", hasDefault)], requiredSuite)]
+  , onModIze scale [([("v", noDefault)], requiredSuite)]
+  , onModIze extrude [([("height", hasDefault), ("center", hasDefault), ("twist", hasDefault), ("scale", hasDefault), ("translate", hasDefault), ("r", hasDefault)], requiredSuite)]
+  , onModIze rotateExtrude [([("a", hasDefault), ("r", hasDefault), ("translate", hasDefault), ("rotate", hasDefault)], requiredSuite)]
+  , onModIze shell [([("w", noDefault)], requiredSuite)]
+  , onModIze pack [([("size", noDefault), ("sep", noDefault)], requiredSuite)]
+  , onModIze unit [([("unit", noDefault)], requiredSuite)]
+  ]
+  where
+    hasDefault = True
+    noDefault = False
+    noSuite :: Maybe Bool
+    noSuite = Nothing
+    requiredSuite = Just True
+    onModIze func rawInstances = (name, ONModule name implementation instances)
+      where
+        (name, implementation) = func
+        instances = map fixup rawInstances
+        fixup :: ([(String, Bool)], Maybe Bool) -> ([(Symbol, Bool)], Maybe Bool)
+        fixup (args, suiteInfo) = ((map fixupArgs args), suiteInfo)
+          where
+            fixupArgs :: (String, Bool) -> (Symbol, Bool)
+            fixupArgs (symbol, maybeDefault) =(Symbol symbol, maybeDefault) 
 -- | sphere is a module without a suite.
 --   this means that the parser will look for this like
 --   sphere(args...);
-sphere :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-sphere = moduleWithoutSuite "sphere" $ do
+sphere :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+sphere = newModuleWithoutSuite "sphere" $ \_ _ -> do
     example "sphere(3);"
     example "sphere(r=5);"
     -- arguments:
@@ -74,8 +112,8 @@ sphere = moduleWithoutSuite "sphere" $ do
 
 -- | FIXME: square1, square2 like cylinder has?
 -- | FIXME: translate for square2?
-cube :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-cube = moduleWithoutSuite "cube" $ do
+cube :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+cube = newModuleWithoutSuite "cube" $ \_ _ -> do
     -- examples
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
@@ -116,10 +154,11 @@ cube = moduleWithoutSuite "cube" $ do
         `eulerCharacteristic` 2
     test "cube([2,3,4]);" -- openscad syntax
         `eulerCharacteristic` 2
+    -- Implementation
     addObj3 $ Prim.rect3R r (x1, y1, z1) (x2, y2, z2)
 
-square :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-square = moduleWithoutSuite "square" $ do
+square :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+square = newModuleWithoutSuite "square" $ \_ _ -> do
     -- examples
     example "square(x=[-2,2], y=[-1,5]);"
     example "square(size = [3,4], center = true, r = 0.5);"
@@ -156,10 +195,11 @@ square = moduleWithoutSuite "square" $ do
         `eulerCharacteristic` 0
     test "square(size=[2,3]);"
         `eulerCharacteristic` 0
+    -- Implementation
     addObj2 $ Prim.rectR r (x1, y1) (x2, y2)
 
-cylinder :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-cylinder = moduleWithoutSuite "cylinder" $ do
+cylinder :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+cylinder = newModuleWithoutSuite "cylinder" $ \_ _ -> do
     example "cylinder(r=10, h=30, center=true);"
     example "cylinder(r1=4, r2=6, h=10);"
     example "cylinder(r=5, h=10, $fn = 6);"
@@ -205,8 +245,8 @@ cylinder = moduleWithoutSuite "cylinder" $ do
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
 
-circle :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-circle = moduleWithoutSuite "circle" $ do
+circle :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+circle = newModuleWithoutSuite "circle" $ \_ _ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
     -- Arguments
@@ -226,8 +266,8 @@ circle = moduleWithoutSuite "circle" $ do
 -- | FIXME: handle rectangles that are not grid alligned.
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 -- | FIXME: polygons have to have more than two points, or do not generate geometry, and generate an error.
-polygon :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-polygon = moduleWithoutSuite "polygon" $ do
+polygon :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+polygon = newModuleWithoutSuite "polygon" $ \_ _ -> do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
@@ -263,8 +303,9 @@ polygon = moduleWithoutSuite "polygon" $ do
              else Prim.polygonR 0 pts
         | otherwise = Prim.polygonR 0 points
     addObj2 $ addPolyOrSquare points
-union :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-union = moduleWithSuite "union" $ \children -> do
+
+union :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+union = newModuleWithSuite "union" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the union interface"
@@ -272,8 +313,8 @@ union = moduleWithSuite "union" $ \children -> do
         then objReduce (Prim.unionR r) (Prim.unionR r) children
         else objReduce  Prim.union      Prim.union     children
 
-intersect :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-intersect = moduleWithSuite "intersection" $ \children -> do
+intersect :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+intersect = newModuleWithSuite "intersection" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the intersection interface"
@@ -281,8 +322,8 @@ intersect = moduleWithSuite "intersection" $ \children -> do
         then objReduce (Prim.intersectR r) (Prim.intersectR r) children
         else objReduce  Prim.intersect      Prim.intersect     children
 
-difference :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-difference = moduleWithSuite "difference" $ \children -> do
+difference :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+difference = newModuleWithSuite "difference" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
@@ -290,8 +331,8 @@ difference = moduleWithSuite "difference" $ \children -> do
         then objReduce (Prim.differenceR r) (Prim.differenceR r) children
         else objReduce  Prim.difference      Prim.difference     children
 
-translate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-translate = moduleWithSuite "translate" $ \children -> do
+translate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+translate = newModuleWithSuite "translate" $ \_ children -> do
     example "translate ([2,3]) circle (4);"
     example "translate ([5,6,7]) sphere(5);"
     (x,y,z) <-
@@ -314,14 +355,11 @@ translate = moduleWithSuite "translate" $ \children -> do
     return $ return $
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
-deg2rad :: ℝ -> ℝ
-deg2rad x = x / 180 * pi
-
--- This is mostly insane
 -- | FIXME: rotating a module that is not found returns no geometry, instead of an error.
+-- | FIXME: error reporting on fallthrough.
 -- + FIXME: rotate(y=90) would be nice.
-rotate :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-rotate = moduleWithSuite "rotate" $ \children -> do
+rotate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+rotate = newModuleWithSuite "rotate" $ \_ children -> do
     a <- argument "a"
         `doc` "value to rotate by; angle or list of angles"
     v <- argument "v"
@@ -339,9 +377,12 @@ rotate = moduleWithSuite "rotate" $ \children -> do
         ) <||> ( \(yz,zx) ->
             objMap id (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
         ) <||> const []
+      where
+        deg2rad :: ℝ -> ℝ
+        deg2rad x = x / 180 * pi
 
-scale :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-scale = moduleWithSuite "scale" $ \children -> do
+scale :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+scale = newModuleWithSuite "scale" $ \_ children -> do
     example "scale(2) square(5);"
     example "scale([2,3]) square(5);"
     example "scale([2,3,4]) cube(5);"
@@ -355,9 +396,9 @@ scale = moduleWithSuite "scale" $ \children -> do
         Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
         Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
--- | FIXME: allow the user to pass in the box around this object, to avoid the approximation in getBox3.
-extrude :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-extrude = moduleWithSuite "linear_extrude" $ \children -> do
+-- | FIXME: avoid the approximation in getBox3. better definition of function()?
+extrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+extrude = newModuleWithSuite "linear_extrude" $ \_ children -> do
     example "linear_extrude(10) square(5);"
     height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` Left 1
         `doc` "height to extrude to..."
@@ -407,8 +448,8 @@ extrude = moduleWithSuite "linear_extrude" $ \children -> do
                 shiftAsNeeded $ Prim.extrudeRM r twistArg scaleArg translateArg obj height'
         ) children
 
-rotateExtrude :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
+rotateExtrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+rotateExtrude = newModuleWithSuite "rotate_extrude" $ \_ children -> do
     example "rotate_extrude() translate(20) circle(10);"
     totalRot     :: ℝ <- argument "a" `defaultTo` 360
                     `doc` "angle to sweep"
@@ -424,27 +465,15 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \children -> do
         capM = if cap then Just r else Nothing
     return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
 
-{-
-rotateExtrudeStatement :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-rotateExtrudeStatement = moduleWithSuite "rotate_extrude" $ \suite -> do
-    -- arguments
-    h :: ℝ <- realArgument "h"
-    center :: Bool <- boolArgumentWithDefault "center" False
-    twist :: ℝ <- realArgumentWithDefault 0
-    r :: ℝ <- realArgumentWithDefault "r" 0
-
-    getAndModUpObj2s suite (\obj -> extrudeRMod r (\θ (x,y) -> (x*cos(θ)+y*sin(θ), y*cos(θ)-x*sin(θ)) )  obj h)
--}
-
-shell :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-shell = moduleWithSuite "shell" $ \children -> do
+shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+shell = newModuleWithSuite "shell" $ \_ children -> do
     w :: ℝ <- argument "w"
             `doc` "width of the shell..."
     return $ return $ objMap (Prim.shell w) (Prim.shell w) children
 
 -- Not a permanent solution! Breaks if can't pack.
-pack :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-pack = moduleWithSuite "pack" $ \children -> do
+pack :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+pack = newModuleWithSuite "pack" $ \sourcePosition children -> do
     example "pack ([45,45], sep=2) { circle(10); circle(10); circle(10); circle(10); }"
     -- arguments
     size :: ℝ2 <- argument "size"
@@ -458,16 +487,16 @@ pack = moduleWithSuite "pack" $ \children -> do
             then case Prim.pack3 size sep obj3s of
                 Just solution -> return $ OObj3 solution : (map OObj2 obj2s ++ others)
                 Nothing       -> do
-                    putStrLn "Can't pack given objects in given box with present algorithm"
+                    errorC sourcePosition "Can't pack given objects in given box with the present algorithm."
                     return children
             else case Prim.pack2 size sep obj2s of
                 Just solution -> return $ OObj2 solution : others
                 Nothing       -> do
-                    putStrLn "Can't pack given objects in given box with present algorithm"
+                    errorC sourcePosition "Can't pack given objects in given box with the present algorithm."
                     return children
 
-unit :: (Symbol, [OVal] -> ArgParser (IO [OVal]))
-unit = moduleWithSuite "unit" $ \children -> do
+unit :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+unit = newModuleWithSuite "unit" $ \sourcePosition children -> do
     example "unit(\"inch\") {..}"
     -- arguments
     name :: String <- argument "unit"
@@ -492,26 +521,27 @@ unit = moduleWithSuite "unit" $ \children -> do
     -- The actual work...
     return $ case mmRatio name of
         Nothing -> do
-            putStrLn $ "unrecognized unit " ++ name
+            errorC sourcePosition $ "unrecognized unit " ++ name
             return children
         Just r  ->
             return $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
+
 
 ---------------
 
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = mplus
 
-moduleWithSuite :: String -> ([OVal] -> ArgParser (IO [OVal])) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
-moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
+newModuleWithSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+newModuleWithSuite name modArgMapper = (Symbol name, modArgMapper)
 
-moduleWithoutSuite :: String -> ArgParser (IO [OVal]) -> (Symbol, [OVal] -> ArgParser (IO [OVal]))
-moduleWithoutSuite name modArgMapper = (Symbol name, const modArgMapper)
+newModuleWithoutSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+newModuleWithoutSuite name modArgMapper = (Symbol name, modArgMapper)
 
-addObj2 :: SymbolicObj2 -> ArgParser (IO [OVal])
+addObj2 :: SymbolicObj2 -> ArgParser (StateC [OVal])
 addObj2 x = return $ return [OObj2 x]
 
-addObj3 :: SymbolicObj3 -> ArgParser (IO [OVal])
+addObj3 :: SymbolicObj3 -> ArgParser (StateC [OVal])
 addObj3 x = return $ return [OObj3 x]
 
 objMap :: (SymbolicObj2 -> SymbolicObj2) -> (SymbolicObj3 -> SymbolicObj3) -> [OVal] -> [OVal]

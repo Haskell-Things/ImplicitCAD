@@ -62,7 +62,7 @@ outsetBox :: ℝ -> Box2 -> Box2
 outsetBox r (a,b) =
         (a ^-^ (r,r), b ^+^ (r,r))
 
--- Define a Box2 around the given object.
+-- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
 getBox2 (RectR _ a b) = (a,b)

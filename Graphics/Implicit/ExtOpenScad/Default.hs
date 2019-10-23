@@ -15,7 +15,7 @@ import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map,
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
-import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
+import Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives, newPrimitiveModules)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
@@ -27,11 +27,12 @@ defaultObjects = VarLookup $ fromList $
     ++ defaultFunctions
     ++ defaultFunctions2
     ++ defaultFunctionsSpecial
-    ++ defaultModules
+    ++ oldPrimitiveModules
+    ++ newPrimitiveModules
     ++ varArgModules
     ++ defaultPolymorphicFunctions
 
--- Missing standard ones:
+-- FIXME: Missing standard ones(which standard?):
 -- rand, lookup,
 
 defaultConstants :: [(Symbol, OVal)]
@@ -80,11 +81,12 @@ defaultFunctionsSpecial =
         )
     ]
 
-defaultModules :: [(Symbol, OVal)]
-defaultModules =
-  map makeModule primitives
+oldPrimitiveModules :: [(Symbol, OVal)]
+oldPrimitiveModules =
+  map makeModule oldprimitives
   where
     makeModule a = (fst a, OModule (fst a) Nothing (snd a))
+
 
 varArgModules :: [(Symbol, OVal)]
 varArgModules =
@@ -125,26 +127,24 @@ varArgModules =
             forM_ (iterator args) $ \iter -> do
                 modifyVarLookup iter
                 runSuite suite
+          where
+            -- | convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
+            iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
+            iterator [] = [id]
+            iterator ((Nothing, _):iterators) = [outer | outer <- iterator iterators]
+            iterator ((Just var, vals):iterators) = [outer . (varify inner) | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
+            -- convert the loop iterator variable's expression value to a list (possibly of one value)
+            valsList :: OVal -> [OVal]
+            valsList v@(OBool _) = [v]
+            valsList v@(ONum _) = [v]
+            valsList v@(OString _) = [v]
+            valsList (OList vs) = vs
+            valsList _ = []
+            -- promote a result into a VarLookup
+            varify :: (Map Symbol OVal -> Map Symbol OVal) -> VarLookup -> VarLookup
+            varify f (VarLookup v) = VarLookup $ f v
 
-        -- convert the loop iterator variable's expression value to a list (possibly of one value)
-        valsList :: OVal -> [OVal]
-        valsList v@(OBool _) = [v]
-        valsList v@(ONum _) = [v]
-        valsList v@(OString _) = [v]
-        valsList (OList vs) = vs
-        valsList _ = []
-
-        -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
-        iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
-        iterator [] = [id]
-        iterator ((Nothing, _):iterators) = [outer | outer <- iterator iterators]
-        iterator ((Just var, vals):iterators) = [outer . (varify inner) | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
-
-        varify :: (Map Symbol OVal -> Map Symbol OVal) -> VarLookup -> VarLookup
-        varify f (VarLookup v) = VarLookup $ f v
-
--- more complicated ones:
-
+-- | more complicated ones:
 defaultPolymorphicFunctions :: [(Symbol, OVal)]
 defaultPolymorphicFunctions =
     [

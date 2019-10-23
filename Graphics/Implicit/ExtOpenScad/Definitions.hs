@@ -8,7 +8,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, OVargsModule, OError, OObj2, OObj3),
+                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OModule, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
@@ -21,7 +21,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, String, Maybe, Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
@@ -131,8 +131,11 @@ data OVal = OUndefined
          | OList [OVal]
          | OString String
          | OFunc (OVal -> OVal)
-         | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (IO [OVal]))
+         -- Name, arguments, argument parsers.
+         | OModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
          | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
+         -- Name, implementation, arguments, whether the module accepts/requires a suite.
+         | ONModule Symbol (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) [([(Symbol, Bool)],  Maybe Bool)]
          | OVargsModule String (String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
@@ -159,8 +162,24 @@ instance Show OVal where
     show (OUModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
       where
         showArg (Symbol a, hasDefault) = if hasDefault
-                                         then a ++ "=..."
-                                         else a
+                                         then a
+                                         else a ++ "=..."
+    show (ONModule (Symbol name) _ instances) = showInstances instances
+      where
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a
+                                         else a ++ "=..."
+        showInstances :: [([(Symbol, Bool)], Maybe Bool)] -> String
+        showInstances [] = ""
+        showInstances [oneInstance] = "module " ++ name ++ showInstance oneInstance
+        showInstances multipleInstances = "Module " ++ name ++ "[ " ++ intercalate ", " (map showInstance multipleInstances) ++ " ]"
+        showInstance :: ([(Symbol, Bool)], Maybe Bool) -> String
+        showInstance (arguments, suiteInfo) = " (" ++ intercalate ", " (map showArg (arguments)) ++ ") {}" ++ showSuiteInfo suiteInfo
+        showSuiteInfo suiteInfo = case suiteInfo of
+                          Just requiresSuite -> if requiresSuite == True
+                                                then " requiring suite {}"
+                                                else " accepting suite {}"
+                          _ -> ""
     show (OVargsModule name _) = "varargs module " ++ name
     show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
     show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"

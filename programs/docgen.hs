@@ -9,7 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 
 import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, snd, (.), head, tail, length, (/=), (+))
-import Graphics.Implicit.ExtOpenScad.Primitives (primitives)
+import Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol))
 
 import qualified Control.Exception as Ex (catch, SomeException)
@@ -95,9 +95,9 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
 main = do
-        docs <- mapM (getArgParserDocs.($ []).snd) primitives
+        docs <- mapM (getArgParserDocs.($ []).snd) oldprimitives
         let
-            names = map fst primitives
+            names = map fst oldprimitives
             docname = "ImplicitCAD Primitives"
 
         putStrLn (map (const '=') docname)
