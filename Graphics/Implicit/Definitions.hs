@@ -233,8 +233,8 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      RectR ℝ ℝ2 ℝ2 -- rounding, start, stop.
-    | Circle ℝ -- radius
+      RectR ℝ ℝ2 ℝ2   -- rounding, start, stop.
+    | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
     | Complement2 SymbolicObj2
