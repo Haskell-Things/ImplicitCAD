@@ -15,11 +15,17 @@ import Data.VectorSpace ((^-^), (^+^))
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
 
--- Test to see whether a Box3 has area.
+-- | An empty box.
+emptyBox :: Box3
+emptyBox = ((0,0,0), (0,0,0))
+
+-- | Is a Box3 empty?
+-- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: (Eq a2, Eq a1, Eq a) =>
            ((a, a1, a2), (a, a1, a2)) -> Bool
 isEmpty ((a,b,c),(d,e,f)) = a==d || b==e || c==f
 
+-- | Increase a boxes size by a rounding value.
 outsetBox :: ℝ -> Box3 -> Box3
 outsetBox r (a,b) =
     (a ^-^ (r,r,r), b ^+^ (r,r,r))
@@ -48,6 +54,7 @@ getBox3 (UnionR3 r symbObjs) = outsetBox r $ ((left,bot,inward), (right,top,out)
         right = maximum rights
         top = maximum tops
         out = maximum outs
+getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
 getBox3 (IntersectR3 _ symbObjs) =
     let
         boxes = map getBox3 symbObjs
@@ -65,8 +72,7 @@ getBox3 (IntersectR3 _ symbObjs) =
           && right > left
           && out   > inward
         then ((left,bot,inward),(right,top,out))
-        else ((0,0,0),(0,0,0))
-getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
+        else emptyBox
 -- Simple transforms
 getBox3 (Translate3 v symbObj) =
     let
@@ -110,8 +116,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
     in
         ((bx1+ax1, by1+ax1, ay1), (bx2+ax2, by2+ax2, ay2))
 -- FIXME: magic numbers: 0.2 and 11.
--- FIXME: this may use an approximation for height, based on sampling the function.
--- FIXME: generate a warning if the approximation part of this function is used.
+-- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
 getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
     let
@@ -124,10 +129,8 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
         range = [0, 1 .. (samples-1)]
         (xrange, yrange) = ( map ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, map ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range)
 
-        -- FIXME: shouldn't this fuzz value be the same as the resolution?
         hfuzz :: ℝ
---        hfuzz = 0.2
-        hfuzz = 0.0
+        hfuzz = 0.2
         h = case height of
               Left hval -> hval
               Right hfun -> hmax + hfuzz*(hmax-hmin)
@@ -164,25 +167,22 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
     in
         ((twistXmin + tminx, twistYmin + tminy, 0),(twistXmax + tmaxx, twistYmax + tmaxy, h))
 -- Note: Assumes x2 is always greater than x1.
--- FIXME: Insert the above assumption as an assertion in the language structure?
+-- FIXME: Insert the above assumption as an assertion in the type system?
 getBox3 (RotateExtrude _ _ (Left (xshift,yshift)) _ symbObj) =
     let
         ((_,y1),(x2,y2)) = getBox2 symbObj
         r = max x2 (x2 + xshift)
     in
         ((-r, -r, min y1 (y1 + yshift)),(r, r, max y2 (y2 + yshift)))
--- FIXME: magic numbers.
--- FIXME: this is an approximation, based on sampling the function.
--- FIXME: generate a warning if the approximation part of this function is used.
+-- FIXME: magic numbers: 0.1, 1.1, and 11.
+-- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
 getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
     let
         samples :: Fastℕ
         samples = 11
-        -- FIXME: shouldn't this fuzz value be the same as the resolution?
         xfuzz :: ℝ
         xfuzz = 1.1
-        -- FIXME: shouldn't this fuzz value be the same as the resolution?
         yfuzz :: ℝ
         yfuzz=0.1
         range :: [Fastℕ]
