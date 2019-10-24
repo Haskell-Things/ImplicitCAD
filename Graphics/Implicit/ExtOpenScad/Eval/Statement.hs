@@ -13,7 +13,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
                                                   Pattern(Name),
                                                   Expr(LitE),
-                                                  OVal(OBool, OModule, OUModule, ONModule, OVargsModule),
+                                                  OVal(OBool, OUModule, ONModule, OVargsModule),
                                                   VarLookup(VarLookup),
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
@@ -135,15 +135,6 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- Run the module.
               let
                 argsMapped = argMap evaluatedArgs $ implementation sourcePos suiteResults
-              forM_ (snd argsMapped) $ errorC sourcePos
-              fromMaybe (return []) (fst argsMapped)
-            Just (OModule _ _ mod') -> do
-              evaluatedArgs <- evalArgs argsExpr
-              -- Evaluate the suite.
-              suiteResults <- runSuiteCapture varlookup suite
-              -- Run the module.
-              let
-                argsMapped = argMap evaluatedArgs $ mod' suiteResults
               forM_ (snd argsMapped) $ errorC sourcePos
               fromMaybe (return []) (fst argsMapped)
             Just (OVargsModule modname mod') -> do

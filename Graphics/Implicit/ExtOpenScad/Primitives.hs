@@ -21,8 +21,8 @@
 -- to simplify polygon
 {-# LANGUAGE PatternGuards #-}
 
--- Export one set containing all of the primitive object's patern matches.
-module Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives, newPrimitiveModules) where
+-- Export one set containing all of the primitive modules.
+module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
 import Prelude(String, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, map, (++), otherwise)
 
@@ -52,12 +52,8 @@ argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser
 argument a = GIEUA.argument (Symbol a)
 
 -- | The only thing exported here. basically, a list of modules.
--- | FIXME: allow for these to fail, and return a failure condition.
-oldprimitives :: [(Symbol, [OVal] -> ArgParser (StateC [OVal]))]
-oldprimitives = []
-
-newPrimitiveModules :: [(Symbol, OVal)]
-newPrimitiveModules =
+primitiveModules :: [(Symbol, OVal)]
+primitiveModules =
   [
     onModIze sphere [([("r", noDefault)], noSuite)]
   , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault)], noSuite)]
@@ -96,7 +92,7 @@ newPrimitiveModules =
 --   this means that the parser will look for this like
 --   sphere(args...);
 sphere :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-sphere = newModuleWithoutSuite "sphere" $ \_ _ -> do
+sphere = moduleWithoutSuite "sphere" $ \_ _ -> do
     example "sphere(3);"
     example "sphere(r=5);"
     -- arguments:
@@ -113,7 +109,7 @@ sphere = newModuleWithoutSuite "sphere" $ \_ _ -> do
 -- | FIXME: square1, square2 like cylinder has?
 -- | FIXME: translate for square2?
 cube :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-cube = newModuleWithoutSuite "cube" $ \_ _ -> do
+cube = moduleWithoutSuite "cube" $ \_ _ -> do
     -- examples
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
@@ -158,7 +154,7 @@ cube = newModuleWithoutSuite "cube" $ \_ _ -> do
     addObj3 $ Prim.rect3R r (x1, y1, z1) (x2, y2, z2)
 
 square :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-square = newModuleWithoutSuite "square" $ \_ _ -> do
+square = moduleWithoutSuite "square" $ \_ _ -> do
     -- examples
     example "square(x=[-2,2], y=[-1,5]);"
     example "square(size = [3,4], center = true, r = 0.5);"
@@ -199,7 +195,7 @@ square = newModuleWithoutSuite "square" $ \_ _ -> do
     addObj2 $ Prim.rectR r (x1, y1) (x2, y2)
 
 cylinder :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-cylinder = newModuleWithoutSuite "cylinder" $ \_ _ -> do
+cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
     example "cylinder(r=10, h=30, center=true);"
     example "cylinder(r1=4, r2=6, h=10);"
     example "cylinder(r=5, h=10, $fn = 6);"
@@ -246,7 +242,7 @@ cylinder = newModuleWithoutSuite "cylinder" $ \_ _ -> do
         else shift $ Prim.cylinder2 r1 r2 dh
 
 circle :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-circle = newModuleWithoutSuite "circle" $ \_ _ -> do
+circle = moduleWithoutSuite "circle" $ \_ _ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
     -- Arguments
@@ -267,7 +263,7 @@ circle = newModuleWithoutSuite "circle" $ \_ _ -> do
 -- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
 -- | FIXME: polygons have to have more than two points, or do not generate geometry, and generate an error.
 polygon :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-polygon = newModuleWithoutSuite "polygon" $ \_ _ -> do
+polygon = moduleWithoutSuite "polygon" $ \_ _ -> do
     example "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
@@ -305,7 +301,7 @@ polygon = newModuleWithoutSuite "polygon" $ \_ _ -> do
     addObj2 $ addPolyOrSquare points
 
 union :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-union = newModuleWithSuite "union" $ \_ children -> do
+union = moduleWithSuite "union" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the union interface"
@@ -314,7 +310,7 @@ union = newModuleWithSuite "union" $ \_ children -> do
         else objReduce  Prim.union      Prim.union     children
 
 intersect :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-intersect = newModuleWithSuite "intersection" $ \_ children -> do
+intersect = moduleWithSuite "intersection" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the intersection interface"
@@ -323,7 +319,7 @@ intersect = newModuleWithSuite "intersection" $ \_ children -> do
         else objReduce  Prim.intersect      Prim.intersect     children
 
 difference :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-difference = newModuleWithSuite "difference" $ \_ children -> do
+difference = moduleWithSuite "difference" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
@@ -332,7 +328,7 @@ difference = newModuleWithSuite "difference" $ \_ children -> do
         else objReduce  Prim.difference      Prim.difference     children
 
 translate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-translate = newModuleWithSuite "translate" $ \_ children -> do
+translate = moduleWithSuite "translate" $ \_ children -> do
     example "translate ([2,3]) circle (4);"
     example "translate ([5,6,7]) sphere(5);"
     (x,y,z) <-
@@ -359,7 +355,7 @@ translate = newModuleWithSuite "translate" $ \_ children -> do
 -- | FIXME: error reporting on fallthrough.
 -- + FIXME: rotate(y=90) would be nice.
 rotate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-rotate = newModuleWithSuite "rotate" $ \_ children -> do
+rotate = moduleWithSuite "rotate" $ \_ children -> do
     a <- argument "a"
         `doc` "value to rotate by; angle or list of angles"
     v <- argument "v"
@@ -382,7 +378,7 @@ rotate = newModuleWithSuite "rotate" $ \_ children -> do
         deg2rad x = x / 180 * pi
 
 scale :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-scale = newModuleWithSuite "scale" $ \_ children -> do
+scale = moduleWithSuite "scale" $ \_ children -> do
     example "scale(2) square(5);"
     example "scale([2,3]) square(5);"
     example "scale([2,3,4]) cube(5);"
@@ -398,7 +394,7 @@ scale = newModuleWithSuite "scale" $ \_ children -> do
 
 -- | FIXME: avoid the approximation in getBox3. better definition of function()?
 extrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-extrude = newModuleWithSuite "linear_extrude" $ \_ children -> do
+extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
     example "linear_extrude(10) square(5);"
     height :: Either ℝ (ℝ -> ℝ -> ℝ) <- argument "height" `defaultTo` Left 1
         `doc` "height to extrude to..."
@@ -449,7 +445,7 @@ extrude = newModuleWithSuite "linear_extrude" $ \_ children -> do
         ) children
 
 rotateExtrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-rotateExtrude = newModuleWithSuite "rotate_extrude" $ \_ children -> do
+rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     example "rotate_extrude() translate(20) circle(10);"
     totalRot     :: ℝ <- argument "a" `defaultTo` 360
                     `doc` "angle to sweep"
@@ -466,14 +462,14 @@ rotateExtrude = newModuleWithSuite "rotate_extrude" $ \_ children -> do
     return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
 
 shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-shell = newModuleWithSuite "shell" $ \_ children -> do
+shell = moduleWithSuite "shell" $ \_ children -> do
     w :: ℝ <- argument "w"
             `doc` "width of the shell..."
     return $ return $ objMap (Prim.shell w) (Prim.shell w) children
 
 -- Not a permanent solution! Breaks if can't pack.
 pack :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-pack = newModuleWithSuite "pack" $ \sourcePosition children -> do
+pack = moduleWithSuite "pack" $ \sourcePosition children -> do
     example "pack ([45,45], sep=2) { circle(10); circle(10); circle(10); circle(10); }"
     -- arguments
     size :: ℝ2 <- argument "size"
@@ -496,7 +492,7 @@ pack = newModuleWithSuite "pack" $ \sourcePosition children -> do
                     return children
 
 unit :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-unit = newModuleWithSuite "unit" $ \sourcePosition children -> do
+unit = moduleWithSuite "unit" $ \sourcePosition children -> do
     example "unit(\"inch\") {..}"
     -- arguments
     name :: String <- argument "unit"
@@ -532,11 +528,11 @@ unit = newModuleWithSuite "unit" $ \sourcePosition children -> do
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = mplus
 
-newModuleWithSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-newModuleWithSuite name modArgMapper = (Symbol name, modArgMapper)
+moduleWithSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
 
-newModuleWithoutSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
-newModuleWithoutSuite name modArgMapper = (Symbol name, modArgMapper)
+moduleWithoutSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+moduleWithoutSuite name modArgMapper = (Symbol name, modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (StateC [OVal])
 addObj2 x = return $ return [OObj2 x]

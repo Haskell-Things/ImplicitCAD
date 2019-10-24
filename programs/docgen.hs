@@ -8,9 +8,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, snd, (.), head, tail, length, (/=), (+))
-import Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives)
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol))
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error)
+import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
 
 import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_, mapM)
@@ -95,11 +95,10 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
 main = do
-        docs <- mapM (getArgParserDocs.($ []).snd) oldprimitives
+        docs <- mapM (getArgParserDocs.getArgParserFrom) primitiveModules
         let
-            names = map fst oldprimitives
-            docname = "ImplicitCAD Primitives"
-
+          names = map fst primitiveModules
+          docname = "ImplicitCAD Primitives"
         putStrLn (map (const '=') docname)
         putStrLn docname
         putStrLn (map (const '=') docname)
@@ -107,6 +106,11 @@ main = do
         putStrLn ""
         forM_ (zip names docs) $ \(moduleName, moduleDocList) ->
           dumpPrimitive moduleName moduleDocList 0
+          where
+            getArgParserFrom :: (Symbol, OVal) -> ArgParser(StateC [OVal])
+            getArgParserFrom (_, (ONModule _ implementation _)) = (implementation sourcePosition [])
+              where sourcePosition = SourcePosition 0 0 "docgen"
+            getArgParserFrom (_, _) = error "bad value in primitive array."
 
 -- | the format we extract documentation into
 data Doc = Doc String [DocPart]
@@ -130,7 +134,7 @@ getArgParserDocs ::
     ArgParser a      -- ^ ArgParser(s)
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)
 
-getArgParserDocs (AP  name fallback doc fnext) = do
+getArgParserDocs (AP name fallback doc fnext) = do
   otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(_ :: Ex.SomeException) -> return [])
   if otherDocs /= [Empty]
     then

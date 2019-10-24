@@ -10,12 +10,12 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, fst, snd)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OModule, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
-import Graphics.Implicit.ExtOpenScad.Primitives (oldprimitives, newPrimitiveModules)
+import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
@@ -27,10 +27,9 @@ defaultObjects = VarLookup $ fromList $
     ++ defaultFunctions
     ++ defaultFunctions2
     ++ defaultFunctionsSpecial
-    ++ oldPrimitiveModules
-    ++ newPrimitiveModules
-    ++ varArgModules
     ++ defaultPolymorphicFunctions
+    ++ primitiveModules
+    ++ varArgModules
 
 -- FIXME: Missing standard ones(which standard?):
 -- rand, lookup,
@@ -80,13 +79,6 @@ defaultFunctionsSpecial =
             (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
     ]
-
-oldPrimitiveModules :: [(Symbol, OVal)]
-oldPrimitiveModules =
-  map makeModule oldprimitives
-  where
-    makeModule a = (fst a, OModule (fst a) Nothing (snd a))
-
 
 varArgModules :: [(Symbol, OVal)]
 varArgModules =
