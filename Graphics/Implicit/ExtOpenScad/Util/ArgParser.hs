@@ -26,7 +26,7 @@ import qualified Data.Map as DM (null)
 
 import Data.Maybe (isNothing, fromJust, isJust)
 
-import Control.Arrow(first)
+import Control.Arrow (first)
 
 -- * ArgParser building functions
 

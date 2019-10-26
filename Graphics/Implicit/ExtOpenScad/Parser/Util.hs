@@ -63,8 +63,7 @@ number = ("number" ?:) $ do
            b <- option "" ( ('.':) <$> (char '.' >> many1 digit) )
            return (a ++ b)
         ,
-        do
-          ("0."++) <$> (char '.' >> many1 digit)
+        ("0."++) <$> (char '.' >> many1 digit)
         ]
   d <- option "0"
        (

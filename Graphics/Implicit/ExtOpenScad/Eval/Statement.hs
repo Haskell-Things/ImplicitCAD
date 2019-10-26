@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (<), (>), (&&), (==), (/=), map, fmap, flip, elem, not, zip, init, last)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), map, fmap, notElem, elem, not, zip, init, last, null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
@@ -36,7 +36,7 @@ import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
 
-import Control.Monad (forM_, forM, mapM_, when)
+import Control.Monad (forM_, forM, mapM_, when, unless)
 
 import Control.Monad.State (get, liftIO, runStateT, (>>))
 
@@ -97,7 +97,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               optionsMatch <- checkOptions args True
-              when (optionsMatch == False) (errorC sourcePos $ "Options check failed when executing user-defined module " ++ name)
+              unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " ++ name)
               evaluatedArgs <- evalArgs argsExpr
               -- Evaluate the suite.
               suiteResults <- runSuiteCapture varlookup suite
@@ -114,9 +114,10 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   [(_, suiteInfoFound)]   -> suiteInfoFound
                   []                      -> Nothing
                   ((_, suiteInfoFound):_) -> suiteInfoFound
-              when (length possibleInstances < 1) (do
-                                                      errorC sourcePos $ "no instance of " ++ name ++ " found to match given parameters.\nInstances available:\n" ++ show (ONModule (Symbol name) implementation forms)
-                                                      mapM_ (flip checkOptions True) $ fmap (Just . fst) forms)
+              when (null possibleInstances) (do
+                                                errorC sourcePos $ "no instance of " ++ name ++ " found to match given parameters.\nInstances available:\n" ++ show (ONModule (Symbol name) implementation forms)
+                                                mapM_ (`checkOptions` True) $ fmap (Just . fst) forms
+                                            )
 {-              when (length possibleInstances > 1) (do
                                                       errorC sourcePos $ "too many instances of " ++ name ++ " have been found that match given parameters."
                                                       mapM_ (flip checkOptions True) $ fmap (Just . fst) possibleInstances) -}
@@ -126,7 +127,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               vals <- runSuiteCapture varlookup suite
               suiteResults <- case suiteInfo of
                               Just True -> do
-                                when (vals == []) (errorC sourcePos "Suite required, but none provided.")
+                                when (null vals) (errorC sourcePos "Suite required, but none provided.")
                                 return vals
                               Just False -> return vals
                               _ -> do
@@ -153,71 +154,52 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 return []
         pushVals newVals
           where
-            selectInstances :: [([(Symbol, Bool)], Maybe Bool)] -> StateC ([([(Symbol, Bool)], Maybe Bool)])
+            selectInstances :: [([(Symbol, Bool)], Maybe Bool)] -> StateC [([(Symbol, Bool)], Maybe Bool)]
             selectInstances instances = do
-              validInstances <- forM instances $
+              validInstances <- forM instances
                     ( \(args, suiteInfo) -> do
                         res <- checkOptions (Just args) False
-                        return $ case res of
-                                   True -> (Just (args, suiteInfo))
-                                   _    -> Nothing
+                        return $ if res then Just (args, suiteInfo) else Nothing
                     )
               return $ catMaybes validInstances
-            checkOptions :: (Maybe [(Symbol, Bool)]) -> Bool -> StateC (Bool)
+            checkOptions :: Maybe [(Symbol, Bool)] -> Bool -> StateC Bool
             checkOptions args makeWarnings = do
               -- Find what arguments are satisfied by a named parameter.
               valNamedFound <- namedValuesSatisfied $ fromMaybe [] args
               let
                 -- Find what arguments are satisfied by a default value, were given in a named parameter, or were given.. and count them.
-                valDefaulted  = map fst $ filter (\t -> snd t == True) $ fromMaybe [] args
-                valNotDefaulted = map fst $ filter (\t -> snd t == False) $ fromMaybe [] args
+                valDefaulted  = map fst $ filter snd $ fromMaybe [] args
+                valNotDefaulted = map fst $ filter (not.snd) $ fromMaybe [] args
                 valUnnamed = unnamedParameters argsExpr
-                valUnnamedCount = length $ valUnnamed
-                valNamedCount = length $ namedParameters argsExpr
-                mappedDefaulted = filter (\t -> t `elem` valNamedFound) valDefaulted
-                mappedNotDefaulted = filter (\t -> t `elem` valNamedFound) valNotDefaulted
-                notMappedDefaultable = filter (\t -> not (t `elem` mappedDefaulted)) valDefaulted
-                notMappedNotDefaultable = filter (\t -> not (t `elem` mappedNotDefaulted)) valNotDefaulted
-                mapableFromUnnamed = filter ( \t -> (fst t) `elem` (notMappedDefaultable ++ notMappedNotDefaultable)) $ fromMaybe [] args
+                valNamed = namedParameters argsExpr
+                mappedDefaulted = filter (`elem` valNamedFound) valDefaulted
+                mappedNotDefaulted = filter (`elem` valNamedFound) valNotDefaulted
+                notMappedDefaultable = filter (`notElem` mappedDefaulted) valDefaulted
+                notMappedNotDefaultable = filter (`notElem` mappedNotDefaulted) valNotDefaulted
+                mapableFromUnnamed = filter ( \t -> fst t `elem` (notMappedDefaultable ++ notMappedNotDefaultable)) $ fromMaybe [] args
                 mapFromUnnamed = zip mapableFromUnnamed valUnnamed
---                mappedDefaultable = filter (\t -> fst (fst t) `elem` valDefaulted) mapFromUnnamed
---                mappedNotDefaultable = filter (\t -> fst (fst t) `elem` valNotDefaulted) mapFromUnnamed 
-                missingNotDefaultable = filter (\t -> not (fst (fst t) `elem` valDefaulted)) mapFromUnnamed
---                extraUnnamed = filter (\t -> not (t `elem` (valDefaulted ++ valNotDefaulted) ++ (map fst $ map fst $ mappedNotDefaultable ++ mappedDefaultable))) $ namedParameters argsExpr
-                extraUnnamed = filter (\t -> not (t `elem` (valDefaulted ++ valNotDefaulted))) $ namedParameters argsExpr
+                missingNotDefaultable = filter (\t -> fst (fst t) `notElem` valDefaulted) mapFromUnnamed
+                extraUnnamed = filter (`notElem` (valDefaulted ++ valNotDefaulted)) $ namedParameters argsExpr
                 parameterReport =  "Passed " ++
-                  (if valNamedCount > 0 then (show valNamedCount ++ (if valNamedCount == 1 then " named parameter" else " named parameters")) else "" ) ++
-                  (if valNamedCount > 0 && valUnnamedCount > 0 then (", and ") else "") ++
-                  (if valUnnamedCount > 0 then (show valUnnamedCount ++ (if valUnnamedCount == 1 then " un-named parameter." else " un-named parameters.")) else ".") ++
-                  (if length missingNotDefaultable > 0 then
-                      (if (length missingNotDefaultable) == 1
-                       then " Couldn't match one parameter: " ++ (show $ fst $ fst $ last missingNotDefaultable)
-                       else " Couldn't match " ++ show missingNotDefaultable ++ " parameters: " ++ (intercalate ", " $ map show $ map fst $ init missingNotDefaultable) ++ " and " ++ (show $ fst $ last missingNotDefaultable) ++ "."
+                  (if not (null valNamed) then show (length valNamed) ++ (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) ++
+                  (if not (null valNamed) && not (null valUnnamed) then ", and " else "") ++
+                  (if not (null valUnnamed) then show (length valUnnamed) ++ (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") ++
+                  (if not (null missingNotDefaultable) then
+                      (if length missingNotDefaultable == 1
+                       then " Couldn't match one parameter: " ++ show (fst $ fst $ last missingNotDefaultable)
+                       else " Couldn't match " ++ show missingNotDefaultable ++ " parameters: " ++ intercalate ", " (map (show.fst) $ init missingNotDefaultable) ++ " and " ++ show (fst $ last missingNotDefaultable) ++ "."
                       ) else "") ++
-                  (if length extraUnnamed > 0 then
-                      (if (length extraUnnamed) == 1
-                       then " Had one extra parameter: " ++ (show $ last extraUnnamed) 
-                       else " Had " ++ (show $ length extraUnnamed) ++ " extra parameters. They are:" ++ (intercalate ", " $ map show $ init extraUnnamed) ++ " and " ++ (show $ last extraUnnamed) ++ "."
+                  (if not (null extraUnnamed) then
+                      (if length extraUnnamed == 1
+                       then " Had one extra parameter: " ++ show (last extraUnnamed)
+                       else " Had " ++ show (length extraUnnamed) ++ " extra parameters. They are:" ++ intercalate ", " (map show $ init extraUnnamed) ++ " and " ++ show (last extraUnnamed) ++ "."
                       ) else "")
-{-                  ++
-                  (if (length mappedDefaultable > 0 || length mappedNotDefaultable > 0) then (
-                      "Mapped " ++
-                      (if length mappedDefaultable > 0 then
-                         (if (length mappedDefaultable == 1) then "one defaultable un-named parameter" else (show (length mappedDefaultable)) ++ " defaultable un-named parameters") else "") ++
-                      (if length mappedDefaultable > 0 && length mappedNotDefaultable > 0 then "and " else "") ++
-                      (if length mappedNotDefaultable > 0 then
-                         (if (length mappedNotDefaultable == 1) then "one required un-named parameter." else (show (length mappedDefaultable)) ++ " required un-named parameters.") else "")) else "") ++
-                  (if length mapableFromUnnamed > 0 then
-                      (if (length mapableFromUnnamed) == 1
-                       then " Considered one un-named parameter mapable: " ++ (show $ fst $ last mapableFromUnnamed) 
-                       else " Considered " ++ show (length mapableFromUnnamed) ++ " parameters mapable: " ++ (intercalate ", " $ map show $ map fst $ init mapableFromUnnamed) ++ " and " ++ (show $ fst $ last mapableFromUnnamed) ++ "."
-                      ) else "") -}
-              when ((length missingNotDefaultable) > 0 && makeWarnings)
+              when (not (null missingNotDefaultable) && makeWarnings)
                 (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
-              when (length extraUnnamed > 0 && isJust args && makeWarnings)
-                (errorC sourcePos $ "Too many parameters: " ++ (show $ length extraUnnamed) ++ " extra. " ++ parameterReport)
-              return $ (length missingNotDefaultable) == 0 && (length extraUnnamed) == 0
-            namedValuesSatisfied :: [(Symbol, Bool)] -> StateC ([Symbol])
+              when (not (null extraUnnamed) && isJust args && makeWarnings)
+                (errorC sourcePos $ "Too many parameters: " ++ show (length extraUnnamed) ++ " extra. " ++ parameterReport)
+              return $ null missingNotDefaultable && null extraUnnamed
+            namedValuesSatisfied :: [(Symbol, Bool)] -> StateC [Symbol]
             namedValuesSatisfied args = fmap catMaybes $ forM args $ 
               \(symbol, _) -> do
                 maybeVar <- lookupVar symbol
@@ -225,17 +207,15 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                          then Nothing
                          else Just symbol
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
-            namedParameters args = mapMaybe (
-              \(argName, _) -> argName
-              ) $ args
+            namedParameters = mapMaybe fst
             unnamedParameters :: [(Maybe Symbol, Expr)] -> [Expr]
-            unnamedParameters args = mapMaybe (
+            unnamedParameters = mapMaybe (
               \(argName, expr) ->
                 case argName of
                   Just _  -> Nothing
                   Nothing -> Just expr
-              ) $ args
-            evalArgs :: [(Maybe Symbol, Expr)] -> StateC([(Maybe Symbol, OVal)])
+              )
+            evalArgs :: [(Maybe Symbol, Expr)] -> StateC [(Maybe Symbol, OVal)]
             evalArgs args = forM args $ \(posName, expr) -> do
               val <- evalExpr sourcePos expr
               return (posName, val)

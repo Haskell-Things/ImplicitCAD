@@ -8,7 +8,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap, return, (++))
+import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -44,7 +44,7 @@ runOpenscad scadOpts constants source =
     in do
       (initialObjects, initialMessages) <- addConstants constants
       case parseProgram "" source of
-        Left e -> return (initialObjects, [], [], [mesg e] ++ initialMessages)
+        Left e -> return (initialObjects, [], [], mesg e : initialMessages)
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory

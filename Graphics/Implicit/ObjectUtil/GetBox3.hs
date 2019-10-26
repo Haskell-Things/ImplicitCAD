@@ -42,7 +42,7 @@ getBox3 (Complement3 _) =
         where
           infty :: (Fractional t) => t
           infty = 1/0
-getBox3 (UnionR3 r symbObjs) = outsetBox r $ ((left,bot,inward), (right,top,out))
+getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
     where
         boxes = map getBox3 symbObjs
         (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
@@ -158,9 +158,9 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
         (tminx, tmaxx, tminy, tmaxy) =
           let
             tvalsx :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
-            tvalsx tfun = fst $ unzip $ map tfun hrange
+            tvalsx tfun = map (fst . tfun) hrange
             tvalsy :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
-            tvalsy tfun = snd $ unzip $ map tfun hrange
+            tvalsy tfun = map (snd . tfun) hrange
           in case translate of
             Left  (tvalx, tvaly) -> (tvalx, tvalx, tvaly, tvaly)
             Right tfun -> (minimum $ tvalsx tfun, maximum $ tvalsx tfun, minimum $ tvalsy tfun, maximum $ tvalsy tfun)

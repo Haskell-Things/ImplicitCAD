@@ -87,7 +87,7 @@ varArgModules =
        ,modVal "for" for
        ,modVal "color" executeSuite
     ] where
-        modVal name func = ((Symbol name), OVargsModule name func)
+        modVal name func = (Symbol name, OVargsModule name func)
 
         -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
         executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
@@ -110,8 +110,8 @@ varArgModules =
                 compat (ScadOpts compat_flag _) = compat_flag
                 openScadFormat = "ECHO: " ++ text args
                 extopenscadFormat = concatMap showe' args
-                formattedMessage = if (compat scadOpts) then openScadFormat else extopenscadFormat
-            addMessage TextOut pos $ formattedMessage
+                formattedMessage = if compat scadOpts then openScadFormat else extopenscadFormat
+            addMessage TextOut pos formattedMessage
             runSuite suite
 
         for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
@@ -123,8 +123,8 @@ varArgModules =
             -- | convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
             iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
             iterator [] = [id]
-            iterator ((Nothing, _):iterators) = [outer | outer <- iterator iterators]
-            iterator ((Just var, vals):iterators) = [outer . (varify inner) | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
+            iterator ((Nothing, _):iterators) = iterator iterators
+            iterator ((Just var, vals):iterators) = [outer . varify inner | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
             -- convert the loop iterator variable's expression value to a list (possibly of one value)
             valsList :: OVal -> [OVal]
             valsList v@(OBool _) = [v]

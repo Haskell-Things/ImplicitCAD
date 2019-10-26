@@ -112,7 +112,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
 -- | parse expressions that don't associate, either because they are not operators or because they are operators
 --   that contain the expressions they operate on in start and end tokens, like parentheses, and no other operator can associate with their expressions.
 nonAssociativeExpr :: GenParser Char st Expr
-nonAssociativeExpr = do
+nonAssociativeExpr =
        number
    <|> vectorListParentheses
    <|> variableish

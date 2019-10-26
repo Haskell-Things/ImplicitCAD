@@ -84,7 +84,7 @@ primitiveModules =
         (name, implementation) = func
         instances = map fixup rawInstances
         fixup :: ([(String, Bool)], Maybe Bool) -> ([(Symbol, Bool)], Maybe Bool)
-        fixup (args, suiteInfo) = ((map fixupArgs args), suiteInfo)
+        fixup (args, suiteInfo) = (map fixupArgs args, suiteInfo)
           where
             fixupArgs :: (String, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) =(Symbol symbol, maybeDefault) 
@@ -404,7 +404,7 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
         `doc` "twist as we extrude, either a total amount to twist or a function..."
     scaleArg  :: Either ℝ (ℝ  -> ℝ) <- argument "scale"  `defaultTo` Left 1
         `doc` "scale according to this funciton as we extrude..."
-    translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate"  `defaultTo` (Left (0,0))
+    translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate"  `defaultTo` Left (0,0)
         `doc` "translate according to this funciton as we extrude..."
     r      :: ℝ   <- argument "r"      `defaultTo` 0
         `doc` "round the top/bottom."
@@ -422,19 +422,13 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
             then Prim.translate (0,0,-heightn/2.0)
             else id
         isTwistID = case twistArg of
-                      Left constant -> if constant == 0
-                                       then True
-                                       else False
+                      Left constant -> constant == 0
                       Right _       -> False
         isScaleID = case scaleArg of
-                      Left constant -> if constant == 1
-                                       then True
-                                       else False
+                      Left constant -> constant == 1
                       Right _       -> False
         isTransID = case translateArg of
-                      Left constant -> if constant == (0,0)
-                                       then True
-                                       else False
+                      Left constant -> constant == (0,0)
                       Right _       -> False
     return $ return $ obj2UpMap (
         \obj -> case height of

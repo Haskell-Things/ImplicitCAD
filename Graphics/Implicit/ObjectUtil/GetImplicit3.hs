@@ -149,7 +149,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
             Left sval  -> if sval == 1
                           then (x,y)
                           else (x/sval    , y/sval)
-            Right sfun ->      (x/(sfun s), y/(sfun s))
+            Right sfun ->      (x/sfun s, y/sfun s)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
         rotateVec θ (x,y)
           | θ == 0    = (x,y)
@@ -162,7 +162,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
             h = height' (x,y)
             res = rmax r
                 (obj
-                 . rotateVec (-k*(twistVal twist z h))
+                 . rotateVec (-k*twistVal twist z h)
                  . scaleVec scale z
                  . translatePos translate z
                  $ (x,y))

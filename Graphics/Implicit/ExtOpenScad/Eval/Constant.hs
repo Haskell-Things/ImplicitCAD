@@ -56,11 +56,10 @@ addConstants constants = do
     execAssignments [] _ = return ()
     execAssignments (assignment:xs) count = do
       let
-        pos = (SourcePosition count 1 "cmdline_constants")
+        pos = SourcePosition count 1 "cmdline_constants"
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
       case parseAssignment "cmdline_constant" assignment of
-        Left e -> do
-          addMessage SyntaxError pos $ show' e
+        Left e            -> addMessage SyntaxError pos $ show' e
         Right (key, expr) -> do
           res <- evalExpr pos expr
           case matchPat key res of
@@ -88,7 +87,7 @@ runExpr expression = do
     execExpression :: String -> StateC OVal
     execExpression expr = do
       let
-        pos = (SourcePosition 1 1 "raw_expression")
+        pos = SourcePosition 1 1 "raw_expression"
         show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
       case parseExpression "raw_expression" expr of
         Left e -> do

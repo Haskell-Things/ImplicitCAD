@@ -70,9 +70,7 @@ computation A2 =
     function
   ) <* matchSemi
   *<|>
-  (
-    assignment
-  ) <* matchSemi
+  assignment <* matchSemi
 
 -- | A suite of s!
 --   What's a suite? Consider:

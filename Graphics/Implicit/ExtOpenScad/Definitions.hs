@@ -168,9 +168,9 @@ instance Show OVal where
         showInstances [oneInstance] = "module " ++ name ++ showInstance oneInstance
         showInstances multipleInstances = "Module " ++ name ++ "[ " ++ intercalate ", " (map showInstance multipleInstances) ++ " ]"
         showInstance :: ([(Symbol, Bool)], Maybe Bool) -> String
-        showInstance (arguments, suiteInfo) = " (" ++ intercalate ", " (map showArg (arguments)) ++ ") {}" ++ showSuiteInfo suiteInfo
+        showInstance (arguments, suiteInfo) = " (" ++ intercalate ", " (map showArg arguments) ++ ") {}" ++ showSuiteInfo suiteInfo
         showSuiteInfo suiteInfo = case suiteInfo of
-                          Just requiresSuite -> if requiresSuite == True
+                          Just requiresSuite -> if requiresSuite
                                                 then " requiring suite {}"
                                                 else " accepting suite {}"
                           _ -> ""
