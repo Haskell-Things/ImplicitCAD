@@ -1,6 +1,6 @@
 Name:                implicit
 Version:             0.2.1
-Cabal-version:       >= 1.8
+Cabal-version:       >= 1.10
 Tested-with:         GHC >= 8.2
 Build-type:          Simple
 Synopsis:            A Math-inspired programmatic 2&3D CAD system: CSG, bevels, and shells; gcode export..
@@ -17,6 +17,8 @@ Category:            Graphics
 
 Library
 
+    Default-Extensions: NoImplicitPrelude
+    Default-Language: Haskell2010
     Build-depends:
                   base >= 3 && < 5,
                   filepath,
@@ -114,6 +116,8 @@ Library
 
 Executable extopenscad
    Main-is: extopenscad.hs
+   default-extensions: NoImplicitPrelude
+   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  base,
@@ -145,6 +149,8 @@ Executable extopenscad
 
 Executable docgen
    main-is: docgen.hs
+   default-extensions: NoImplicitPrelude
+   Default-Language: Haskell2010
    Hs-source-dirs: programs
    build-depends:
                  base,
@@ -167,6 +173,8 @@ Executable docgen
 
 Executable implicitsnap
    Main-is: implicitsnap.hs
+   default-extensions: NoImplicitPrelude
+   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  base,
@@ -200,6 +208,8 @@ Executable implicitsnap
 
 Executable Benchmark
    Main-is: Benchmark.hs
+   default-extensions: NoImplicitPrelude
+   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  base,
@@ -225,6 +235,8 @@ Executable Benchmark
 
 Test-suite test-implicit
     Type: exitcode-stdio-1.0
+    default-extensions: NoImplicitPrelude
+    Default-Language: Haskell2010
     Build-depends:
                   base,
                   hspec,
@@ -258,6 +270,8 @@ Test-suite test-implicit
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
+    default-extensions: NoImplicitPrelude
+    Default-Language: Haskell2010
     Build-depends:
                   base,
                   criterion,
