@@ -29,7 +29,7 @@ joinSegs (Polyline present:remaining) =
     in
         case findNext remaining of
             (Nothing, _) -> Polyline present: joinSegs remaining
-            (Just (Polyline match), others) -> joinSegs $ (Polyline $ present ++ match) : others
+            (Just (Polyline match), others) -> joinSegs $ Polyline (present ++ match) : others
 
 -- | Simplify and sort a polyline.
 reducePolyline :: Polyline -> Polyline
