@@ -108,7 +108,7 @@ main = do
           dumpPrimitive moduleName moduleDocList 0
           where
             getArgParserFrom :: (Symbol, OVal) -> ArgParser(StateC [OVal])
-            getArgParserFrom (_, (ONModule _ implementation _)) = (implementation sourcePosition [])
+            getArgParserFrom (_, ONModule _ implementation _) = implementation sourcePosition []
               where sourcePosition = SourcePosition 0 0 "docgen"
             getArgParserFrom (_, _) = error "bad value in primitive array."
 

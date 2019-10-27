@@ -23,9 +23,9 @@ import ExecSpec.Util ((-->), num)
 default (ℝ)
 
 exprExec :: Spec
-exprExec = do
+exprExec =
   describe "arithmatic" $ do
-    it "handles simple addition" $
+    it "performs simple addition" $
       "1+1" --> num 2
-    it "handles multiple addition" $
+    it "performs multiple addition" $
       "1+1+1" --> num 3

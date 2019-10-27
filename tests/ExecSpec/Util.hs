@@ -32,4 +32,4 @@ infixr 1 -->
 -- | Types
 
 num :: ℝ -> OVal
-num x = ONum x
+num = ONum
