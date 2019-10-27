@@ -5,6 +5,10 @@
 -- FIXME: why are these required?
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
+-- allow us to specify what package to import what module from.
+-- We don't actually care, but when we compile our haskell examples, we do.
+{-# LANGUAGE PackageImports #-}
+
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
@@ -28,7 +32,7 @@ import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages)
 
 import Control.Monad (mapM_)
 
-import Control.Monad.State.Lazy (runStateT)
+import "monads-tf" Control.Monad.State.Lazy (runStateT)
 
 import System.Directory (getCurrentDirectory)
 

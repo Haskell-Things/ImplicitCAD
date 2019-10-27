@@ -5,6 +5,9 @@
 -- FIXME: describe why we need this.
 {-# LANGUAGE OverloadedStrings #-}
 
+-- allow us to select what package to import what module from. We don't care, but our examples do.
+{-# LANGUAGE PackageImports #-}
+
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
@@ -13,7 +16,7 @@ import Prelude(Either(Left, Right), ($), (.), (*), map, ($!), (-), (/), pi, erro
 import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>), mconcat, fromLazyText, bf)
 
-import Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
+import "monads-tf" Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
 
 import Data.List (intersperse)
 import Data.Function (fix)

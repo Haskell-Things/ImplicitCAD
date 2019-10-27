@@ -5,6 +5,10 @@
 -- FIXME: why is this required?
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- allow us to specify what package to import what module from.
+-- We don't actually care, but when we compile our haskell examples, we do.
+{-# LANGUAGE PackageImports #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), map, fmap, notElem, elem, not, zip, init, last, null)
@@ -38,7 +42,7 @@ import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
 
 import Control.Monad (forM_, forM, mapM_, when, unless)
 
-import Control.Monad.State (get, liftIO, runStateT, (>>))
+import "monads-tf" Control.Monad.State (get, liftIO, runStateT, (>>))
 
 import System.FilePath (takeDirectory)
 
@@ -118,9 +122,12 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                                                 errorC sourcePos $ "no instance of " ++ name ++ " found to match given parameters.\nInstances available:\n" ++ show (ONModule (Symbol name) implementation forms)
                                                 mapM_ (`checkOptions` True) $ fmap (Just . fst) forms
                                             )
-{-              when (length possibleInstances > 1) (do
+              -- Ignore this for now, because all instances we define have the same suite requirements.
+              {-
+              when (length possibleInstances > 1) (do
                                                       errorC sourcePos $ "too many instances of " ++ name ++ " have been found that match given parameters."
-                                                      mapM_ (flip checkOptions True) $ fmap (Just . fst) possibleInstances) -}
+                                                      mapM_ (`checkOptions` True) $ fmap (Just . fst) possibleInstances)
+              -}
               -- Evaluate all of the arguments.
               evaluatedArgs <- evalArgs argsExpr
               -- Evaluate the suite.

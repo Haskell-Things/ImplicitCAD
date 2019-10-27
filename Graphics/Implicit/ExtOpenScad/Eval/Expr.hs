@@ -2,6 +2,10 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- allow us to specify what package to import what module from.
+-- We don't actually care, but when we compile our haskell examples, we do.
+{-# LANGUAGE PackageImports #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
 import Prelude (String, Maybe(Just, Nothing), IO, concat, ($), map, return, zip, (!!), const, (++), foldr, concatMap, (.), (<$>))
@@ -30,7 +34,7 @@ import Data.Map (fromList, lookup)
 
 import Control.Monad (zipWithM, mapM, forM, mapM_)
 
-import Control.Monad.State (StateT, get, modify, liftIO, runStateT)
+import "monads-tf" Control.Monad.State (StateT, get, modify, liftIO, runStateT)
 
 newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
 type StateE = StateT ExprState IO

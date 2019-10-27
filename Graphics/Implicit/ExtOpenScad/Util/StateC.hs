@@ -8,6 +8,11 @@
 -- For the signature of mapMaybeM.
 {-# LANGUAGE KindSignatures #-}
 
+-- allow us to specify what package to import what module from.
+-- We don't actually care, but when we compile our haskell examples, we do.
+{-# LANGUAGE PackageImports #-}
+
+
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, scadOptions) where
 
 import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (++), return)
@@ -15,8 +20,11 @@ import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (++), re
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
 
 import Data.Map (lookup)
-import Control.Monad.State (get, put, modify)
+
+import "monads-tf" Control.Monad.State (get, put, modify)
+
 import System.FilePath((</>))
+
 import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup

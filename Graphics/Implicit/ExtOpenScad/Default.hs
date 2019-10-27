@@ -5,7 +5,9 @@
 -- Allow us to use explicit foralls when writing function type declarations.
 {-# LANGUAGE ExplicitForAll #-}
 
--- We'd like to parse openscad-ish code, with some improvements, for backwards compatability.
+-- allow us to specify what package to import what module from.
+-- We don't actually care, but when we compile our haskell examples, we do.
+{-# LANGUAGE PackageImports #-}
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
@@ -19,7 +21,8 @@ import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate, concatMap)
-import Control.Monad.State (forM_)
+
+import "monads-tf" Control.Monad.State (forM_)
 
 defaultObjects :: VarLookup
 defaultObjects = VarLookup $ fromList $
