@@ -25,11 +25,8 @@ instance FastN Fastℕ where
   toFastℕ = id
   {-# INLINABLE toFastℕ #-}
 
-instance Show Fastℕ where
-  show (Fastℕ n) = show n
-
 -- System integers, meant to go fast, and have no chance of wrapping 2^31.
 -- When Read and Show instances exist on a given type they need to satisfy
 -- read . show = id
 newtype Fastℕ = Fastℕ Int
-  deriving (Read, Eq, Ord, Num, Enum, Integral, Real)
+  deriving (Show, Read, Eq, Ord, Num, Enum, Integral, Real)
