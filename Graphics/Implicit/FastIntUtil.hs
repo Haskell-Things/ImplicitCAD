@@ -25,7 +25,6 @@ instance FastN Fastℕ where
   toFastℕ = id
   {-# INLINABLE toFastℕ #-}
 
-
 -- System integers, meant to go fast, and have no chance of wrapping 2^31.
 newtype Fastℕ = Fastℕ Int
   deriving (Show, Read, Eq, Ord, Num, Enum, Integral, Real)
