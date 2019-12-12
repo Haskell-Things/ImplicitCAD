@@ -25,10 +25,10 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1)
+import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1, Int)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 
@@ -191,8 +191,8 @@ data SourcePosition = SourcePosition
     deriving (Eq)
 
 instance Show SourcePosition where
-    show (SourcePosition line col []) = "line " ++ show line ++ ", column " ++ show col
-    show (SourcePosition line col filePath) = "line " ++ show line ++ ", column " ++ show col ++ ", file " ++ filePath
+    show (SourcePosition line col []) = "line " ++ show ((fromFastℕ line) :: Int) ++ ", column " ++ show ((fromFastℕ col) :: Int)
+    show (SourcePosition line col filePath) = "line " ++ show ((fromFastℕ line) :: Int) ++ ", column " ++ show ((fromFastℕ col) :: Int) ++ ", file " ++ filePath
 
 -- | The types of messages the execution engine can send back to the application.
 data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
