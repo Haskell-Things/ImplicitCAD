@@ -9,9 +9,9 @@ stl2ps=/disk4/faikvm.com/stltools/stltools/stl2ps.py
 convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
+GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
 # new-style location root. must NOT have trailing slash
-#BUILDROOT=dist
-BUILDROOT=dist-newstyle/build/i386-linux/ghc-8.6.5/implicit-0.2.1
+BUILDROOT=dist-newstyle/build/i386-linux/ghc-${GHCVERSION}/implicit-0.2.1
 EXEBUILDROOT=${BUILDROOT}/x/
 TESTBUILDROOT=${BUILDROOT}/t/
 BENCHBUILDROOT=${BUILDROOT}/b/
@@ -74,7 +74,7 @@ install: build
 	cabal install
 
 # Cleanup from using the rules in this file.
-clean: Setup
+clean:
 	rm -f Examples/*.stl
 	rm -f Examples/*.svg
 	rm -f Examples/*.ps
