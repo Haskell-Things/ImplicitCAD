@@ -94,8 +94,8 @@ distclean: clean Setup
 	./Setup clean
 	rm -f Setup Setup.hi Setup.o
 	rm -rf dist-newstyle
-	rm -f `find ./ -name *~`
-	rm -f `find ./ -name \#*\#`
+	rm -f `find ./ -name "*~"`
+	rm -f `find ./ -name "\#*\#"`
 
 # Destroy the current user's cabal/ghc environment.
 nukeclean: distclean
