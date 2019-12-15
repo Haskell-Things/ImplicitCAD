@@ -16,20 +16,33 @@ EXEBUILDROOT=${BUILDROOT}/x/
 TESTBUILDROOT=${BUILDROOT}/t/
 BENCHBUILDROOT=${BUILDROOT}/b/
 
+exebin = ${EXEBUILDROOT}/$(1)/build/$(1)/$(1)
+exedir = ${EXEBUILDROOT}/$(1)
+
 # The location of the created extopenscad binary, for running shell based test cases.
-EXTOPENSCAD=${EXEBUILDROOT}/extopenscad/build/extopenscad/extopenscad
+EXTOPENSCAD=extopenscad
+EXTOPENSCADBIN=$(call exebin,${EXTOPENSCAD})
+EXTOPENSCADDIR=$(call exedir,${EXTOPENSCAD})
 # The location of the implicitsnap binary, which listens for requests via http. The backend of the website.
-IMPLICITSNAP=${EXEBUILDROOT}/implicitsnap/build/implicitsnap/implicitsnap
+IMPLICITSNAP=implicitsnap
+IMPLICITSNAPBIN=$(call exebin,${IMPLICITSNAP})
+IMPLICITSNAPDIR=$(call exedir,${IMPLICITSNAP})
 # The location of the benchmark binary, for benchmarking some implicitcad internals.
-BENCHMARK=${EXEBUILDROOT}/Benchmark/build/Benchmark/Benchmark
+BENCHMARK=Benchmark
+BENCHMARKBIN=$(call exebin,${BENCHMARK})
+BENCHMARKDIR=$(call exedir,${BENCHMARK})
+# The location of the documentation generator. for documenting (some of) the extopenscad language.
+DOCGEN=docgen
+DOCGENBIN=$(call exebin,${DOCGEN})
+DOCGENDIR=$(call exedir,${DOCGEN})
 # The location of the parser benchmark binary, specifically for benchmarking implicitcad's parser.
 PARSERBENCH=${BENCHBUILDROOT}/parser-bench/build/parser-bench/parser-bench
+PARSERBENCHDIR=${BENCHBUILDROOT}/parser-bench
 # The location of the created test binary, for running haskell test cases.
 TESTSUITE=${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit
+TESTSUITEDIR=${TESTBUILDROOT}/test-implicit
 # The location of it's source.
 TESTFILES=$(shell find tests/ -name '*.hs')
-# The location of the documentation generator. for documenting (some of) the extopenscad language.
-DOCGEN=${EXEBUILDROOT}/docgen/build/docgen/docgen
 
 ## Options used when calling ImplicitCAD. for testing, and for image generation.
 # Enable multiple CPU usage.
@@ -51,7 +64,8 @@ SCADOPTS?=-q
 LIBFILES=$(shell find Graphics -name '*.hs')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
-EXECTARGETS=$(EXTOPENSCAD) $(IMPLICITSNAP) $(BENCHMARK) $(TESTSUITE) $(PARSERBENCH) $(DOCGEN)
+EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
+EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
 # Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
@@ -82,12 +96,13 @@ clean:
 	rm -f Examples/example[0-9][0-9]
 	rm -f Examples/*.hi
 	rm -f Examples/*.o
+	rm -f Examples/example*.cachegrind.*
 	rm -f tests/*.stl
 	rm -rf docs/parser.md
 	rm -f $(TARGETS)
-	rm -rf ${BUILDROOT}/build/Graphics
+	rm -rf ${EXECBUILDDIRS} ${PARSERBENCHDIR} ${TESTSUITEDIR}
 	rm -f ${BUILDROOT}/build/libHS*
-	rm -f Examples/example*.cachegrind.*
+	rm -f ${BUILDROOT}/cache/registration
 
 # Clean up before making a release.
 distclean: clean Setup
@@ -111,8 +126,8 @@ dist: $(TARGETS)
 	./Setup sdist
 
 # Generate examples.
-examples: $(EXTOPENSCAD)
-	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { echo $$each ; ../$(EXTOPENSCAD) $(SCADOPTS) $$each $(RTSOPTS); } done
+examples: $(EXTOPENSCADBIN)
+	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { echo $$each ; ../$(EXTOPENSCADBIN) $(SCADOPTS) $$each $(RTSOPTS); } done
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; cd ..; $(GHC) Examples/$$filename.hs -o Examples/$$filename; cd Examples; echo $$filename; $$filename +RTS -t ; } done
 
 # Generate images from the examples, so we can upload the images to our website.
@@ -121,7 +136,7 @@ images: examples
 
 # Hspec parser tests.
 tests: $(TESTSUITE) $(TESTFILES)
-#	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCAD) $$each ${RESOPTS} ${RTSOPTS}; } done
+#	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCADBIN) $$each ${RESOPTS} ${RTSOPTS}; } done
 	$(TESTSUITE)
 
 # The ImplicitCAD library.
@@ -135,6 +150,7 @@ ${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit: $(TESTFILES) S
 # Build a binary target with cabal.
 ${EXEBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs Setup ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal new-build $(word 1,$(subst /, ,$*))
+	touch $@
 
 # Build a benchmark target with cabal.
 ${BENCHBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs Setup ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
@@ -149,4 +165,4 @@ ${BUILDROOT}/setup-config: implicit.cabal
 # The setup command, used to perform administrative tasks (haddock, upload to hackage, clean, etc...).
 Setup: Setup.*hs ${BUILDROOT}/setup-config $(LIBTARGET)
 	$(GHC) -O2 -Wall --make Setup -package Cabal
-
+	touch $@
