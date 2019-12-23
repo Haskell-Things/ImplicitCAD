@@ -194,7 +194,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   (if not (null missingNotDefaultable) then
                       (if length missingNotDefaultable == 1
                        then " Couldn't match one parameter: " ++ show (fst $ fst $ last missingNotDefaultable)
-                       else " Couldn't match " ++ show missingNotDefaultable ++ " parameters: " ++ intercalate ", " (map (show.fst) $ init missingNotDefaultable) ++ " and " ++ show (fst $ last missingNotDefaultable) ++ "."
+                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map (show.fst) $ init missingNotDefaultable) ++ " and " ++ show (fst $ last missingNotDefaultable) ++ "."
                       ) else "") ++
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
