@@ -198,7 +198,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                       ) else "") ++
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
-                       then " Had one extra parameter: " ++ show (last extraUnnamed)
+                       then " Had one extra parameter: " ++ showSymbol (last extraUnnamed)
                        else " Had " ++ show (length extraUnnamed) ++ " extra parameters. They are:" ++ intercalate ", " (map showSymbol $ init extraUnnamed) ++ " and " ++ showSymbol (last extraUnnamed) ++ "."
                       ) else "")
                 showSymbol :: Symbol -> String
