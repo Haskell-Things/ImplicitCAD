@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
-import Prelude (String, Char, ($), foldl1, map, (.), return, (>>), Bool(True, False), read, (**), (*), (==), (++), (<$>), (<$))
+import Prelude (String, Char, ($), foldl1, map, (.), pure, (*>), Bool(True, False), read, (**), (*), (==), (<>), (<$>), (<$))
 
 import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, optional, choice, option, oneOf, between)
 
@@ -60,22 +60,22 @@ number = ("number" ?:) $ do
        [
          do
            a <- many1 digit
-           b <- option "" ( ('.':) <$> (char '.' >> many1 digit) )
-           return (a ++ b)
+           b <- option "" ( ('.':) <$> (char '.' *> many1 digit) )
+           pure (a <> b)
         ,
-        ("0."++) <$> (char '.' >> many1 digit)
+        ("0."<>) <$> (char '.' *> many1 digit)
         ]
   d <- option "0"
        (
-         oneOf "eE" >> choice
+         oneOf "eE" *> choice
          [
-           ('-':) <$> (char '-' >> many1 digit)
+           ('-':) <$> (char '-' *> many1 digit)
          ,
-           optional (char '+') >> many1 digit
+           optional (char '+') *> many1 digit
          ]
        )
   _ <- whiteSpace
-  return . LitE $ ONum $ if d == "0"
+  pure . LitE $ ONum $ if d == "0"
                          then read h
                          else read h * (10 ** read d)
 
