@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), map, fmap, notElem, elem, not, zip, init, last, null)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), map, fmap, notElem, elem, not, zip, init, last, null, String)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
@@ -101,7 +101,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               optionsMatch <- checkOptions args True
-              unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " ++ name)
+              unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " ++ name ++ ".")
               evaluatedArgs <- evalArgs argsExpr
               -- Evaluate the suite.
               suiteResults <- runSuiteCapture varlookup suite
@@ -194,13 +194,15 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   (if not (null missingNotDefaultable) then
                       (if length missingNotDefaultable == 1
                        then " Couldn't match one parameter: " ++ show (fst $ fst $ last missingNotDefaultable)
-                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map (show.fst) $ init missingNotDefaultable) ++ " and " ++ show (fst $ last missingNotDefaultable) ++ "."
+                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map (showSymbol.fst.fst) $ init missingNotDefaultable) ++ " and " ++ showSymbol (fst.fst $ last missingNotDefaultable) ++ "."
                       ) else "") ++
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
                        then " Had one extra parameter: " ++ show (last extraUnnamed)
-                       else " Had " ++ show (length extraUnnamed) ++ " extra parameters. They are:" ++ intercalate ", " (map show $ init extraUnnamed) ++ " and " ++ show (last extraUnnamed) ++ "."
+                       else " Had " ++ show (length extraUnnamed) ++ " extra parameters. They are:" ++ intercalate ", " (map showSymbol $ init extraUnnamed) ++ " and " ++ showSymbol (last extraUnnamed) ++ "."
                       ) else "")
+                showSymbol :: Symbol -> String
+                showSymbol (Symbol sym) = show sym
               when (not (null missingNotDefaultable) && makeWarnings)
                 (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
               when (not (null extraUnnamed) && isJust args && makeWarnings)
