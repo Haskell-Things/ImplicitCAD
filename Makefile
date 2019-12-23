@@ -10,7 +10,7 @@ convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
-ARCHITECTURE=$(shell arch)
+ARCHITECTURE=$(shell arch | sed "s/i[3-6]86/i386/" )
 # new-style location root. must NOT have trailing slash
 BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-0.2.1
 EXEBUILDROOT=${BUILDROOT}/x/
