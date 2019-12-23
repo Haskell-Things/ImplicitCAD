@@ -9,7 +9,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, return, ($), (++), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip)
+import Prelude (Char, Maybe(Nothing, Just), String, return, ($), (++), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), Symbol(Symbol))
 
@@ -52,37 +52,21 @@ expr0 = foldr ($) nonAssociativeExpr levels
            <|>
             return condition
       , \higher -> -- || boolean OR operator
-          chainl1 higher (do
-                             op <- matchOR
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchOR
       , \higher -> -- && boolean AND operator
-          chainl1 higher (do
-                             op <- matchAND
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchAND
       , \higher -> -- == and != operators
-          chainl1 higher (do
-                             op <- matchEQ <|> matchNE
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> (matchEQ <|> matchNE)
       , \higher -> -- <, <=, >= and > operators
-          chainl1 higher (do
-                             op <- matchLE <|> matchLT <|> matchGE <|> matchGT
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> (matchLE <|> matchLT <|> matchGE <|> matchGT)
       , \higher -> -- + and - operators
-          chainl1 higher (do
-                             op <- oneOf "+-" <* whiteSpace
-                             return $ binaryOperation [op])
+          chainl1 higher $ binaryOperation . pure <$> oneOf "+-" <* whiteSpace
       , \higher -> -- ++ string/list concatenation operator. This is not available in OpenSCAD.
-          chainl1 higher (do
-                             op <- matchCAT
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchCAT
       , \higher -> -- ^ exponent operator. This is not available in OpenSCAD.
-          chainr1 higher (do
-                             op <- matchTok '^'
-                             return $ binaryOperation op)
+          chainr1 higher $ binaryOperation <$> matchTok '^'
       , \higher -> -- *, /, % operators
-          chainl1 higher (do
-                             op <- oneOf "*/%" <* whiteSpace
-                             return $ binaryOperation [op])
+          chainl1 higher $ binaryOperation . pure <$> oneOf "*/%" <* whiteSpace
       , \higher ->
           fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'.
                   do
