@@ -40,24 +40,21 @@ import Data.Functor (($>))
 pattern Name :: String -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
-data CompIdx = A1 | A2
-
 -- | all of the token parsers are lexemes which consume all trailing spaces nicely.
 -- | This leaves us to deal only with the first spaces in the file.
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
     program :: GenParser Char st [StatementI]
-    program = removeNoOps <$> (whiteSpace *> many (computation A1) <* eof)
+    program = removeNoOps <$> (whiteSpace *> many computation  <* eof)
 
+
+-- | A computable block of code, or a comment.
+computationOrComment :: GenParser Char st StatementI
+computationOrComment = computation <|> throwAway
 
 -- | A computable block of code in our openscad-like programming language.
-computation :: CompIdx -> GenParser Char st StatementI
-computation A1 =
-  computation A2
-  <|>
-  throwAway
-
-computation A2 =
+computation :: GenParser Char st StatementI
+computation =
   -- suite statements: no semicolon...
   userModule
   <|>
@@ -88,9 +85,9 @@ computation A2 =
 --  are in turn StatementI s.
 suite :: GenParser Char st [StatementI]
 suite = (
-    removeNoOps . (:[]) <$> computation A1
+    removeNoOps . (:[]) <$> computationOrComment
   *<|>
-    removeNoOps <$> surroundedBy '{' (many (computation A1)) '}'
+    removeNoOps <$> surroundedBy '{' (many computationOrComment) '}'
   ) <?> "suite"
 
 -- | Every StatementI requires a source position, thus we can build a combinator.
@@ -99,7 +96,7 @@ statementI p = StatementI <$> sourcePos <*> p
 
 -- | Commenting out a computation: use % or * before the statement, and it will not be run.
 throwAway :: GenParser Char st StatementI
-throwAway = statementI $ DoNothing <$ oneOf "%*" <* whiteSpace <* computation A2
+throwAway = statementI $ DoNothing <$ oneOf "%*" <* whiteSpace <* computation
 
 -- | An include! Basically, inject another extopenscad file here...
 include :: GenParser Char st StatementI
@@ -118,6 +115,9 @@ assignment = statementI p <?> "assignment"
     p :: GenParser Char st (Statement StatementI)
     p = (:=) <$> patternMatcher <* matchTok '=' <*> expr0
 
+parens :: GenParser Char st a -> GenParser Char st a
+parens p = surroundedBy '(' p ')'
+
 -- | A function declaration (parser)
 function :: GenParser Char st StatementI
 function = statementI p <?> "function"
@@ -127,14 +127,14 @@ function = statementI p <?> "function"
     lval :: GenParser Char st GIED.Pattern
     lval = Name <$> (matchFunction *> matchIdentifier)
     rval :: GenParser Char st Expr
-    rval = LamE <$> surroundedBy '(' (sepBy patternMatcher matchComma) ')' <*> (matchTok '=' *> expr0)
+    rval = LamE <$> parens (sepBy patternMatcher matchComma) <*> (matchTok '=' *> expr0)
 
 -- | An if statement (parser)
 ifStatementI :: GenParser Char st StatementI
 ifStatementI = statementI p <?> "if"
   where
     p :: GenParser Char st (Statement StatementI)
-    p = If <$> (matchIf *> surroundedBy '(' expr0 ')') <*> suite <*> option [] (matchElse *> suite)
+    p = If <$> (matchIf *> parens expr0) <*> suite <*> option [] (matchElse *> suite)
 
 -- | parse a call to a module.
 userModule :: GenParser Char st StatementI
@@ -153,8 +153,8 @@ userModuleDeclaration = statementI p <?> "module declaration"
 -- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
 moduleArgsUnit =
-    surroundedBy '('
-      (sepBy (
+  parens $
+     sepBy (
         do
             -- eg. a = 12
             symb <- matchIdentifier
@@ -163,27 +163,25 @@ moduleArgsUnit =
         *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
-            argVars <- surroundedBy '(' (sepBy matchIdentifier matchComma) ')'
+            argVars <- parens $ sepBy matchIdentifier matchComma
             expr <- matchTok '=' *> expr0
             return (Just (Symbol symb), LamE (fmap Name argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
             return (Nothing, expr)
-      ) matchComma)
-      ')'
+      ) matchComma
 
 -- | parse the arguments in the module declaration.
 moduleArgsUnitDecl ::  GenParser Char st [(Symbol, Maybe Expr)]
 moduleArgsUnitDecl =
-    surroundedBy '('
-      (sepBy (
+  parens $
+      sepBy (
         do
           symb <- matchIdentifier
           expr <- optionMaybe (matchTok '=' *> expr0)
           return (Symbol symb, expr)
-      ) matchComma)
-      ')'
+      ) matchComma
 
 -- | Find the source position. Used when generating errors.
 sourcePos :: GenParser Char st SourcePosition

@@ -49,7 +49,11 @@ Library
                 -Wall
                 -Wcompat
                 -Wmonomorphism-restriction
-                -Wmissing-local-signatures
+                -- Only enforce top level signatures.
+                -- Enforcing sigs on every bound value
+                -- generally isn't required.
+                -Wmissing-signatures
+                -- -Wmissing-local-signatures
                 -Wmissing-export-lists
                 -Wmissing-import-lists
                 -Wmissing-home-modules
