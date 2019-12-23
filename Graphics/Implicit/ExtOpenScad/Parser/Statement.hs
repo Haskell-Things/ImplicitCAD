@@ -45,7 +45,7 @@ pattern Name n = GIED.Name (Symbol n)
 parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
     program :: GenParser Char st [StatementI]
-    program = removeNoOps <$> (whiteSpace *> many computation  <* eof)
+    program = removeNoOps <$> (whiteSpace *> many computationOrComment  <* eof)
 
 
 -- | A computable block of code, or a comment.
