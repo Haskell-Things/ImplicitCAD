@@ -5,13 +5,13 @@
 -- Allow us to use a shorter form of Name.
 {-# LANGUAGE PatternSynonyms #-}
 
--- FIXME: required. why?
-{-# LANGUAGE KindSignatures #-}
+-- Easyily generate tuples with fixed parts. (12, ) <$> foo
+{-# LANGUAGE TupleSections #-}
 
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, return, ($), (*>), Bool(False, True), (<$>), (<*>), (.), (<$), flip, fmap, filter, not)
+import Prelude(Char, Either, String, return, ($), (*>), Bool(False, True), (<$>), (<*>), (.), (<$), flip, fmap, filter, not, pure)
 
 import Data.Maybe(Maybe(Just, Nothing))
 
@@ -155,21 +155,16 @@ moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
 moduleArgsUnit =
   parens $
      sepBy (
-        do
-            -- eg. a = 12
-            symb <- matchIdentifier
-            expr <- matchTok '=' *> expr0
-            return (Just (Symbol symb), expr)
+            (,) -- eg. a = 12
+              <$> pure . Symbol <$> matchIdentifier
+              <*> (matchTok '=' *> expr0)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
             argVars <- parens $ sepBy matchIdentifier matchComma
             expr <- matchTok '=' *> expr0
             return (Just (Symbol symb), LamE (fmap Name argVars) expr)
-        *<|> do
-            -- eg. 12
-            expr <- expr0
-            return (Nothing, expr)
+        *<|> (Nothing, ) <$> expr0 -- eg. 12
       ) matchComma
 
 -- | parse the arguments in the module declaration.
