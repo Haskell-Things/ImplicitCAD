@@ -10,15 +10,17 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
-import Prelude (String, Char, ($), foldl1, map, (.), pure, (*>), Bool(True, False), read, (**), (*), (==), (<>), (<$>), (<$))
+import Prelude (either, id, String, Char, ($), foldl1, map, (.), pure, (*>), Bool(True, False), read, (**), (*), (==), (<>), (<$>), (<$), fromInteger)
 
-import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, optional, choice, option, oneOf, between)
+import Text.Parsec (SourcePos, (<|>), (<?>), try, char, sepBy, noneOf, string, many, digit, many1, option, oneOf, between)
 
 import Text.Parsec.String (GenParser)
 
 import qualified Text.Parsec as P (sourceLine, sourceColumn, sourceName)
 
 import Text.Parsec.Prim (ParsecT)
+
+import Text.Parsec.Token (naturalOrFloat, integer)
 
 import Data.Functor.Identity (Identity)
 
@@ -32,6 +34,8 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok, ma
 import Data.Functor (($>))
 
 import Data.Kind (Type)
+
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (lexer)
 
 infixr 1 *<|>
 (*<|>) :: forall u a tok. GenParser tok u a -> ParsecT [tok] u Identity a -> ParsecT [tok] u Identity a
@@ -56,28 +60,14 @@ patternMatcher = "pattern" ?:
 -- | Parse a number.
 number :: GenParser Char st Expr
 number = ("number" ?:) $ do
-  h <- choice
-       [
-         do
-           a <- many1 digit
-           b <- option "" ( ('.':) <$> (char '.' *> many1 digit) )
-           pure (a <> b)
-        ,
-        ("0."<>) <$> (char '.' *> many1 digit)
-        ]
-  d <- option "0"
-       (
-         oneOf "eE" *> choice
-         [
-           ('-':) <$> (char '-' *> many1 digit)
-         ,
-           optional (char '+') *> many1 digit
-         ]
-       )
+  n <- try (either fromInteger id <$> naturalOrFloat lexer) <|> do
+    h <- ("0."<>) <$> (char '.' *> many1 digit)
+    d <- option 0 $ oneOf "eE" *> integer lexer
+    pure $ if d == 0
+      then read h
+      else read h * (10 ** fromInteger d)
   _ <- whiteSpace
-  pure . LitE $ ONum $ if d == "0"
-                         then read h
-                         else read h * (10 ** read d)
+  pure . LitE $ ONum n 
 
 -- | Parse a variable reference.
 --   NOTE: abused by the parser for function calls.
