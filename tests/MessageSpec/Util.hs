@@ -4,7 +4,7 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- Utilities
-module WarnErrSpec.Util
+module MessageSpec.Util
        ( (-->)
        , oneMessage
        ) where

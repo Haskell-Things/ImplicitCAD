@@ -18,7 +18,7 @@ import ParserSpec.Expr(exprSpec)
 import ExecSpec.Expr(exprExec)
 
 -- the execution test for warnings.
-import WarnErrSpec.WarnErr(programExec)
+import MessageSpec.Message(programExec)
 
 main :: IO ()
 main = hspec $ do

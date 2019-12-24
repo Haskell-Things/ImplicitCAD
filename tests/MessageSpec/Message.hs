@@ -5,7 +5,7 @@
 -- Allow us to use shorter forms of Var and Name.
 {-# LANGUAGE PatternSynonyms #-}
 
-module WarnErrSpec.WarnErr (programExec) where
+module MessageSpec.Message (programExec) where
 
 -- Be explicit about what we import.
 import Prelude (($))
@@ -19,7 +19,7 @@ import Graphics.Implicit.Definitions (Fastℕ, ℝ)
 import Graphics.Implicit.ExtOpenScad.Definitions (MessageType(TextOut), SourcePosition(SourcePosition))
 
 -- Our utility library, for making these tests easier to read.
-import WarnErrSpec.Util ((-->), oneMessage)
+import MessageSpec.Util ((-->), oneMessage)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (Fastℕ, ℝ)
