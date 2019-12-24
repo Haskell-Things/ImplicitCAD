@@ -267,6 +267,8 @@ Test-suite test-implicit
                   ParserSpec.Util
                   ExecSpec.Expr
                   ExecSpec.Util
+                  WarnErrSpec.WarnErr
+                  WarnErrSpec.Util
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0

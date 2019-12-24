@@ -17,11 +17,16 @@ import ParserSpec.Expr(exprSpec)
 -- the execution test for expressions.
 import ExecSpec.Expr(exprExec)
 
+-- the execution test for warnings.
+import WarnErrSpec.WarnErr(programExec)
+
 main :: IO ()
 main = hspec $ do
   -- run tests against the expression parsing engine.
   describe "expression parsing" exprSpec
   -- and now, against the statement parsing engine.
   describe "statements parsing" statementSpec
-  -- run tests against the expression execution engine.
+  -- run tests against the expression execution engine. single statements.
   describe "expression execution" exprExec
+  -- run tests against the evaluation engine, checking for messages.
+  describe "program execution" programExec
