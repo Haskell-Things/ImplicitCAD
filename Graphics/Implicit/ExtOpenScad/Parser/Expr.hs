@@ -9,7 +9,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, return, ($), (++), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip)
+import Prelude (Char, Maybe(Nothing, Just), String, ($), (++), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), Symbol(Symbol))
 
@@ -48,48 +48,32 @@ expr0 = foldr ($) nonAssociativeExpr levels
           do
             trueExpr  <- matchTok '?' *> self
             falseExpr <- matchColon   *> self
-            return $ Var "?" :$ [condition, trueExpr, falseExpr]
+            pure $ Var "?" :$ [condition, trueExpr, falseExpr]
            <|>
-            return condition
+            pure condition
       , \higher -> -- || boolean OR operator
-          chainl1 higher (do
-                             op <- matchOR
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchOR
       , \higher -> -- && boolean AND operator
-          chainl1 higher (do
-                             op <- matchAND
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchAND
       , \higher -> -- == and != operators
-          chainl1 higher (do
-                             op <- matchEQ <|> matchNE
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> (matchEQ <|> matchNE)
       , \higher -> -- <, <=, >= and > operators
-          chainl1 higher (do
-                             op <- matchLE <|> matchLT <|> matchGE <|> matchGT
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> (matchLE <|> matchLT <|> matchGE <|> matchGT)
       , \higher -> -- + and - operators
-          chainl1 higher (do
-                             op <- oneOf "+-" <* whiteSpace
-                             return $ binaryOperation [op])
+          chainl1 higher $ binaryOperation . pure <$> oneOf "+-" <* whiteSpace
       , \higher -> -- ++ string/list concatenation operator. This is not available in OpenSCAD.
-          chainl1 higher (do
-                             op <- matchCAT
-                             return $ binaryOperation op)
+          chainl1 higher $ binaryOperation <$> matchCAT
       , \higher -> -- ^ exponent operator. This is not available in OpenSCAD.
-          chainr1 higher (do
-                             op <- matchTok '^'
-                             return $ binaryOperation op)
+          chainr1 higher $ binaryOperation <$> matchTok '^'
       , \higher -> -- *, /, % operators
-          chainl1 higher (do
-                             op <- oneOf "*/%" <* whiteSpace
-                             return $ binaryOperation [op])
+          chainl1 higher $ binaryOperation . pure <$> oneOf "*/%" <* whiteSpace
       , \higher ->
           fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'.
                   do
                     op <- matchTok '!'
                     right <- self
                     -- when noting a not, just skip both of them.
-                    return $ case right of
+                    pure $ case right of
                       Var "!" :$ [deepright] -> deepright
                       _                      -> Var op :$ [right]
         <|>
@@ -98,7 +82,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
           fix $ \self ->
               do -- Unary -. applied to strings is undefined, but handle that in the interpreter.
                 right <- matchTok '-' *> self
-                return $ Var "negate" :$ [right]
+                pure $ Var "negate" :$ [right]
           <|> do -- Unary +. Handle this by ignoring the +
                 matchTok '+' *> self
         <|>
@@ -129,22 +113,22 @@ variableish = "variable" ?:
         args <- option [] (
           "function application" ?: do
               args <- surroundedBy '(' (sepBy expr0 matchComma) ')'
-              return [(:$ args)]
+              pure [(:$ args)]
           )
         mods <- many (
                "list indexing" ?: do
                    i <- surroundedBy '[' expr0 ']'
-                   return $ \l -> Var "index" :$ [l, i]
+                   pure $ \l -> Var "index" :$ [l, i]
           *<|> "list splicing" ?: do
                    start <- matchTok '[' *> optionMaybe expr0
                    end   <- matchColon *> optionMaybe expr0 <* matchTok ']'
-                   return $ case (start, end) of
+                   pure $ case (start, end) of
                               (Nothing, Nothing) -> id
                               (Just s,  Nothing)  -> \l -> Var "splice" :$ [l, s, LitE OUndefined]
                               (Nothing, Just e )  -> \l -> Var "splice" :$ [l, LitE $ ONum 0, e]
                               (Just s,  Just e )  -> \l -> Var "splice" :$ [l, s, e]
                  )
-        return $ foldl (\a b -> b a) obj (args ++ mods)
+        pure $ foldl (\a b -> b a) obj (args ++ mods)
 
 -- | Parse parentheses, lists, vectors, and vector/list generators.
 vectorListParentheses :: GenParser Char st Expr
@@ -158,7 +142,7 @@ vectorListParentheses =
               <* if o == '['
                  then matchTok ']'
                  else matchTok ')'
-            return $ if o == '(' && length exprs == 1
+            pure $ if o == '(' && length exprs == 1
                      then head exprs
                      else ListE exprs
     *<|> "vector/list generator" ?: do
@@ -169,13 +153,13 @@ vectorListParentheses =
         exprs <- do
                    expr2 <- expr0
                    expr3 <- optionMaybe (matchColon *> expr0)
-                   return $ case expr3 of
+                   pure $ case expr3 of
                       Just n  -> [expr1, expr2, n]
                       Nothing -> [expr1, LitE $ ONum 1.0, expr2]
           <* matchTok ']'
-        return $ collector "list_gen" exprs
+        pure $ collector "list_gen" exprs
 
--- | Apply a symbolic operator to a list of expressions, returning one big expression.
+-- | Apply a symbolic operator to a list of expressions, pureing one big expression.
 --   Accepts a string for the operator, to simplify callers.
 collector :: String -> [Expr] -> Expr
 collector _ [x] = x
@@ -190,7 +174,7 @@ assignment :: GenParser Char st Expr
 assignment = do
     ident       <- matchIdentifier
     expression  <- matchTok '=' *> expr0
-    return $ ListE [Var ident, expression]
+    pure $ ListE [Var ident, expression]
 
 -- | build nested let statements when foldr'd.
 bindLets :: Expr -> Expr -> Expr
