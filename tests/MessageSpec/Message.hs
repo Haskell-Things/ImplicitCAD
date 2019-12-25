@@ -31,3 +31,9 @@ programExec =
       "echo(1+1);" --> oneMessage TextOut (SourcePosition 1 1 []) "2.0"
     it "calls a no argument function" $
       "module a(){echo(1);}a();" --> oneMessage TextOut (SourcePosition 1 12 []) "1.0"
+    it "calls a single argument function" $
+      "module a(b){echo(b);}a(1);" --> oneMessage TextOut (SourcePosition 1 13 []) "1.0"
+    it "calls a function with a named and an unnamed argument" $
+      "module a(b,c){echo(b+c);}a(b=1,1);" --> oneMessage TextOut (SourcePosition 1 15 []) "2.0"
+--    it "warns about a missing argument" $
+--      "module a(b){echo(b);}a();" --> oneMessage TextOut (SourcePosition 1 13 []) "1.0"

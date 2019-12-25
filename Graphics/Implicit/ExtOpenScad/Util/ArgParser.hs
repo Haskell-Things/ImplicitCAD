@@ -107,10 +107,10 @@ argMap2 unnamedArgs (VarLookup namedArgs) (AP name fallback _ f) =
                 Just b  -> argMap2 [] (VarLookup namedArgs) (f b)
                 Nothing -> (Nothing, ["No value and no default for argument " ++ show name])
 
--- FIXME: don't use map.null here, wrapp it in StateC.hs.
+-- FIXME: don't use map.null here, wrap it in StateC.hs.
 -- FIXME: generate a warning.
 argMap2 a (VarLookup b) (APTerminator val) =
-    (Just val, ["unused arguments" | not (P.null a && DM.null b)])
+    (Just val, ["Unused arguments" | not (P.null a && DM.null b)])
 
 argMap2 a b (APFailIf testval err child) =
     if testval

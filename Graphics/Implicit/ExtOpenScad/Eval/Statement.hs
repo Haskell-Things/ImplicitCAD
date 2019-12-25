@@ -171,30 +171,37 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               return $ catMaybes validInstances
             checkOptions :: Maybe [(Symbol, Bool)] -> Bool -> StateC Bool
             checkOptions args makeWarnings = do
-              -- Find what arguments are satisfied by a named parameter.
-              valNamedFound <- namedValuesSatisfied $ fromMaybe [] args
               let
                 -- Find what arguments are satisfied by a default value, were given in a named parameter, or were given.. and count them.
+                valDefaulted ,valNotDefaulted, valNamed, mappedDefaulted, mappedNotDefaulted, notMappedNotDefaultable :: [Symbol]
+                -- function definition has a default value.
                 valDefaulted  = map fst $ filter snd $ fromMaybe [] args
+                -- function definition has no default value.
                 valNotDefaulted = map fst $ filter (not.snd) $ fromMaybe [] args
-                valUnnamed = unnamedParameters argsExpr
+                -- function call has a named expression bound to this symbol.
                 valNamed = namedParameters argsExpr
-                mappedDefaulted = filter (`elem` valNamedFound) valDefaulted
-                mappedNotDefaulted = filter (`elem` valNamedFound) valNotDefaulted
-                notMappedDefaultable = filter (`notElem` mappedDefaulted) valDefaulted
+                -- function call has a named expression, function definition has an argument with this name, AND there is a default value for this argument.
+                mappedDefaulted = filter (`elem` valNamed) valDefaulted
+                -- function call has a named expression, function definition has an argument with this name, AND there is NOT a default value for this argument.
+                mappedNotDefaulted = filter (`elem` valNamed) valNotDefaulted
+                -- arguments we need to find a mapping for, from the unnamed expressions.
                 notMappedNotDefaultable = filter (`notElem` mappedNotDefaulted) valNotDefaulted
-                mapableFromUnnamed = filter ( \t -> fst t `elem` (notMappedDefaultable ++ notMappedNotDefaultable)) $ fromMaybe [] args
-                mapFromUnnamed = zip mapableFromUnnamed valUnnamed
-                missingNotDefaultable = filter (\t -> fst (fst t) `notElem` valDefaulted) mapFromUnnamed
+                -- expressions without a name.
+                valUnnamed :: [Expr]
+                valUnnamed = unnamedParameters argsExpr
+                mapFromUnnamed :: [(Symbol, Expr)]
+                mapFromUnnamed = zip notMappedNotDefaultable valUnnamed
+                missingNotDefaultable = filter (`notElem` (mappedDefaulted ++ mappedNotDefaulted ++ (map fst mapFromUnnamed))) valNotDefaulted
                 extraUnnamed = filter (`notElem` (valDefaulted ++ valNotDefaulted)) $ namedParameters argsExpr
                 parameterReport =  "Passed " ++
+                  (if (null valNamed && null valUnnamed) then "no parameters" else "" ) ++
                   (if not (null valNamed) then show (length valNamed) ++ (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) ++
                   (if not (null valNamed) && not (null valUnnamed) then ", and " else "") ++
                   (if not (null valUnnamed) then show (length valUnnamed) ++ (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") ++
                   (if not (null missingNotDefaultable) then
                       (if length missingNotDefaultable == 1
-                       then " Couldn't match one parameter: " ++ show (fst $ fst $ last missingNotDefaultable)
-                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map (showSymbol.fst.fst) $ init missingNotDefaultable) ++ " and " ++ showSymbol (fst.fst $ last missingNotDefaultable) ++ "."
+                       then " Couldn't match one parameter: " ++ showSymbol (last missingNotDefaultable)
+                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map showSymbol $ init missingNotDefaultable) ++ " and " ++ showSymbol (last missingNotDefaultable) ++ "."
                       ) else "") ++
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
@@ -203,18 +210,27 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                       ) else "")
                 showSymbol :: Symbol -> String
                 showSymbol (Symbol sym) = show sym
+                  {-
+              when (makeWarnings)
+                (errorC sourcePos $ concatMap show argsExpr)
+              when (makeWarnings)
+                (errorC sourcePos $ "valNamed: " ++ show (length valNamed))
+              when (makeWarnings)
+                (errorC sourcePos $ "mappedDefaulted: " ++ show (length mappedDefaulted))
+              when (makeWarnings)
+                (errorC sourcePos $ "mappedNotDefaulted: " ++ show (length mappedNotDefaulted))
+              when (makeWarnings)
+                (errorC sourcePos $ "notMappedNotDefaultable: " ++ show (length notMappedNotDefaultable))
+              when (makeWarnings)
+                (errorC sourcePos $ "mapFromUnnamed: " ++ show (length mapFromUnnamed))
+              when (makeWarnings)
+                (errorC sourcePos $ "missingNotDefaultable: " ++ show (length missingNotDefaultable))
+                 -}
               when (not (null missingNotDefaultable) && makeWarnings)
                 (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
               when (not (null extraUnnamed) && isJust args && makeWarnings)
                 (errorC sourcePos $ "Too many parameters: " ++ show (length extraUnnamed) ++ " extra. " ++ parameterReport)
               return $ null missingNotDefaultable && null extraUnnamed
-            namedValuesSatisfied :: [(Symbol, Bool)] -> StateC [Symbol]
-            namedValuesSatisfied args = fmap catMaybes $ forM args $ 
-              \(symbol, _) -> do
-                maybeVar <- lookupVar symbol
-                return $ if isJust maybeVar
-                         then Nothing
-                         else Just symbol
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
             namedParameters = mapMaybe fst
             unnamedParameters :: [(Maybe Symbol, Expr)] -> [Expr]
