@@ -7,14 +7,14 @@
 
 module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
 
-import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, map, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise)
+import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, fmap, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise, pure)
 
 -- Our number system, and the definition of a 3D object.
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋅), Obj3)
 
 import Codec.Picture (Pixel8)
 
-import Control.Monad (guard, return)
+import Control.Monad (guard)
 
 import Control.Arrow ((***))
 
@@ -61,7 +61,7 @@ s `colorMult` (Color a b c d) = Color (s `mult` a) (s `mult` b) (s `mult` c) d
 average :: [Color] -> Color
 average l =
     let
-        ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ map
+        ((rs, gs), (bs, as)) = (unzip *** unzip) . unzip $ fmap
             (\(Color r g b a) -> ((fromIntegral r, fromIntegral g), (fromIntegral b, fromIntegral a)))
             l :: (([ℝ], [ℝ]), ([ℝ], [ℝ]))
         n :: ℝ
@@ -172,7 +172,7 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
                         parComponent    = v' - normalComponent
                     in
                         normalComponent - parComponent
-            return $ illumination*(3 + 0.3*abs(rV ⋅ cameraV)*abs(rV ⋅ cameraV))
+            pure $ illumination*(3 + 0.3*abs(rV ⋅ cameraV)*abs(rV ⋅ cameraV))
             )
         Nothing   -> defaultColor
 
