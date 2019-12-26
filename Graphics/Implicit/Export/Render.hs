@@ -8,11 +8,13 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(ceiling, ($), (+), (*), max, div, tail, map, concat, reverse, (.), concatMap, min, Int)
+import Prelude(ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), both, allthree, fromℕtoℝ, fromℕ)
 
 import Data.VectorSpace ((^-^))
+
+import Data.Foldable(fold)
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -127,21 +129,21 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
 
         -- (2) Calculate segments for each side
         segsZ = [[[
-            map (injZ z0) $ getSegs (x0,y0) (x1',y1') (obj **$ z0) (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) (midA0, midA1, midB0, midB1)
+            fmap (injZ z0) $ getSegs (x0,y0) (x1',y1') (obj **$ z0) (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) (midA0, midA1, midB0, midB1)
              | x0<-pXs | x1'<-tail pXs |midB0<-mX''  | midB1<-mX'T     | midA0<-mY''  | midA1<-tail mY''  | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<- tail objY0Z0 | objX0Y1Z0<-objY1Z0    | objX1Y1Z0<-tail objY1Z0
             ]| y0<-pYs | y1'<-tail pYs |mX'' <-mX'   | mX'T <-tail mX' | mY'' <-mY'                       | objY0Z0  <-objZ0                              | objY1Z0  <-tail objZ0
             ]| z0<-pZs                 |mX'  <-midsX |                   mY'  <-midsY                     | objZ0    <-objV
             ] `using` parBuffer (max 1 $ div (fromℕ nz) forcesteps) rdeepseq
 
         segsY = [[[
-            map (injY y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0) (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) (midA0, midA1, midB0, midB1)
+            fmap (injY y0) $ getSegs (x0,z0) (x1',z1') (obj *$* y0) (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) (midA0, midA1, midB0, midB1)
              | x0<-pXs | x1'<-tail pXs | midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-tail mA'' | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<-tail objY0Z0 | objX0Y0Z1<-objY0Z1 | objX1Y0Z1<-tail objY0Z1
             ]| y0<-pYs |                 mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'                      | objY0Z0  <-objZ0                             | objY0Z1  <-objZ1
             ]| z0<-pZs | z1'<-tail pZs | mB'  <-midsX | mBT  <-tail midsX | mA'  <-midsZ                    | objZ0    <-objV                              | objZ1    <-tail objV
             ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
 
         segsX = [[[
-            map (injX x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0) (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) (midA0, midA1, midB0, midB1)
+            fmap (injX x0) $ getSegs (y0,z0) (y1',z1') (obj $** x0) (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) (midA0, midA1, midB0, midB1)
              | x0<-pXs |                 midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-mA'T     | objX0Y0Z0<-objY0Z0 | objX0Y1Z0<-objY1Z0    | objX0Y0Z1<-objY0Z1    | objX0Y1Z1<-     objY1Z1
             ]| y0<-pYs | y1'<-tail pYs | mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'   | mA'T <-tail mA' | objY0Z0  <-objZ0   | objY1Z0  <-tail objZ0 | objY0Z1  <-objZ1      | objY1Z1  <-tail objZ1
             ]| z0<-pZs | z1'<-tail pZs | mB'  <-midsY | mBT  <-tail midsY | mA'  <-midsZ                   | objZ0    <- objV                           | objZ1    <- tail objV
@@ -151,14 +153,13 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
         sqTris = [[[
-            concatMap (tesselateLoop minres obj) $ getLoops $ concat [
-                        segX''',
-                   mapR segX''T,
-                   mapR segY''',
-                        segY'T',
-                        segZ''',
+            foldMap (tesselateLoop minres obj) $ getLoops $ 
+                        segX''' <>
+                   mapR segX''T <>
+                   mapR segY''' <>
+                        segY'T' <>
+                        segZ''' <>
                    mapR segZT''
-                ]
              | segZ'''<- segZ''| segZT''<- segZT'
              | segY'''<- segY''| segY'T'<- segY'T
              | segX'''<- segX''| segX''T<- tail segX''
@@ -174,7 +175,7 @@ getMesh p1@(x1,y1,z1) p2 res@(xres,yres,zres) obj =
 
     in
       -- (5) merge squares, etc
-      mergedSquareTris . concat . concat $ concat sqTris
+      mergedSquareTris . fold . fold $ fold sqTris
 
 -- | getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
@@ -233,20 +234,20 @@ getContour p1@(x1, y1) p2 res@(xres,yres) obj =
             ] `using` parBuffer (max 1 $ div (fromℕ $ nx+ny) forcesteps) rdeepseq
     in
       -- | Merge squares, etc
-      cleanLoopsFromSegs . concat $ concat segs
+      cleanLoopsFromSegs . fold $ fold segs
   
 -- utility functions
   
 injX :: ℝ -> Polyline -> [ℝ3]
-injX a (Polyline xs) = map (prepend a) xs
+injX a (Polyline xs) = fmap (prepend a) xs
 prepend :: ℝ -> ℝ2 -> ℝ3
 prepend a (b,c) = (a,b,c)
 injY :: ℝ -> Polyline -> [ℝ3]
-injY a (Polyline xs) = map (insert a) xs
+injY a (Polyline xs) = fmap (insert a) xs
 insert :: ℝ -> ℝ2 -> ℝ3
 insert b (a,c) = (a,b,c)
 injZ :: ℝ -> Polyline -> [ℝ3]
-injZ a (Polyline xs) = map (postfix a) xs
+injZ a (Polyline xs) = fmap (postfix a) xs
 postfix :: ℝ -> ℝ2 -> ℝ3
 postfix c (a,b) = (a,b,c)
 
@@ -278,5 +279,5 @@ appACB :: Obj3 -> ℝ -> ℝ -> ℝ -> ℝ
 appACB f a c b = f (a,b,c)
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
-mapR = map reverse
+mapR = fmap reverse
 
