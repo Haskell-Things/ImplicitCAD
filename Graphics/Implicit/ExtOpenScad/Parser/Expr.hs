@@ -9,7 +9,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, ($), (++), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
+import Prelude (Char, Maybe(Nothing, Just), String, ($), (<>), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), Symbol(Symbol))
 
@@ -128,7 +128,7 @@ variableish = "variable" ?:
                               (Nothing, Just e )  -> \l -> Var "splice" :$ [l, LitE $ ONum 0, e]
                               (Just s,  Just e )  -> \l -> Var "splice" :$ [l, s, e]
                  )
-        pure $ foldl (\a b -> b a) obj (args ++ mods)
+        pure $ foldl (\a b -> b a) obj (args <> mods)
 
 -- | Parse parentheses, lists, vectors, and vector/list generators.
 vectorListParentheses :: GenParser Char st Expr

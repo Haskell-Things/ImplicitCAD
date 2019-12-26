@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
-import Prelude(concatMap, (++), ($))
+import Prelude(foldMap, (<>), ($))
 
 import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -67,7 +67,7 @@ mergedSquareTris sqTris =
         -- triangles...
         triTriangles :: [Triangle]
         triTriangles = [tri | Tris tris <- sqTris, tri <- unmesh tris ]
-        --concat $ map (\(Tris a) -> a) $ filter isTris sqTris
+        --concat $ fmap (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
         squaresFromTris :: [TriSquare]
         squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]
@@ -80,10 +80,10 @@ mergedSquareTris sqTris =
         -- For each plane:
         -- Select for being the same range on X and then merge them on Y
         -- Then vice versa.
-        joined = map
-            ( -- concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
-              concat . (map joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
-            . concat . (map joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS))
+        joined = fmap
+            ( -- concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
+              concat . (fmap joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
+            . concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS))
             planeAligned
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
@@ -91,8 +91,8 @@ mergedSquareTris sqTris =
     in
         -- merge them to triangles, and combine with the original triangles.
         -- Disable square merging temporarily.
-        --triTriangles ++ concat (map squareToTri finishedSquares)
-        TriangleMesh $ triTriangles ++ concatMap squareToTri squaresFromTris
+        --triTriangles <> concat (fmap squareToTri finishedSquares)
+        TriangleMesh $ triTriangles <> foldMap squareToTri squaresFromTris
 
 -- And now for a bunch of helper functions that do the heavy lifting...
 

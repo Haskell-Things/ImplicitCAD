@@ -11,7 +11,7 @@
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 
-import Prelude(Char, Either, String, return, ($), (*>), Bool(False, True), (<$>), (<*>), (.), (<$), flip, fmap, filter, not)
+import Prelude(Char, Either, String, ($), (*>), Bool(False, True), (<$>), (<*>), (.), (<$), flip, fmap, filter, not, pure)
 
 import Data.Maybe(Maybe(Just, Nothing))
 
@@ -159,17 +159,17 @@ moduleArgsUnit =
             -- eg. a = 12
             symb <- matchIdentifier
             expr <- matchTok '=' *> expr0
-            return (Just (Symbol symb), expr)
+            pure (Just (Symbol symb), expr)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
             argVars <- surroundedBy '(' (sepBy matchIdentifier matchComma) ')'
             expr <- matchTok '=' *> expr0
-            return (Just (Symbol symb), LamE (fmap Name argVars) expr)
+            pure (Just (Symbol symb), LamE (fmap Name argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
-            return (Nothing, expr)
+            pure (Nothing, expr)
       ) matchComma)
       ')'
 
@@ -181,7 +181,7 @@ moduleArgsUnitDecl =
         do
           symb <- matchIdentifier
           expr <- optionMaybe (matchTok '=' *> expr0)
-          return (Symbol symb, expr)
+          pure (Symbol symb, expr)
       ) matchComma)
       ')'
 

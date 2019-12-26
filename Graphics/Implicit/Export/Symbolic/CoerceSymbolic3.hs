@@ -23,9 +23,9 @@ coerceSymbolic3 :: SymbolicObj3 -> BoxedObj3
 coerceSymbolic3 (EmbedBoxedObj3 boxedObj) = boxedObj
 coerceSymbolic3 (Rect3R r a b) = rect3R r a b
 coerceSymbolic3 (Sphere r ) = sphere r
-coerceSymbolic3 (UnionR3 r objs) = unionR r (map coerceSymbolic3 objs)
-coerceSymbolic3 (IntersectR3 r objs) = intersectR r (map coerceSymbolic3 objs)
-coerceSymbolic3 (DifferenceR3 r objs) = differenceR r (map coerceSymbolic3 objs)
+coerceSymbolic3 (UnionR3 r objs) = unionR r (fmap coerceSymbolic3 objs)
+coerceSymbolic3 (IntersectR3 r objs) = intersectR r (fmap coerceSymbolic3 objs)
+coerceSymbolic3 (DifferenceR3 r objs) = differenceR r (fmap coerceSymbolic3 objs)
 coerceSymbolic3 (Complement3 obj) = complement $ coerceSymbolic3 obj
 coerceSymbolic3 (Shell3 w obj) = shell w $ coerceSymbolic3 obj
 coerceSymbolic3 (Translate3 v obj) = translate v $ coerceSymbolic3 obj

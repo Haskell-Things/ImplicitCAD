@@ -11,15 +11,16 @@
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Prelude(Either(Left, Right), ($), (.), (*), map, ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const)
+import Prelude(Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, fmap)
 
 import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf))
-import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, (<>), mconcat, fromLazyText, bf)
+import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
-import "monads-tf" Control.Monad.Reader (Reader, runReader, return, fmap, sequence, ask)
+import "monads-tf" Control.Monad.Reader (Reader, runReader, ask)
 
 import Data.List (intersperse)
 import Data.Function (fix)
+import Data.Foldable(fold, foldMap)
 
 default (ℝ)
 
@@ -35,15 +36,15 @@ rad2deg r = r * (180/pi)
 
 -- | Format an openscad call given that all the modified objects are in the Reader monad...
 callToken :: (Text, Text) -> Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
-callToken cs name args []    = return $ name <> buildArgs cs args <> ";"
+callToken cs name args []    = pure $ name <> buildArgs cs args <> ";"
 callToken cs name args [obj] = fmap ((name <> buildArgs cs args) <>) obj
 callToken cs name args objs  = do
-  objs' <- fmap (mconcat . map (<> "\n")) $ sequence objs
-  return $! name <> buildArgs cs args <> "{\n" <> objs' <> "}\n"
+  objs' <- fmap (foldMap (<> "\n")) $ sequenceA objs
+  pure $! name <> buildArgs cs args <> "{\n" <> objs' <> "}\n"
 
 buildArgs :: (Text, Text) -> [Builder] -> Builder
 buildArgs _ [] = "()"
-buildArgs (c1, c2) args = "(" <> fromLazyText c1 <> mconcat (intersperse "," args) <> fromLazyText c2 <> ")"
+buildArgs (c1, c2) args = "(" <> fromLazyText c1 <> fold (intersperse "," args) <> fromLazyText c2 <> ")"
 
 call :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
 call = callToken ("[", "]")
@@ -68,11 +69,11 @@ buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [
 
 buildS3 (Complement3 obj) = call "complement" [] [buildS3 obj]
 
-buildS3 (UnionR3 r objs) | r == 0 = call "union" [] $ map buildS3 objs
+buildS3 (UnionR3 r objs) | r == 0 = call "union" [] $ fmap buildS3 objs
 
-buildS3 (IntersectR3 r objs) | r == 0 = call "intersection" [] $ map buildS3 objs
+buildS3 (IntersectR3 r objs) | r == 0 = call "intersection" [] $ fmap buildS3 objs
 
-buildS3 (DifferenceR3 r objs) | r == 0 = call "difference" [] $ map buildS3 objs
+buildS3 (DifferenceR3 r objs) | r == 0 = call "difference" [] $ fmap buildS3 objs
 
 buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 obj]
 
@@ -133,15 +134,15 @@ buildS2 (RectR r (x1,y1) (x2,y2)) | r == 0 = call "translate" [bf x1, bf y1] [
 buildS2 (Circle r) = call "circle" [bf r] []
 
 buildS2 (PolygonR r points) | r == 0 = call "polygon" [buildVector [x,y] | (x,y) <- points] []
-    where buildVector comps = "[" <> mconcat (intersperse "," $ map bf comps) <> "]"
+    where buildVector comps = "[" <> fold (intersperse "," $ fmap bf comps) <> "]"
 
 buildS2 (Complement2 obj) = call "complement" [] [buildS2 obj]
 
-buildS2 (UnionR2 r objs) | r == 0 = call "union" [] $ map buildS2 objs
+buildS2 (UnionR2 r objs) | r == 0 = call "union" [] $ fmap buildS2 objs
 
-buildS2 (DifferenceR2 r objs) | r == 0 = call "difference" [] $ map buildS2 objs
+buildS2 (DifferenceR2 r objs) | r == 0 = call "difference" [] $ fmap buildS2 objs
 
-buildS2 (IntersectR2 r objs) | r == 0 = call "intersection" [] $ map buildS2 objs
+buildS2 (IntersectR2 r objs) | r == 0 = call "intersection" [] $ fmap buildS2 objs
 
 buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] [buildS2 obj]
 

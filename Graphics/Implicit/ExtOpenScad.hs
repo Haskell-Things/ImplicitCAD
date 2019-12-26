@@ -12,7 +12,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap, return)
+import Prelude(String, Either(Left, Right), IO, ($), fmap, pure)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -30,11 +30,11 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
 import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages)
 
-import Control.Monad (mapM_)
-
 import "monads-tf" Control.Monad.State.Lazy (runStateT)
 
 import System.Directory (getCurrentDirectory)
+
+import Data.Foldable (traverse_)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
@@ -48,10 +48,10 @@ runOpenscad scadOpts constants source =
     in do
       (initialObjects, initialMessages) <- addConstants constants
       case parseProgram "" source of
-        Left e -> return (initialObjects, [], [], mesg e : initialMessages)
+        Left e -> pure (initialObjects, [], [], mesg e : initialMessages)
         Right sts -> fmap rearrange
             $ (\sts' -> do
                 path <- getCurrentDirectory
                 runStateT sts' $ CompState (initialObjects, [], path, initialMessages, scadOpts)
             )
-            $ mapM_ runStatementI sts
+            $ traverse_ runStatementI sts

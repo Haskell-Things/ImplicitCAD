@@ -12,7 +12,7 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (++), map, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id)
+import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (<>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
@@ -20,30 +20,29 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
 import Data.Map (Map, fromList, insert)
-import Data.List (genericIndex, genericLength, intercalate, concatMap)
-
-import "monads-tf" Control.Monad.State (forM_)
+import Data.List (genericIndex, genericLength, intercalate)
+import Data.Foldable (for_)
 
 defaultObjects :: VarLookup
 defaultObjects = VarLookup $ fromList $
     defaultConstants
-    ++ defaultFunctions
-    ++ defaultFunctions2
-    ++ defaultFunctionsSpecial
-    ++ defaultPolymorphicFunctions
-    ++ primitiveModules
-    ++ varArgModules
+    <> defaultFunctions
+    <> defaultFunctions2
+    <> defaultFunctionsSpecial
+    <> defaultPolymorphicFunctions
+    <> primitiveModules
+    <> varArgModules
 
 -- FIXME: Missing standard ones(which standard?):
 -- rand, lookup,
 
 defaultConstants :: [(Symbol, OVal)]
-defaultConstants = map (\(a,b) -> (a, toOObj (b :: ℝ) ))
+defaultConstants = fmap (\(a,b) -> (a, toOObj (b :: ℝ) ))
     [(Symbol "pi", pi),
      (Symbol "PI", pi)]
 
 defaultFunctions :: [(Symbol, OVal)]
-defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
+defaultFunctions = fmap (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     [
         (Symbol "sin",   sin),
         (Symbol "cos",   cos),
@@ -67,7 +66,7 @@ defaultFunctions = map (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     ]
 
 defaultFunctions2 :: [(Symbol, OVal)]
-defaultFunctions2 = map (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
+defaultFunctions2 = fmap (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
     [
         (Symbol "max",   max),
         (Symbol "min",   min),
@@ -79,7 +78,7 @@ defaultFunctionsSpecial :: [(Symbol, OVal)]
 defaultFunctionsSpecial =
     [
         (Symbol "map", toOObj $ flip
-            (map :: (OVal -> OVal) -> [OVal] -> [OVal] )
+            (fmap :: (OVal -> OVal) -> [OVal] -> [OVal] )
         )
     ]
 
@@ -95,7 +94,7 @@ varArgModules =
         -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
         executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         executeSuite name pos _ suite runSuite = do
-            addMessage Warning pos $ "Module " ++ name ++ " not implemented"
+            addMessage Warning pos $ "Module " <> name <> " not implemented"
             runSuite suite
 
         echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
@@ -103,23 +102,23 @@ varArgModules =
             scadOpts <- scadOptions
             let
                 text :: [(Maybe Symbol, OVal)] -> String
-                text a = intercalate ", " $ map show' a
+                text a = intercalate ", " $ fmap show' a
                 show' :: (Maybe Symbol, OVal) -> String
                 show' (Nothing, arg) = show arg
-                show' (Just (Symbol var), arg) = var ++ " = " ++ show arg
+                show' (Just (Symbol var), arg) = var <> " = " <> show arg
                 showe' (Nothing, OString arg) = arg
-                showe' (Just (Symbol var), arg) = var ++ " = " ++ showe' (Nothing, arg)
+                showe' (Just (Symbol var), arg) = var <> " = " <> showe' (Nothing, arg)
                 showe' a = show' a
                 compat (ScadOpts compat_flag _) = compat_flag
-                openScadFormat = "ECHO: " ++ text args
-                extopenscadFormat = concatMap showe' args
+                openScadFormat = "ECHO: " <> text args
+                extopenscadFormat = foldMap showe' args
                 formattedMessage = if compat scadOpts then openScadFormat else extopenscadFormat
             addMessage TextOut pos formattedMessage
             runSuite suite
 
         for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         for _ _ args suite runSuite =
-            forM_ (iterator args) $ \iter -> do
+            for_ (iterator args) $ \iter -> do
                 modifyVarLookup iter
                 runSuite suite
           where
@@ -127,7 +126,7 @@ varArgModules =
             iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
             iterator [] = [id]
             iterator ((Nothing, _):iterators) = iterator iterators
-            iterator ((Just var, vals):iterators) = [outer . varify inner | inner <- map (insert var) (valsList vals), outer <- iterator iterators]
+            iterator ((Just var, vals):iterators) = [outer . varify inner | inner <- fmap (insert var) (valsList vals), outer <- iterator iterators]
             -- convert the loop iterator variable's expression value to a list (possibly of one value)
             valsList :: OVal -> [OVal]
             valsList v@(OBool _) = [v]
@@ -165,7 +164,7 @@ defaultPolymorphicFunctions =
         (Symbol "||", toOObj (||) ),
         (Symbol "!", toOObj not ),
         (Symbol "list_gen", toOObj list_gen),
-        (Symbol "++", concatenate),
+        (Symbol "<>", concatenate),
         (Symbol "len", toOObj olength),
         (Symbol "str", toOObj (show :: OVal -> String))
     ] where
@@ -183,8 +182,8 @@ defaultPolymorphicFunctions =
             _              -> OError ["prod takes only lists or nums"]
 
         mult (ONum a)  (ONum b)  = ONum  (a*b)
-        mult (ONum a)  (OList b) = OList (map (mult (ONum a)) b)
-        mult (OList a) (ONum b)  = OList (map (mult (ONum b)) a)
+        mult (ONum a)  (OList b) = OList (fmap (mult (ONum a)) b)
+        mult (OList a) (ONum b)  = OList (fmap (mult (ONum b)) a)
         mult (OList a) (OList b) = OList $ zipWith mult a b
         mult a         b         = errorAsAppropriate "product" a b
 
@@ -196,7 +195,7 @@ defaultPolymorphicFunctions =
                 b -> div' a b
 
         div' (ONum a)  (ONum b) = ONum  (a/b)
-        div' (OList a) (ONum b) = OList (map (\x -> div' x (ONum b)) a)
+        div' (OList a) (ONum b) = OList (fmap (\x -> div' x (ONum b)) a)
         div' a         b        = errorAsAppropriate "divide" a b
 
         omod (ONum a) (ONum b) = ONum . fromInteger $ mod (floor a) (floor b)
@@ -207,8 +206,8 @@ defaultPolymorphicFunctions =
             (OList [])     -> OList []
             _              -> OError ["concat takes a list"]
 
-        append (OList   a) (OList   b) = OList   $ a++b
-        append (OString a) (OString b) = OString $ a++b
+        append (OList   a) (OList   b) = OList   $ a<>b
+        append (OString a) (OString b) = OString $ a<>b
         append a           b           = errorAsAppropriate "concat" a b
 
         sumtotal = OFunc $ \x -> case x of
@@ -222,8 +221,8 @@ defaultPolymorphicFunctions =
             _              -> OError ["sum takes two lists or nums"]
 
         add (ONum a) (ONum b) = ONum (a+b)
-        add (ONum a)  (OList b) = OList (map (add (ONum a)) b)
-        add (OList a) (ONum b)  = OList (map (add (ONum b)) a)
+        add (ONum a)  (OList b) = OList (fmap (add (ONum a)) b)
+        add (OList a) (ONum b)  = OList (fmap (add (ONum b)) a)
         add (OList a) (OList b) = OList $ zipWith add a b
         add a b = errorAsAppropriate "add" a b
 
@@ -232,8 +231,8 @@ defaultPolymorphicFunctions =
         sub a b = errorAsAppropriate "subtract" a b
 
         negatefun (ONum n) = ONum (-n)
-        negatefun (OList l) = OList $ map negatefun l
-        negatefun a = OError ["Can't negate " ++ oTypeStr a ++ "(" ++ show a ++ ")"]
+        negatefun (OList l) = OList $ fmap negatefun l
+        negatefun a = OError ["Can't negate " <> oTypeStr a <> "(" <> show a <> ")"]
 
         {-numCompareToExprCompare :: (ℝ -> ℝ -> Bool) -> Oval -> OVal -> Bool
         numCompareToExprCompare f a b =
@@ -287,19 +286,19 @@ defaultPolymorphicFunctions =
         errorAsAppropriate _   err@(OError _)   _ = err
         errorAsAppropriate _   _   err@(OError _) = err
         errorAsAppropriate name a b = OError
-            ["Can't " ++ name ++ " objects of types " ++ oTypeStr a ++ " and " ++ oTypeStr b ++ "."]
+            ["Can't " <> name <> " objects of types " <> oTypeStr a <> " and " <> oTypeStr b <> "."]
 
         list_gen :: [ℝ] -> Maybe [ℝ]
-        list_gen [a, b] = Just $ map fromInteger [(ceiling a).. (floor b)]
+        list_gen [a, b] = Just $ fmap fromInteger [(ceiling a).. (floor b)]
         list_gen [a, b, c] =
             let
                 nr = (c-a)/b
                 n :: ℝ
                 n  = fromInteger (floor nr)
             in if nr - n > 0
-            then Just $ map fromInteger
+            then Just $ fmap fromInteger
                 [(ceiling a), (ceiling (a+b)).. (floor (c - b*(nr -n)))]
-            else Just $ map fromInteger
+            else Just $ fmap fromInteger
                 [(ceiling a), (ceiling (a+b)).. (floor c)]
         list_gen _ = Nothing
 
@@ -309,4 +308,4 @@ defaultPolymorphicFunctions =
 
         olength (OString s) = ONum $ genericLength s
         olength (OList s)   = ONum $ genericLength s
-        olength a           = OError ["Can't take length of a " ++ oTypeStr a ++ "."]
+        olength a           = OError ["Can't take length of a " <> oTypeStr a <> "."]

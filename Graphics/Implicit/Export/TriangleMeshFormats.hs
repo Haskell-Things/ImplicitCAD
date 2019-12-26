@@ -11,16 +11,15 @@
 -- This module exposes three functions, which convert a triangle mesh to an output file.
 module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) where
 
-import Prelude (Float, Eq, Bool, ($), (+), map, (.), toEnum, length, zip, return, (==), (||), (&&), filter, not)
+import Prelude (Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, (==), (||), (&&), filter, not, (<>))
 
 import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh), ℕ, ℝ3, ℝ, fromℝtoFloat)
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, buildℕ)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
 import qualified Data.ByteString.Builder.Internal as BI (Builder)
 
--- note: moved to prelude in newer version
-import Data.Monoid(mconcat)
+import Data.Foldable(fold, foldMap)
 
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
@@ -79,7 +78,7 @@ cleanupTris tris =
 
 -- | Generate an STL file is ASCII format.
 stl :: TriangleMesh -> Text
-stl triangles = toLazyText $ stlHeader <> mconcat (map triangle $ unmesh $ cleanupTris triangles) <> stlFooter
+stl triangles = toLazyText $ stlHeader <> (foldMap triangle $ unmesh $ cleanupTris triangles) <> stlFooter
     where
         stlHeader :: Builder
         stlHeader = "solid ImplictCADExport\n"
@@ -108,7 +107,7 @@ float32LE = writeStorable . LE
 
 -- | Generate an STL file in it's binary format.
 binaryStl :: TriangleMesh -> ByteString
-binaryStl triangles = toLazyByteString $ header <> lengthField <> mconcat (map triangle $ unmesh $ cleanupTris triangles)
+binaryStl triangles = toLazyByteString $ header <> lengthField <> (foldMap triangle $ unmesh $ cleanupTris triangles)
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length $ unmesh $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
@@ -121,20 +120,18 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
         where
                 -- some dense JS. Let's make helper functions so that we don't repeat code each line
                 header :: Builder
-                header = mconcat [
-                          "var Shape = function(){\n"
-                         ,"var s = this;\n"
-                         ,"THREE.Geometry.call(this);\n"
-                         ,"function vec(x,y,z){return new THREE.Vector3(x,y,z);}\n"
-                         ,"function v(x,y,z){s.vertices.push(vec(x,y,z));}\n"
-                         ,"function f(a,b,c){"
-                         ,"s.faces.push(new THREE.Face3(a,b,c));"
-                         ,"}\n" ]
+                header = "var Shape = function(){\n"
+                         <> "var s = this;\n"
+                         <> "THREE.Geometry.call(this);\n"
+                         <> "function vec(x,y,z){return new THREE.Vector3(x,y,z);}\n"
+                         <> "function v(x,y,z){s.vertices.push(vec(x,y,z));}\n"
+                         <> "function f(a,b,c){"
+                         <> "s.faces.push(new THREE.Face3(a,b,c));"
+                         <> "}\n"
                 footer :: Builder
-                footer = mconcat [
-                          "}\n"
-                         ,"Shape.prototype = new THREE.Geometry();\n"
-                         ,"Shape.prototype.constructor = Shape;\n" ]
+                footer = "}\n"
+                         <> "Shape.prototype = new THREE.Geometry();\n"
+                         <> "Shape.prototype.constructor = Shape;\n"
                 -- A vertex line; v (0.0, 0.0, 1.0) = "v(0.0,0.0,1.0);\n"
                 v :: ℝ3 -> Builder
                 v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
@@ -148,9 +145,9 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                         (Triangle (a,b,c)) <- unmesh $ cleanupTris triangles
                         -- The vertices from each triangle take up 3 position in the resulting list
                         [a,b,c]
-                vertcode = mconcat $ map v verts
-                facecode = mconcat $ do
+                vertcode = foldMap v verts
+                facecode = fold $ do
                         (n,_) <- zip [0, 3 ..] $ unmesh $ cleanupTris triangles
                         let
                             (posa, posb, posc) = (n, n+1, n+2) :: (ℕ, ℕ, ℕ)
-                        return $ f posa posb posc
+                        pure $ f posa posb posc

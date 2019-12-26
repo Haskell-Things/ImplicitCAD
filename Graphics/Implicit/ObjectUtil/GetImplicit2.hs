@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, map, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
+import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2))
 
@@ -35,7 +35,7 @@ getImplicit2 (PolygonR _ points) =
         pair n = (points `genericIndex` n, points `genericIndex` mod (n + 1) (genericLength points) )
         pairs :: [(ℝ2,ℝ2)]
         pairs =  [ pair n | n <- [0 .. genericLength points - 1] ]
-        relativePairs =  map (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
+        relativePairs =  fmap (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
         crossing_points =
             [x2 ^-^ y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <-relativePairs,
                ( (y2 <= 0) && (y1 >= 0) ) || ( (y2 >= 0) && (y1 <= 0) ) ]
@@ -44,7 +44,7 @@ getImplicit2 (PolygonR _ points) =
         seemsInLeft = odd . length . filter (<0) $ nub crossing_points
         isIn = seemsInRight && seemsInLeft
         dists :: [ℝ]
-        dists = map (distFromLineSeg p) pairs
+        dists = fmap (distFromLineSeg p) pairs
     in
         minimum dists * if isIn then -1 else 1
 -- (Rounded) CSG
@@ -55,22 +55,22 @@ getImplicit2 (Complement2 symbObj) =
         - obj p
 getImplicit2 (UnionR2 r symbObjs) =
     \p -> let
-        objs = map getImplicit2 symbObjs
+        objs = fmap getImplicit2 symbObjs
     in
-        rminimum r $ map ($p) objs
+        rminimum r $ fmap ($p) objs
 getImplicit2 (DifferenceR2 r symbObjs) =
     let
-        objs = map getImplicit2 symbObjs
+        objs = fmap getImplicit2 symbObjs
         obj = head objs
         complement :: Obj2 -> ℝ2 -> ℝ
         complement obj' p = - obj' p
     in
-        \p -> rmaximum r . map ($p) $ obj:map complement (tail objs)
+        \p -> rmaximum r . fmap ($p) $ obj:fmap complement (tail objs)
 getImplicit2 (IntersectR2 r symbObjs) =
     \p -> let
-        objs = map getImplicit2 symbObjs
+        objs = fmap getImplicit2 symbObjs
     in
-        rmaximum r $ map ($p) objs
+        rmaximum r $ fmap ($p) objs
 -- Simple transforms
 getImplicit2 (Translate2 v symbObj) =
     \p -> let

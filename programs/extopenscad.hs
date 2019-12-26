@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (++), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, map, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, fmap, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -39,12 +39,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupV
 -- Operator to subtract two points. Used when defining the resolution of a 2d object.
 import Data.AffineSpace ((.-.))
 
--- For defining the <> operator.
-import Data.Monoid (Monoid, mappend)
-
 import Control.Applicative ((<$>), (<*>), many)
 
--- NOTE: make sure we don't import (<>) in new versions.
 import Options.Applicative (fullDesc, progDesc, header, auto, info, helper, help, str, argument, long, short, option, metavar, execParser, Parser, optional, strOption, switch)
 
 -- For handling input/output files.
@@ -52,12 +48,6 @@ import System.FilePath (splitExtension)
 
 -- For handling handles to output files.
 import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
-
--- | The following is needed to ensure backwards/forwards compatibility
--- | with old versions of Data.Monoid:
-infixr 6 <>
-(<>) :: Monoid a => a -> a -> a
-(<>) = mappend
 
 -- | Our command line options.
 data ExtOpenScadOpts = ExtOpenScadOpts
@@ -178,7 +168,7 @@ extOpenScadOpts = ExtOpenScadOpts
 
 -- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
-readOutputFormat ext = lookup (map toLower ext) formatExtensions
+readOutputFormat ext = lookup (fmap toLower ext) formatExtensions
 
 -- | A Read instance for our output format. Used by 'auto' in our command line parser.
 --   Reads a string, and evaluates to the appropriate OutputFormat.
@@ -246,7 +236,7 @@ messageOutputHandle :: ExtOpenScadOpts -> IO Handle
 messageOutputHandle args = maybe (return stdout) (`openFile` WriteMode) (messageOutputFile args)
 
 textOutOpenScad :: Message -> String
-textOutOpenScad  (Message _ _ msg) = "ECHO: " ++ msg
+textOutOpenScad  (Message _ _ msg) = "ECHO: " <> msg
 
 textOutBare :: Message -> String
 textOutBare (Message _ _ msg) = show msg
@@ -257,7 +247,7 @@ isTextOut _                      = False
 
 objectMessage :: String -> String -> String -> String -> String -> String
 objectMessage dimensions infile outfile res box =
-  "Rendering " ++ dimensions ++ " object from " ++ infile ++ " to " ++ outfile ++ " with resolution " ++ res ++ " in box " ++ box
+  "Rendering " <> dimensions <> " object from " <> infile <> " to " <> outfile <> " with resolution " <> res <> " in box " <> box
 
 -- using the openscad compat group turns on openscad compatibility options. using related extopenscad options turns them off.
 -- FIXME: allow processArgs to generate messages.
@@ -300,13 +290,13 @@ run rawargs = do
     let res = fromMaybe (getRes s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
         posDefExt = case format of
-                      Just f  -> Prelude.lookup f (map swap formatExtensions)
+                      Just f  -> Prelude.lookup f (fmap swap formatExtensions)
                       Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
 
     case (obj2s, obj3s) of
       ([], obj:objs) -> do
         let output = fromMaybe
-                     (basename ++ "." ++ fromMaybe "stl" posDefExt)
+                     (basename <> "." <> fromMaybe "stl" posDefExt)
                      (outputFile args)
             target = if null objs
                      then obj
@@ -330,7 +320,7 @@ run rawargs = do
 
       (obj:objs, []) -> do
         let output = fromMaybe
-                     (basename ++ "." ++ fromMaybe "svg" posDefExt)
+                     (basename <> "." <> fromMaybe "svg" posDefExt)
                      (outputFile args)
             target = if null objs
                      then obj
@@ -359,7 +349,7 @@ run rawargs = do
       _        -> hPutStr stderr "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
 
     -- | Always display our warnings, errors, and other non-textout messages on stderr.
-    hPutStr stderr $ unlines $ map show $ filter (not . isTextOut) messages
+    hPutStr stderr $ unlines $ fmap show $ filter (not . isTextOut) messages
 
     let textOutHandler =
           case () of
@@ -367,7 +357,7 @@ run rawargs = do
             _ | rawEcho args      -> textOutBare
             _                     -> show
 
-    hPutStr hMessageOutput $ unlines $ map textOutHandler $ filter isTextOut messages
+    hPutStr hMessageOutput $ unlines $ fmap textOutHandler $ filter isTextOut messages
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()

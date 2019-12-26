@@ -6,7 +6,7 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (++), head, flip, maximum, minimum, (==))
+import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -135,7 +135,7 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
                         packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
                     rowAndUp =
                         if abs (by2-by1) - abs (y2-y1) > sep
-                        then tmap1 (fst row ++ ) $
+                        then tmap1 (fst row <> ) $
                             packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
                         else row
                 in

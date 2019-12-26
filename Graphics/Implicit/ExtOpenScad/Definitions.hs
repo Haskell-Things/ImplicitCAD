@@ -25,7 +25,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, map, ($), (++), undefined, and, zipWith, foldl1, Int)
+import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), undefined, and, zipWith, foldl1, Int)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
@@ -83,13 +83,13 @@ instance Monad ArgParser where
     (APTest str tests child) >>= g = APTest str tests (child >>= g)
     -- And an ArgParserTerminator happily gives away the value it contains
     (APTerminator a) >>= g = g a
-    (APBranch bs) >>= g = APBranch $ map (>>= g) bs
+    (APBranch bs) >>= g = APBranch $ fmap (>>= g) bs
     return = pure
 
 instance MonadPlus ArgParser where
     mzero = APFailIf True "" undefined
-    mplus (APBranch as) (APBranch bs) = APBranch ( as  ++  bs )
-    mplus (APBranch as) b             = APBranch ( as  ++ [b] )
+    mplus (APBranch as) (APBranch bs) = APBranch ( as  <>  bs )
+    mplus (APBranch as) b             = APBranch ( as  <> [b] )
     mplus a             (APBranch bs) = APBranch ( a   :   bs )
     mplus a             b             = APBranch [ a   ,   b  ]
 
@@ -157,31 +157,31 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OUModule (Symbol name) arguments _) = "module " ++ name ++ " (" ++ intercalate ", " (map showArg (fromMaybe [] arguments)) ++ ") {}"
+    show (OUModule (Symbol name) arguments _) = "module " <> name <> " (" <> intercalate ", " (fmap showArg (fromMaybe [] arguments)) <> ") {}"
       where
         showArg (Symbol a, hasDefault) = if hasDefault
                                          then a
-                                         else a ++ "=..."
+                                         else a <> "=..."
     show (ONModule (Symbol name) _ instances) = showInstances instances
       where
         showArg (Symbol a, hasDefault) = if hasDefault
                                          then a
-                                         else a ++ "=..."
+                                         else a <> "=..."
         showInstances :: [([(Symbol, Bool)], Maybe Bool)] -> String
         showInstances [] = ""
-        showInstances [oneInstance] = "module " ++ name ++ showInstance oneInstance
-        showInstances multipleInstances = "Module " ++ name ++ "[ " ++ intercalate ", " (map showInstance multipleInstances) ++ " ]"
+        showInstances [oneInstance] = "module " <> name <> showInstance oneInstance
+        showInstances multipleInstances = "Module " <> name <> "[ " <> intercalate ", " (fmap showInstance multipleInstances) <> " ]"
         showInstance :: ([(Symbol, Bool)], Maybe Bool) -> String
-        showInstance (arguments, suiteInfo) = " (" ++ intercalate ", " (map showArg arguments) ++ ") {}" ++ showSuiteInfo suiteInfo
+        showInstance (arguments, suiteInfo) = " (" <> intercalate ", " (fmap showArg arguments) <> ") {}" <> showSuiteInfo suiteInfo
         showSuiteInfo suiteInfo = case suiteInfo of
                           Just requiresSuite -> if requiresSuite
                                                 then " requiring suite {}"
                                                 else " accepting suite {}"
                           _ -> ""
-    show (OVargsModule name _) = "varargs module " ++ name
-    show (OError msgs) = "Execution Error:\n" ++ foldl1 (\a b -> a ++ "\n" ++ b) msgs
-    show (OObj2 obj) = "<obj2: " ++ show obj ++ ">"
-    show (OObj3 obj) = "<obj3: " ++ show obj ++ ">"
+    show (OVargsModule name _) = "varargs module " <> name
+    show (OError msgs) = "Execution Error:\n" <> foldl1 (\a b -> a <> "\n" <> b) msgs
+    show (OObj2 obj) = "<obj2: " <> show obj <> ">"
+    show (OObj3 obj) = "<obj3: " <> show obj <> ">"
 
 -- | In order to not propagate Parsec or other modules around, create our own source position type for the AST.
 data SourcePosition = SourcePosition
@@ -191,8 +191,8 @@ data SourcePosition = SourcePosition
     deriving (Eq)
 
 instance Show SourcePosition where
-    show (SourcePosition line col []) = "line " ++ show ((fromFastℕ line) :: Int) ++ ", column " ++ show ((fromFastℕ col) :: Int)
-    show (SourcePosition line col filePath) = "line " ++ show ((fromFastℕ line) :: Int) ++ ", column " ++ show ((fromFastℕ col) :: Int) ++ ", file " ++ filePath
+    show (SourcePosition line col []) = "line " <> show ((fromFastℕ line) :: Int) <> ", column " <> show ((fromFastℕ col) :: Int)
+    show (SourcePosition line col filePath) = "line " <> show ((fromFastℕ line) :: Int) <> ", column " <> show ((fromFastℕ col) :: Int) <> ", file " <> filePath
 
 -- | The types of messages the execution engine can send back to the application.
 data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
@@ -208,7 +208,7 @@ data Message = Message MessageType SourcePosition String
   deriving (Eq)
 
 instance Show Message where
-  show (Message mtype pos text) = show mtype ++ " at " ++ show pos ++ ": " ++ text
+  show (Message mtype pos text) = show mtype <> " at " <> show pos <> ": " <> text
 
 -- | Options changing the behavior of the extended OpenScad engine.
 data ScadOpts = ScadOpts

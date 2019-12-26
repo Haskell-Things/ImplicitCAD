@@ -3,7 +3,7 @@
 -- Copyright 2014-2019, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (++), mod, concat, error)
+import Prelude (IO, String, Int, Either(Left, Right), return, show, ($), otherwise, (==), (-), (<>), mod, concat, error)
 import Criterion.Main (Benchmark, bgroup, defaultMain, bench, env, whnf)
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr, StatementI)
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
@@ -12,14 +12,14 @@ import Text.ParserCombinators.Parsec (parse)
 import Text.Printf (printf)
 
 lineComment :: Int -> String
-lineComment width = "//" ++ ['x' | _ <- [1..width]] ++ "\n"
+lineComment width = "//" <> ['x' | _ <- [1..width]] <> "\n"
 
 lineComments :: Int -> String
 lineComments n = concat [lineComment 80 | _ <- [1..n]]
 
 blockComment :: Int -> Int -> String
 blockComment lineCount width =
-  "/*" ++ concat [['x' | _ <- [1..width]] ++ "\n" | _ <- [1..lineCount]] ++ "*/"
+  "/*" <> concat [['x' | _ <- [1..width]] <> "\n" | _ <- [1..lineCount]] <> "*/"
 
 blockComments :: Int -> Int -> String
 blockComments lineCount n = concat [blockComment lineCount 40 | _ <- [1..n]]
@@ -40,7 +40,7 @@ functionDeclarations :: Int -> String
 functionDeclarations n = concat ["function functionname(arg, arg2) = sin(arg*arg2);" | _ <- [1..n]]
 
 echos :: Int -> String
-echos n = concat ["echo(" ++ show x ++ ");" | x <- [1..n]]
+echos n = concat ["echo(" <> show x <> ");" | x <- [1..n]]
 
 ifs :: Int -> String
 ifs n = concat ["if (true) {cube (10);} else {cube (20);}" | _ <- [1..n]]
@@ -49,25 +49,25 @@ fors :: Int -> String
 fors n = concat ["for (i=[0:1:10]) {cube (i);}" | _ <- [1..n]]
 
 moduleCalls :: Int -> String
-moduleCalls n = concat ["moduleno" ++ show x ++ " (" ++ show x ++ ");" | x <- [1..n]]
+moduleCalls n = concat ["moduleno" <> show x <> " (" <> show x <> ");" | x <- [1..n]]
 
 moduleDeclarations :: Int -> String
 moduleDeclarations n = concat ["module modulename(arg, arg2=10) { cube(arg2); }" | _ <- [1..n]]
 
 ternary :: Int -> String
-ternary n = concat ["true?1:" | _ <- [1..n]] ++ "2"
+ternary n = concat ["true?1:" | _ <- [1..n]] <> "2"
 
 lets :: Int -> String
-lets n = concat ["let (a=1) " | _ <- [1..n]] ++ " a"
+lets n = concat ["let (a=1) " | _ <- [1..n]] <> " a"
 
 intList :: Int -> String
-intList n = "[" ++ concat [show i ++ "," | i <- [1..n]] ++ "0]"
+intList n = "[" <> concat [show i <> "," | i <- [1..n]] <> "0]"
 
 intParList :: Int -> String
-intParList n = "(" ++ concat [show i ++ "," | i <- [1..n]] ++ "0)"
+intParList n = "(" <> concat [show i <> "," | i <- [1..n]] <> "0)"
 
 intPosNegList :: Int -> String
-intPosNegList n = "[" ++ concat [posOrNeg i ++ show i ++ "," | i <- [1..n]] ++ "0]"
+intPosNegList n = "[" <> concat [posOrNeg i <> show i <> "," | i <- [1..n]] <> "0]"
   where
     posOrNeg :: Int -> String
     posOrNeg x = if x `mod` 2 == 1
@@ -75,16 +75,16 @@ intPosNegList n = "[" ++ concat [posOrNeg i ++ show i ++ "," | i <- [1..n]] ++ "
                  else "-"
 
 parExpr :: Int -> String
-parExpr n = concat ["(a+" ++ show i ++ "+" | i <- [0..n]] ++ "0)" ++ concat ["+" ++ show i ++ ")" | i <- [1..n]]
+parExpr n = concat ["(a+" <> show i <> "+" | i <- [0..n]] <> "0)" <> concat ["+" <> show i <> ")" | i <- [1..n]]
 
 genList :: Int -> String
-genList n = concat ["[1:1:" ++ show i ++ "] ++ " | i <- [1..n]] ++ "0"
+genList n = concat ["[1:1:" <> show i <> "] <> " | i <- [1..n]] <> "0"
 
 stringList :: Int -> String
-stringList n = "[" ++ concat ["\"" ++ show i ++ "\", " | i <- [1..n]] ++ " \"something\"]"
+stringList n = "[" <> concat ["\"" <> show i <> "\", " | i <- [1..n]] <> " \"something\"]"
 
 boolList :: Int -> String
-boolList n = "[" ++ concat [trueOrFalse i ++ "," | i <- [1..n]] ++ "false]"
+boolList n = "[" <> concat [trueOrFalse i <> "," | i <- [1..n]] <> "false]"
   where
     trueOrFalse :: Int -> String
     trueOrFalse x = if x `mod` 2 == 1
@@ -92,7 +92,7 @@ boolList n = "[" ++ concat [trueOrFalse i ++ "," | i <- [1..n]] ++ "false]"
                     else "false"
 
 undefinedList :: Int -> String
-undefinedList n = "[" ++ concat ["undef, " | _ <- [1..n]] ++ "undef]"
+undefinedList n = "[" <> concat ["undef, " | _ <- [1..n]] <> "undef]"
 
 deepArithmetic :: Int -> String
 deepArithmetic n

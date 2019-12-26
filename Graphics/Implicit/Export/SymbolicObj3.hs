@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(map, zip, length, filter, (>), ($), null, (++), concatMap, (.))
+import Prelude(fmap, zip, length, filter, (>), ($), null, (<>), foldMap, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3), Triangle, TriangleMesh(TriangleMesh))
 import Graphics.Implicit.Export.Render (getMesh)
@@ -25,7 +25,7 @@ symbolicGetMesh :: ℝ -> SymbolicObj3 -> TriangleMesh
 {--
 -- A translated objects mesh is its mesh translated.
 symbolicGetMesh res (Translate3 v obj) = 
-    map (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
+    fmap (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
 
 -- A scaled objects mesh is its mesh scaled
 symbolicGetMesh res (Scale3 s obj) =
@@ -34,7 +34,7 @@ symbolicGetMesh res (Scale3 s obj) =
         mesh = symbolicGetMesh res obj
         scaleTriangle :: (ℝ3, ℝ3, ℝ3) -> (ℝ3, ℝ3, ℝ3)
         scaleTriangle (a,b,c) = (s S.⋯* a, s S.⋯* b, s S.⋯* c)
-    in map scaleTriangle  mesh
+    in fmap scaleTriangle mesh
 
 -- A couple triangles make a cube...
 symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = 
@@ -43,14 +43,14 @@ symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) =
         rsquare a b c d = [(c,b,a),(c,a,d)]
     in
            rsquare (x1,y1,z1) (x2,y1,z1) (x2,y2,z1) (x1,y2,z1)
-        ++ square (x1,y1,z2) (x2,y1,z2) (x2,y2,z2) (x1,y2,z2)
-        ++ square (x1,y1,z1) (x2,y1,z1) (x2,y1,z2) (x1,y1,z2)
-        ++ rsquare (x1,y2,z1) (x2,y2,z1) (x2,y2,z2) (x1,y2,z2)
-        ++ square (x1,y1,z1) (x1,y1,z2) (x1,y2,z2) (x1,y2,z1)
-        ++ rsquare (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
+        <> square (x1,y1,z2) (x2,y1,z2) (x2,y2,z2) (x1,y2,z2)
+        <> square (x1,y1,z1) (x2,y1,z1) (x2,y1,z2) (x1,y1,z2)
+        <> rsquare (x1,y2,z1) (x2,y2,z1) (x2,y2,z2) (x1,y2,z2)
+        <> square (x1,y1,z1) (x1,y1,z2) (x1,y2,z2) (x1,y2,z1)
+        <> rsquare (x2,y1,z1) (x2,y1,z2) (x2,y2,z2) (x2,y2,z1)
 
 -- Use spherical coordinates to create an easy tesselation of a sphere
-symbolicGetMesh res (Sphere r) = half1 ++ half2
+symbolicGetMesh res (Sphere r) = half1 <> half2
     where
         -- Convenience functions for mesh generation
         square a b c d = [(a,b,c),(d,a,c)]
@@ -63,9 +63,9 @@ symbolicGetMesh res (Sphere r) = half1 ++ half2
         -- Function placing steps on sphere
         f n' m' = spherical (2*pi*n'/n) (pi*m'/m)
         -- Mesh in two pieces..
-        half1 = concat [ square (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1)) 
+        half1 = fold [ square (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1))
                         | m1 <- [0.. m-1], m2 <- [0.. m-1] ]
-        half2 = concat [ rsquare (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1)) 
+        half2 = fold [ rsquare (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1))
                         | m1 <- [m.. n-1], m2 <- [0.. m-1] ]
 
 {-symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb]) 
@@ -102,21 +102,21 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
             [((x1,y1,r-dh x1 y1), (x2,y2,r-dh x2 y2), (x2,y2,h-r+dh x2 y2)), 
              ((x1,y1,r-dh x1 y1), (x2,y2,h-r+dh x2 y2), (x1,y1,h-r+dh x1 y1)) ]
         -- Get a contour polyline for obj2, turn it into a list of segments
-        segs = concat $ map segify $ symbolicGetOrientedContour res obj2
+        segs = foldMap segify $ symbolicGetOrientedContour res obj2
         -- Create sides for the main body of our object = segs × (r,h-r)
-        side_tris = concat $ map (\(a,b) -> segToSide a b) segs
+        side_tris = foldMap (\(a,b) -> segToSide a b) segs
         -- Triangles that fill the contour. Make sure the mesh is at least (res/5) fine.
         -- --res/5 because xyres won't always match up with normal res and we need to compensate.
         fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
         -- The bottom. Use dh to determine the z coordinates
-        bottom_tris = map flipTri $ [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+        bottom_tris = fmap flipTri $ [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2))
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
         -- Same idea at the top.
         top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
     in
         -- Merge them all together! :)
-        side_tris ++ bottom_tris ++ top_tris 
+        side_tris <> bottom_tris <> top_tris 
 
 
 symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) = 
@@ -163,19 +163,19 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
                 [((x1,y1,la1), (x2,y2,la2), (x2,y2,lb2)), 
                  ((x1,y1,la1), (x2,y2,lb2), (x1,y1,lb1)) ]
         -- Get a contour polyline for obj2, turn it into a list of segments
-        segs = concat $ map segify $ symbolicGetOrientedContour res obj2
+        segs = foldMap segify $ symbolicGetOrientedContour res obj2
         -- Create sides for the main body of our object = segs × (r,h-r)
         -- Many layers...
-        side_tris = map flipTri $ concat $
-            [concat $ map (\(a,b) -> segToSide m a b) segs | m <- [0.. n-1] ]
+        side_tris = fmap flipTri $ fold $
+            [foldMap (\(a,b) -> segToSide m a b) segs | m <- [0.. n-1] ]
         -- Triangles that fill the contour. Make sure the mesh is at least (res/5) fine.
         -- --res/5 because xyres won't always match up with normal res and we need to compensate.
         fill_tris = {-divideMeshTo (res/5) $-} symbolicGetContourMesh res obj2
         -- The bottom. Use dh to determine the z coordinates
-        bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2)) 
+        bottom_tris = [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2))
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
         -- Same idea at the top.
-        top_tris = map flipTri $ [((a1,a2,h' (a1,a2) -r+dh a1 a2), (b1,b2,h' (b1,b2) -r+dh b1 b2), (c1,c2,h' (c1,c2)-r+dh c1 c2)) 
+        top_tris = fmap flipTri $ [((a1,a2,h' (a1,a2) -r+dh a1 a2), (b1,b2,h' (b1,b2) -r+dh b1 b2), (c1,c2,h' (c1,c2)-r+dh c1 c2))
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
         -- Mesh modifiers in individual components
         k = 2*pi/360
@@ -187,16 +187,16 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
             scale' z *((x+tx)*sin(k*twist' z) - (y+ty)*cos(k*twist' z))
         -- function to transform a triangle
         transformTriangle :: (ℝ3,ℝ3,ℝ3) -> (ℝ3,ℝ3,ℝ3)
-        transformTriangle (a@(_,_,z1), b@(_,_,z2), c@(_,_,z3)) = 
+        transformTriangle (a@(_,_,z1), b@(_,_,z2), c@(_,_,z3)) =
             ((fx a, fy a, z1), (fx b, fy b, z2), (fx c, fy c, z3))
 
     in
-        map transformTriangle (side_tris ++ bottom_tris ++ top_tris)
+        fmap transformTriangle (side_tris <> bottom_tris <> top_tris)
 -}
 
 symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
     let
-        boxes = map getBox3 objs
+        boxes = fmap getBox3 objs
         boxedObjs = zip boxes objs
 
         sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
@@ -211,9 +211,9 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
         (obj, (a,b)) -> unmesh $ getMesh a b (res,res,res) obj
     else if null dependants
-    then concatMap (unmesh . symbolicGetMesh res) independents
-    else  concatMap (unmesh . symbolicGetMesh res) independents
-        ++ unmesh (symbolicGetMesh res (UnionR3 r dependants))
+    then foldMap (unmesh . symbolicGetMesh res) independents
+    else  foldMap (unmesh . symbolicGetMesh res) independents
+        <> unmesh (symbolicGetMesh res (UnionR3 r dependants))
 
 -- | If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj =

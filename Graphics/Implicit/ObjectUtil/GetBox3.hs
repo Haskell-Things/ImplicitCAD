@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), map, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
 
@@ -44,7 +44,7 @@ getBox3 (Complement3 _) =
           infty = 1/0
 getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
     where
-        boxes = map getBox3 symbObjs
+        boxes = fmap getBox3 symbObjs
         (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
         (lefts, bots, ins) = unzip3 leftbot
         (rights, tops, outs) = unzip3 topright
@@ -57,7 +57,7 @@ getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
 getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
 getBox3 (IntersectR3 _ symbObjs) =
     let
-        boxes = map getBox3 symbObjs
+        boxes = fmap getBox3 symbObjs
         (leftbot, topright) = unzip boxes
         (lefts, bots, ins) = unzip3 leftbot
         (rights, tops, outs) = unzip3 topright
@@ -127,7 +127,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
         samples = 11
         range :: [Fastℕ]
         range = [0, 1 .. (samples-1)]
-        (xrange, yrange) = ( map ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, map ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range)
+        (xrange, yrange) = ( fmap ((\s -> x1+s*dx/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range, fmap ((\s -> y1+s*dy/fromFastℕtoℝ (samples-1)) . fromFastℕtoℝ) range)
 
         hfuzz :: ℝ
         hfuzz = 0.2
@@ -137,13 +137,13 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
                 where
                     hs = [hfun (x,y) | x <- xrange, y <- yrange]
                     (hmin, hmax) = (minimum hs, maximum hs)
-        hrange = map ((/ fromFastℕtoℝ (samples-1)) . (h*) . fromFastℕtoℝ) range
+        hrange = fmap ((/ fromFastℕtoℝ (samples-1)) . (h*) . fromFastℕtoℝ) range
 
         (twistXmin, twistYmin, twistXmax, twistYmax) =
           let
             scale' = case scale of
                        Left  sval -> sval
-                       Right sfun -> maximum $ map (abs . sfun) hrange
+                       Right sfun -> maximum $ fmap (abs . sfun) hrange
             smin v = min v (scale' * v)
             smax v = max v (scale' * v)
             -- FIXME: assumes minimums are negative, and maximums are positive.
@@ -158,9 +158,9 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
         (tminx, tmaxx, tminy, tmaxy) =
           let
             tvalsx :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
-            tvalsx tfun = map (fst . tfun) hrange
+            tvalsx tfun = fmap (fst . tfun) hrange
             tvalsy :: (ℝ -> (ℝ, ℝ)) -> [ℝ]
-            tvalsy tfun = map (snd . tfun) hrange
+            tvalsy tfun = fmap (snd . tfun) hrange
           in case translate of
             Left  (tvalx, tvaly) -> (tvalx, tvalx, tvaly, tvaly)
             Right tfun -> (minimum $ tvalsx tfun, maximum $ tvalsx tfun, minimum $ tvalsy tfun, maximum $ tvalsy tfun)
@@ -189,7 +189,7 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
         range = [0, 1 .. (samples-1)]
         step = rot/fromFastℕtoℝ (samples-1)
         ((x1,y1),(x2,y2)) = getBox2 symbObj
-        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ map (f . (step*) . fromFastℕtoℝ) range
+        (xrange, yrange) = unzip $ take (fromFastℕ samples) $ fmap (f . (step*) . fromFastℕtoℝ) range
         xmax = maximum xrange
         ymax = maximum yrange
         ymin = minimum yrange
@@ -200,7 +200,7 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
         ymin' = ymin - yfuzz * (ymax - ymin)
         (r, _, _) = if either (==0) (const False) rotate
             then let
-                s = maximum $ map abs [x2, y1, y2]
+                s = maximum $ fmap abs [x2, y1, y2]
             in (s + xmax', s + ymin', y2 + ymax')
             else (x2 + xmax', y1 + ymin', y2 + ymax')
     in

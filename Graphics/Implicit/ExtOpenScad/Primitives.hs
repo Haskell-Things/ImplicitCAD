@@ -24,7 +24,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(String, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), return, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, map, (++), otherwise)
+import Prelude(String, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -82,9 +82,9 @@ primitiveModules =
     onModIze func rawInstances = (name, ONModule name implementation instances)
       where
         (name, implementation) = func
-        instances = map fixup rawInstances
+        instances = fmap fixup rawInstances
         fixup :: ([(String, Bool)], Maybe Bool) -> ([(Symbol, Bool)], Maybe Bool)
-        fixup (args, suiteInfo) = (map fixupArgs args, suiteInfo)
+        fixup (args, suiteInfo) = (fmap fixupArgs args, suiteInfo)
           where
             fixupArgs :: (String, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) =(Symbol symbol, maybeDefault) 
@@ -128,7 +128,7 @@ cube = moduleWithoutSuite "cube" $ \_ _ -> do
             let
                 toInterval' :: ℝ -> ℝ2
                 toInterval' = toInterval center
-            return (either toInterval' id x,
+            pure (either toInterval' id x,
                     either toInterval' id y,
                     either toInterval' id z)
         <|> do
@@ -138,7 +138,7 @@ cube = moduleWithoutSuite "cube" $ \_ _ -> do
                 `doc` "should center?"
                 `defaultTo` False
             let (x,y, z) = either (\w -> (w,w,w)) id size
-            return (toInterval center x, toInterval center y, toInterval center z)
+            pure (toInterval center x, toInterval center y, toInterval center z)
     -- arguments shared between forms
     r      :: ℝ    <- argument "r"
                         `doc` "radius of rounding"
@@ -172,7 +172,7 @@ square = moduleWithoutSuite "square" $ \_ _ -> do
             let
                 toInterval' :: ℝ -> ℝ2
                 toInterval' = toInterval center
-            return (either toInterval' id x,
+            pure (either toInterval' id x,
                     either toInterval' id y)
         <|> do
             size   :: Either ℝ ℝ2  <- argument "size"
@@ -181,7 +181,7 @@ square = moduleWithoutSuite "square" $ \_ _ -> do
                 `doc` "should center?"
                 `defaultTo` False
             let (x,y) = either (\w -> (w,w)) id size
-            return (toInterval center x, toInterval center y)
+            pure (toInterval center x, toInterval center y)
     -- arguments shared between forms
     r      :: ℝ    <- argument "r"
                         `doc` "radius of rounding"
@@ -274,7 +274,7 @@ polygon = moduleWithoutSuite "polygon" $ \_ _ -> do
                         `defaultTo` []
     case paths of
         [] -> addObj2 $ Prim.polygonR r points
-        _ -> return $ return []
+        _ -> pure $ pure []
                         `defaultTo` 0
 -}
     let
@@ -305,7 +305,7 @@ union = moduleWithSuite "union" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the union interface"
-    return $ return $ if r > 0
+    pure $ pure $ if r > 0
         then objReduce (Prim.unionR r) (Prim.unionR r) children
         else objReduce  Prim.union      Prim.union     children
 
@@ -314,7 +314,7 @@ intersect = moduleWithSuite "intersection" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the intersection interface"
-    return $ return $ if r > 0
+    pure $ pure $ if r > 0
         then objReduce (Prim.intersectR r) (Prim.intersectR r) children
         else objReduce  Prim.intersect      Prim.intersect     children
 
@@ -323,7 +323,7 @@ difference = moduleWithSuite "difference" $ \_ children -> do
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
-    return $ return $ if r > 0
+    pure $ pure $ if r > 0
         then objReduce (Prim.differenceR r) (Prim.differenceR r) children
         else objReduce  Prim.difference      Prim.difference     children
 
@@ -340,18 +340,18 @@ translate = moduleWithSuite "translate" $ \_ children -> do
             z :: ℝ <- argument "z"
                 `doc` "z amount to translate"
                 `defaultTo` 0;
-            return (x,y,z);
+            pure (x,y,z);
         <|> do
             v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
                 `doc` "vector to translate by"
-            return $ case v of
+            pure $ case v of
                 Left          x       -> (x,0,0)
                 Right (Left  (x,y)  ) -> (x,y,0)
                 Right (Right (x,y,z)) -> (x,y,z)
-    return $ return $
+    pure $ pure $
         objMap (Prim.translate (x,y)) (Prim.translate (x,y,z)) children
 
--- | FIXME: rotating a module that is not found returns no geometry, instead of an error.
+-- | FIXME: rotating a module that is not found pures no geometry, instead of an error.
 -- | FIXME: error reporting on fallthrough.
 -- + FIXME: rotate(y=90) would be nice.
 rotate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
@@ -365,7 +365,7 @@ rotate = moduleWithSuite "rotate" $ \_ children -> do
     -- the right object. See Graphics.Implicit.ExtOpenScad.Util
     -- Entries must be joined with the operator <||>
     -- Final entry must be fall through.
-    return $ return $ caseOType a $
+    pure $ pure $ caseOType a $
                ( \θ  ->
                           objMap (Prim.rotate $ deg2rad θ) (Prim.rotate3V (deg2rad θ) v) children
         ) <||> ( \(yz,zx,xy) ->
@@ -387,7 +387,7 @@ scale = moduleWithSuite "scale" $ \_ children -> do
     let
         scaleObjs stretch2 stretch3 =
             objMap (Prim.scale stretch2) (Prim.scale stretch3) children
-    return $ return $ case v of
+    pure $ pure $ case v of
         Left   x              -> scaleObjs (x,1) (x,1,1)
         Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
         Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
@@ -430,7 +430,7 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
         isTransID = case translateArg of
                       Left constant -> constant == (0,0)
                       Right _       -> False
-    return $ return $ obj2UpMap (
+    pure $ pure $ obj2UpMap (
         \obj -> case height of
             Left constHeight | isTwistID && isScaleID && isTransID ->
                 shiftAsNeeded $ Prim.extrudeR r obj constHeight
@@ -453,13 +453,13 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
             || either ( /= (0,0)) (\f -> f 0 /= f totalRot) translateArg
             || either is360m (\f -> is360m (f 0 - f totalRot)) rotateArg
         capM = if cap then Just r else Nothing
-    return $ return $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
+    pure $ pure $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
 
 shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 shell = moduleWithSuite "shell" $ \_ children -> do
     w :: ℝ <- argument "w"
             `doc` "width of the shell..."
-    return $ return $ objMap (Prim.shell w) (Prim.shell w) children
+    pure $ pure $ objMap (Prim.shell w) (Prim.shell w) children
 
 -- Not a permanent solution! Breaks if can't pack.
 pack :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
@@ -471,19 +471,19 @@ pack = moduleWithSuite "pack" $ \sourcePosition children -> do
     sep  :: ℝ  <- argument "sep"
         `doc` "mandetory space between objects"
     -- The actual work...
-    return $
+    pure $
         let (obj2s, obj3s, others) = divideObjs children
         in if not $ null obj3s
             then case Prim.pack3 size sep obj3s of
-                Just solution -> return $ OObj3 solution : (map OObj2 obj2s ++ others)
+                Just solution -> pure $ OObj3 solution : (fmap OObj2 obj2s <> others)
                 Nothing       -> do
                     errorC sourcePosition "Can't pack given objects in given box with the present algorithm."
-                    return children
+                    pure children
             else case Prim.pack2 size sep obj2s of
-                Just solution -> return $ OObj2 solution : others
+                Just solution -> pure $ OObj2 solution : others
                 Nothing       -> do
                     errorC sourcePosition "Can't pack given objects in given box with the present algorithm."
-                    return children
+                    pure children
 
 unit :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 unit = moduleWithSuite "unit" $ \sourcePosition children -> do
@@ -509,12 +509,12 @@ unit = moduleWithSuite "unit" $ \sourcePosition children -> do
         mmRatio "nm"   = Just 0.0000001
         mmRatio _      = Nothing
     -- The actual work...
-    return $ case mmRatio name of
+    pure $ case mmRatio name of
         Nothing -> do
-            errorC sourcePosition $ "unrecognized unit " ++ name
-            return children
+            errorC sourcePosition $ "unrecognized unit " <> name
+            pure children
         Just r  ->
-            return $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
+            pure $ objMap (Prim.scale (r,r)) (Prim.scale (r,r,r)) children
 
 
 ---------------
@@ -529,10 +529,10 @@ moduleWithoutSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [
 moduleWithoutSuite name modArgMapper = (Symbol name, modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (StateC [OVal])
-addObj2 x = return $ return [OObj2 x]
+addObj2 x = pure $ pure [OObj2 x]
 
 addObj3 :: SymbolicObj3 -> ArgParser (StateC [OVal])
-addObj3 x = return $ return [OObj3 x]
+addObj3 x = pure $ pure [OObj3 x]
 
 objMap :: (SymbolicObj2 -> SymbolicObj2) -> (SymbolicObj3 -> SymbolicObj3) -> [OVal] -> [OVal]
 objMap obj2mod obj3mod (x:xs) = case x of

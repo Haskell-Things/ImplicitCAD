@@ -4,13 +4,13 @@
 
 module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
 
-import Prelude(Bool(True, False), Maybe(Just, Nothing), map, (.), filter, (==), last, reverse, ($), (++), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise)
+import Prelude(Bool(True, False), Maybe(Just, Nothing), fmap, (.), filter, (==), last, reverse, ($), (<>), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise)
 
 import Graphics.Implicit.Definitions (minℝ, Polyline(Polyline))
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
 cleanLoopsFromSegs =
-    map reducePolyline
+    fmap reducePolyline
     . joinSegs
     . filter polylineNotNull
 
@@ -29,7 +29,7 @@ joinSegs (Polyline present:remaining) =
     in
         case findNext remaining of
             (Nothing, _) -> Polyline present: joinSegs remaining
-            (Just (Polyline match), others) -> joinSegs $ Polyline (present ++ match) : others
+            (Just (Polyline match), others) -> joinSegs $ Polyline (present <> match) : others
 
 -- | Simplify and sort a polyline.
 reducePolyline :: Polyline -> Polyline
@@ -84,10 +84,10 @@ fromSegOrPoly (Seg v@(va,vb) s (a,b)) = [a*^v ^+^ t, b*^v ^+^ t]
 fromSegOrPoly (Poly ps) = ps
 
 joinSegs :: [Polyline] -> [Polyline]
-joinSegs = map fromSegOrPoly . joinSegs' . map toSegOrPoly
+joinSegs = fmap fromSegOrPoly . joinSegs' . fmap toSegOrPoly
 
 joinSegs' :: [SegOrPoly] -> [SegOrPoly]
-joinSegs' segsOrPolys = polys ++ concat (map joinAligned aligned) where
+joinSegs' segsOrPolys = polys <> (foldMap joinAligned aligned) where
     polys = filter (not.isSeg) segsOrPolys
     segs  = filter isSeg segsOrPolys
     aligned = groupWith (\(Seg basis p _) -> (basis,p)) segs
@@ -113,6 +113,6 @@ connectPolys (present:remaining) =
     in
         case findNext remaining of
             (Nothing, _) -> present:(connectPolys remaining)
-            (Just match, others) -> connectPolys $ (present ++ tail match): others
+            (Just match, others) -> connectPolys $ (present <> tail match): others
 
 -}

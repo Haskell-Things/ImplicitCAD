@@ -8,7 +8,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbolicGetContour, symbolicGetContourMesh) where
 
-import Prelude(map, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling)
+import Prelude(fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
@@ -23,7 +23,7 @@ import Graphics.Implicit.Export.Render (getContour)
 import Data.VectorSpace ((^/), magnitude)
 
 symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
-symbolicGetOrientedContour res symbObj = map orient $ symbolicGetContour res symbObj
+symbolicGetOrientedContour res symbObj = fmap orient $ symbolicGetContour res symbObj
     where
         obj = getImplicit2 symbObj
         -- FIXME: cowardly case handling.
@@ -51,14 +51,14 @@ symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> getContour a b (res,res) obj'
 
 appOpPolylines :: (ℝ2 -> ℝ2) -> [Polyline] -> [Polyline]
-appOpPolylines op = map (appOpPolyline op)
+appOpPolylines op = fmap (appOpPolyline op)
 appOpPolyline :: (ℝ2 -> ℝ2) -> Polyline -> Polyline
-appOpPolyline op (Polyline xs) = Polyline $ map op xs
+appOpPolyline op (Polyline xs) = Polyline $ fmap op xs
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [Polytri]
-symbolicGetContourMesh res (Translate2 v obj) = map (\(Polytri (a,b,c)) -> Polytri (a + v, b + v, c + v) )  $
+symbolicGetContourMesh res (Translate2 v obj) = fmap (\(Polytri (a,b,c)) -> Polytri (a + v, b + v, c + v) )  $
     symbolicGetContourMesh res obj
-symbolicGetContourMesh res (Scale2 s@(a,b) obj) = map (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s) )  $
+symbolicGetContourMesh res (Scale2 s@(a,b) obj) = fmap (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s) )  $
     symbolicGetContourMesh (res/sc) obj where sc = max a b
 symbolicGetContourMesh _ (RectR 0 (x1,y1) (x2,y2)) = [Polytri ((x1,y1), (x2,y1), (x2,y2)), Polytri ((x2,y2), (x1,y2), (x1,y1)) ]
 -- FIXME: magic number.

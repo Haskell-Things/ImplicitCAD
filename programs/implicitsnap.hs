@@ -12,7 +12,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (++), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, map, otherwise, filter, not)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (<>), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, fmap, otherwise, filter, not)
 
 import Control.Applicative ((<|>))
 
@@ -154,12 +154,12 @@ executeAndExport content callback maybeFormat =
         showB False = "false"
         callbackF :: Bool -> Bool -> ℝ -> String -> String
         callbackF False is2D w msg =
-            callback ++ "([null," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w  ++ "]);"
+            callback <> "([null," <> show msg <> "," <> showB is2D <> "," <> show w  <> "]);"
         callbackF True  is2D w msg =
-            callback ++ "([new Shape()," ++ show msg ++ "," ++ showB is2D ++ "," ++ show w ++ "]);"
+            callback <> "([new Shape()," <> show msg <> "," <> showB is2D <> "," <> show w <> "]);"
         callbackS :: (Show a1, Show a) => a -> a1 -> String
         callbackS str          msg =
-            callback ++ "([" ++ show str ++ "," ++ show msg ++ ",null,null]);"
+            callback <> "([" <> show str <> "," <> show msg <> ",null,null]);"
         scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions [] content
     in
@@ -168,13 +168,14 @@ executeAndExport content callback maybeFormat =
       let
         res = getRes   s
         w   = getWidth s
+        resError :: String
         resError = "Unreasonable resolution requested: "
-                   ++ "the server imps revolt! "
-                   ++ "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+                   <> "the server imps revolt! "
+                   <> "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
         render = res > 0
         scadMessages = intercalate "\n"
-                       (map show (filter (not . isTextOut) messages) ++
-                        map show (filter isTextOut messages))
+                       (fmap show (filter (not . isTextOut) messages) <>
+                        fmap show (filter isTextOut messages))
 
       return $ case (obj2s, obj3s, render) of
         (_ ,        _, False) -> callbackF False False 1 resError
@@ -188,8 +189,8 @@ executeAndExport content callback maybeFormat =
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
               output3d         = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then output3d ++ callbackF True False w (scadMessages ++ unionWarning)
-            else callbackS output3d (scadMessages ++ unionWarning)
+            then output3d <> callbackF True False w (scadMessages <> unionWarning)
+            else callbackS output3d (scadMessages <> unionWarning)
         (obj:objs, []   , _) -> do
           let target          = if null objs
                                 then obj
@@ -201,8 +202,8 @@ executeAndExport content callback maybeFormat =
               output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
               output2d        = TL.unpack $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then output3d ++ callbackF True True w (scadMessages ++ unionWarning)
-            else callbackS output2d (scadMessages ++ unionWarning)
+            then output3d <> callbackF True True w (scadMessages <> unionWarning)
+            else callbackS output2d (scadMessages <> unionWarning)
         ([], []         , _) -> callbackF False False 1 $ intercalate "\n" [scadMessages, "Nothing to render."]
         _                    -> callbackF False False 1 $ intercalate "\n" [scadMessages, "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"]
 

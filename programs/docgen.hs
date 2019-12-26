@@ -8,12 +8,13 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (++), putStrLn, filter, zip, null, map, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error)
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
 
 import qualified Control.Exception as Ex (catch, SomeException)
-import Control.Monad (forM_, mapM)
+import Control.Monad (forM_)
+import Data.Traversable (traverse)
 
 -- | Return true if the argument is of type ExampleDoc.
 isExample :: DocPart -> Bool
@@ -40,11 +41,11 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
 
   if level /= 0
     then
-      putStrLn $ "#" ++ moduleLabel
+      putStrLn $ "#" <> moduleLabel
     else
     do
       putStrLn moduleLabel
-      putStrLn (map (const '-') moduleLabel)
+      putStrLn (fmap (const '-') moduleLabel)
       putStrLn ""
 
   if null examples
@@ -54,7 +55,7 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
     do
       putStrLn "#Examples:\n"
       forM_ examples $ \(ExampleDoc example) ->
-        putStrLn $ "   * `" ++ example ++ "`"
+        putStrLn $ "   * `" <> example <> "`"
       putStrLn ""
 
   if null arguments
@@ -74,15 +75,15 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
       forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
         case (posfallback, description) of
           (Nothing, "") ->
-            putStrLn $ "   * `" ++ name  ++ "`"
+            putStrLn $ "   * `" <> name  <> "`"
           (Just fallback, "") ->
-            putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
+            putStrLn $ "   * `" <> name <> " = " <> fallback <> "`"
           (Nothing, _) -> do
-            putStrLn $ "   * `" ++ name ++ "`"
-            putStrLn $ "     " ++ description
+            putStrLn $ "   * `" <> name <> "`"
+            putStrLn $ "     " <> description
           (Just fallback, _) -> do
-            putStrLn $ "   * `" ++ name ++ " = " ++ fallback ++ "`"
-            putStrLn $ "     " ++ description
+            putStrLn $ "   * `" <> name <> " = " <> fallback <> "`"
+            putStrLn $ "     " <> description
       putStrLn ""
 
   if null syntaxes
@@ -90,18 +91,18 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
       return ()
     else
       forM_ syntaxes $ \(Branch syntax) ->
-        dumpPrimitive (Symbol $ "Syntax " ++ show (level+1)) syntax (level+1)
+        dumpPrimitive (Symbol $ "Syntax " <> show (level+1)) syntax (level+1)
 
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
 main = do
-        docs <- mapM (getArgParserDocs.getArgParserFrom) primitiveModules
+        docs <- traverse (getArgParserDocs.getArgParserFrom) primitiveModules
         let
-          names = map fst primitiveModules
+          names = fmap fst primitiveModules
           docname = "ImplicitCAD Primitives"
-        putStrLn (map (const '=') docname)
+        putStrLn (fmap (const '=') docname)
         putStrLn docname
-        putStrLn (map (const '=') docname)
+        putStrLn (fmap (const '=') docname)
         putStrLn ""
         putStrLn ""
         forM_ (zip names docs) $ \(moduleName, moduleDocList) ->
@@ -163,6 +164,6 @@ getArgParserDocs (APBranch children) = do
   aResults <- getArgParserDocs $ head children
   if otherDocs /= [Empty]
     then
-    return [Branch (aResults ++ otherDocs)]
+    return [Branch (aResults <> otherDocs)]
     else
     return aResults

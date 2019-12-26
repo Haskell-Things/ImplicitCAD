@@ -15,7 +15,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, scadOptions) where
 
-import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (++), return)
+import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (<>), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
 
@@ -30,7 +30,7 @@ import Data.Kind (Type)
 getVarLookup :: StateC VarLookup
 getVarLookup = do
   (CompState (varlookup,_,_,_,_)) <- get
-  return varlookup
+  pure varlookup
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
 modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
@@ -40,15 +40,15 @@ modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, 
 lookupVar :: Symbol -> StateC (Maybe OVal)
 lookupVar name = do
     (VarLookup varlookup) <- getVarLookup
-    return $ lookup name varlookup
+    pure $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals= modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals ++ b, c, d, e))
+pushVals vals= modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals <> b, c, d, e))
 
 getVals :: StateC [OVal]
 getVals = do
     (CompState (_,vals,_,_,_)) <- get
-    return vals
+    pure vals
 
 putVals :: [OVal] -> StateC ()
 putVals vals = do
@@ -62,26 +62,26 @@ withPathShiftedBy pathShift s = do
     x <- s
     (CompState (a',b',_,d',e')) <- get
     put $ CompState (a', b', path, d', e')
-    return x
+    pure x
 
--- | Return the path stored in the state.
+-- | Pure the path stored in the state.
 getPath :: StateC FilePath
 getPath = do
     (CompState (_,_,path,_,_)) <- get
-    return path
+    pure path
 
 getRelPath :: FilePath -> StateC FilePath
 getRelPath relPath = do
     path <- getPath
-    return $ path </> relPath
+    pure $ path </> relPath
 
 scadOptions :: StateC ScadOpts
 scadOptions = do
   (CompState (_, _, _, _, opts)) <- get
-  return opts
+  pure opts
 
 addMesg :: Message -> StateC ()
-addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> CompState (a, b, c, messages ++ [message], d))
+addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> CompState (a, b, c, messages <> [message], d))
 
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
@@ -97,5 +97,5 @@ warnC = addMessage Warning
 mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
 mapMaybeM f (Just a) = do
     b <- f a
-    return (Just b)
-mapMaybeM _ Nothing = return Nothing
+    pure (Just b)
+mapMaybeM _ Nothing = pure Nothing

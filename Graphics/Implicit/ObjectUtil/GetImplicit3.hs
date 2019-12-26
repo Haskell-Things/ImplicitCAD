@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, map, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, return, error, head, tail, (>), (&&), (<), (==), otherwise)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
@@ -50,24 +50,24 @@ getImplicit3 (Complement3 symbObj) =
         \p -> - obj p
 getImplicit3 (UnionR3 r symbObjs) =
     let
-        objs = map getImplicit3 symbObjs
+        objs = fmap getImplicit3 symbObjs
     in
-        \p -> rminimum r $ map ($p) objs
+        \p -> rminimum r $ fmap ($p) objs
 getImplicit3 (IntersectR3 r symbObjs) =
     let
-        objs = map getImplicit3 symbObjs
+        objs = fmap getImplicit3 symbObjs
     in
-        \p -> rmaximum r $ map ($p) objs
+        \p -> rmaximum r $ fmap ($p) objs
 getImplicit3 (DifferenceR3 r symbObjs) =
     let
-        tailObjs = map getImplicit3 $ tail symbObjs
+        tailObjs = fmap getImplicit3 $ tail symbObjs
         headObj = getImplicit3 $ head symbObjs
         complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in
       \p -> do
         let
-          maxTail = rmaximum r $ map ($p) $ map complement tailObjs
+          maxTail = rmaximum r $ fmap ($p) $ fmap complement tailObjs
         if maxTail > -minℝ && maxTail < minℝ
           then rmax r (headObj p) minℝ
           else rmax r (headObj p) maxTail
@@ -222,12 +222,12 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                         in
                             (c*r' - s*z', c*z' + s*r')
                         else (r - rshift, z - zshift)
-            return $
-                if capped
-                then rmax round'
+            pure $
+              if capped
+              then rmax round'
                     (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
                     (obj rz_pos)
-                else obj rz_pos
+              else obj rz_pos
 
 -- FIXME: implement this, or implement a fallthrough function.
 --getImplicit3 (ExtrudeRotateR) =

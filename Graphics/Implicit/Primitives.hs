@@ -39,7 +39,7 @@ module Graphics.Implicit.Primitives (
                                      implicit
                                     ) where
 
-import Prelude(Maybe(Just, Nothing), Either, map, ($))
+import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
@@ -279,9 +279,9 @@ pack3 (dx, dy) sep objs =
         boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
         boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
         withBoxes :: [(Box2, SymbolicObj3)]
-        withBoxes = map (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
+        withBoxes = fmap (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
     in case pack ((0,0),(dx,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y,0) obj) a
+            (a, []) -> Just $ union $ fmap (\((x,y),obj) -> translate (x,y,0) obj) a
             _ -> Nothing
 
 -- 2D operations
@@ -293,8 +293,8 @@ pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
 pack2 (dx, dy) sep objs =
     let
         withBoxes :: [(Box2, SymbolicObj2)]
-        withBoxes = map (\obj -> ( getBox2 obj, obj)) objs
+        withBoxes = fmap (\obj -> ( getBox2 obj, obj)) objs
     in case pack ((0,0),(dx,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ map (\((x,y),obj) -> translate (x,y) obj) a
+            (a, []) -> Just $ union $ fmap (\((x,y),obj) -> translate (x,y) obj) a
             _ -> Nothing
 

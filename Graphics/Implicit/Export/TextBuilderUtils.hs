@@ -15,20 +15,13 @@ module Graphics.Implicit.Export.TextBuilderUtils (
      bf,
      buildTruncFloat,
      buildℕ,
-     buildInt,
-     -- Values from Data.Monoid
-     (<>),
-     mconcat,
-     mempty
+     buildInt
     ) where
 
 import Prelude (Maybe(Nothing, Just), Int, ($))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, fromℝtoFloat)
 import Data.Text.Lazy as DTL (Text, pack)
--- We manually redefine this operator to avoid a dependency on base >= 4.5
--- This will become unnecessary later.
-import Data.Monoid (Monoid, mappend, mconcat, mempty)
 
 import Data.Text.Internal.Lazy (defaultChunkSize)
 import Data.Text.Lazy.Builder as DTLB (Builder, toLazyTextWith, fromLazyText)
@@ -54,7 +47,3 @@ buildℕ = decimal
 buildInt :: Int -> Builder
 buildInt = decimal
 
--- This is directly copied from base 4.5.1.0
-infixr 6 <>
-(<>) :: Monoid m => m -> m -> m
-(<>) = mappend

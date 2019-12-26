@@ -7,9 +7,9 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
-module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchIf, matchElse, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEach) where
+module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchIf, matchElse, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEach, lexer) where
 
-import Prelude (String, Char, Bool(True), (>>), return)
+import Prelude (String, Char, Bool(True), (>>), pure)
 
 import "monads-tf" Control.Monad.Identity (Identity)
 
@@ -96,7 +96,7 @@ matchTok :: Char -> GenParser Char st String
 matchTok x = do
   y <- char x
   _ <- P.whiteSpace lexer
-  return [y]
+  pure [y]
 --matchTok tok = lexeme lexer $ symbol lexer [tok]
 
 -- | match a colon.
@@ -113,23 +113,23 @@ matchComma = comma lexer
 
 -- | Match operators.
 matchLE :: GenParser Char st String
-matchLE = P.reservedOp lexer "<=" >> return "<="
+matchLE = P.reservedOp lexer "<=" >> pure "<="
 matchLT :: GenParser Char st String
 matchLT = matchTok '<'
 matchGE :: GenParser Char st String
-matchGE = P.reservedOp lexer ">=" >> return ">="
+matchGE = P.reservedOp lexer ">=" >> pure ">="
 matchGT :: GenParser Char st String
 matchGT = matchTok '>'
 matchEQ :: GenParser Char st String
-matchEQ = P.reservedOp lexer "==" >> return "=="
+matchEQ = P.reservedOp lexer "==" >> pure "=="
 matchNE :: GenParser Char st String
-matchNE = P.reservedOp lexer "!=" >> return "!="
+matchNE = P.reservedOp lexer "!=" >> pure "!="
 matchAND :: GenParser Char st String
-matchAND = P.reservedOp lexer "&&" >> return "&&"
+matchAND = P.reservedOp lexer "&&" >> pure "&&"
 matchOR :: GenParser Char st String
-matchOR = P.reservedOp lexer "||" >> return "||"
+matchOR = P.reservedOp lexer "||" >> pure "||"
 matchCAT :: GenParser Char st String
-matchCAT = P.reservedOp lexer "++" >> return "++"
+matchCAT = P.reservedOp lexer "++" >> pure "++"
 
 
 -- | match something between two ends.

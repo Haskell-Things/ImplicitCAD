@@ -11,7 +11,7 @@
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
-import Prelude(String, Maybe(Just, Nothing), ($), (++), concat, show, error, return, map, snd, filter, (.), fst, foldl1, not, (&&))
+import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&))
 import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
@@ -25,6 +25,8 @@ import Data.Map (fromList, lookup, delete)
 import qualified Data.Map as DM (null)
 
 import Data.Maybe (isNothing, fromJust, isJust)
+
+import Data.Foldable (fold)
 
 import Control.Arrow (first)
 
@@ -41,9 +43,9 @@ argument name =
             val :: Maybe desiredType
             val = fromOObj oObjVal
             errmsg = case oObjVal of
-                OError errs -> "error in computing value for argument " ++ show name
-                             ++ ": " ++ concat errs
-                _   ->  "arg " ++ show oObjVal ++ " not compatible with " ++ show name
+                OError errs -> "error in computing value for argument " <> show name
+                             <> ": " <> fold errs
+                _   ->  "arg " <> show oObjVal <> " not compatible with " <> show name
         -- Using /= Nothing would require Eq desiredType
         APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
 {-# INLINABLE argument #-}
@@ -80,13 +82,13 @@ argMap ::
     -> ArgParser a              -- ^ ArgParser to apply them to
     -> (Maybe a, [String])      -- ^ (result, error messages)
 argMap args = argMap2 unnamedArgs (VarLookup $ fromList namedArgs) where
-    unnamedArgs = map snd $ filter (isNothing . fst) args
-    namedArgs   = map (first fromJust) $ filter (isJust . fst) args
+    unnamedArgs = fmap snd $ filter (isNothing . fst) args
+    namedArgs   = fmap (first fromJust) $ filter (isJust . fst) args
 
 argMap2 :: [OVal] -> VarLookup -> ArgParser a -> (Maybe a, [String])
 argMap2 unnamedArgs namedArgs (APBranch branches) =
     foldl1 merge solutions where
-        solutions = map (argMap2 unnamedArgs namedArgs) branches
+        solutions = fmap (argMap2 unnamedArgs namedArgs) branches
         merge :: forall a. (Maybe a, [String]) -> (Maybe a, [String]) -> (Maybe a, [String])
         merge a@(Just _, []) _ = a
         merge _ b@(Just _, []) = b
@@ -105,7 +107,7 @@ argMap2 unnamedArgs (VarLookup namedArgs) (AP name fallback _ f) =
             x:xs -> argMap2 xs (VarLookup namedArgs) (f x)
             []   -> case fallback of
                 Just b  -> argMap2 [] (VarLookup namedArgs) (f b)
-                Nothing -> (Nothing, ["No value and no default for argument " ++ show name])
+                Nothing -> (Nothing, ["No value and no default for argument " <> show name])
 
 -- FIXME: don't use map.null here, wrap it in StateC.hs.
 -- FIXME: generate a warning.

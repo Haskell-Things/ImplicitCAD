@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, map, zip3, Either(Left, Right), fromIntegral, (++))
+import Prelude (($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Right), fromIntegral, (<>))
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
@@ -48,12 +48,12 @@ object2 = squarePipe (10,10,10) 1 100
       squarePipe :: (ℝ,ℝ,ℝ) -> ℝ -> ℝ -> SymbolicObj3
       squarePipe (x,y,z) diameter precision =
             union
-            $ map (\start-> translate start
+            $ fmap (\start-> translate start
                    $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
                   )
-            $ zip3 (map (\n->(fromIntegral n/precision)*x) [0..100::Fastℕ])
-                   (map (\n->(fromIntegral n/precision)*y) [0..100::Fastℕ])
-                   (map (\n->(fromIntegral n/precision)*z) [0..100::Fastℕ])
+            $ zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100::Fastℕ])
+                   (fmap (\n->(fromIntegral n/precision)*y) [0..100::Fastℕ])
+                   (fmap (\n->(fromIntegral n/precision)*z) [0..100::Fastℕ])
 
 -- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
@@ -74,9 +74,9 @@ obj2Benchmarks :: String -> String -> SymbolicObj2 -> Benchmark
 obj2Benchmarks name filename obj =
     bgroup name
     [
-      bench "SVG write" $ nfAppIO (writeSVG 1 $ filename ++ ".svg") obj,
-      bench "PNG write" $ nfAppIO (writePNG2 1 $ filename ++ ".png") obj,
-      bench "DXF write" $ nfAppIO (writeDXF2 1 $ filename ++ ".dxf") obj,
+      bench "SVG write" $ nfAppIO (writeSVG 1 $ filename <> ".svg") obj,
+      bench "PNG write" $ nfAppIO (writePNG2 1 $ filename <> ".png") obj,
+      bench "DXF write" $ nfAppIO (writeDXF2 1 $ filename <> ".dxf") obj,
       bench "Get contour" $ nf (symbolicGetContour 1) obj
     ]
 
@@ -86,8 +86,8 @@ obj3Benchmarks name filename obj =
     bgroup name
     [
 --        bench "PNG write" $ writePNG3 1 "benchmark.png" obj
-      bench "STLTEXT write" $ nfAppIO (writeSTL 1 $ filename ++ ".stl.text") obj,
-      bench "STL write" $ nfAppIO (writeBinSTL 1 $ filename ++ ".stl") obj,
+      bench "STLTEXT write" $ nfAppIO (writeSTL 1 $ filename <> ".stl.text") obj,
+      bench "STL write" $ nfAppIO (writeBinSTL 1 $ filename <> ".stl") obj,
       bench "Get mesh" $ nf (symbolicGetMesh 1) obj
     ]
 

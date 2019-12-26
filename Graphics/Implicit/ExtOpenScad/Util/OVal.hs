@@ -14,15 +14,17 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, toOObj, divideObjs, caseOType, oTypeStr, getErrors) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char, String, (==), fromInteger, floor, ($), (.), map, error, (++), show, head, flip, filter, not, return, head)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char, String, (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, head, flip, filter, not, return, head)
 
 import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3))
 
-import Control.Monad (mapM, msum)
+import Control.Monad (msum)
 
 import Data.Maybe (fromMaybe, maybe)
+
+import Data.Traversable(traverse)
 
 -- for some minimal paralellism.
 import Control.Parallel.Strategies(runEval, rpar, rseq)
@@ -31,7 +33,7 @@ import Control.Parallel.Strategies(runEval, rpar, rseq)
 class OTypeMirror a where
     fromOObj :: OVal -> Maybe a
     fromOObjList :: OVal -> Maybe [a]
-    fromOObjList (OList list) = mapM fromOObj list
+    fromOObjList (OList list) = traverse fromOObj list
     fromOObjList _ = Nothing
     {-# INLINABLE fromOObjList #-}
     toOObj :: a -> OVal
@@ -72,7 +74,7 @@ instance OTypeMirror Char where
 instance (OTypeMirror a) => OTypeMirror [a] where
     fromOObj = fromOObjList
     {-# INLINABLE fromOObj #-}
-    toOObj list = OList $ map toOObj list
+    toOObj list = OList $ fmap toOObj list
 
 instance (OTypeMirror a) => OTypeMirror (Maybe a) where
     fromOObj a = Just $ fromOObj a
@@ -102,7 +104,7 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
             output = fromOObj oOutput
         in
           fromMaybe (error $ "coercing OVal to a -> b isn't always safe; use a -> Maybe b"
-                               ++ " (trace: " ++ show oInput ++ " -> " ++ show oOutput ++ " )") output
+                               <> " (trace: " <> show oInput <> " -> " <> show oOutput <> " )") output
     fromOObj _ = Nothing
     {-# INLINABLE fromOObj #-}
     toOObj f = OFunc $ \oObj ->
@@ -136,7 +138,7 @@ oTypeStr (OObj3          _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe String
 getErrors (OError er) = Just $ head er
-getErrors (OList l)   = msum $ map getErrors l
+getErrors (OList l)   = msum $ fmap getErrors l
 getErrors _           = Nothing
 
 caseOType :: forall c a. a -> (a -> c) -> c

@@ -77,7 +77,7 @@ divideMesh2To res mesh =
                                           (av b c, av a c, av a b)]
                 (_,_,_) -> divideTriangle (c, a, b)
     in
-        concat $ map divideTriangle mesh
+        foldMap divideTriangle mesh
 
 divideMeshTo :: ℝ -> [(ℝ3, ℝ3, ℝ3)] -> [(ℝ3, ℝ3, ℝ3)]
 divideMeshTo res mesh =
@@ -99,7 +99,7 @@ divideMeshTo res mesh =
                                           (av b c, av a c, av a b)]
                 (_,_,_) -> divideTriangle (c, a, b)
     in
-        concat $ map divideTriangle mesh
+        foldMap divideTriangle mesh
 
 dividePolylineTo :: ℝ -> [ℝ2] -> [ℝ2]
 dividePolylineTo res polyline =
@@ -109,7 +109,7 @@ dividePolylineTo res polyline =
         divide a b =
             if S.norm (a S.- b) <= res
             then [a]
-            else concat [divide a (av a b), divide (av a b) b]
+            else divide a (av a b) <> divide (av a b) b
         n = length polyline
     in do
         m <- [0.. n]

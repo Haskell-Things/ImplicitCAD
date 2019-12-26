@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), map, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (++), pi, atan2, (==), (>), (++), show, (&&), otherwise, error)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
@@ -75,10 +75,10 @@ getBox2 (Complement2 _) =
           infty :: (Fractional t) => t
           infty = 1/0
 getBox2 (UnionR2 r symbObjs) =
-  outsetBox r $ unionBoxes (map getBox2 symbObjs)
+  outsetBox r $ unionBoxes (fmap getBox2 symbObjs)
 getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
 getBox2 (IntersectR2 r symbObjs) =
-  outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ map getBox2 symbObjs
+  outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ fmap getBox2 symbObjs
 -- Simple transforms
 getBox2 (Translate2 v symbObj) =
     let
@@ -120,7 +120,7 @@ getBox2R (PolygonR _ points) deg =
   let
     pointRBoxes = [ pointRBox point deg | point <- points ]
     (pointValsMin, pointValsMax) = unzip pointRBoxes
-    (pointValsX, pointValsY) = unzip (pointValsMin ++ pointValsMax)
+    (pointValsX, pointValsY) = unzip (pointValsMin <> pointValsMax)
   in
     ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
 getBox2R (Complement2 symObj) _ = getBox2 $ Complement2 symObj
@@ -196,7 +196,7 @@ pointRBox (xStart, yStart) travel =
       | θpos > 90*k && θpos < 180*k   = InQuadrant UpperLeft
       | θpos > 180*k && θpos < 270*k  = InQuadrant LowerLeft
       | θpos > 270*k && θpos < 360*k  = InQuadrant LowerRight
-      | otherwise                     = error $ "illegal position in positionOf: " ++ show (θpos*k) ++ " pos: " ++ show θpos ++ " d: " ++ show d
+      | otherwise                     = error $ "illegal position in positionOf: " <> show (θpos*k) <> " pos: " <> show θpos <> " d: " <> show d
     -- returns position around a circle in radians, from 0 to 2pi.
     absrad :: ℝ -> ℝ
     absrad rad
@@ -310,7 +310,7 @@ pointRBox (xStart, yStart) travel =
     mixWith :: [ℝ2] -> Box2
     mixWith points = ((minimum xPoints, minimum yPoints), (maximum xPoints, maximum yPoints))
                      where
-                       (xPoints, yPoints) = unzip $ points ++ [(xStart, yStart), (xStop, yStop)] 
+                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)] 
     invertRotation :: Direction -> Direction
     invertRotation Clockwise = CounterClockwise
     invertRotation CounterClockwise = Clockwise

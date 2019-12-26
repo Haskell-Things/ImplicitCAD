@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, return, (++), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), map, fmap, notElem, elem, not, zip, init, last, null, String)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
@@ -40,9 +40,13 @@ import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
 
-import Control.Monad (forM_, forM, mapM_, when, unless)
+import Control.Monad (when, unless)
 
-import "monads-tf" Control.Monad.State (get, liftIO, runStateT, (>>))
+import "monads-tf" Control.Monad.State (get, liftIO, runStateT)
+
+import Data.Foldable (traverse_, for_)
+
+import Data.Traversable (for)
 
 import System.FilePath (takeDirectory)
 
@@ -56,10 +60,10 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
     case (getErrors val, posMatch) of
         (Just err,  _ ) -> errorC sourcePos err
         (_, Just (VarLookup match)) ->
-          forM_ (toList match) $ \(Symbol varName, _) -> do
+          for_ (toList match) $ \(Symbol varName, _) -> do
             maybeVar <- lookupVar (Symbol varName)
             when (isJust maybeVar)
-              (warnC sourcePos $ "redefining already defined object: " ++ show varName)
+              (warnC sourcePos $ "redefining already defined object: " <> show varName)
             modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
@@ -67,32 +71,32 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
 runStatementI (StatementI sourcePos (If expr a b)) = do
     val <- evalExpr sourcePos expr
     case (getErrors val, val) of
-        (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " ++ err)
+        (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " <> err)
         (_, OBool True )  -> runSuite a
         (_, OBool False)  -> runSuite b
-        _                 -> return ()
+        _                 -> pure ()
 
 -- | Interpret a module declaration.
 runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
-    argTemplate' <- forM argTemplate $ \(argName, defexpr) -> do
+    argTemplate' <- for argTemplate $ \(argName, defexpr) -> do
         defval <- mapMaybeM (evalExpr sourcePos) defexpr
-        return (argName, defval)
-    argNames <-  forM argTemplate $ \(argName, defexpr) -> do
+        pure (argName, defval)
+    argNames <-  for argTemplate $ \(argName, defexpr) -> do
       defval <- mapMaybeM (evalExpr sourcePos) defexpr
       let
         hasDefault = isJust defval
-      return (argName, hasDefault)
+      pure (argName, hasDefault)
     (VarLookup varlookup) <- getVarLookup
 --  FIXME: \_? really?
     runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OUModule name (Just argNames) $ \_ -> do
-        newNameVals <- forM argTemplate' $ \(argName, maybeDef) -> do
+        newNameVals <- for argTemplate' $ \(argName, maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument argName `defaultTo` def
                 Nothing  -> argument argName
-            return (argName, val)
+            pure (argName, val)
         let
             varlookup' = union (fromList newNameVals) varlookup
-        return $ runSuiteCapture (VarLookup varlookup') suite
+        pure $ runSuiteCapture (VarLookup varlookup') suite
 
 -- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
@@ -101,16 +105,16 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
         newVals  <- case maybeMod of
             Just (OUModule _ args mod') -> do
               optionsMatch <- checkOptions args True
-              unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " ++ name ++ ".")
+              unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " <> name <> ".")
               evaluatedArgs <- evalArgs argsExpr
               -- Evaluate the suite.
               suiteResults <- runSuiteCapture varlookup suite
-              when (suite /= []) (errorC sourcePos $ "Suite provided, but module " ++ name ++ " does not accept one. Perhaps a missing semicolon?")
+              when (suite /= []) (errorC sourcePos $ "Suite provided, but module " <> name <> " does not accept one. Perhaps a missing semicolon?")
               -- Run the module.
               let
                 argsMapped = argMap evaluatedArgs $ mod' suiteResults
-              forM_ (snd argsMapped) $ errorC sourcePos
-              fromMaybe (return []) (fst argsMapped)
+              for_ (snd argsMapped) $ errorC sourcePos
+              fromMaybe (pure []) (fst argsMapped)
             Just (ONModule _ implementation forms) -> do
               possibleInstances <- selectInstances forms
               let
@@ -119,14 +123,14 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   []                      -> Nothing
                   ((_, suiteInfoFound):_) -> suiteInfoFound
               when (null possibleInstances) (do
-                                                errorC sourcePos $ "no instance of " ++ name ++ " found to match given parameters.\nInstances available:\n" ++ show (ONModule (Symbol name) implementation forms)
-                                                mapM_ (`checkOptions` True) $ fmap (Just . fst) forms
+                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> show (ONModule (Symbol name) implementation forms)
+                                                traverse_ (`checkOptions` True) $ fmap (Just . fst) forms
                                             )
               -- Ignore this for now, because all instances we define have the same suite requirements.
               {-
               when (length possibleInstances > 1) (do
-                                                      errorC sourcePos $ "too many instances of " ++ name ++ " have been found that match given parameters."
-                                                      mapM_ (`checkOptions` True) $ fmap (Just . fst) possibleInstances)
+                                                      errorC sourcePos $ "too many instances of " <> name <> " have been found that match given parameters."
+                                                      traverse_ (`checkOptions` True) $ fmap (Just . fst) possibleInstances)
               -}
               -- Evaluate all of the arguments.
               evaluatedArgs <- evalArgs argsExpr
@@ -135,49 +139,49 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               suiteResults <- case suiteInfo of
                               Just True -> do
                                 when (null vals) (errorC sourcePos "Suite required, but none provided.")
-                                return vals
-                              Just False -> return vals
+                                pure vals
+                              Just False -> pure vals
                               _ -> do
-                                when (suite /= []) (errorC sourcePos $ "Suite provided, but module " ++ name ++ " does not accept one. Perhaps a missing semicolon?")
-                                return []
+                                when (suite /= []) (errorC sourcePos $ "Suite provided, but module " <> name <> " does not accept one. Perhaps a missing semicolon?")
+                                pure []
               -- Run the module.
               let
                 argsMapped = argMap evaluatedArgs $ implementation sourcePos suiteResults
-              forM_ (snd argsMapped) $ errorC sourcePos
-              fromMaybe (return []) (fst argsMapped)
+              for_ (snd argsMapped) $ errorC sourcePos
+              fromMaybe (pure []) (fst argsMapped)
             Just (OVargsModule modname mod') -> do
               -- Evaluate all of the arguments.
               evaluatedArgs <- evalArgs argsExpr
               -- Run the module, which evaluates it's own suite.
-              _ <- mod' modname sourcePos evaluatedArgs suite runSuite -- no values are returned
-              return []
+              _ <- mod' modname sourcePos evaluatedArgs suite runSuite -- no values are pureed
+              pure []
             Just foo -> do
                     case getErrors foo of
                         Just err -> errorC sourcePos err
-                        Nothing  -> errorC sourcePos $ "Object " ++ name ++ " is not a module!"
-                    return []
+                        Nothing  -> errorC sourcePos $ "Object " <> name <> " is not a module!"
+                    pure []
             _ -> do
-                errorC sourcePos $ "Module " ++ name ++ " not in scope."
-                return []
+                errorC sourcePos $ "Module " <> name <> " not in scope."
+                pure []
         pushVals newVals
           where
             selectInstances :: [([(Symbol, Bool)], Maybe Bool)] -> StateC [([(Symbol, Bool)], Maybe Bool)]
             selectInstances instances = do
-              validInstances <- forM instances
+              validInstances <- for instances
                     ( \(args, suiteInfo) -> do
                         res <- checkOptions (Just args) False
-                        return $ if res then Just (args, suiteInfo) else Nothing
+                        pure $ if res then Just (args, suiteInfo) else Nothing
                     )
-              return $ catMaybes validInstances
+              pure $ catMaybes validInstances
             checkOptions :: Maybe [(Symbol, Bool)] -> Bool -> StateC Bool
             checkOptions args makeWarnings = do
               let
                 -- Find what arguments are satisfied by a default value, were given in a named parameter, or were given.. and count them.
                 valDefaulted ,valNotDefaulted, valNamed, mappedDefaulted, mappedNotDefaulted, notMappedNotDefaultable :: [Symbol]
                 -- function definition has a default value.
-                valDefaulted  = map fst $ filter snd $ fromMaybe [] args
+                valDefaulted  = fmap fst $ filter snd $ fromMaybe [] args
                 -- function definition has no default value.
-                valNotDefaulted = map fst $ filter (not.snd) $ fromMaybe [] args
+                valNotDefaulted = fmap fst $ filter (not.snd) $ fromMaybe [] args
                 -- function call has a named expression bound to this symbol.
                 valNamed = namedParameters argsExpr
                 -- function call has a named expression, function definition has an argument with this name, AND there is a default value for this argument.
@@ -191,46 +195,46 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 valUnnamed = unnamedParameters argsExpr
                 mapFromUnnamed :: [(Symbol, Expr)]
                 mapFromUnnamed = zip notMappedNotDefaultable valUnnamed
-                missingNotDefaultable = filter (`notElem` (mappedDefaulted ++ mappedNotDefaulted ++ (map fst mapFromUnnamed))) valNotDefaulted
-                extraUnnamed = filter (`notElem` (valDefaulted ++ valNotDefaulted)) $ namedParameters argsExpr
-                parameterReport =  "Passed " ++
-                  (if (null valNamed && null valUnnamed) then "no parameters" else "" ) ++
-                  (if not (null valNamed) then show (length valNamed) ++ (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) ++
-                  (if not (null valNamed) && not (null valUnnamed) then ", and " else "") ++
-                  (if not (null valUnnamed) then show (length valUnnamed) ++ (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") ++
+                missingNotDefaultable = filter (`notElem` (mappedDefaulted <> mappedNotDefaulted <> (fmap fst mapFromUnnamed))) valNotDefaulted
+                extraUnnamed = filter (`notElem` (valDefaulted <> valNotDefaulted)) $ namedParameters argsExpr
+                parameterReport =  "Passed " <>
+                  (if (null valNamed && null valUnnamed) then "no parameters" else "" ) <>
+                  (if not (null valNamed) then show (length valNamed) <> (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) <>
+                  (if not (null valNamed) && not (null valUnnamed) then ", and " else "") <>
+                  (if not (null valUnnamed) then show (length valUnnamed) <> (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") <>
                   (if not (null missingNotDefaultable) then
                       (if length missingNotDefaultable == 1
-                       then " Couldn't match one parameter: " ++ showSymbol (last missingNotDefaultable)
-                       else " Couldn't match " ++ show (length missingNotDefaultable) ++ " parameters: " ++ intercalate ", " (map showSymbol $ init missingNotDefaultable) ++ " and " ++ showSymbol (last missingNotDefaultable) ++ "."
-                      ) else "") ++
+                       then " Couldn't match one parameter: " <> showSymbol (last missingNotDefaultable)
+                       else " Couldn't match " <> show (length missingNotDefaultable) <> " parameters: " <> intercalate ", " (fmap showSymbol $ init missingNotDefaultable) <> " and " <> showSymbol (last missingNotDefaultable) <> "."
+                      ) else "") <>
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
-                       then " Had one extra parameter: " ++ showSymbol (last extraUnnamed)
-                       else " Had " ++ show (length extraUnnamed) ++ " extra parameters. They are:" ++ intercalate ", " (map showSymbol $ init extraUnnamed) ++ " and " ++ showSymbol (last extraUnnamed) ++ "."
+                       then " Had one extra parameter: " <> showSymbol (last extraUnnamed)
+                       else " Had " <> show (length extraUnnamed) <> " extra parameters. They are:" <> intercalate ", " (fmap showSymbol $ init extraUnnamed) <> " and " <> showSymbol (last extraUnnamed) <> "."
                       ) else "")
                 showSymbol :: Symbol -> String
                 showSymbol (Symbol sym) = show sym
                   {-
               when (makeWarnings)
-                (errorC sourcePos $ concatMap show argsExpr)
+                (errorC sourcePos $ foldMap show argsExpr)
               when (makeWarnings)
-                (errorC sourcePos $ "valNamed: " ++ show (length valNamed))
+                (errorC sourcePos $ "valNamed: " <> show (length valNamed))
               when (makeWarnings)
-                (errorC sourcePos $ "mappedDefaulted: " ++ show (length mappedDefaulted))
+                (errorC sourcePos $ "mappedDefaulted: " <> show (length mappedDefaulted))
               when (makeWarnings)
-                (errorC sourcePos $ "mappedNotDefaulted: " ++ show (length mappedNotDefaulted))
+                (errorC sourcePos $ "mappedNotDefaulted: " <> show (length mappedNotDefaulted))
               when (makeWarnings)
-                (errorC sourcePos $ "notMappedNotDefaultable: " ++ show (length notMappedNotDefaultable))
+                (errorC sourcePos $ "notMappedNotDefaultable: " <> show (length notMappedNotDefaultable))
               when (makeWarnings)
-                (errorC sourcePos $ "mapFromUnnamed: " ++ show (length mapFromUnnamed))
+                (errorC sourcePos $ "mapFromUnnamed: " <> show (length mapFromUnnamed))
               when (makeWarnings)
-                (errorC sourcePos $ "missingNotDefaultable: " ++ show (length missingNotDefaultable))
+                (errorC sourcePos $ "missingNotDefaultable: " <> show (length missingNotDefaultable))
                  -}
               when (not (null missingNotDefaultable) && makeWarnings)
-                (errorC sourcePos $ "Insufficient parameters. " ++ parameterReport)
+                (errorC sourcePos $ "Insufficient parameters. " <> parameterReport)
               when (not (null extraUnnamed) && isJust args && makeWarnings)
-                (errorC sourcePos $ "Too many parameters: " ++ show (length extraUnnamed) ++ " extra. " ++ parameterReport)
-              return $ null missingNotDefaultable && null extraUnnamed
+                (errorC sourcePos $ "Too many parameters: " <> show (length extraUnnamed) <> " extra. " <> parameterReport)
+              pure $ null missingNotDefaultable && null extraUnnamed
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
             namedParameters = mapMaybe fst
             unnamedParameters :: [(Maybe Symbol, Expr)] -> [Expr]
@@ -241,9 +245,9 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   Nothing -> Just expr
               )
             evalArgs :: [(Maybe Symbol, Expr)] -> StateC [(Maybe Symbol, OVal)]
-            evalArgs args = forM args $ \(posName, expr) -> do
+            evalArgs args = for args $ \(posName, expr) -> do
               val <- evalExpr sourcePos expr
-              return (posName, val)
+              pure (posName, val)
 
 -- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
@@ -256,28 +260,28 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
       name' <- getRelPath name
       content <- liftIO $ readFile name'
       case parseProgram name' content of
-        Left e -> errorC sourcePos $ "Error parsing " ++ name ++ ":" ++ show e
+        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> show e
         Right sts -> withPathShiftedBy (takeDirectory name) $ do
             vals <- getVals
             putVals []
             runSuite sts
             vals' <- getVals
-            if injectVals then putVals (vals' ++ vals) else putVals vals
+            if injectVals then putVals (vals' <> vals) else putVals vals
       else
-        warnC sourcePos $ "Not importing " ++ name ++ ": File import disabled."
+        warnC sourcePos $ "Not importing " <> name <> ": File import disabled."
 
-runStatementI (StatementI _ DoNothing) = return ()
+runStatementI (StatementI _ DoNothing) = pure ()
 
 runSuite :: [StatementI] -> StateC ()
-runSuite = mapM_ runStatementI
+runSuite = traverse_ runStatementI
 
 runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
 runSuiteCapture varlookup suite = do
     (CompState (_ , _, path, _, opts)) <- get
     (res, CompState (_, _, _, messages, _)) <- liftIO $ runStateT
-        (runSuite suite >> getVals)
+        (runSuite suite *> getVals)
         (CompState (varlookup, [], path, [], opts))
     let
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
-    mapM_ moveMessage messages
-    return $ reverse res
+    traverse_ moveMessage messages
+    pure $ reverse res

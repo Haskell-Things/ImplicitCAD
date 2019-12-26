@@ -8,7 +8,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants, runExpr) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, ($), return, (+), Either (Left, Right), Char, Bool(False))
+import Prelude (String, Maybe(Just, Nothing), IO, ($), pure, (+), Either (Left, Right), Char, Bool(False))
 
 import Graphics.Implicit.Definitions (Fastℕ)
 
@@ -54,10 +54,10 @@ addConstants constants = do
   path <- getCurrentDirectory
   let scadOpts = ScadOpts False False
   (_, CompState (varLookup, _, _, messages, _)) <- liftIO $ runStateT (execAssignments constants 0) (CompState (defaultObjects, [], path, [], scadOpts))
-  return (varLookup, messages)
+  pure (varLookup, messages)
   where
     execAssignments :: [String] -> Fastℕ  -> StateC ()
-    execAssignments [] _ = return ()
+    execAssignments [] _ = pure ()
     execAssignments (assignment:xs) count = do
       let
         pos = SourcePosition count 1 "cmdline_constants"
@@ -67,7 +67,7 @@ addConstants constants = do
         Right (key, expr) -> do
           res <- evalExpr pos expr
           case matchPat key res of
-            Nothing -> return ()
+            Nothing -> pure ()
             Just pat -> modifyVarLookup $ varUnion pat
       execAssignments xs (count+1)
     parseAssignment :: SourceName -> String -> Either ParseError (Pattern, Expr)
@@ -78,15 +78,15 @@ addConstants constants = do
           key <- patternMatcher
           _ <- matchTok '='
           expr <- expr0
-          return (key, expr)
+          pure (key, expr)
 
--- | Evaluate an expression, returning only it's result.
+-- | Evaluate an expression, pureing only it's result.
 runExpr :: String -> IO (OVal, [Message])
 runExpr expression = do
   path <- getCurrentDirectory
   let scadOpts = ScadOpts False False
   (res, CompState (_, _, _, messages, _)) <- liftIO $ runStateT (execExpression expression) (CompState (defaultObjects, [], path, [], scadOpts))
-  return (res, messages)
+  pure (res, messages)
   where
     execExpression :: String -> StateC OVal
     execExpression expr = do
@@ -96,7 +96,7 @@ runExpr expression = do
       case parseExpression "raw_expression" expr of
         Left e -> do
           addMessage SyntaxError pos $ show' e
-          return OUndefined
+          pure OUndefined
         Right parseRes -> evalExpr pos parseRes
     parseExpression :: SourceName -> String -> Either ParseError Expr
     parseExpression = parse expr0

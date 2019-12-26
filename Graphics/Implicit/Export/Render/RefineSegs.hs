@@ -5,7 +5,7 @@
 -- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude((<), (/), (++), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
+import Prelude((<), (/), (<>), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2, (⋅))
 import Graphics.Implicit.Export.Util (centroid)
@@ -80,7 +80,7 @@ simplify1 (Polyline (a:b:c:xs)) =
 simplify1 a = a
 
 addPolylines :: Polyline -> Polyline -> Polyline
-addPolylines (Polyline as) (Polyline bs) = Polyline (as ++ bs) 
+addPolylines (Polyline as) (Polyline bs) = Polyline (as <> bs)
 
 {-
 simplify2 :: ℝ -> Polyline -> Polyline
@@ -90,7 +90,7 @@ simplify2 res [a,b,c,d] =
     else [a,b,c,d]
 simplify2 _ a = a
 
-simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) ++ [last as]
+simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) <> [last as]
     where
         half (a:b:xs) = a : half xs
         half a = a
