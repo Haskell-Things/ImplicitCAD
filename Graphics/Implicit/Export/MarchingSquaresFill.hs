@@ -5,13 +5,15 @@
 -- exports getContourMesh, which returns an array of triangles describing the interior of a 2D object.
 module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
-import Prelude(Bool(True, False), ($), (-), (+), (/), (*), (<=), ceiling, concat, max, div, floor)
+import Prelude(Bool(True, False), ($), (-), (+), (/), (*), (<=), ceiling, max, div, floor)
 
 import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, both, Polytri(Polytri), Obj2, (⋯/), (⋯*), fromℕtoℝ, fromℕ)
 
 import Data.VectorSpace ((^-^),(^+^))
 
 import Data.List(genericIndex)
+
+import Data.Foldable (fold)
 
 -- Each step on the Y axis is done in parallel using Control.Parallel.Strategies
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
@@ -48,7 +50,7 @@ getContourMesh p1 p2 res obj =
         trisOnGrid = [[getSquareTriangles (gridPos n (mx,my)) (gridPos n (mx+1,my+1)) preEvaledObj
              | mx <- [0..nx-1] ] | my <- [0..ny-1] ] `using` parBuffer (max 1 $ fromℕ $ div ny 32) rdeepseq
         -- FIXME: merge adjacent triangles.
-        triangles = concat $ concat trisOnGrid
+        triangles = fold $ fold trisOnGrid
     in
         triangles
 
