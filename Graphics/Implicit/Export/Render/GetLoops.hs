@@ -5,7 +5,7 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (++))
+import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>))
 
 -- We're working with 3D points here.
 import Graphics.Implicit.Definitions (ℝ3)
@@ -61,9 +61,9 @@ getLoops' segs workingLoop =
         (possibleConts, nonConts) = partition connects segs
         (next, unused) = if null possibleConts
             then error "unclosed loop in paths given"
-            else (head possibleConts, tail possibleConts ++ nonConts)
+            else (head possibleConts, tail possibleConts <> nonConts)
     in
         if null next
         then workingLoop : getLoops' segs []
-        else getLoops' unused (workingLoop ++ [next])
+        else getLoops' unused (workingLoop <> [next])
 
