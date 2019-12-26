@@ -7,10 +7,12 @@
 
 module Graphics.Implicit.Export.NormedTriangleMeshFormats (obj) where
 
-import Prelude(($), map, (+), (.), (*), length, (-), return)
+import Prelude(($), fmap, (+), (.), (*), length, (-), pure, (<>))
 
 import Graphics.Implicit.Definitions (NormedTriangle(NormedTriangle), NormedTriangleMesh(NormedTriangleMesh), ℝ3)
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, (<>), bf, mconcat, buildInt)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt)
+
+import Data.Foldable (fold, foldMap)
 
 -- | Generate a .obj format file from a NormedTriangleMesh
 --   see: https://en.wikipedia.org/wiki/Wavefront_.obj_file
@@ -34,13 +36,13 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
             NormedTriangle ((_,a),(_,b),(_,c)) <- normedtriangles
             -- | The normals from each triangle take up 3 positions in the resulting list
             [a,b,c]
-        vertcode = mconcat $ map v verts
-        normcode = mconcat $ map n norms
-        trianglecode = mconcat $ do
-            n' <- map ((+1).(*3)) [0,1 .. length normedtriangles -1]
+        vertcode = foldMap v verts
+        normcode = foldMap n norms
+        trianglecode = fold $ do
+            n' <- fmap ((+1).(*3)) [0,1 .. length normedtriangles -1]
             let
                 vta = buildInt  n'
                 vtb = buildInt (n'+1)
                 vtc = buildInt (n'+2)
-            return $ "f " <> vta <> " " <> vtb <> " " <> vtc <> " " <> "\n"
+            pure $ "f " <> vta <> " " <> vtb <> " " <> vtc <> " " <> "\n"
 
