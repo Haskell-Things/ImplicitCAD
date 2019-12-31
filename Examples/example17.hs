@@ -1,13 +1,13 @@
 -- Example 17, pulled from our benchmarking suite.
-import Graphics.Implicit
-import Graphics.Implicit.Definitions
+import Graphics.Implicit (union, translate, rect3R, writeSTL)
+import Graphics.Implicit.Definitions (Fastℕ, ℝ, ℝ3, SymbolicObj3)
 
 default (Fastℕ, ℝ)
 
 object2 :: SymbolicObj3
 object2 = squarePipe (10,10,10) 1 100
     where
-      squarePipe :: (ℝ,ℝ,ℝ) -> ℝ -> ℝ -> SymbolicObj3
+      squarePipe :: ℝ3 -> ℝ -> ℝ -> SymbolicObj3
       squarePipe (x,y,z) diameter precision =
             union
             $ fmap (\start-> translate start
