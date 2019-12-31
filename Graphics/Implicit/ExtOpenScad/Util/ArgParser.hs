@@ -11,7 +11,7 @@
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
-import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&))
+import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>))
 import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
@@ -82,8 +82,8 @@ argMap ::
     -> ArgParser a              -- ^ ArgParser to apply them to
     -> (Maybe a, [String])      -- ^ (result, error messages)
 argMap args = argMap2 unnamedArgs (VarLookup $ fromList namedArgs) where
-    unnamedArgs = fmap snd $ filter (isNothing . fst) args
-    namedArgs   = fmap (first fromJust) $ filter (isJust . fst) args
+    unnamedArgs = snd <$> filter (isNothing . fst) args
+    namedArgs   = first fromJust <$> filter (isJust . fst) args
 
 argMap2 :: [OVal] -> VarLookup -> ArgParser a -> (Maybe a, [String])
 argMap2 unnamedArgs namedArgs (APBranch branches) =

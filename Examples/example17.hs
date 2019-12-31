@@ -12,11 +12,11 @@ object2 = squarePipe (10,10,10) 1 100
       squarePipe :: ℝ3 -> ℝ -> ℝ -> SymbolicObj3
       squarePipe (x,y,z) diameter precision =
             union
-            $ ((\start-> translate start
-                   $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
-                  )
-            <$>
-             zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100])
+            ((\start-> translate start
+               $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
+             )
+             <$>
+              zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100])
                    (fmap (\n->(fromIntegral n/precision)*y) [0..100])
                    (fmap (\n->(fromIntegral n/precision)*z) [0..100]))
 

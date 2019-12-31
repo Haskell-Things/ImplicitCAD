@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
@@ -49,25 +49,21 @@ getImplicit3 (Complement3 symbObj) =
     in
         \p -> - obj p
 getImplicit3 (UnionR3 r symbObjs) =
-    let
-        objs = fmap getImplicit3 symbObjs
-    in
-        \p -> rminimum r $ fmap ($p) objs
+  \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
+
 getImplicit3 (IntersectR3 r symbObjs) =
-    let
-        objs = fmap getImplicit3 symbObjs
-    in
-        \p -> rmaximum r $ fmap ($p) objs
+  \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
+
 getImplicit3 (DifferenceR3 r symbObjs) =
     let
-        tailObjs = fmap getImplicit3 $ tail symbObjs
+        tailObjs = getImplicit3 <$> tail symbObjs
         headObj = getImplicit3 $ head symbObjs
         complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in
       \p -> do
         let
-          maxTail = rmaximum r $ fmap ($p) $ fmap complement tailObjs
+          maxTail = rmaximum r $ fmap ($p) $ complement <$> tailObjs
         if maxTail > -minℝ && maxTail < minℝ
           then rmax r (headObj p) minℝ
           else rmax r (headObj p) maxTail

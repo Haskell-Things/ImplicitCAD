@@ -69,7 +69,7 @@ patMatch _ _ = Nothing
 
 -- | Construct a VarLookup from the given Pattern and OVal, if possible.
 matchPat :: Pattern -> OVal -> Maybe VarLookup
-matchPat pat val = VarLookup . fromList . zip (fmap Symbol $ patVars pat) <$> patMatch pat val
+matchPat pat val = VarLookup . fromList . zip (Symbol <$> patVars pat) <$> patMatch pat val
 
 -- | The entry point from StateC. evaluates an expression, pureing the result, and moving any error messages generated into the calling StateC.
 evalExpr :: SourcePosition -> Expr -> StateC OVal

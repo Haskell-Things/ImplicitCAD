@@ -191,8 +191,8 @@ data SourcePosition = SourcePosition
     deriving (Eq)
 
 instance Show SourcePosition where
-    show (SourcePosition line col []) = "line " <> show ((fromFastℕ line) :: Int) <> ", column " <> show ((fromFastℕ col) :: Int)
-    show (SourcePosition line col filePath) = "line " <> show ((fromFastℕ line) :: Int) <> ", column " <> show ((fromFastℕ col) :: Int) <> ", file " <> filePath
+    show (SourcePosition line col []) = "line " <> show (fromFastℕ line :: Int) <> ", column " <> show (fromFastℕ col :: Int)
+    show (SourcePosition line col filePath) = "line " <> show (fromFastℕ line :: Int) <> ", column " <> show (fromFastℕ col :: Int) <> ", file " <> filePath
 
 -- | The types of messages the execution engine can send back to the application.
 data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.

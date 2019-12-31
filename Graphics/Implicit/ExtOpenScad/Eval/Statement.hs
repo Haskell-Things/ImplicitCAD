@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>), (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
@@ -195,22 +195,22 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 valUnnamed = unnamedParameters argsExpr
                 mapFromUnnamed :: [(Symbol, Expr)]
                 mapFromUnnamed = zip notMappedNotDefaultable valUnnamed
-                missingNotDefaultable = filter (`notElem` (mappedDefaulted <> mappedNotDefaulted <> (fmap fst mapFromUnnamed))) valNotDefaulted
+                missingNotDefaultable = filter (`notElem` (mappedDefaulted <> mappedNotDefaulted <> fmap fst mapFromUnnamed)) valNotDefaulted
                 extraUnnamed = filter (`notElem` (valDefaulted <> valNotDefaulted)) $ namedParameters argsExpr
                 parameterReport =  "Passed " <>
-                  (if (null valNamed && null valUnnamed) then "no parameters" else "" ) <>
+                  (if null valNamed && null valUnnamed then "no parameters" else "" ) <>
                   (if not (null valNamed) then show (length valNamed) <> (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) <>
                   (if not (null valNamed) && not (null valUnnamed) then ", and " else "") <>
                   (if not (null valUnnamed) then show (length valUnnamed) <> (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") <>
                   (if not (null missingNotDefaultable) then
                       (if length missingNotDefaultable == 1
                        then " Couldn't match one parameter: " <> showSymbol (last missingNotDefaultable)
-                       else " Couldn't match " <> show (length missingNotDefaultable) <> " parameters: " <> intercalate ", " (fmap showSymbol $ init missingNotDefaultable) <> " and " <> showSymbol (last missingNotDefaultable) <> "."
+                       else " Couldn't match " <> show (length missingNotDefaultable) <> " parameters: " <> intercalate ", " (showSymbol <$> init missingNotDefaultable) <> " and " <> showSymbol (last missingNotDefaultable) <> "."
                       ) else "") <>
                   (if not (null extraUnnamed) then
                       (if length extraUnnamed == 1
                        then " Had one extra parameter: " <> showSymbol (last extraUnnamed)
-                       else " Had " <> show (length extraUnnamed) <> " extra parameters. They are:" <> intercalate ", " (fmap showSymbol $ init extraUnnamed) <> " and " <> showSymbol (last extraUnnamed) <> "."
+                       else " Had " <> show (length extraUnnamed) <> " extra parameters. They are:" <> intercalate ", " (showSymbol <$> init extraUnnamed) <> " and " <> showSymbol (last extraUnnamed) <> "."
                       ) else "")
                 showSymbol :: Symbol -> String
                 showSymbol (Symbol sym) = show sym

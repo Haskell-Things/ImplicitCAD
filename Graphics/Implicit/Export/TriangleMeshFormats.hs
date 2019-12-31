@@ -78,7 +78,7 @@ cleanupTris tris =
 
 -- | Generate an STL file is ASCII format.
 stl :: TriangleMesh -> Text
-stl triangles = toLazyText $ stlHeader <> (foldMap triangle $ unmesh $ cleanupTris triangles) <> stlFooter
+stl triangles = toLazyText $ stlHeader <> foldMap triangle (unmesh $ cleanupTris triangles) <> stlFooter
     where
         stlHeader :: Builder
         stlHeader = "solid ImplictCADExport\n"
@@ -107,7 +107,7 @@ float32LE = writeStorable . LE
 
 -- | Generate an STL file in it's binary format.
 binaryStl :: TriangleMesh -> ByteString
-binaryStl triangles = toLazyByteString $ header <> lengthField <> (foldMap triangle $ unmesh $ cleanupTris triangles)
+binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triangle (unmesh $ cleanupTris triangles)
     where header = fromByteString $ replicate 80 0
           lengthField = fromWord32le $ toEnum $ length $ unmesh $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0

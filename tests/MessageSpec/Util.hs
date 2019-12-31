@@ -36,7 +36,7 @@ infixr 1 -->
 -- | Types
 
 -- | An even smaller wrapper which runs a program, and only returns the generated messages. for the test suite.
-getOpenscadMessages ::  ScadOpts -> [String] -> String -> IO ([Message])
+getOpenscadMessages ::  ScadOpts -> [String] -> String -> IO [Message]
 getOpenscadMessages scadOpts constants source = do
     (_, _, _, messages) <- runOpenscad scadOpts constants source
     return messages

@@ -96,7 +96,7 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         "  8\n" <> "0\n" <>
         "  6\n" <> "CONTINUOUS\n" <>
         " 66\n" <> "1\n" <>
-        " 62\n" <> (buildInt $ length singlePolyline) <> "\n" <>
+        " 62\n" <> buildInt (length singlePolyline) <> "\n" <>
         " 10\n" <> "0.0\n" <>
         " 20\n" <> "0.0\n" <>
         " 30\n" <> "0.0000\n" <>

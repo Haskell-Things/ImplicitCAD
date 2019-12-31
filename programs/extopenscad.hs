@@ -349,7 +349,7 @@ run rawargs = do
       _        -> hPutStr stderr "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
 
     -- | Always display our warnings, errors, and other non-textout messages on stderr.
-    hPutStr stderr $ unlines $ fmap show $ filter (not . isTextOut) messages
+    hPutStr stderr $ unlines $ show <$> filter (not . isTextOut) messages
 
     let textOutHandler =
           case () of
@@ -357,7 +357,7 @@ run rawargs = do
             _ | rawEcho args      -> textOutBare
             _                     -> show
 
-    hPutStr hMessageOutput $ unlines $ fmap textOutHandler $ filter isTextOut messages
+    hPutStr hMessageOutput $ unlines $ textOutHandler <$> filter isTextOut messages
 
 -- | The entry point. Use the option parser then run the extended OpenScad code.
 main :: IO ()

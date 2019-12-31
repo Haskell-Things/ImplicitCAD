@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Right), fromIntegral, (<>))
+import Prelude (($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Right), fromIntegral, (<>), (<$>))
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
@@ -48,12 +48,13 @@ object2 = squarePipe (10,10,10) 1 100
       squarePipe :: (ℝ,ℝ,ℝ) -> ℝ -> ℝ -> SymbolicObj3
       squarePipe (x,y,z) diameter precision =
             union
-            $ fmap (\start-> translate start
+            ((\start-> translate start
                    $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
                   )
-            $ zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100::Fastℕ])
+             <$>
+              zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100::Fastℕ])
                    (fmap (\n->(fromIntegral n/precision)*y) [0..100::Fastℕ])
-                   (fmap (\n->(fromIntegral n/precision)*z) [0..100::Fastℕ])
+                   (fmap (\n->(fromIntegral n/precision)*z) [0..100::Fastℕ]))
 
 -- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
