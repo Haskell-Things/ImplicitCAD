@@ -8,7 +8,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, ($), fmap, pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
+import Prelude (String, Maybe(Just, Nothing), ($), fmap, pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -34,14 +34,16 @@ import Data.Map (fromList, lookup)
 
 import Data.Foldable (fold, traverse_)
 
+import Data.Functor.Identity (Identity)
+
 import Data.Traversable (for)
 
 import Control.Monad (zipWithM)
 
-import "monads-tf" Control.Monad.State (StateT, get, modify, liftIO, runStateT)
+import "monads-tf" Control.Monad.State (StateT, get, modify, runState)
 
 newtype ExprState = ExprState (VarLookup, [String], [Message], SourcePosition)
-type StateE = StateT ExprState IO
+type StateE = StateT ExprState Identity
 
 -- Add a message to our list of messages contained in the StatE monad.
 addMessage :: MessageType -> SourcePosition -> String -> StateE ()
@@ -75,8 +77,8 @@ matchPat pat val = VarLookup . fromList . zip (Symbol <$> patVars pat) <$> patMa
 evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
     varlookup <- getVarLookup
-    (valf, ExprState (_, _, messages, _)) <- liftIO $ runStateT (evalExpr' expr) $ ExprState (varlookup, [], [], pos)
     let
+      (valf, ExprState (_, _, messages, _)) = runState (evalExpr' expr) $ ExprState (varlookup, [], [], pos)
       moveMessage (Message mtype mpos text) = GIEUS.addMessage mtype mpos text
     traverse_ moveMessage messages
     pure $ valf []
