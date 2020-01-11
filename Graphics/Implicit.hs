@@ -2,10 +2,6 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: Required. why?
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, UndecidableInstances #-}
-
 {- The purpose of this file is to pass on the functionality we want
    to be accessible to an end user who is compiling objects using
    this haskell library. -}

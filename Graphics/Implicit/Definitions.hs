@@ -6,9 +6,6 @@
 -- This module deliberately declares orphan instances of Show.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -105,12 +102,12 @@ minℝ = 0.0000000000000002
 --minℝ = 0.00000011920928955078125 * 2
 
 -- | apply a function to both items in the provided tuple.
-both :: forall t b. (t -> b) -> (t, t) -> (b, b)
+both :: (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
 {-# INLINABLE both #-}
 
 -- | apply a function to all three items in the provided tuple.
-allthree :: forall t b. (t -> b) -> (t, t, t) -> (b, b, b)
+allthree :: (t -> b) -> (t, t, t) -> (b, b, b)
 allthree f (x,y,z) = (f x, f y, f z)
 {-# INLINABLE allthree #-}
 
