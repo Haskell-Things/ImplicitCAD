@@ -6,20 +6,8 @@
 
 -- This file provides primitive objects for the openscad parser.
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Allow us to use type signatures in patterns.
 {-# LANGUAGE ScopedTypeVariables #-}
-
--- Allow us to use shorter forms of Var and Name.
-{-# LANGUAGE PatternSynonyms #-}
-
--- For the type arithmatic involved in calling VectorSpace.
-{-# LANGUAGE TypeFamilies #-}
-
--- to simplify polygon
-{-# LANGUAGE PatternGuards #-}
 
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
@@ -48,7 +36,7 @@ import Data.AffineSpace (distanceSq)
 default (ℝ)
 
 -- | Use the old syntax when defining arguments.
-argument :: forall desiredType. (OTypeMirror desiredType) => String -> ArgParser desiredType
+argument :: OTypeMirror desiredType => String -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
 -- | The only thing exported here. basically, a list of modules.
