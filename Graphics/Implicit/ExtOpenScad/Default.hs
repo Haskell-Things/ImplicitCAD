@@ -2,9 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- allow us to specify what package to import what module from.
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
@@ -302,7 +299,7 @@ defaultPolymorphicFunctions =
                 [(ceiling a), (ceiling (a+b)).. (floor c)]
         list_gen _ = Nothing
 
-        ternary :: forall t. Bool -> t -> t -> t
+        ternary :: Bool -> t -> t -> t
         ternary True a _ = a
         ternary False _ b = b
 

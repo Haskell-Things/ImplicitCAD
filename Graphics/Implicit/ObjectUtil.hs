@@ -6,9 +6,6 @@
 
 module Graphics.Implicit.ObjectUtil(getImplicit3, getImplicit2, getBox3, getBox2) where
 
--- as there is no real content here, we need no content from the prelude.
-import Prelude()
-
 import Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3)
 
 import Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)

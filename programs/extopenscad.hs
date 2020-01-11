@@ -7,7 +7,6 @@
 
 -- Enable additional syntax to make our code more readable.
 {-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE PatternGuards #-}
 
 -- Let's be explicit about what we're getting from where :)
 

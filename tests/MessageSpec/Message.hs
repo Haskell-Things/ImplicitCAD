@@ -2,9 +2,6 @@
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use shorter forms of Var and Name.
-{-# LANGUAGE PatternSynonyms #-}
-
 module MessageSpec.Message (programExec) where
 
 -- Be explicit about what we import.

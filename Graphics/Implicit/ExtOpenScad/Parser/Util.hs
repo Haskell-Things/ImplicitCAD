@@ -2,12 +2,6 @@
 -- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
--- FIXME: required. why?
-{-# LANGUAGE KindSignatures, FlexibleContexts #-}
-
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
 import Prelude (String, Char, ($), foldl1, fmap, (.), pure, (*>), Bool(True, False), read, (**), (*), (==), (<>), (<$>), (<$))
@@ -31,17 +25,15 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok, ma
 
 import Data.Functor (($>))
 
-import Data.Kind (Type)
-
 infixr 1 *<|>
-(*<|>) :: forall u a tok. GenParser tok u a -> ParsecT [tok] u Identity a -> ParsecT [tok] u Identity a
+(*<|>) :: GenParser tok u a -> ParsecT [tok] u Identity a -> ParsecT [tok] u Identity a
 a *<|> b = try a <|> b
 
 infixr 2 ?:
-(?:) :: forall s u (m :: Type -> Type) a. String -> ParsecT s u m a -> ParsecT s u m a
+(?:) :: String -> ParsecT s u m a -> ParsecT s u m a
 l ?: p = p <?> l
 
-tryMany :: forall u a tok. [GenParser tok u a] -> ParsecT [tok] u Identity a
+tryMany :: [GenParser tok u a] -> ParsecT [tok] u Identity a
 tryMany = foldl1 (<|>) . fmap try
 
 -- | A pattern parser

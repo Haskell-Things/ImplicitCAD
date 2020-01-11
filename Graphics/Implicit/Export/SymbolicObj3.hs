@@ -2,9 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- The purpose of this function is to symbolicaly compute triangle meshes using the symbolic system where possible.
 -- Otherwise we coerce it into an implicit function and apply our modified marching cubes algorithm.
 
@@ -199,7 +196,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
         boxes = fmap getBox3 objs
         boxedObjs = zip boxes objs
 
-        sepFree :: forall a. [((ℝ3, ℝ3), a)] -> ([a], [a])
+        sepFree :: [((ℝ3, ℝ3), a)] -> ([a], [a])
         sepFree ((box,obj):others) =
             if length (filter (box3sWithin r box) boxes) > 1
             then first ((:) obj) $ sepFree others

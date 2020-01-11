@@ -3,9 +3,6 @@
 -- Copyright (C) 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- Allow us to use real types in the type constraints.
 {-# LANGUAGE FlexibleContexts #-}
 
@@ -79,7 +76,7 @@ writeOBJ res = writeObject res NormedTriangleMeshFormats.obj
 writeTHREEJS :: DiscreteAproxable obj TriangleMesh => ℝ -> FilePath -> obj -> IO ()
 writeTHREEJS res = writeObject res TriangleMeshFormats.jsTHREE
 
-writeGCodeHacklabLaser :: forall obj. DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
+writeGCodeHacklabLaser :: DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()
 writeGCodeHacklabLaser res = writeObject res PolylineFormats.hacklabLaserGCode
 
 writeSCAD3 :: ℝ -> FilePath -> SymbolicObj3 -> IO ()

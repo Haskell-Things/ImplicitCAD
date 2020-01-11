@@ -5,9 +5,6 @@
 -- Allow us to use a shorter form of Name.
 {-# LANGUAGE PatternSynonyms #-}
 
--- FIXME: required. why?
-{-# LANGUAGE KindSignatures #-}
-
 -- The entry point for parsing an ExtOpenScad program.
 module Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram) where
 

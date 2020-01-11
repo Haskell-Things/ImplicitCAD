@@ -2,9 +2,6 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- FIXME: Required. why?
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -229,13 +226,13 @@ instance Object SymbolicObj3 ℝ3 where
     getImplicit = getImplicit3
     implicit a b= EmbedBoxedObj3 (a,b)
 
-union :: forall obj vec. Object obj vec => [obj] -> obj
+union :: Object obj vec => [obj] -> obj
 union = unionR 0
 
-difference :: forall obj vec. Object obj vec => [obj] -> obj
+difference :: Object obj vec => [obj] -> obj
 difference = differenceR 0
 
-intersect :: forall obj vec. Object obj vec => [obj] -> obj
+intersect :: Object obj vec => [obj] -> obj
 intersect = intersectR 0
 
 -- 3D operations
