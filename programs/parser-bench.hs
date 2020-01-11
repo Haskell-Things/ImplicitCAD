@@ -78,7 +78,7 @@ parExpr :: Int -> String
 parExpr n = concat ["(a+" <> show i <> "+" | i <- [0..n]] <> "0)" <> concat ["+" <> show i <> ")" | i <- [1..n]]
 
 genList :: Int -> String
-genList n = concat ["[1:1:" <> show i <> "] <> " | i <- [1..n]] <> "0"
+genList n = concat ["[1:1:" <> show i <> "] ++ " | i <- [1..n]] <> "0"
 
 stringList :: Int -> String
 stringList n = "[" <> concat ["\"" <> show i <> "\", " | i <- [1..n]] <> " \"something\"]"
