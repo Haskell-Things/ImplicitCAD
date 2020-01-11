@@ -1,0 +1,10 @@
+// example24.escad -- the variably twisted extruded product of the difference of 5 circles.
+linear_extrude (height = 40, center=true, twist(h) = 35*cos(h*2*pi/60)) {
+        difference (r = 8) {
+                circle (10);
+                translate ([22,0]) circle (10);
+                translate ([0,22]) circle (10);
+                translate ([-22,0]) circle (10);
+                translate ([0,-22]) circle (10);
+        }
+}
