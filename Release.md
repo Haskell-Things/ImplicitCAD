@@ -9,8 +9,10 @@ Purpose of this document: to make sure i follow a consistent patern, when making
 These changes don't improve anything but the code quality, messages output, or build system. they can add features to the parser, but cannot remove them. they may not change the md5 of the generated STL files.
 
 1. make sure test-implicit is all green.
-2. make sure parser-bench hasn't gone all out of control.
-3. make sure docgen hasn't changed it's output too much.
+2. make sure docgen hasn't changed it's output too much.
+3. make sure parser-bench does not show any unacceptable speed reductions.
+4. make sure Benchmark does not show any unacceptable speed reductions.
+5. make sure the md5sum of the stl files resulting from running 'make examples' have not changed.
 
 push to master.
 
