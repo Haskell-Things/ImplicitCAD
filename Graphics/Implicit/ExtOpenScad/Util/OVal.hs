@@ -2,9 +2,6 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
 -- FIXME: required. why?
 {-# LANGUAGE ViewPatterns #-}
 
@@ -141,17 +138,17 @@ getErrors (OError er) = Just $ head er
 getErrors (OList l)   = msum $ fmap getErrors l
 getErrors _           = Nothing
 
-caseOType :: forall c a. a -> (a -> c) -> c
+caseOType :: a -> (a -> c) -> c
 caseOType = flip ($)
 
 infixr 2 <||>
-(<||>) :: forall desiredType out. (OTypeMirror desiredType)
+(<||>) :: (OTypeMirror desiredType)
     => (desiredType -> out)
     -> (OVal -> out)
     -> (OVal -> out)
 (<||>) f g input =
     let
-        coerceAttempt :: Maybe desiredType
+        coerceAttempt :: OTypeMirror desiredType => Maybe desiredType
         coerceAttempt = fromOObj input
     in
         maybe (g input) f coerceAttempt
