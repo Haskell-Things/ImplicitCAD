@@ -13,9 +13,9 @@
 {-# LANGUAGE PackageImports #-}
 
 
-module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, mapMaybeM, scadOptions) where
+module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, scadOptions) where
 
-import Prelude(FilePath, String, Maybe(Just, Nothing), Monad, (.), ($), (<>), pure)
+import Prelude(FilePath, String,Maybe, (.), ($), (<>), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
 
@@ -24,8 +24,6 @@ import Data.Map (lookup)
 import "monads-tf" Control.Monad.State (get, put, modify)
 
 import System.FilePath((</>))
-
-import Data.Kind (Type)
 
 getVarLookup :: StateC VarLookup
 getVarLookup = do
@@ -93,9 +91,3 @@ errorC = addMessage Error
 warnC :: SourcePosition -> String -> StateC ()
 warnC = addMessage Warning
 {-# INLINABLE warnC #-}
-
-mapMaybeM :: forall t (m :: Type -> Type) a. Monad m => (t -> m a) -> Maybe t -> m (Maybe a)
-mapMaybeM f (Just a) = do
-    b <- f a
-    pure (Just b)
-mapMaybeM _ Nothing = pure Nothing
