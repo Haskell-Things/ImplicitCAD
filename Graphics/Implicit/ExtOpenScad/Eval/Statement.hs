@@ -265,10 +265,12 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
             vals <- getVals
             putVals []
             runSuite sts
-            vals' <- getVals
-            if injectVals then putVals (vals' <> vals) else putVals vals
-      else
-        warnC sourcePos $ "Not importing " <> name <> ": File import disabled."
+            if injectVals
+              then do
+                vals' <- getVals
+                putVals (vals' <> vals)
+              else putVals vals
+      else warnC sourcePos $ "Not importing " <> name <> ": File import disabled."
 
 runStatementI (StatementI _ DoNothing) = pure ()
 
