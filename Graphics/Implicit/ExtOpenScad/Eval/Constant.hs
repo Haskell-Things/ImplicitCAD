@@ -22,12 +22,11 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(SyntaxError),
                                                   StateC,
                                                   ScadOpts(ScadOpts),
-                                                  CompState(CompState, scadVars),
+                                                  CompState(CompState, scadVars, messages),
                                                   SourcePosition(SourcePosition),
                                                   OVal(OUndefined),
                                                   varUnion
                                                  )
-import Graphics.Implicit.ExtOpenScad.Definitions (messages)
 
 import Graphics.Implicit.ExtOpenScad.Util.StateC (modifyVarLookup, addMessage)
 
