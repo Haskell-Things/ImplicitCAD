@@ -2,9 +2,6 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: why are these required?
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
-
 -- allow us to specify what package to import what module from.
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
