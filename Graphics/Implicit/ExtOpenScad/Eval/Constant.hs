@@ -8,7 +8,9 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants, runExpr) where
 
-import Prelude (String, Maybe(Just, Nothing), IO, ($), pure, (+), Either (Left, Right), Char, Bool(False))
+import Prelude (String, IO, ($), pure, (+), Either,  Bool(False), (.), either, (<$>), (<*), (<*>), (<$))
+
+import Data.Foldable (traverse_, foldlM)
 
 import Graphics.Implicit.Definitions (Fastℕ)
 
@@ -20,7 +22,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(SyntaxError),
                                                   StateC,
                                                   ScadOpts(ScadOpts),
-                                                  CompState(CompState),
+                                                  CompState(CompState, scadVars, messages),
                                                   SourcePosition(SourcePosition),
                                                   OVal(OUndefined),
                                                   varUnion
@@ -34,13 +36,11 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 
-import "monads-tf" Control.Monad.State (liftIO, runStateT)
+import "monads-tf" Control.Monad.State (liftIO, runStateT, (>>=))
 
 import System.Directory (getCurrentDirectory)
 
 import Text.Parsec (SourceName, parse, ParseError)
-
-import Text.Parsec.String (GenParser)
 
 import Text.Parsec.Error (errorMessages, showErrorMessages)
 
@@ -52,52 +52,34 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchTok)
 addConstants :: [String] -> IO (VarLookup, [Message])
 addConstants constants = do
   path <- getCurrentDirectory
-  let scadOpts = ScadOpts False False
-  (_, CompState (varLookup, _, _, messages, _)) <- liftIO $ runStateT (execAssignments constants 0) (CompState (defaultObjects, [], path, [], scadOpts))
-  pure (varLookup, messages)
+  (_, s) <- liftIO . runStateT (execAssignments constants) $ CompState defaultObjects [] path [] opts
+  pure (scadVars s, messages s)
   where
-    execAssignments :: [String] -> Fastℕ  -> StateC ()
-    execAssignments [] _ = pure ()
-    execAssignments (assignment:xs) count = do
-      let
-        pos = SourcePosition count 1 "cmdline_constants"
-        show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
-      case parseAssignment "cmdline_constant" assignment of
-        Left e            -> addMessage SyntaxError pos $ show' e
-        Right (key, expr) -> do
-          res <- evalExpr pos expr
-          case matchPat key res of
-            Nothing -> pure ()
-            Just pat -> modifyVarLookup $ varUnion pat
-      execAssignments xs (count+1)
+    opts = ScadOpts False False
+    show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
+    execAssignments :: [String] -> StateC (Fastℕ)
+    execAssignments = foldlM execAssignment 0
+    execAssignment :: Fastℕ -> String -> StateC (Fastℕ)
+    execAssignment count assignment = do
+      let pos = SourcePosition count 1 "cmdline_constants"
+          err = addMessage SyntaxError pos . show'
+          run (k, e) = evalExpr pos e >>= traverse_ (modifyVarLookup . varUnion) . matchPat k
+      either err run $ parseAssignment "cmdline_constant" assignment
+      pure $ count + 1
     parseAssignment :: SourceName -> String -> Either ParseError (Pattern, Expr)
-    parseAssignment = parse assignment
-      where
-        assignment :: GenParser Char st (Pattern, Expr)
-        assignment = do
-          key <- patternMatcher
-          _ <- matchTok '='
-          expr <- expr0
-          pure (key, expr)
+    parseAssignment = parse $ (,) <$> patternMatcher <* matchTok '=' <*> expr0
 
 -- | Evaluate an expression, pureing only it's result.
+-- FIXME: improve the expression evaluator so that we can remove the IO in this.
 runExpr :: String -> IO (OVal, [Message])
 runExpr expression = do
-  path <- getCurrentDirectory
-  let scadOpts = ScadOpts False False
-  (res, CompState (_, _, _, messages, _)) <- liftIO $ runStateT (execExpression expression) (CompState (defaultObjects, [], path, [], scadOpts))
-  pure (res, messages)
+  (res, s) <- initState <$> getCurrentDirectory >>= runStateT (execExpression expression)
+  pure (res, messages s)
   where
+    initState path = CompState defaultObjects [] path [] $ ScadOpts False False
+    initPos = SourcePosition 1 1 "raw_expression"
+    show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
+    oUndefined e = OUndefined <$ addMessage SyntaxError initPos (show' e)
     execExpression :: String -> StateC OVal
-    execExpression expr = do
-      let
-        pos = SourcePosition 1 1 "raw_expression"
-        show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
-      case parseExpression "raw_expression" expr of
-        Left e -> do
-          addMessage SyntaxError pos $ show' e
-          pure OUndefined
-        Right parseRes -> evalExpr pos parseRes
-    parseExpression :: SourceName -> String -> Either ParseError Expr
-    parseExpression = parse expr0
+    execExpression = either oUndefined (evalExpr initPos) . parse expr0 "raw_expression"
 

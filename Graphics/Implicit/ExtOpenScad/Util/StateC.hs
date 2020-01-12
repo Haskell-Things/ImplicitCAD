@@ -2,12 +2,6 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- Allow us to use explicit foralls when writing function type declarations.
-{-# LANGUAGE ExplicitForAll #-}
-
--- For the signature of mapMaybeM.
-{-# LANGUAGE KindSignatures #-}
-
 -- allow us to specify what package to import what module from.
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
@@ -15,23 +9,21 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, scadOptions) where
 
-import Prelude(FilePath, String,Maybe, (.), ($), (<>), pure)
+import Prelude(FilePath, String,Maybe, ($), (<>), pure)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(CompState))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(scadVars, oVals, sourceDir, messages, scadOpts))
 
 import Data.Map (lookup)
 
-import "monads-tf" Control.Monad.State (get, put, modify)
+import "monads-tf" Control.Monad.State (modify, gets)
 
 import System.FilePath((</>))
 
 getVarLookup :: StateC VarLookup
-getVarLookup = do
-  (CompState (varlookup,_,_,_,_)) <- get
-  pure varlookup
+getVarLookup = gets scadVars
 
 modifyVarLookup :: (VarLookup -> VarLookup) -> StateC ()
-modifyVarLookup = modify . (\f (CompState (a,b,c,d,e)) -> CompState (f a, b, c, d, e))
+modifyVarLookup f = modify $ \c -> c { scadVars = f $ scadVars c }
 
 -- | Perform a variable lookup
 --   FIXME: generate a warning when we look up a variable that is not present.
@@ -41,45 +33,33 @@ lookupVar name = do
     pure $ lookup name varlookup
 
 pushVals :: [OVal] -> StateC ()
-pushVals vals= modify (\(CompState (a,b,c,d,e)) -> CompState (a, vals <> b, c, d, e))
+pushVals vals = modify $ \c -> c { oVals = vals <> oVals c }
 
 getVals :: StateC [OVal]
-getVals = do
-    (CompState (_,vals,_,_,_)) <- get
-    pure vals
+getVals = gets oVals
 
 putVals :: [OVal] -> StateC ()
-putVals vals = do
-    (CompState (a,_,c,d,e)) <- get
-    put $ CompState (a,vals,c,d,e)
+putVals vals = modify $ \c -> c { oVals = vals }
 
 withPathShiftedBy :: FilePath -> StateC a -> StateC a
 withPathShiftedBy pathShift s = do
-    (CompState (a,b,path,d,e)) <- get
-    put $ CompState (a, b, path </> pathShift, d, e)
-    x <- s
-    (CompState (a',b',_,d',e')) <- get
-    put $ CompState (a', b', path, d', e')
-    pure x
+  path <- getPath
+  modify $ \c -> c { sourceDir = path </> pathShift }
+  x <- s
+  modify $ \c -> c { sourceDir = path }
+  pure x
 
 -- | Pure the path stored in the state.
 getPath :: StateC FilePath
-getPath = do
-    (CompState (_,_,path,_,_)) <- get
-    pure path
+getPath = gets sourceDir
 
 getRelPath :: FilePath -> StateC FilePath
 getRelPath relPath = do
     path <- getPath
     pure $ path </> relPath
 
-scadOptions :: StateC ScadOpts
-scadOptions = do
-  (CompState (_, _, _, _, opts)) <- get
-  pure opts
-
 addMesg :: Message -> StateC ()
-addMesg = modify . (\message (CompState (a, b, c, messages, d)) -> CompState (a, b, c, messages <> [message], d))
+addMesg m = modify $ \c -> c { messages = messages c <> pure m }
 
 addMessage :: MessageType -> SourcePosition -> String -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
@@ -91,3 +71,7 @@ errorC = addMessage Error
 warnC :: SourcePosition -> String -> StateC ()
 warnC = addMessage Warning
 {-# INLINABLE warnC #-}
+
+scadOptions :: StateC ScadOpts
+scadOptions = gets scadOpts
+

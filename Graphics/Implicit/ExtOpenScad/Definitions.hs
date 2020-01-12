@@ -16,11 +16,11 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
-                                                  CompState(CompState),
+                                                  CompState(CompState, scadVars, oVals, sourceDir, messages, scadOpts),
                                                   VarLookup(VarLookup),
                                                   Message(Message),
-                                                  MessageType(..),
-                                                  ScadOpts(ScadOpts),
+                                                  MessageType(TextOut, Warning, Error, SyntaxError, Compatibility, Unimplemented),
+                                                  ScadOpts(ScadOpts, openScadCompatibility, importsAllowed),
                                                   lookupVarIn,
                                                   varUnion
                                                   ) where
@@ -43,7 +43,13 @@ import Data.List (intercalate)
 import "monads-tf" Control.Monad.State (StateT)
 
 -- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
-newtype CompState = CompState (VarLookup, [OVal], FilePath, [Message], ScadOpts)
+data CompState = CompState
+  { scadVars  :: VarLookup
+  , oVals     :: [OVal]
+  , sourceDir :: FilePath
+  , messages  :: [Message]
+  , scadOpts  :: ScadOpts
+  }
 
 type StateC = StateT CompState IO
 
@@ -212,8 +218,9 @@ instance Show Message where
 
 -- | Options changing the behavior of the extended OpenScad engine.
 data ScadOpts = ScadOpts
-  Bool -- openScadCompatibility
-  Bool -- Imports allowed.
+  { openScadCompatibility :: Bool
+  , importsAllowed        :: Bool
+  }
 
 -- helper, to use union on VarLookups.
 varUnion :: VarLookup -> VarLookup -> VarLookup

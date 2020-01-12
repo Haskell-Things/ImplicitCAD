@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>), (<$>), traverse)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>), (<$>), traverse, (<$))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Statement(Include, (:=), If, NewModule, ModuleCall, DoNothing),
@@ -24,7 +24,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Message(Message),
                                                   ScadOpts(ScadOpts),
                                                   StateC,
-                                                  CompState(CompState),
+                                                  CompState(CompState, messages, sourceDir, scadOpts),
                                                   varUnion
                                                  )
 
@@ -40,9 +40,9 @@ import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
 
-import Control.Monad (when, unless)
+import Control.Monad (when, unless, (>>=))
 
-import "monads-tf" Control.Monad.State (get, liftIO, runStateT)
+import "monads-tf" Control.Monad.State (gets, liftIO, runStateT)
 
 import Data.Foldable (traverse_, for_)
 
@@ -251,11 +251,11 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
 
 -- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
-    scadOpts <- scadOptions
+    opts <- scadOptions
     let
       allowInclude :: ScadOpts -> Bool
       allowInclude (ScadOpts _ allow) = allow
-    if allowInclude scadOpts
+    if allowInclude opts
       then do
       name' <- getRelPath name
       content <- liftIO $ readFile name'
@@ -279,11 +279,8 @@ runSuite = traverse_ runStatementI
 
 runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
 runSuiteCapture varlookup suite = do
-    (CompState (_ , _, path, _, opts)) <- get
-    (res, CompState (_, _, _, messages, _)) <- liftIO $ runStateT
-        (runSuite suite *> getVals)
-        (CompState (varlookup, [], path, [], opts))
-    let
+  (res, s) <- gets mkSubState >>= liftIO . runStateT (runSuite suite *> getVals)
+  reverse res <$ traverse moveMessage (messages s)
+    where
+      mkSubState s = CompState varlookup [] (sourceDir s) [] (scadOpts s)
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
-    traverse_ moveMessage messages
-    pure $ reverse res

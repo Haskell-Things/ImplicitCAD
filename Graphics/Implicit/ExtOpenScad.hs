@@ -12,11 +12,11 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, Either(Left, Right), IO, ($), fmap, pure)
+import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), CompState(CompState))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), CompState(CompState, scadVars, oVals, messages), StatementI)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -28,7 +28,7 @@ import Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants)
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
-import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages)
+import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages, ParseError)
 
 import "monads-tf" Control.Monad.State.Lazy (runStateT)
 
@@ -38,20 +38,21 @@ import Data.Foldable (traverse_)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-runOpenscad scadOpts constants source =
-    let
-        rearrange :: (t, CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-        rearrange (_, CompState (varlookup, ovals, _, messages, _)) = (varlookup, obj2s, obj3s, messages) where
-                                  (obj2s, obj3s, _) = divideObjs ovals
-        show' err = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
-        mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
-    in do
-      (initialObjects, initialMessages) <- addConstants constants
-      case parseProgram "" source of
-        Left e -> pure (initialObjects, [], [], mesg e : initialMessages)
-        Right sts -> fmap rearrange
-            $ (\sts' -> do
-                path <- getCurrentDirectory
-                runStateT sts' $ CompState (initialObjects, [], path, initialMessages, scadOpts)
-            )
-            $ traverse_ runStatementI sts
+runOpenscad scadOpts constants source = do
+  (initialObjects, initialMessages) <- addConstants constants
+  let
+    err :: Applicative f => ParseError -> f (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+    err e = pure (initialObjects, [], [], mesg e : initialMessages)
+    run :: [StatementI] -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+    run sts = rearrange <$> do
+      let sts' = traverse_ runStatementI sts
+      path <- getCurrentDirectory
+      runStateT sts' $ CompState initialObjects [] path initialMessages scadOpts
+  either err run $ parseProgram "" source
+  where
+    rearrange :: ((), CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+    rearrange (_, s) =
+      let (obj2s, obj3s, _) = divideObjs $ oVals s
+      in (scadVars s, obj2s, obj3s, messages s)
+    show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
+    mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
