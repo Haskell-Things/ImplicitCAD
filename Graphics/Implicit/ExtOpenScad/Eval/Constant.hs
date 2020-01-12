@@ -8,7 +8,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants, runExpr) where
 
-import Prelude (String, IO, ($), pure, (+), Either,  Bool(False), (.), either, (<$>), (<*), (<*>), (<$))
+import Prelude (String, IO, ($), pure, (+), Either,  Bool(False), (.), either, (<$>), (<*), (<*>))
 
 import Data.Foldable (traverse_, foldlM)
 
@@ -18,21 +18,22 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern,
                                                   Expr,
                                                   VarLookup,
-                                                  Message,
+                                                  Message(Message),
                                                   MessageType(SyntaxError),
                                                   StateC,
                                                   ScadOpts(ScadOpts),
-                                                  CompState(CompState, scadVars, messages),
+                                                  CompState(CompState, scadVars),
                                                   SourcePosition(SourcePosition),
                                                   OVal(OUndefined),
                                                   varUnion
                                                  )
+import Graphics.Implicit.ExtOpenScad.Definitions (messages)
 
 import Graphics.Implicit.ExtOpenScad.Util.StateC (modifyVarLookup, addMessage)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
-import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
+import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat, rawRunExpr)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 
@@ -69,17 +70,12 @@ addConstants constants = do
     parseAssignment :: SourceName -> String -> Either ParseError (Pattern, Expr)
     parseAssignment = parse $ (,) <$> patternMatcher <* matchTok '=' <*> expr0
 
--- | Evaluate an expression, pureing only it's result.
--- FIXME: improve the expression evaluator so that we can remove the IO in this.
-runExpr :: String -> IO (OVal, [Message])
+-- | Evaluate an expression.
+runExpr :: String -> (OVal, [Message])
 runExpr expression = do
-  (res, s) <- initState <$> getCurrentDirectory >>= runStateT (execExpression expression)
-  pure (res, messages s)
-  where
-    initState path = CompState defaultObjects [] path [] $ ScadOpts False False
-    initPos = SourcePosition 1 1 "raw_expression"
-    show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
-    oUndefined e = OUndefined <$ addMessage SyntaxError initPos (show' e)
-    execExpression :: String -> StateC OVal
-    execExpression = either oUndefined (evalExpr initPos) . parse expr0 "raw_expression"
-
+  either oUndefined run $ parse expr0 "raw_expression" expression
+    where
+      run expr = rawRunExpr initPos defaultObjects expr
+      initPos = SourcePosition 1 1 "raw_expression"
+      show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
+      oUndefined e = (OUndefined, [Message SyntaxError initPos $ show' e])

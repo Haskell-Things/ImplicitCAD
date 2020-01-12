@@ -21,13 +21,13 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum))
 
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
 
-import Test.Hspec (Expectation, shouldReturn)
+import Test.Hspec (Expectation, shouldBe)
 
 -- An operator for expressions for "the left side should evaluate to the right side."
 infixr 1 -->
 (-->) :: String -> OVal -> Expectation
 (-->) source value =
-  runExpr source `shouldReturn` (value, [])
+  runExpr source `shouldBe` (value, [])
 
 -- | Types
 
