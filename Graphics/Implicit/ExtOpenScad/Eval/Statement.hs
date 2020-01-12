@@ -19,7 +19,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   StatementI(StatementI),
                                                   Symbol(Symbol),
                                                   Message(Message),
-                                                  ScadOpts(ScadOpts),
+                                                  ScadOpts(importsAllowed),
                                                   StateC,
                                                   CompState(CompState, messages, sourceDir, scadOpts),
                                                   varUnion
@@ -249,10 +249,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
 -- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
     opts <- scadOptions
-    let
-      allowInclude :: ScadOpts -> Bool
-      allowInclude (ScadOpts _ allow) = allow
-    if allowInclude opts
+    if importsAllowed opts
       then do
       name' <- getRelPath name
       content <- liftIO $ readFile name'
