@@ -9,7 +9,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, scadOptions) where
 
-import Prelude(FilePath, String,Maybe, ($), (<>), pure)
+import Prelude(FilePath, String, Maybe, ($), (<>), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(scadVars, oVals, sourceDir, messages, scadOpts))
 

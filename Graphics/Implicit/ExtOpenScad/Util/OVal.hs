@@ -142,7 +142,7 @@ caseOType :: a -> (a -> c) -> c
 caseOType = flip ($)
 
 infixr 2 <||>
-(<||>) :: (OTypeMirror desiredType)
+(<||>) :: OTypeMirror desiredType
     => (desiredType -> out)
     -> (OVal -> out)
     -> (OVal -> out)

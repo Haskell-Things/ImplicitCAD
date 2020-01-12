@@ -57,9 +57,9 @@ addConstants constants = do
   where
     opts = ScadOpts False False
     show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
-    execAssignments :: [String] -> StateC (Fastℕ)
+    execAssignments :: [String] -> StateC Fastℕ
     execAssignments = foldlM execAssignment 0
-    execAssignment :: Fastℕ -> String -> StateC (Fastℕ)
+    execAssignment :: Fastℕ -> String -> StateC Fastℕ
     execAssignment count assignment = do
       let pos = SourcePosition count 1 "cmdline_constants"
           err = addMessage SyntaxError pos . show'
