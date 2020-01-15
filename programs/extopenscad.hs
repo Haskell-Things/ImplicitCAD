@@ -13,7 +13,7 @@
 import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, fmap, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
-import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
+import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
 
 -- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
@@ -69,6 +69,7 @@ data OutputFormat
     | SCAD
     | PNG
     | GCode
+    | ASCIISTL
     | STL
     | OBJ
 --  | 3MF
@@ -84,6 +85,7 @@ formatExtensions =
     , ("ngc", GCode)
     , ("gcode", GCode)
     , ("stl", STL)
+    , ("stl.txt", ASCIISTL)
     , ("obj", OBJ)
 --  , ("3mf", 3MF)
     , ("dxf", DXF)
@@ -211,12 +213,13 @@ getRes _ = 1
 export3 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj3 -> IO ()
 export3 posFmt res output obj =
     case posFmt of
-        Just STL  -> writeBinSTL res output obj
-        Just SCAD -> writeSCAD3 res output obj
-        Just OBJ  -> writeOBJ res output obj
-        Just PNG  -> writePNG3 res output obj
-        Nothing   -> writeBinSTL res output obj
-        Just fmt  -> putStrLn $ "Unrecognized 3D format: " <> show fmt
+        Just ASCIISTL -> writeSTL res output obj
+        Just STL      -> writeBinSTL res output obj
+        Just SCAD     -> writeSCAD3 res output obj
+        Just OBJ      -> writeOBJ res output obj
+        Just PNG      -> writePNG3 res output obj
+        Nothing       -> writeBinSTL res output obj
+        Just fmt      -> putStrLn $ "Unrecognized 3D format: " <> show fmt
 
 -- | Output a file containing a 2D object.
 export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
