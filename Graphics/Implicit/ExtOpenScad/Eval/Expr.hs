@@ -6,9 +6,6 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
--- So GHC doesn't complain about varLookup and sourcePos from ExprState
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), messages, addMessage) where
 
 import Prelude (String, Maybe(Just, Nothing), ($), fmap, pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
@@ -46,10 +43,10 @@ import Control.Monad (zipWithM)
 import "monads-tf" Control.Monad.State (StateT, get, modify, runState)
 
 data ExprState = ExprState
-  { scadVars  :: VarLookup
+  { _scadVars  :: VarLookup
   , patterns  :: [String]
   , messages  :: [Message]
-  , sourcePos :: SourcePosition
+  , _sourcePos :: SourcePosition
   }
 
 type StateE = StateT ExprState Identity
