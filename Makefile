@@ -69,8 +69,10 @@ EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(
 EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 # Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
-.PHONY: build install clean distclean nukeclean docs dist examples tests
+.PHONY: build install clean distclean nukeclean docs dist examples tests benchmarks benchmarkdir
 
 # Empty out the default suffix list, to make debugging output cleaner.
 .SUFFIXES:
@@ -139,6 +141,12 @@ images: examples
 tests: $(TESTSUITE) $(TESTFILES)
 #	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCADBIN) $$each ${RESOPTS} ${RTSOPTS}; } done
 	$(TESTSUITE)
+
+benchmarkdir:
+	[ ! -e benchmarks ] && bash -c 'rm -f benchmarks; ln -s `mktemp --tmpdir -d icad-XXX` benchmarks' || true
+
+benchmarks: $(BENCHMARKBIN) benchmarkdir
+	cd benchmarks && ${ROOT_DIR}/${BENCHMARKBIN}
 
 # The ImplicitCAD library.
 $(LIBTARGET): $(LIBFILES)
