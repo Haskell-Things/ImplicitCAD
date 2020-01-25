@@ -15,7 +15,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), Norme
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
-]-- | Change the default for bare numbers in this file.
+-- | Change the default for bare numbers in this file.
 default (ℝ)
 
 -- FIXME: magic numbers.
@@ -39,7 +39,7 @@ normVertex res obj p =
         -- and that f is obj
         -- and is fixed at p
         -- so actually: d v = ...
-        d :: ℝ3 -> ℝ
+        d :: ℝ3 -> ℝ2
         d v = ( obj (p ^+^ (res/100)*^v) - obj (p ^-^ (res/100)*^v) ) / (res/50)
         dx = d (1, 0, 0)
         dy = d (0, 1, 0)
