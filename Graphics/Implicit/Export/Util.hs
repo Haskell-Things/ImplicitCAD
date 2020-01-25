@@ -39,7 +39,7 @@ normVertex res obj p =
         -- and that f is obj
         -- and is fixed at p
         -- so actually: d v = ...
-        d :: ℝ3 -> ℝ2
+        d :: ℝ3 -> ℝ
         d v = ( obj (p ^+^ (res/100)*^v) - obj (p ^-^ (res/100)*^v) ) / (res/50)
         dx = d (1, 0, 0)
         dy = d (0, 1, 0)
