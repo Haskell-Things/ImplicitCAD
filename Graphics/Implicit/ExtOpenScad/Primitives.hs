@@ -44,7 +44,7 @@ primitiveModules :: [(Symbol, OVal)]
 primitiveModules =
   [
     onModIze sphere [([("r", noDefault)], noSuite)]
-  , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault)], noSuite)]
+  , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite)]
   , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault)], noSuite)]
   , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
   , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite)]
