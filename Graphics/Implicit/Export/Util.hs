@@ -9,13 +9,13 @@
 
 module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
-import Prelude(Fractional, (/), (-), ($), foldl, recip, realToFrac, length)
+import Prelude(Fractional, (/), (-), ($), foldl, realToFrac, length)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), NormedTriangle(NormedTriangle))
 
 import Data.VectorSpace (VectorSpace, Scalar, (^+^), (*^), (^/), (^-^), normalized, zeroV)
 
--- | Change the default for bare numbers in this file.
+]-- | Change the default for bare numbers in this file.
 default (ℝ)
 
 -- FIXME: magic numbers.
@@ -46,12 +46,9 @@ normVertex res obj p =
         dz = d (0, 0, 1)
     in (p, normalized (dx,dy,dz))
 
+-- Get a centroid of a series of points.
 centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
-centroid pts =
-    (norm *^) $ foldl (^+^) zeroV pts
-    where
-      norm :: Fractional a => a
-      norm = recip $ realToFrac $ length pts
+centroid pts = foldl (^+^) zeroV pts ^/ (realToFrac $ length pts)
 {-# INLINABLE centroid #-}
 
 {-
