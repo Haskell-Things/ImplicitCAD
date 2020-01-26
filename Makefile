@@ -64,7 +64,7 @@ SCADOPTS?=-q
 
 LIBDIR=Graphics
 LIBFILES=$(shell find ${LIBDIR} -name '*.hs')
-LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi')
+LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi' -o -name '*.o')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
 EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
