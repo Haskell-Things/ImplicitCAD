@@ -56,12 +56,13 @@ getLoops' segs workingLoop =
         presEnd :: [[ℝ3]] -> ℝ3
         presEnd = last . last
         connects (x:_) = x == presEnd workingLoop
-        connects [] = False -- Handle the empty case.
+        -- Handle the empty case.
+        connects [] = False
         -- divide our set into sequences that connect, and sequences that don't.
         (possibleConts, nonConts) = partition connects segs
         (next, unused) = if null possibleConts
-            then error "unclosed loop in paths given"
-            else (head possibleConts, tail possibleConts <> nonConts)
+                         then error "unclosed loop in paths given"
+                         else (head possibleConts, tail possibleConts <> nonConts)
     in
         if null next
         then workingLoop : getLoops' segs []
