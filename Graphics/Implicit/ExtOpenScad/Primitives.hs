@@ -257,12 +257,12 @@ circle = moduleWithoutSuite "circle" $ \_ _ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
     -- Arguments
-    r <- do
-      radius :: ℝ <- argument "r"
-                     `doc` "radius of the circle"
-      pure radius
-      <|>
-        do
+    r <-
+      do
+        radius :: ℝ <- argument "r"
+                       `doc` "radius of the circle"
+        pure radius
+      <|> do
         diameter :: ℝ <- argument "d"
                          `doc` "diameter of the circle"
         pure $ diameter/2
