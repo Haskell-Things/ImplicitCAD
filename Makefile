@@ -107,6 +107,7 @@ clean:
 	rm -rf docs/parser.md
 	rm -f $(TARGETS)
 	rm -f $(LIBBUILDS)
+	rm -f benchmarks
 	rm -rf ${EXECBUILDDIRS} ${PARSERBENCHDIR} ${TESTSUITEDIR}
 	rm -f ${BUILDROOT}/build/libHS*
 	rm -f ${BUILDROOT}/cache/registration
