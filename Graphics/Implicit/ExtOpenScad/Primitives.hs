@@ -76,7 +76,8 @@ primitiveModules =
         fixup (args, suiteInfo) = (fmap fixupArgs args, suiteInfo)
           where
             fixupArgs :: (String, Bool) -> (Symbol, Bool)
-            fixupArgs (symbol, maybeDefault) =(Symbol symbol, maybeDefault) 
+            fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
+
 -- | sphere is a module without a suite.
 --   this means that the parser will look for this like
 --   sphere(args...);
