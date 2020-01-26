@@ -10,9 +10,10 @@ convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
+IMPLICITVERSION=$(shell cat implicit.cabal | sed -n "s/Version[: ]*\([0-9]*.*\)/\1/p")
 ARCHITECTURE=$(shell uname -m | sed "s/i[3-6]86/i386/" )
 # new-style location root. must NOT have trailing slash
-BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-0.2.1
+BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-${IMPLICITVERSION}
 EXEBUILDROOT=${BUILDROOT}/x/
 TESTBUILDROOT=${BUILDROOT}/t/
 BENCHBUILDROOT=${BUILDROOT}/b/
