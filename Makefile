@@ -12,8 +12,10 @@ GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
 IMPLICITVERSION=$(shell cat implicit.cabal | sed -n "s/Version[: ]*\([0-9]*.*\)/\1/p")
 ARCHITECTURE=$(shell uname -m | sed "s/i[3-6]86/i386/" )
+# FIXME: detect this on other OSes.
+OS=linux
 # new-style location root. must NOT have trailing slash
-BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-${IMPLICITVERSION}
+BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-${OS}/ghc-${GHCVERSION}/implicit-${IMPLICITVERSION}
 EXEBUILDROOT=${BUILDROOT}/x/
 TESTBUILDROOT=${BUILDROOT}/t/
 BENCHBUILDROOT=${BUILDROOT}/b/
@@ -105,8 +107,8 @@ clean:
 	rm -f Examples/example*.cachegrind.*
 	rm -f tests/*.stl
 	rm -rf docs/parser.md
-	rm -f $(TARGETS)
-	rm -f $(LIBBUILDS)
+	rm -f ${TARGETS}
+	rm -f ${LIBBUILDS}
 	rm -f benchmarks
 	rm -rf ${EXECBUILDDIRS} ${PARSERBENCHDIR} ${TESTSUITEDIR}
 	rm -f ${BUILDROOT}/build/libHS*
@@ -116,7 +118,11 @@ clean:
 distclean: clean Setup
 	./Setup clean
 	rm -f Setup Setup.hi Setup.o
+	rm -rf dist
 	rm -rf dist-newstyle
+	rm -rf .stack-work
+	rm -f cabal.project.local
+	rm .ghc.environment.${ARCHITECTURE}-${OS}-${GHCVERSION}
 	rm -f `find ./ -name "*~"`
 	rm -f `find ./ -name "\#*\#"`
 

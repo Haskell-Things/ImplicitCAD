@@ -1,17 +1,14 @@
 Name:                implicit
-Version:             0.2.1
+Version:             0.3.0.0
 Cabal-version:       >= 1.10
-Tested-with:         GHC >= 8.2
+Tested-with:         GHC >= 8.6
 Build-type:          Simple
-Synopsis:            A Math-inspired programmatic 2&3D CAD system: CSG, bevels, and shells; gcode export..
-Description:         A math-inspired programmatic CAD library in haskell.
-                     Build objects with constructive solid geometry, bevels,
-                     shells and more in 2D & 3D. Then export to SVGs, STLs,
-                     or produce gcode directly!
+Synopsis:            A math-inspired programmatic 2D & 3D CAD system.
+Description:         An OpenSCAD execution engine for generating models in STL and many other formats.
 License:             AGPL-3
 License-file:        LICENSE
-Author:              Julia Longtin <julial@turinglace.com>
-Maintainer:          Julia Longtin <julial@turinglace.com>
+Author:              Julia Longtin <julia.longtin@gmail.com>
+Maintainer:          Julia Longtin <julia.longtin@gmail.com>
 Homepage:            http://implicitcad.org/
 Category:            Graphics
 
