@@ -208,15 +208,15 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
                         `doc` "top radius; overrides r"
         pure (radius, radius1, radius2)
       <|> do
-        diameter :: ℝ  <- argument "r"
+        diameter :: ℝ  <- argument "d"
                         `defaultTo` 2
                         `doc` "diameter of cylinder"
-        diameter1 :: ℝ <- argument "r1"
+        diameter1 :: ℝ <- argument "d1"
                         `defaultTo` 2
-                        `doc` "bottom diameter; overrides r"
-        diameter2 :: ℝ <- argument "r2"
+                        `doc` "bottom diameter; overrides d"
+        diameter2 :: ℝ <- argument "d2"
                         `defaultTo` 2
-                        `doc` "top diameter; overrides r"
+                        `doc` "top diameter; overrides d"
         pure (diameter/2, diameter1/2, diameter2/2)
 
 
