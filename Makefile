@@ -10,7 +10,7 @@ convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
-ARCHITECTURE=$(shell arch | sed "s/i[3-6]86/i386/" )
+ARCHITECTURE=$(shell uname -m | sed "s/i[3-6]86/i386/" )
 # new-style location root. must NOT have trailing slash
 BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-0.2.1
 EXEBUILDROOT=${BUILDROOT}/x/
@@ -62,7 +62,9 @@ SCADOPTS?=-q
 # Uncomment for valgrind on the examples.
 #VALGRIND=valgrind --tool=cachegrind --cachegrind-out-file=$$each.cachegrind.`date +%s`
 
-LIBFILES=$(shell find Graphics -name '*.hs')
+LIBDIR=Graphics
+LIBFILES=$(shell find ${LIBDIR} -name '*.hs')
+LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
 EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
@@ -103,6 +105,7 @@ clean:
 	rm -f tests/*.stl
 	rm -rf docs/parser.md
 	rm -f $(TARGETS)
+	rm -f $(LIBBUILDS)
 	rm -rf ${EXECBUILDDIRS} ${PARSERBENCHDIR} ${TESTSUITEDIR}
 	rm -f ${BUILDROOT}/build/libHS*
 	rm -f ${BUILDROOT}/cache/registration
