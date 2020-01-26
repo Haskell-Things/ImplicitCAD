@@ -350,7 +350,7 @@ run rawargs = do
           else putStrLn "No objects to render."
       _        -> hPutStr stderr "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?\n"
 
-    -- | Always display our warnings, errors, and other non-textout messages on stderr.
+    -- Always display our warnings, errors, and other non-textout messages on stderr.
     hPutStr stderr $ unlines $ show <$> filter (not . isTextOut) messages
 
     let textOutHandler =

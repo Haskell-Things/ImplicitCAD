@@ -310,9 +310,9 @@ polygon = moduleWithoutSuite "polygon" $ \_ _ -> do
             d2d3 = distanceSq p2 p3
             isGridAligned :: ℝ2 -> ℝ2 -> Bool
             isGridAligned (x1, y1) (x2, y2) = x1 == x2 || y1 == y2
-          -- | Rectangles have no overlapping points,
-          --   the distance on each side is equal to it's opposing side,
-          --   and the distance between the pairs of opposing corners are equal.
+          -- Rectangles have no overlapping points,
+          -- the distance on each side is equal to it's opposing side,
+          -- and the distance between the pairs of opposing corners are equal.
           in if (p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
                  && (d1d2==d3d4 && d1d3==d2d4)
                  && (d1d4==d2d3) && isGridAligned p1 p2
