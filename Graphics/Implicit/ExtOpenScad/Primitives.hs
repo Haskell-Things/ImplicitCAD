@@ -45,10 +45,10 @@ primitiveModules =
   [
     onModIze sphere [([("r", noDefault)], noSuite), ([("d", noDefault)], noSuite)]
   , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite)]
-  , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault)], noSuite)]
+  , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite)]
   , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite),
                        ([("d", hasDefault), ("h", hasDefault), ("d1", hasDefault), ("d2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
-  , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite)]
+  , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite), ([("d", noDefault), ("$fn", hasDefault)], noSuite)]
   , onModIze polygon [([("points", noDefault)], noSuite)]
   , onModIze union [([("r", hasDefault)], requiredSuite)]
   , onModIze intersect [([("r", hasDefault)], requiredSuite)]
@@ -257,12 +257,20 @@ circle = moduleWithoutSuite "circle" $ \_ _ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
     -- Arguments
-    r     :: ℝ <- argument "r"
-               `doc` "radius of the circle"
+    r <- do
+      radius :: ℝ <- argument "r"
+                     `doc` "radius of the circle"
+      pure radius
+      <|>
+        diameter :: ℝ <- argument "d"
+                         `doc` "diameter of the circle"
+        pure $ diameter/2
     sides :: ℕ <- argument "$fn"
                `doc` "if defined, makes a regular polygon with n sides instead of a circle"
                `defaultTo` (-1)
     test "circle(r=10);"
+        `eulerCharacteristic` 0
+    test "circle(d=20);"
         `eulerCharacteristic` 0
     addObj2 $ if sides < 3
         then Prim.circle r
