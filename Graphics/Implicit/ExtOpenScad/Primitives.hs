@@ -262,6 +262,7 @@ circle = moduleWithoutSuite "circle" $ \_ _ -> do
                      `doc` "radius of the circle"
       pure radius
       <|>
+        do
         diameter :: ℝ <- argument "d"
                          `doc` "diameter of the circle"
         pure $ diameter/2
