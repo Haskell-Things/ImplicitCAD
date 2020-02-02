@@ -273,6 +273,7 @@ Test-suite test-implicit
                   MessageSpec.Message
                   MessageSpec.Util
                   PropertySpec
+                  PropertySpec.Exec
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0

@@ -1,15 +1,13 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module PropertySpec
   ( propSpec
   ) where
 
-import Prelude (($), Bool (True), (.))
-import Test.Hspec (it, Spec)
-import HaskellWorks.Hspec.Hedgehog (requireProperty)
-import Hedgehog ((===))
+import Test.Hspec (Spec)
+import PropertySpec.Exec (additionSpec, subtractionSpec, multiplicationSpec, divisionSpec)
 
 propSpec :: Spec 
-propSpec =
-  it "trivial" . requireProperty $ do
-    True === True
+propSpec = do
+  additionSpec
+  subtractionSpec
+  multiplicationSpec
+  divisionSpec
