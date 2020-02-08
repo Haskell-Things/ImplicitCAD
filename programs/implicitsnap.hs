@@ -55,6 +55,7 @@ import Data.String (IsString)
 import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
+import Data.ByteString (ByteString)
 import qualified Data.Text.Lazy as TL (unpack)
 
 -- | The entry point. uses snap to serve a website.
@@ -84,7 +85,7 @@ renderHandler = method GET $ withCompression $ do
             writeBS . BS.Char.pack $ executeAndExport
                 (BS.Char.unpack source)
                 (BS.Char.unpack callback)
-                (Just $ BS.Char.unpack format)
+                (Just format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
 -- | Find the resolution to raytrace at.
@@ -121,14 +122,14 @@ getWidth (_, obj:objs,     _, _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 $ UnionR2 0 (obj:objs)
 getWidth (_,    [],    [], _) = 0
 
-getOutputHandler2 :: String -> ([Polyline] -> Text)
+getOutputHandler2 :: ByteString -> ([Polyline] -> Text)
 getOutputHandler2 name
   | name == "SVG"                   = svg
   | name == "gcode/hacklab-laser"   = hacklabLaserGCode
   | otherwise                       = dxf2
 
 -- FIXME: OBJ support
-getOutputHandler3 :: String -> (TriangleMesh -> Text)
+getOutputHandler3 :: ByteString -> (TriangleMesh -> Text)
 getOutputHandler3 name
   | name == "STL"                   = stl
   | otherwise                       = jsTHREE
@@ -146,13 +147,13 @@ generateScadOpts = ScadOpts compat_flag import_flag
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
-executeAndExport :: String -> String -> Maybe String -> String
+executeAndExport :: String -> String -> Maybe ByteString -> String
 executeAndExport content callback maybeFormat =
     let
         showB :: IsString t => Bool -> t
         showB True  = "true"
         showB False = "false"
-        callbackF :: Bool -> Bool -> ℝ -> String -> String
+        callbackF :: (Show a) => Bool -> Bool -> ℝ -> a -> String
         callbackF False is2D w msg =
             callback <> "([null," <> show msg <> "," <> showB is2D <> "," <> show w  <> "]);"
         callbackF True  is2D w msg =
