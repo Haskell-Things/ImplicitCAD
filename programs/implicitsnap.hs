@@ -50,7 +50,7 @@ import Data.List (intercalate)
 
 import System.IO.Unsafe (unsafePerformIO)
 
-import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
+import Data.ByteString.Char8 (pack, unpack)
 import Data.ByteString (ByteString)
 import Data.Text.Lazy (Text, toStrict)
 import Data.Text.Encoding (encodeUtf8)
@@ -75,12 +75,12 @@ renderHandler = method GET $ withCompression $ do
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
         (Just [source], Just [callback], Nothing) ->
             writeBS $ executeAndExport
-                (BS.Char.unpack source)
+                (unpack source)
                 callback
                 Nothing
         (Just [source], Just [callback], Just [format]) ->
             writeBS $ executeAndExport
-                (BS.Char.unpack source)
+                (unpack source)
                 callback
                 (Just format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
@@ -151,7 +151,7 @@ executeAndExport content callback maybeFormat =
         showB True  = "true"
         showB False = "false"
         showℝ :: ℝ -> ByteString
-        showℝ val = BS.Char.pack $ show val
+        showℝ val = pack $ show val
         callbackF :: Bool -> Bool -> ℝ -> ByteString -> ByteString
         callbackF False is2D w msg =
             callback <> "([null," <> msg <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
@@ -173,7 +173,7 @@ executeAndExport content callback maybeFormat =
                    <> "the server imps revolt! "
                    <> "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
         render = res > 0
-        scadMessages = BS.Char.pack $ intercalate "\n"
+        scadMessages = pack $ intercalate "\n"
                        (fmap show (filter (not . isTextOut) messages) <>
                         fmap show (filter isTextOut messages))
 
