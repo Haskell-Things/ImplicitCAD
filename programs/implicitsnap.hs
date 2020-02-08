@@ -12,7 +12,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), Show, ($), (<>), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, fmap, otherwise, filter, not)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), ($), (<>), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, fmap, otherwise, filter, not)
 
 import Control.Applicative ((<|>))
 
@@ -46,17 +46,14 @@ import Data.AffineSpace ((.-.))
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
-import Data.Text.Lazy (Text)
-
 import Data.List (intercalate)
-
-import Data.String (IsString)
 
 import System.IO.Unsafe (unsafePerformIO)
 
 import qualified Data.ByteString.Char8 as BS.Char (pack, unpack)
 import Data.ByteString (ByteString)
-import qualified Data.Text.Lazy as TL (unpack)
+import Data.Text.Lazy (Text, toStrict)
+import Data.Text.Encoding (encodeUtf8)
 
 -- | The entry point. uses snap to serve a website.
 main :: IO ()
@@ -77,14 +74,14 @@ renderHandler = method GET $ withCompression $ do
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
         (Just [source], Just [callback], Nothing) ->
-            writeBS . BS.Char.pack $ executeAndExport
+            writeBS $ executeAndExport
                 (BS.Char.unpack source)
-                (BS.Char.unpack callback)
+                callback
                 Nothing
         (Just [source], Just [callback], Just [format]) ->
-            writeBS . BS.Char.pack $ executeAndExport
+            writeBS $ executeAndExport
                 (BS.Char.unpack source)
-                (BS.Char.unpack callback)
+                callback
                 (Just format)
         (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
 
@@ -147,20 +144,22 @@ generateScadOpts = ScadOpts compat_flag import_flag
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
-executeAndExport :: String -> String -> Maybe ByteString -> String
+executeAndExport :: String -> ByteString -> Maybe ByteString -> ByteString
 executeAndExport content callback maybeFormat =
     let
-        showB :: IsString t => Bool -> t
+        showB :: Bool -> ByteString
         showB True  = "true"
         showB False = "false"
-        callbackF :: (Show a) => Bool -> Bool -> ℝ -> a -> String
+        showℝ :: ℝ -> ByteString
+        showℝ val = BS.Char.pack $ show val
+        callbackF :: Bool -> Bool -> ℝ -> ByteString -> ByteString
         callbackF False is2D w msg =
-            callback <> "([null," <> show msg <> "," <> showB is2D <> "," <> show w  <> "]);"
+            callback <> "([null," <> msg <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
         callbackF True  is2D w msg =
-            callback <> "([new Shape()," <> show msg <> "," <> showB is2D <> "," <> show w <> "]);"
-        callbackS :: (Show a1, Show a) => a -> a1 -> String
+            callback <> "([new Shape()," <> msg <> "," <> showB is2D <> "," <> showℝ w <> "]);"
+        callbackS :: ByteString -> ByteString -> ByteString
         callbackS str          msg =
-            callback <> "([" <> show str <> "," <> show msg <> ",null,null]);"
+            callback <> "([" <> str <> "," <> msg <> ",null,null]);"
         scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions [] content
     in
@@ -169,12 +168,12 @@ executeAndExport content callback maybeFormat =
       let
         res = getRes   s
         w   = getWidth s
-        resError :: String
+        resError :: ByteString
         resError = "Unreasonable resolution requested: "
                    <> "the server imps revolt! "
                    <> "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
         render = res > 0
-        scadMessages = intercalate "\n"
+        scadMessages = BS.Char.pack $ intercalate "\n"
                        (fmap show (filter (not . isTextOut) messages) <>
                         fmap show (filter isTextOut messages))
 
@@ -184,11 +183,11 @@ executeAndExport content callback maybeFormat =
           let target           = if null objs
                                  then obj
                                  else UnionR3 0 (obj:objs)
-              unionWarning :: String
+              unionWarning :: ByteString
               unionWarning     = if null objs
                                  then ""
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d         = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
+              output3d         = encodeUtf8 . toStrict $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then output3d <> callbackF True False w (scadMessages <> unionWarning)
             else callbackS output3d (scadMessages <> unionWarning)
@@ -196,16 +195,16 @@ executeAndExport content callback maybeFormat =
           let target          = if null objs
                                 then obj
                                 else UnionR2 0 (obj:objs)
-              unionWarning :: String
+              unionWarning :: ByteString
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = TL.unpack $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
-              output2d        = TL.unpack $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
+              output3d        = encodeUtf8 . toStrict $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
+              output2d        = encodeUtf8 . toStrict $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then output3d <> callbackF True True w (scadMessages <> unionWarning)
             else callbackS output2d (scadMessages <> unionWarning)
-        ([], []         , _) -> callbackF False False 1 $ intercalate "\n" [scadMessages, "Nothing to render."]
-        _                    -> callbackF False False 1 $ intercalate "\n" [scadMessages, "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"]
+        ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
+        _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"
 
 
