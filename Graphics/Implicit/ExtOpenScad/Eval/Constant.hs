@@ -49,10 +49,10 @@ import Graphics.Implicit.ExtOpenScad.Parser.Util (patternMatcher)
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchTok)
 
 -- | Define variables used during the extOpenScad run.
-addConstants :: [String] -> IO (VarLookup, [Message])
-addConstants constants = do
+addConstants :: [String] -> Bool -> IO (VarLookup, [Message])
+addConstants constants withCSG = do
   path <- getCurrentDirectory
-  (_, s) <- liftIO . runStateT (execAssignments constants) $ CompState defaultObjects [] path [] opts
+  (_, s) <- liftIO . runStateT (execAssignments constants) $ CompState (defaultObjects withCSG) [] path [] opts
   pure (scadVars s, messages s)
   where
     opts = ScadOpts False False
@@ -70,11 +70,11 @@ addConstants constants = do
     parseAssignment = parse $ (,) <$> patternMatcher <* matchTok '=' <*> expr0
 
 -- | Evaluate an expression.
-runExpr :: String -> (OVal, [Message])
-runExpr expression = do
+runExpr :: String -> Bool -> (OVal, [Message])
+runExpr expression withCSG = do
   either oUndefined run $ parse expr0 "raw_expression" expression
     where
-      run expr = rawRunExpr initPos defaultObjects expr
+      run expr = rawRunExpr initPos (defaultObjects withCSG) expr
       initPos = SourcePosition 1 1 "raw_expression"
       show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
       oUndefined e = (OUndefined, [Message SyntaxError initPos $ show' e])
