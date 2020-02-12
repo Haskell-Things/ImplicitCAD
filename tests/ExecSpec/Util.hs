@@ -10,7 +10,7 @@ module ExecSpec.Util
        ) where
 
 -- be explicit about where we get things from.
-import Prelude (String)
+import Prelude (String, Bool(False))
 
 -- The datatype of positions in our world.
 import Graphics.Implicit.Definitions (ℝ)
@@ -27,7 +27,7 @@ import Test.Hspec (Expectation, shouldBe)
 infixr 1 -->
 (-->) :: String -> OVal -> Expectation
 (-->) source value =
-  runExpr source `shouldBe` (value, [])
+  runExpr source False `shouldBe` (value, [])
 
 -- | Types
 
