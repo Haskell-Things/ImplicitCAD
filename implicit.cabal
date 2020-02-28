@@ -130,6 +130,7 @@ Executable extopenscad
 --               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
+               -with-rtsopts=-N256               
                -- for debugging.
                -Wall
                -Wcompat
@@ -189,6 +190,7 @@ Executable implicitsnap
 --               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
+               -with-rtsopts=-N256
                -- for debugging.
                -Wall
                -Wcompat
