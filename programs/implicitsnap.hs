@@ -16,7 +16,7 @@ import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), ($), (<>), 
 
 import Control.Applicative ((<|>))
 
-import Snap.Core (Snap, route, writeBS, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
+import Snap.Core (Snap, route, writeText, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
 import Snap.Http.Server (quickHttpServe)
 import Snap.Util.GZip (withCompression)
 
@@ -50,10 +50,10 @@ import Data.List (intercalate)
 
 import System.IO.Unsafe (unsafePerformIO)
 
-import Data.ByteString.Char8 (pack, unpack)
+import Data.ByteString.Char8 (unpack)
 import Data.ByteString (ByteString)
-import Data.Text.Lazy (Text, toStrict)
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text (Text, pack)
+import Data.Text.Lazy (toStrict)
 
 -- | The entry point. uses snap to serve a website.
 main :: IO ()
@@ -64,7 +64,7 @@ site :: Snap ()
 site = route
     [
         ("render/", renderHandler)
-    ] <|> writeBS "fall through"
+    ] <|> writeText "fall through"
 
 -- | Our render/ handler. Uses source, callback, and opitional format to render an object.
 renderHandler :: Snap ()
@@ -74,16 +74,16 @@ renderHandler = method GET $ withCompression $ do
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
         (Just [source], Just [callback], Nothing) ->
-            writeBS $ executeAndExport
+            writeText $ executeAndExport
                 (unpack source)
                 callback
                 Nothing
         (Just [source], Just [callback], Just [format]) ->
-            writeBS $ executeAndExport
+            writeText $ executeAndExport
                 (unpack source)
                 callback
                 (Just format)
-        (_, _, _)       -> writeBS "must provide source and callback as 1 GET variable each"
+        (_, _, _)       -> writeText "must provide source and callback as 1 GET variable each"
 
 -- | Find the resolution to raytrace at.
 getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
@@ -121,15 +121,15 @@ getWidth (_,    [],    [], _) = 0
 
 getOutputHandler2 :: ByteString -> ([Polyline] -> Text)
 getOutputHandler2 name
-  | name == "SVG"                   = svg
-  | name == "gcode/hacklab-laser"   = hacklabLaserGCode
-  | otherwise                       = dxf2
+  | name == "SVG"                   = toStrict.svg
+  | name == "gcode/hacklab-laser"   = toStrict.hacklabLaserGCode
+  | otherwise                       = toStrict.dxf2
 
 -- FIXME: OBJ support
 getOutputHandler3 :: ByteString -> (TriangleMesh -> Text)
 getOutputHandler3 name
-  | name == "STL"                   = stl
-  | otherwise                       = jsTHREE
+  | name == "STL"                   = toStrict.stl
+  | otherwise                       = toStrict.jsTHREE
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -144,22 +144,22 @@ generateScadOpts = ScadOpts compat_flag import_flag
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
-executeAndExport :: String -> ByteString -> Maybe ByteString -> ByteString
+executeAndExport :: String -> ByteString -> Maybe ByteString -> Text
 executeAndExport content callback maybeFormat =
     let
-        showB :: Bool -> ByteString
+        showB :: Bool -> Text
         showB True  = "true"
         showB False = "false"
-        showℝ :: ℝ -> ByteString
+        showℝ :: ℝ -> Text
         showℝ val = pack $ show val
-        callbackF :: Bool -> Bool -> ℝ -> ByteString -> ByteString
+        callbackF :: Bool -> Bool -> ℝ -> Text -> Text
         callbackF False is2D w msg =
-            callback <> "([null," <> msg <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
+            (pack $ unpack callback) <> "([null," <> msg <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
         callbackF True  is2D w msg =
-            callback <> "([new Shape()," <> msg <> "," <> showB is2D <> "," <> showℝ w <> "]);"
-        callbackS :: ByteString -> ByteString -> ByteString
+            (pack $ unpack callback) <> "([new Shape()," <> msg <> "," <> showB is2D <> "," <> showℝ w <> "]);"
+        callbackS :: Text -> Text -> Text
         callbackS str          msg =
-            callback <> "([" <> str <> "," <> msg <> ",null,null]);"
+            (pack $ unpack callback) <> "([" <> str <> "," <> msg <> ",null,null]);"
         scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions [] content
     in
@@ -168,7 +168,7 @@ executeAndExport content callback maybeFormat =
       let
         res = getRes   s
         w   = getWidth s
-        resError :: ByteString
+        resError :: Text
         resError = "Unreasonable resolution requested: "
                    <> "the server imps revolt! "
                    <> "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
@@ -183,11 +183,11 @@ executeAndExport content callback maybeFormat =
           let target           = if null objs
                                  then obj
                                  else UnionR3 0 (obj:objs)
-              unionWarning :: ByteString
+              unionWarning :: Text
               unionWarning     = if null objs
                                  then ""
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d         = encodeUtf8 . toStrict $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res target
+              output3d         = maybe (toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then output3d <> callbackF True False w (scadMessages <> unionWarning)
             else callbackS output3d (scadMessages <> unionWarning)
@@ -195,12 +195,12 @@ executeAndExport content callback maybeFormat =
           let target          = if null objs
                                 then obj
                                 else UnionR2 0 (obj:objs)
-              unionWarning :: ByteString
+              unionWarning :: Text
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = encodeUtf8 . toStrict $ maybe jsTHREE getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
-              output2d        = encodeUtf8 . toStrict $ maybe svg getOutputHandler2 maybeFormat $ discreteAprox res target
+              output3d        = maybe (toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
+              output2d        = maybe (toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then output3d <> callbackF True True w (scadMessages <> unionWarning)
             else callbackS output2d (scadMessages <> unionWarning)
