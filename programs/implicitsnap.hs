@@ -16,7 +16,7 @@ import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), ($), (<>), 
 
 import Control.Applicative ((<|>))
 
-import Snap.Core (Snap, route, writeText, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
+import Snap.Core (Snap, route, writeText, writeBS, method, Method(GET), modifyResponse, setContentType, setTimeout, getRequest, rqParam)
 import Snap.Http.Server (quickHttpServe)
 import Snap.Util.GZip (withCompression)
 
@@ -51,9 +51,14 @@ import Data.List (intercalate)
 import System.IO.Unsafe (unsafePerformIO)
 
 import Data.ByteString.Char8 (unpack)
+import Data.ByteString.UTF8 (fromString)
 import Data.ByteString (ByteString)
-import Data.Text (Text, pack)
-import Data.Text.Lazy (toStrict)
+import Data.ByteString.Lazy as BSL (toStrict)
+import Data.Text (Text)
+import Data.Text (pack)
+import Data.Text.Lazy as TL (toStrict)
+import Data.Text.Encoding (encodeUtf8)
+import Data.Aeson (encode)
 
 -- | The entry point. uses snap to serve a website.
 main :: IO ()
@@ -74,12 +79,12 @@ renderHandler = method GET $ withCompression $ do
     request <- getRequest
     case (rqParam "source" request, rqParam "callback" request, rqParam "format" request)  of
         (Just [source], Just [callback], Nothing) ->
-            writeText $ executeAndExport
+            writeBS $ executeAndExport
                 (unpack source)
                 callback
                 Nothing
         (Just [source], Just [callback], Just [format]) ->
-            writeText $ executeAndExport
+            writeBS $ executeAndExport
                 (unpack source)
                 callback
                 (Just format)
@@ -119,17 +124,17 @@ getWidth (_, obj:objs,     _, _) = max (x2-x1) (y2-y1)
     where ((x1,y1),(x2,y2)) = getBox2 $ UnionR2 0 (obj:objs)
 getWidth (_,    [],    [], _) = 0
 
-getOutputHandler2 :: ByteString -> ([Polyline] -> Text)
+getOutputHandler2 :: ByteString -> [Polyline] -> Text
 getOutputHandler2 name
-  | name == "SVG"                   = toStrict.svg
-  | name == "gcode/hacklab-laser"   = toStrict.hacklabLaserGCode
-  | otherwise                       = toStrict.dxf2
+  | name == "SVG"                   = TL.toStrict.svg
+  | name == "gcode/hacklab-laser"   = TL.toStrict.hacklabLaserGCode
+  | otherwise                       = TL.toStrict.dxf2
 
 -- FIXME: OBJ support
-getOutputHandler3 :: ByteString -> (TriangleMesh -> Text)
+getOutputHandler3 :: ByteString -> TriangleMesh -> Text
 getOutputHandler3 name
-  | name == "STL"                   = toStrict.stl
-  | otherwise                       = toStrict.jsTHREE
+  | name == "STL"                   = TL.toStrict.stl
+  | otherwise                       = TL.toStrict.jsTHREE
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -144,22 +149,22 @@ generateScadOpts = ScadOpts compat_flag import_flag
 
 -- | Give an openscad object to run and the basename of
 --   the target to write to... write an object!
-executeAndExport :: String -> ByteString -> Maybe ByteString -> Text
+executeAndExport :: String -> ByteString -> Maybe ByteString -> ByteString
 executeAndExport content callback maybeFormat =
     let
-        showB :: Bool -> Text
+        showB :: Bool -> ByteString
         showB True  = "true"
         showB False = "false"
-        showℝ :: ℝ -> Text
-        showℝ val = pack $ show val
-        callbackF :: Bool -> Bool -> ℝ -> Text -> Text
+        showℝ :: ℝ -> ByteString
+        showℝ val = fromString $ show val
+        callbackF :: Bool -> Bool -> ℝ -> Text -> ByteString
         callbackF False is2D w msg =
-            (pack $ unpack callback) <> "([null," <> msg <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
+            callback <> "([null," <> (BSL.toStrict $ encode msg) <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
         callbackF True  is2D w msg =
-            (pack $ unpack callback) <> "([new Shape()," <> msg <> "," <> showB is2D <> "," <> showℝ w <> "]);"
-        callbackS :: Text -> Text -> Text
+            callback <> "([new Shape()," <> (BSL.toStrict $ encode msg) <> "," <> showB is2D <> "," <> showℝ w <> "]);"
+        callbackS :: Text -> Text -> ByteString
         callbackS str          msg =
-            (pack $ unpack callback) <> "([" <> str <> "," <> msg <> ",null,null]);"
+            callback <> "([" <> (BSL.toStrict $ encode str) <> "," <> (BSL.toStrict $ encode msg) <> ",null,null]);"
         scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions [] content
     in
@@ -187,9 +192,10 @@ executeAndExport content callback maybeFormat =
               unionWarning     = if null objs
                                  then ""
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d         = maybe (toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
+              output3d :: Text
+              output3d         = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then output3d <> callbackF True False w (scadMessages <> unionWarning)
+            then (encodeUtf8 output3d) <> callbackF True False w (scadMessages <> unionWarning)
             else callbackS output3d (scadMessages <> unionWarning)
         (obj:objs, []   , _) -> do
           let target          = if null objs
@@ -199,10 +205,10 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = maybe (toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
-              output2d        = maybe (toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
+              output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
+              output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then output3d <> callbackF True True w (scadMessages <> unionWarning)
+            then (encodeUtf8 output3d) <> callbackF True True w (scadMessages <> unionWarning)
             else callbackS output2d (scadMessages <> unionWarning)
         ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
         _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"

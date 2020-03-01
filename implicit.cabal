@@ -174,12 +174,14 @@ Executable implicitsnap
    Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
+                 aeson,
                  base,
                  bytestring,
                  implicit,
                  snap-core,
                  snap-server,
                  text,
+                 utf8-string,
                  vector-space
    Ghc-options:
                -threaded
