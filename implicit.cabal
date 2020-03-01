@@ -27,14 +27,14 @@ Library
                   vector-space,
                   hspec,
                   text,
-                  monads-tf,
                   bytestring,
                   blaze-builder,
                   blaze-markup,
                   blaze-svg,
                   storable-endian,
                   JuicyPixels,
-                  transformers
+                  transformers,
+                  mtl
 
     Ghc-options:
                 -O2
