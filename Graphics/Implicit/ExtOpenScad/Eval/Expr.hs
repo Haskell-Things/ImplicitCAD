@@ -40,7 +40,7 @@ import Data.Traversable (for)
 
 import Control.Monad (zipWithM)
 
-import "monads-tf" Control.Monad.State (StateT, get, modify, runState)
+import Control.Monad.State (StateT, get, modify, runState)
 
 data ExprState = ExprState
   { _scadVars  :: VarLookup

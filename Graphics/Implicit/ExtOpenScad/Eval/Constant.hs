@@ -2,10 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- allow us to specify what package to import what module from.
--- We don't actually care, but when we compile our haskell examples, we do.
-{-# LANGUAGE PackageImports #-}
-
 module Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants, runExpr) where
 
 import Prelude (String, IO, ($), pure, (+), Either,  Bool(False), (.), either, (<$>), (<*), (<*>))
@@ -36,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat, rawRunExpr)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 
-import "monads-tf" Control.Monad.State (liftIO, runStateT, (>>=))
+import Control.Monad.State (liftIO, runStateT, (>>=))
 
 import System.Directory (getCurrentDirectory)
 
