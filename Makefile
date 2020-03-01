@@ -10,9 +10,12 @@ convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
-ARCHITECTURE=$(shell arch | sed "s/i[3-6]86/i386/" )
+IMPLICITVERSION=$(shell cat implicit.cabal | sed -n "s/Version[: ]*\([0-9]*.*\)/\1/p")
+ARCHITECTURE=$(shell uname -m | sed "s/i[3-6]86/i386/" )
+# FIXME: detect this on other OSes.
+OS=linux
 # new-style location root. must NOT have trailing slash
-BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-linux/ghc-${GHCVERSION}/implicit-0.2.1
+BUILDROOT=dist-newstyle/build/${ARCHITECTURE}-${OS}/ghc-${GHCVERSION}/implicit-${IMPLICITVERSION}
 EXEBUILDROOT=${BUILDROOT}/x/
 TESTBUILDROOT=${BUILDROOT}/t/
 BENCHBUILDROOT=${BUILDROOT}/b/
@@ -62,15 +65,19 @@ SCADOPTS?=-q
 # Uncomment for valgrind on the examples.
 #VALGRIND=valgrind --tool=cachegrind --cachegrind-out-file=$$each.cachegrind.`date +%s`
 
-LIBFILES=$(shell find Graphics -name '*.hs')
+LIBDIR=Graphics
+LIBFILES=$(shell find ${LIBDIR} -name '*.hs')
+LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi' -o -name '*.o')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
 EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
 EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 # Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
-.PHONY: build install clean distclean nukeclean docs dist examples tests
+.PHONY: build install clean distclean nukeclean docs dist examples tests benchmarks benchmarkdir
 
 # Empty out the default suffix list, to make debugging output cleaner.
 .SUFFIXES:
@@ -100,7 +107,9 @@ clean:
 	rm -f Examples/example*.cachegrind.*
 	rm -f tests/*.stl
 	rm -rf docs/parser.md
-	rm -f $(TARGETS)
+	rm -f ${TARGETS}
+	rm -f ${LIBBUILDS}
+	rm -f benchmarks
 	rm -rf ${EXECBUILDDIRS} ${PARSERBENCHDIR} ${TESTSUITEDIR}
 	rm -f ${BUILDROOT}/build/libHS*
 	rm -f ${BUILDROOT}/cache/registration
@@ -109,7 +118,11 @@ clean:
 distclean: clean Setup
 	./Setup clean
 	rm -f Setup Setup.hi Setup.o
+	rm -rf dist
 	rm -rf dist-newstyle
+	rm -rf .stack-work
+	rm -f cabal.project.local
+	rm .ghc.environment.${ARCHITECTURE}-${OS}-${GHCVERSION}
 	rm -f `find ./ -name "*~"`
 	rm -f `find ./ -name "\#*\#"`
 
@@ -139,6 +152,12 @@ images: examples
 tests: $(TESTSUITE) $(TESTFILES)
 #	cd tests && for each in `find ./ -name '*scad' -type f | sort`; do { ../$(EXTOPENSCADBIN) $$each ${RESOPTS} ${RTSOPTS}; } done
 	$(TESTSUITE)
+
+benchmarkdir:
+	[ ! -e benchmarks ] && bash -c 'rm -f benchmarks; ln -s `mktemp --tmpdir -d icad-XXX` benchmarks' || true
+
+benchmarks: $(BENCHMARKBIN) benchmarkdir
+	cd benchmarks && ${ROOT_DIR}/${BENCHMARKBIN}
 
 # The ImplicitCAD library.
 $(LIBTARGET): $(LIBFILES)

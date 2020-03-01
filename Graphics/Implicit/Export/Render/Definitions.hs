@@ -4,9 +4,6 @@
 -- We want a type that can represent squares/quads and triangles.
 module Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq)) where
 
--- We import nothing from prelude by default.
-import Prelude()
-
 -- Points/Numbers, and the concept of an array of triangles.
 import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, TriangleMesh)
 

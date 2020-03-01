@@ -43,11 +43,12 @@ argument a = GIEUA.argument (Symbol a)
 primitiveModules :: [(Symbol, OVal)]
 primitiveModules =
   [
-    onModIze sphere [([("r", noDefault)], noSuite)]
-  , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault)], noSuite)]
-  , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault)], noSuite)]
-  , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
-  , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite)]
+    onModIze sphere [([("r", noDefault)], noSuite), ([("d", noDefault)], noSuite)]
+  , onModIze cube [([("x", noDefault), ("y", noDefault), ("z", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite),([("size", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite)]
+  , onModIze square [([("x", noDefault), ("y", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite), ([("size", noDefault), ("center", hasDefault), ("r", hasDefault)], noSuite)]
+  , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite),
+                       ([("d", hasDefault), ("h", hasDefault), ("d1", hasDefault), ("d2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
+  , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite), ([("d", noDefault), ("$fn", hasDefault)], noSuite)]
   , onModIze polygon [([("points", noDefault)], noSuite)]
   , onModIze union [([("r", hasDefault)], requiredSuite)]
   , onModIze intersect [([("r", hasDefault)], requiredSuite)]
@@ -75,7 +76,8 @@ primitiveModules =
         fixup (args, suiteInfo) = (fmap fixupArgs args, suiteInfo)
           where
             fixupArgs :: (String, Bool) -> (Symbol, Bool)
-            fixupArgs (symbol, maybeDefault) =(Symbol symbol, maybeDefault) 
+            fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
+
 -- | sphere is a module without a suite.
 --   this means that the parser will look for this like
 --   sphere(args...);
@@ -87,8 +89,14 @@ sphere = moduleWithoutSuite "sphere" $ \_ _ -> do
     -- The radius, r, which is a (real) number.
     -- Because we don't provide a default, this ends right
     -- here if it doesn't get a suitable argument!
-    r :: ℝ <- argument "r"
-                `doc` "radius of the sphere"
+    r <-
+      do
+        radius :: ℝ <- argument "r" `doc` "radius of the sphere"
+        pure radius
+      <|> do
+        diameter :: ℝ <- argument "d" `doc` "diameter of the sphere"
+        pure $ diameter/2
+
     -- This module adds a 3D object, a sphere of radius r,
     -- using the sphere implementation in Prim
     -- (Graphics.Implicit.Primitives)
@@ -188,18 +196,34 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
     example "cylinder(r1=4, r2=6, h=10);"
     example "cylinder(r=5, h=10, $fn = 6);"
     -- arguments
-    r      :: ℝ    <- argument "r"
-                `defaultTo` 1
-                `doc` "radius of cylinder"
+    (r,r1,r2) <-
+      do
+        radius :: ℝ  <- argument "r"
+                        `defaultTo` 1
+                        `doc` "radius of cylinder"
+        radius1 :: ℝ <- argument "r1"
+                        `defaultTo` 1
+                        `doc` "bottom radius; overrides r"
+        radius2 :: ℝ <- argument "r2"
+                        `defaultTo` 1
+                        `doc` "top radius; overrides r"
+        pure (radius, radius1, radius2)
+      <|> do
+        diameter :: ℝ  <- argument "d"
+                        `defaultTo` 2
+                        `doc` "diameter of cylinder"
+        diameter1 :: ℝ <- argument "d1"
+                        `defaultTo` 2
+                        `doc` "bottom diameter; overrides d"
+        diameter2 :: ℝ <- argument "d2"
+                        `defaultTo` 2
+                        `doc` "top diameter; overrides d"
+        pure (diameter/2, diameter1/2, diameter2/2)
+
+
     h      :: Either ℝ ℝ2    <- argument "h"
                 `defaultTo` Left 1
                 `doc` "height of cylinder"
-    r1     :: ℝ    <- argument "r1"
-                `defaultTo` 1
-                `doc` "bottom radius; overrides r"
-    r2     :: ℝ    <- argument "r2"
-                `defaultTo` 1
-                `doc` "top radius; overrides r"
     sides  :: ℕ    <- argument "$fn"
                 `defaultTo` (-1)
                 `doc` "number of sides, for making prisms"
@@ -234,12 +258,21 @@ circle = moduleWithoutSuite "circle" $ \_ _ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
     -- Arguments
-    r     :: ℝ <- argument "r"
-               `doc` "radius of the circle"
+    r <-
+      do
+        radius :: ℝ <- argument "r"
+                       `doc` "radius of the circle"
+        pure radius
+      <|> do
+        diameter :: ℝ <- argument "d"
+                         `doc` "diameter of the circle"
+        pure $ diameter/2
     sides :: ℕ <- argument "$fn"
                `doc` "if defined, makes a regular polygon with n sides instead of a circle"
                `defaultTo` (-1)
     test "circle(r=10);"
+        `eulerCharacteristic` 0
+    test "circle(d=20);"
         `eulerCharacteristic` 0
     addObj2 $ if sides < 3
         then Prim.circle r
@@ -277,9 +310,9 @@ polygon = moduleWithoutSuite "polygon" $ \_ _ -> do
             d2d3 = distanceSq p2 p3
             isGridAligned :: ℝ2 -> ℝ2 -> Bool
             isGridAligned (x1, y1) (x2, y2) = x1 == x2 || y1 == y2
-          -- | Rectangles have no overlapping points,
-          --   the distance on each side is equal to it's opposing side,
-          --   and the distance between the pairs of opposing corners are equal.
+          -- Rectangles have no overlapping points,
+          -- the distance on each side is equal to it's opposing side,
+          -- and the distance between the pairs of opposing corners are equal.
           in if (p1 /= p2 && p2 /= p3 && p3 /= p4 && p4 /= p1)
                  && (d1d2==d3d4 && d1d3==d2d4)
                  && (d1d4==d2d3) && isGridAligned p1 p2

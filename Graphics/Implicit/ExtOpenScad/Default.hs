@@ -20,14 +20,14 @@ import Data.Map (Map, fromList, insert)
 import Data.List (genericIndex, genericLength, intercalate)
 import Data.Foldable (for_)
 
-defaultObjects :: VarLookup
-defaultObjects = VarLookup $ fromList $
+defaultObjects :: Bool -> VarLookup
+defaultObjects withCSG = VarLookup $ fromList $
     defaultConstants
     <> defaultFunctions
     <> defaultFunctions2
     <> defaultFunctionsSpecial
     <> defaultPolymorphicFunctions
-    <> primitiveModules
+    <> (if withCSG then primitiveModules else [])
     <> varArgModules
 
 -- FIXME: Missing standard ones(which standard?):

@@ -9,7 +9,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative)
+import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative, Bool(True))
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -36,7 +36,7 @@ import Data.Foldable (traverse_)
 -- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
 runOpenscad scadOpts constants source = do
-  (initialObjects, initialMessages) <- addConstants constants
+  (initialObjects, initialMessages) <- addConstants constants True
   let
     err :: Applicative f => ParseError -> f (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
     err e = pure (initialObjects, [], [], mesg e : initialMessages)

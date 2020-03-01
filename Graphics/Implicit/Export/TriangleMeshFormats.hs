@@ -52,7 +52,7 @@ cleanupTris tris =
             zsame :: Eq a => ((a, a, a), (a, a, a), (a, a, a)) -> Bool
             zsame ((_,_,z1),(_,_,z2),(_,_,z3)) = same (z1, z2, z3)
         isDegenerateTri :: Triangle -> Bool
-        isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri  -- || (isDegenerateTriLine $ floatTri) || (isDegenerateTriPoint $ floatTri)
+        isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri  
           where
             floatTri = (floatPoint a, floatPoint b, floatPoint c)
     in TriangleMesh $ filter (not . isDegenerateTri) (unmesh tris)

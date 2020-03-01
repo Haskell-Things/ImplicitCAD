@@ -2,21 +2,17 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs, reducePolyline) where
+module Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs) where
 
-import Prelude(Bool(True, False), Maybe(Just, Nothing), fmap, (.), filter, (==), last, reverse, ($), (<>), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise)
+import Prelude(Maybe(Just, Nothing), fmap, (.), (==), last, reverse, ($), (<>), (-), (/), abs, (<=), (||), (&&), (*), (>), otherwise, error)
 
 import Graphics.Implicit.Definitions (minℝ, Polyline(Polyline))
 
 cleanLoopsFromSegs :: [Polyline] -> [Polyline]
-cleanLoopsFromSegs =
-    fmap reducePolyline
-    . joinSegs
-    . filter polylineNotNull
+cleanLoopsFromSegs = fmap reducePolyline . joinSegs
 
 -- | Join polylines that connect.
 joinSegs :: [Polyline] -> [Polyline]
-joinSegs [] = []
 joinSegs (Polyline present:remaining) =
     let
         findNext :: [Polyline] -> (Maybe Polyline, [Polyline])
@@ -30,11 +26,12 @@ joinSegs (Polyline present:remaining) =
         case findNext remaining of
             (Nothing, _) -> Polyline present: joinSegs remaining
             (Just (Polyline match), others) -> joinSegs $ Polyline (present <> match) : others
+joinSegs [] = []
 
 -- | Simplify and sort a polyline.
 reducePolyline :: Polyline -> Polyline
 reducePolyline (Polyline ((x1,y1):(x2,y2):(x3,y3):others))
-    -- Remove duplicate points.
+    -- Remove sequential duplicate points.
     | (x1,y1) == (x2,y2) = reducePolyline (Polyline ((x2,y2):(x3,y3):others))
     | abs ( (y2-y1)/(x2-x1) - (y3-y1)/(x3-x1) ) <= minℝ
       || ( (x2-x1) == 0 && (x3-x1) == 0 && (y2-y1)*(y3-y1) > 0) =
@@ -42,17 +39,13 @@ reducePolyline (Polyline ((x1,y1):(x2,y2):(x3,y3):others))
     | otherwise = Polyline ((x1,y1) : points (reducePolyline (Polyline ((x2,y2):(x3,y3):others))))
   where
     points (Polyline pts) = pts
--- | remove duplicate points
+-- | remove sequential duplicate points.
 reducePolyline (Polyline ((x1,y1):(x2,y2):others)) =
     if (x1,y1) == (x2,y2) then reducePolyline (Polyline ((x2,y2):others)) else Polyline ((x1,y1):(x2,y2):others)
 -- | Return the last result.
-reducePolyline l = l
-
--- ensure that polylines are not empty.
-polylineNotNull :: Polyline -> Bool
-polylineNotNull (Polyline (_:_:_)) = True
-polylineNotNull (Polyline [_]) = True
-polylineNotNull (Polyline []) = False
+reducePolyline l@(Polyline ((_:_))) = l
+-- Should not happen.
+reducePolyline (Polyline ([])) = error "empty polyline"
 
 {-cleanLoopsFromSegs =
     connectPolys

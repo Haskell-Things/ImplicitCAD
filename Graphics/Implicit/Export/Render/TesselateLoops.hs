@@ -18,6 +18,7 @@ import Data.List (genericLength)
 
 import Data.Cross (cross3)
 
+-- de-compose a loop into a series of triangles or squares.
 -- FIXME: res should be ℝ3.
 tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 

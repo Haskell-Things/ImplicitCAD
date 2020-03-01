@@ -26,15 +26,15 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
         n :: ℝ3 -> Builder
         n (x,y,z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
         verts = do
-            -- | Extract the vertices for each triangle
-            --   recall that a normed triangle is of the form ((vert, norm), ...)
+            --  Extract the vertices for each triangle.
+            --  recall that a normed triangle is of the form ((vert, norm), ...)
             NormedTriangle ((a,_),(b,_),(c,_)) <- normedtriangles
-            -- | The vertices from each triangle take up 3 positions in the resulting list
+            -- The vertices from each triangle take up 3 positions in the resulting list
             [a,b,c]
         norms = do
-            -- | extract the normals for each triangle
+            -- extract the normals for each triangle
             NormedTriangle ((_,a),(_,b),(_,c)) <- normedtriangles
-            -- | The normals from each triangle take up 3 positions in the resulting list
+            -- The normals from each triangle take up 3 positions in the resulting list
             [a,b,c]
         vertcode = foldMap v verts
         normcode = foldMap n norms

@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
-import Prelude(foldMap, (<>), ($))
+import Prelude(foldMap, (<>), ($), fmap, concat, (.), (==), compare, error)
 
 import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -12,12 +12,11 @@ import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 
 import Data.VectorSpace ((^*), (*^), (^+^))
 
--- Disable square merging temporarily, while we hunt down mesh problems.
---import GHC.Exts (groupWith)
---import Data.List (sortBy)
+import GHC.Exts (groupWith)
+import Data.List (sortBy)
 
 -- We want small meshes. Essential to this, is getting rid of triangles.
--- We secifically mark quads in tesselation (refer to Graphics.Implicit.
+-- We specifically mark quads in tesselation (refer to Graphics.Implicit.
 -- Export.Render.Definitions, Graphics.Implicit.Export.Render.TesselateLoops)
 -- So that we can try and merge them together.
 
@@ -74,29 +73,25 @@ mergedSquareTris sqTris =
 
         unmesh (TriangleMesh m) = m
 
-{-
-        -- Collect ones that are on the same plane.
-        planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squares
+        -- Collect squares that are on the same plane.
+        planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squaresFromTris
         -- For each plane:
         -- Select for being the same range on X and then merge them on Y
         -- Then vice versa.
         joined = fmap
-            ( -- concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
-              concat . (fmap joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
+            ( concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
+            . concat . (fmap joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
             . concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS))
             planeAligned
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
--}
+
     in
         -- merge them to triangles, and combine with the original triangles.
-        -- Disable square merging temporarily.
-        --triTriangles <> concat (fmap squareToTri finishedSquares)
-        TriangleMesh $ triTriangles <> foldMap squareToTri squaresFromTris
+        TriangleMesh $ triTriangles <> foldMap squareToTri finishedSquares
 
--- And now for a bunch of helper functions that do the heavy lifting...
+-- And now for the helper functions that do the heavy lifting...
 
-{-
 joinXaligned :: [TriSquare] -> [TriSquare]
 joinXaligned quads@((Sq b z xS _):_) =
     let
@@ -112,6 +107,7 @@ joinXaligned quads@((Sq b z xS _):_) =
         mergeAdjacent a = a
     in
         mergeAdjacent orderedQuads
+joinXaligned (Tris _:_) = error "Tried to join y aligned triangles."
 joinXaligned [] = []
 
 joinYaligned :: [TriSquare] -> [TriSquare]
@@ -129,8 +125,8 @@ joinYaligned quads@((Sq b z _ yS):_) =
         mergeAdjacent a = a
     in
         mergeAdjacent orderedQuads
+joinYaligned (Tris _:_) = error "Tried to join y aligned triangles."
 joinYaligned [] = []
--}
 
 -- Deconstruct a square into two triangles.
 squareToTri :: TriSquare -> [Triangle]
