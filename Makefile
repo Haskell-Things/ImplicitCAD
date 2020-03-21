@@ -131,12 +131,12 @@ nukeclean: distclean
 	rm -rf ~/.cabal/ ~/.ghc/
 
 # Generate documentation.
-docs: $(DOCGEN)
+docs: $(DOCGEN) Setup
 	./Setup haddock
 	$(DOCGEN) > docs/escad.md
 
 # Upload to hackage?
-dist: $(TARGETS)
+dist: $(TARGETS) Setup
 	./Setup sdist
 
 # Generate examples.
@@ -164,16 +164,16 @@ $(LIBTARGET): $(LIBFILES)
 	cabal new-build implicit
 
 # The parser test suite, since it's source is stored in a different location than the other binaries we build:
-${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit: $(TESTFILES) Setup ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
+${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit: $(TESTFILES) ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal new-build test-implicit
 
 # Build a binary target with cabal.
-${EXEBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs Setup ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
+${EXEBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal new-build $(word 1,$(subst /, ,$*))
 	touch $@
 
 # Build a benchmark target with cabal.
-${BENCHBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs Setup ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
+${BENCHBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal new-build $(word 1,$(subst /, ,$*))
 
 # Prepare to build.
