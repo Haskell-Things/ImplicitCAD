@@ -19,6 +19,8 @@ import Graphics.Implicit.ExtOpenScad (runOpenscad)
 
 import Test.Hspec (Expectation, shouldReturn)
 
+import Data.Text.Lazy (Text)
+
 -- | decide what options to send to the scad engine.
 generateScadOpts :: ScadOpts
 generateScadOpts = ScadOpts compat_flag import_flag
@@ -41,5 +43,5 @@ getOpenscadMessages scadOpts constants source = do
     (_, _, _, messages) <- runOpenscad scadOpts constants source
     return messages
 
-oneMessage :: MessageType -> SourcePosition -> String -> [Message]
+oneMessage :: MessageType -> SourcePosition -> Text -> [Message]
 oneMessage msgType pos text = [Message msgType pos text]

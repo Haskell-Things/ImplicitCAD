@@ -5,6 +5,9 @@
 -- FIXME: why is this required?
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
@@ -25,6 +28,8 @@ import Data.Maybe (isNothing, fromJust, isJust)
 
 import Data.Foldable (fold)
 
+import Data.Text.Lazy (Text, pack, unpack)
+
 import Control.Arrow (first)
 
 -- * ArgParser building functions
@@ -39,16 +44,17 @@ argument name =
         let
             val :: Maybe desiredType
             val = fromOObj oObjVal
+            errmsg :: Text
             errmsg = case oObjVal of
-                OError errs -> "error in computing value for argument " <> show name
+                OError errs -> "error in computing value for argument " <> (pack $ show name)
                              <> ": " <> fold errs
-                _   ->  "arg " <> show oObjVal <> " not compatible with " <> show name
+                _   ->  "arg " <> (pack $ show oObjVal) <> " not compatible with " <> (pack $ show name)
         -- Using /= Nothing would require Eq desiredType
         APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
 {-# INLINABLE argument #-}
 
 -- | Inline documentation.
-doc :: forall a. ArgParser a -> String -> ArgParser a
+doc :: forall a. ArgParser a -> Text -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
 doc _ _ = error "Impossible!"
 
@@ -59,11 +65,11 @@ defaultTo (AP name _ doc' next) newDefVal =
 defaultTo _ _ = error "Impossible!"
 
 -- | An inline example.
-example :: String -> ArgParser ()
+example :: Text -> ArgParser ()
 example str = APExample str (return ())
 
 -- | Inline test and combinators.
-test :: String -> ArgParser ()
+test :: Text -> ArgParser ()
 test str = APTest str [] (return ())
 
 eulerCharacteristic :: ArgParser a -> ℕ -> ArgParser a
@@ -113,7 +119,7 @@ argMap2 a (VarLookup b) (APTerminator val) =
 
 argMap2 a b (APFailIf testval err child) =
     if testval
-    then (Nothing, [err])
+    then (Nothing, [(unpack err)])
     else argMap2 a b child
 
 argMap2 a b (APExample _ child) = argMap2 a b child

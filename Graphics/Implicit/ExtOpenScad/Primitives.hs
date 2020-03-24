@@ -9,10 +9,13 @@
 -- Allow us to use type signatures in patterns.
 {-# LANGUAGE ScopedTypeVariables #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(String, Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
+import Prelude(Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -27,16 +30,18 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
-import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeR, extrudeRM, rotateExtrude, shell, pack3, pack2)
+import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeRM, rotateExtrude, shell, pack3, pack2)
 
 import Control.Monad (mplus)
 
 import Data.AffineSpace (distanceSq)
 
+import Data.Text.Lazy (Text)
+
 default (ℝ)
 
 -- | Use the old syntax when defining arguments.
-argument :: OTypeMirror desiredType => String -> ArgParser desiredType
+argument :: OTypeMirror desiredType => Text -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
 -- | The only thing exported here. basically, a list of modules.
@@ -72,10 +77,10 @@ primitiveModules =
       where
         (name, implementation) = func
         instances = fmap fixup rawInstances
-        fixup :: ([(String, Bool)], Maybe Bool) -> ([(Symbol, Bool)], Maybe Bool)
+        fixup :: ([(Text, Bool)], Maybe Bool) -> ([(Symbol, Bool)], Maybe Bool)
         fixup (args, suiteInfo) = (fmap fixupArgs args, suiteInfo)
           where
-            fixupArgs :: (String, Bool) -> (Symbol, Bool)
+            fixupArgs :: (Text, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
 
 -- | sphere is a module without a suite.
@@ -510,10 +515,10 @@ unit :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 unit = moduleWithSuite "unit" $ \sourcePosition children -> do
     example "unit(\"inch\") {..}"
     -- arguments
-    name :: String <- argument "unit"
+    name :: Text <- argument "unit"
         `doc` "the unit you wish to work in"
     let
-        mmRatio :: String -> Maybe ℝ
+        mmRatio :: Text -> Maybe ℝ
         mmRatio "inch" = Just 25.4
         mmRatio "in"   = mmRatio "inch"
         mmRatio "foot" = Just 304.8
@@ -543,10 +548,10 @@ unit = moduleWithSuite "unit" $ \sourcePosition children -> do
 (<|>) :: ArgParser a -> ArgParser a -> ArgParser a
 (<|>) = mplus
 
-moduleWithSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+moduleWithSuite :: Text -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
 
-moduleWithoutSuite :: String -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+moduleWithoutSuite :: Text -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 moduleWithoutSuite name modArgMapper = (Symbol name, modArgMapper)
 
 addObj2 :: SymbolicObj2 -> ArgParser (StateC [OVal])

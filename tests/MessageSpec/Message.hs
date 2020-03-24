@@ -2,6 +2,9 @@
 -- Copyright (C) 2014-2017, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module MessageSpec.Message (programExec) where
 
 -- Be explicit about what we import.

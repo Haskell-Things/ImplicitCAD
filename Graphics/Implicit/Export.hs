@@ -55,7 +55,7 @@ formatObject :: (DiscreteAproxable obj aprox)
     => ℝ                -- ^ Resolution
     -> (aprox -> Text)  -- ^ File Format Writer (Function that formats)
     -> obj              -- ^ Object to render
-    -> Text             -- ^ Resulting lazy ByteString
+    -> Text             -- ^ Result
 formatObject res formatWriter = formatWriter . discreteAprox res
 
 writeSVG :: DiscreteAproxable obj [Polyline] => ℝ -> FilePath -> obj -> IO ()

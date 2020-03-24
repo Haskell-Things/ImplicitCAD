@@ -9,9 +9,12 @@
 
 {-# LANGUAGE TypeSynonymInstances #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, toOObj, divideObjs, caseOType, oTypeStr, getErrors) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), Char, String, (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, head, flip, filter, not, return, head)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, head, flip, filter, not, return, head)
 
 import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
 
@@ -21,10 +24,12 @@ import Control.Monad (msum)
 
 import Data.Maybe (fromMaybe, maybe)
 
-import Data.Traversable(traverse)
+import Data.Traversable (traverse)
+
+import Data.Text.Lazy (Text)
 
 -- for some minimal paralellism.
-import Control.Parallel.Strategies(runEval, rpar, rseq)
+import Control.Parallel.Strategies (runEval, rpar, rseq)
 
 -- Convert OVals (and Lists of OVals) into a given Haskell type
 class OTypeMirror a where
@@ -58,20 +63,26 @@ instance OTypeMirror Bool where
     {-# INLINABLE fromOObj #-}
     toOObj = OBool
 
+{-
 -- We don't actually use single chars, this is to compile lists of chars (AKA strings) after passing through OTypeMirror [a]'s fromOObj.
 -- This lets us handle strings without overlapping the [a] case.
 instance OTypeMirror Char where
-    fromOObj (OString str) = Just $ head str
+    fromOObj (OString str) = Just . head $ unpack str
     fromOObj _ = Nothing
     {-# INLINABLE fromOObj #-}
-    fromOObjList (OString str) = Just str
+    fromOObjList (OString str) = Just $ unpack str
     fromOObjList _ = Nothing
-    toOObj a = OString [a]
-
+    toOObj a = OString $ pack [a]
+-}
 instance (OTypeMirror a) => OTypeMirror [a] where
     fromOObj = fromOObjList
     {-# INLINABLE fromOObj #-}
     toOObj list = OList $ fmap toOObj list
+
+instance OTypeMirror Text where
+    fromOObj (OString str) = Just str
+    fromOObj _ = Nothing
+    toOObj a = OString a
 
 instance (OTypeMirror a) => OTypeMirror (Maybe a) where
     fromOObj a = Just $ fromOObj a
@@ -119,7 +130,7 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
     toOObj (Left  x) = toOObj x
 
 -- A string representing each type.
-oTypeStr :: OVal -> String
+oTypeStr :: OVal -> Text
 oTypeStr OUndefined         = "Undefined"
 oTypeStr (OBool          _ ) = "Bool"
 oTypeStr (ONum           _ ) = "Number"
@@ -133,7 +144,7 @@ oTypeStr (OError         _ ) = "Error"
 oTypeStr (OObj2          _ ) = "2D Object"
 oTypeStr (OObj3          _ ) = "3D Object"
 
-getErrors :: OVal -> Maybe String
+getErrors :: OVal -> Maybe Text
 getErrors (OError er) = Just $ head er
 getErrors (OList l)   = msum $ fmap getErrors l
 getErrors _           = Nothing

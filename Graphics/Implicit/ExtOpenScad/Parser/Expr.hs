@@ -6,10 +6,13 @@
 -- Allow us to use shorter forms of Var and Name.
 {-# LANGUAGE PatternSynonyms #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), String, ($), (<>), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
+import Prelude (Char, Maybe(Nothing, Just), ($), (<>), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), Symbol(Symbol))
 
@@ -18,19 +21,21 @@ import qualified Graphics.Implicit.ExtOpenScad.Definitions as GIED (Expr(Var), P
 import Graphics.Implicit.ExtOpenScad.Parser.Util ((?:), (*<|>), number, boolean, scadString, scadUndefined, variable)
 
 -- The lexer.
-import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier, matchEQ, matchNE, matchLE, matchLT, matchGE, matchGT, matchCAT, matchAND, matchOR)
+import Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchLet, matchTok, matchColon, matchComma, surroundedBy, matchIdentifier, matchEQ, matchNE, matchLE, matchLT, matchGE, matchGT, matchCAT, matchAND, matchOR, matchEXP, matchComma)
 
 -- The parsec parsing library.
 import Text.Parsec (oneOf, many, sepBy, optionMaybe, option, (<|>), chainl1, chainr1)
 
 import Text.Parsec.String (GenParser)
 
-import Control.Monad.Fix(fix)
+import Data.Text.Lazy (Text, pack, singleton)
+
+import Control.Monad.Fix (fix)
 
 -- Let us use the old syntax when defining Vars and Names.
-pattern Var :: String -> Expr
+pattern Var :: Text -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
-pattern Name :: String -> GIED.Pattern
+pattern Name :: Text -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- Borrowed the pattern from http://compgroups.net/comp.lang.functional/parsing-ternary-operator-with-parsec/1052460
@@ -60,13 +65,13 @@ expr0 = foldr ($) nonAssociativeExpr levels
       , \higher -> -- <, <=, >= and > operators
           chainl1 higher $ binaryOperation <$> (matchLE <|> matchLT <|> matchGE <|> matchGT)
       , \higher -> -- + and - operators
-          chainl1 higher $ binaryOperation . pure <$> oneOf "+-" <* whiteSpace
+          chainl1 higher $ binaryOperation . singleton <$> (oneOf "+-") <* whiteSpace
       , \higher -> -- string/list concatenation operator (++). This is not available in OpenSCAD.
           chainl1 higher $ binaryOperation <$> matchCAT
       , \higher -> -- exponent operator (^). This is not available in OpenSCAD.
-          chainr1 higher $ binaryOperation <$> matchTok '^'
+          chainr1 higher $ binaryOperation . singleton <$> matchEXP
       , \higher -> -- multiplication (*), division (/), and modulus (%) operators
-          chainl1 higher $ binaryOperation . pure <$> oneOf "*/%" <* whiteSpace
+          chainl1 higher $ binaryOperation . singleton <$> oneOf "*/%" <* whiteSpace
       , \higher ->
           fix $ \self -> -- unary ! operator. OpenSCAD's YACC parser puts '!' at the same level of precedence as '-' and '+'.
                   do
@@ -75,7 +80,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
                     -- when noting a not, just skip both of them.
                     pure $ case right of
                       Var "!" :$ [deepright] -> deepright
-                      _                      -> Var op :$ [right]
+                      _                      -> Var (singleton op) :$ [right]
         <|>
           higher
       , \higher -> -- leading positive or negative sign.
@@ -83,12 +88,12 @@ expr0 = foldr ($) nonAssociativeExpr levels
               do -- Unary -. applied to strings is undefined, but handle that in the interpreter.
                 right <- matchTok '-' *> self
                 pure $ Var "negate" :$ [right]
-          <|> do -- Unary +. Handle this by ignoring the +
+          <|> do -- Unary +. Handle this by ignoring the +.
                 matchTok '+' *> self
         <|>
           higher
       , \higher -> -- "let" expression
-          flip (foldr bindLets) <$> (matchLet *> surroundedBy '(' (assignment `sepBy` matchTok ',') ')') <*> expr0
+          flip (foldr bindLets) <$> (matchLet *> surroundedBy '(' (assignment `sepBy` matchComma) ')') <*> expr0
         <|>
           higher
       ]
@@ -161,12 +166,12 @@ vectorListParentheses =
 
 -- | Apply a symbolic operator to a list of expressions, pureing one big expression.
 --   Accepts a string for the operator, to simplify callers.
-collector :: String -> [Expr] -> Expr
+collector :: Text -> [Expr] -> Expr
 collector _ [x] = x
 collector s  l  = Var s :$ [ListE l]
 
 -- | Apply a symbolic operator to two expressions, combining left and right operands with an binary operator
-binaryOperation :: String -> Expr -> Expr -> Expr
+binaryOperation :: Text -> Expr -> Expr -> Expr
 binaryOperation symbol left right = Var symbol :$ [left, right]
 
 -- | An assignment expression within a let's bindings list
@@ -174,7 +179,7 @@ assignment :: GenParser Char st Expr
 assignment = do
     ident       <- matchIdentifier
     expression  <- matchTok '=' *> expr0
-    pure $ ListE [Var ident, expression]
+    pure $ ListE [Var (pack ident), expression]
 
 -- | build nested let statements when foldr'd.
 bindLets :: Expr -> Expr -> Expr

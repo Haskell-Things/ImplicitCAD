@@ -3,6 +3,9 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 -- Utilities
 module ParserSpec.Util
        ( (-->)
@@ -49,6 +52,8 @@ import Test.Hspec (Expectation, shouldBe)
 
 import Data.Either (Either(Right))
 
+import Data.Text.Lazy (Text)
+
 -- The expression parser entry point.
 import Graphics.Implicit.ExtOpenScad.Parser.Expr (expr0)
 
@@ -70,7 +75,7 @@ num x
 bool :: Bool -> Expr
 bool = LitE . OBool
 
-stringLiteral :: String -> Expr
+stringLiteral :: Text -> Expr
 stringLiteral = LitE . OString
 
 undefined :: Expr
@@ -96,7 +101,7 @@ append = oapp "++"
 plus = oapp "+"
 
 -- | We need two different kinds of application functions, one for operators, and one for functions.
-oapp,fapp :: String -> [Expr] -> Expr
+oapp,fapp :: Text -> [Expr] -> Expr
 oapp name args = Var (Symbol name) :$ args
 fapp name args = Var (Symbol name) :$ [ListE args]
 

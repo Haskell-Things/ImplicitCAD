@@ -6,6 +6,9 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), messages, addMessage) where
 
 import Prelude (String, Maybe(Just, Nothing), ($), fmap, pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
@@ -40,6 +43,8 @@ import Data.Traversable (for)
 
 import Control.Monad (zipWithM)
 
+import Data.Text.Lazy (Text, unpack)
+
 import "monads-tf" Control.Monad.State (StateT, get, modify, runState)
 
 data ExprState = ExprState
@@ -52,18 +57,18 @@ data ExprState = ExprState
 type StateE = StateT ExprState Identity
 
 -- Add a message to our list of messages contained in the StatE monad.
-addMessage :: MessageType -> SourcePosition -> String -> StateE ()
+addMessage :: MessageType -> SourcePosition -> Text -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
   where
     addMesg :: Message -> StateE ()
     addMesg m = modify $ \s -> s { messages = messages s <> pure m }
 
 -- Log an error condition.
-errorE :: SourcePosition -> String -> StateE ()
+errorE :: SourcePosition -> Text -> StateE ()
 errorE = addMessage Error
 
 -- | The names of all of the patterns in the given pattern.
-patVars :: Pattern -> [String]
+patVars :: Pattern -> [Text]
 patVars (Name (Symbol name)) = [name]
 patVars (ListP pats) = foldMap patVars pats
 patVars Wild = []
@@ -102,7 +107,7 @@ evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 -- Evaluate a variable lookup.
 evalExpr' (Var (Symbol name)) = do
   (ExprState (VarLookup varlookup) namestack _ spos) <- get
-  case (lookup (Symbol name) varlookup, elemIndex name namestack) of
+  case (lookup (Symbol name) varlookup, elemIndex (unpack name) namestack) of
         (_, Just pos) -> pure (!! pos)
         (Just val, _) -> pure $ const val
         _             -> do
@@ -134,7 +139,7 @@ evalExpr' (fexpr :$ argExprs) = do
 -- Evaluate a lambda function.
 evalExpr' (LamE pats fexpr) = do
     fparts <- for pats $ \pat -> do
-        modify $ \s -> s { patterns = patVars pat <> patterns s}
+        modify $ \s -> s { patterns = (fmap unpack $ patVars pat) <> patterns s}
         pure $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs <> xss)
             Nothing -> OError ["Pattern match failed"]

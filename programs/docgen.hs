@@ -11,6 +11,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExampl
 import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_)
 import Data.Traversable (traverse)
+import Data.Text.Lazy (unpack, pack)
 
 -- | Return true if the argument is of type ExampleDoc.
 isExample :: DocPart -> Bool
@@ -33,7 +34,7 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
     examples = filter isExample moduleDocList
     arguments = filter isArgument moduleDocList
     syntaxes = filter isBranch moduleDocList
-    moduleLabel = moduleName
+    moduleLabel = unpack moduleName
 
   if level /= 0
     then
@@ -71,14 +72,14 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
       forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
         case (posfallback, description) of
           (Nothing, "") ->
-            putStrLn $ "   * `" <> name  <> "`"
+            putStrLn $ "   * `" <> (unpack name)  <> "`"
           (Just fallback, "") ->
-            putStrLn $ "   * `" <> name <> " = " <> fallback <> "`"
+            putStrLn $ "   * `" <> (unpack name) <> " = " <> fallback <> "`"
           (Nothing, _) -> do
-            putStrLn $ "   * `" <> name <> "`"
+            putStrLn $ "   * `" <> (unpack name) <> "`"
             putStrLn $ "     " <> description
           (Just fallback, _) -> do
-            putStrLn $ "   * `" <> name <> " = " <> fallback <> "`"
+            putStrLn $ "   * `" <> (unpack name) <> " = " <> fallback <> "`"
             putStrLn $ "     " <> description
       putStrLn ""
 
@@ -87,7 +88,7 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
       return ()
     else
       forM_ syntaxes $ \(Branch syntax) ->
-        dumpPrimitive (Symbol $ "Syntax " <> show (level+1)) syntax (level+1)
+        dumpPrimitive (Symbol $ pack $ "Syntax " <> show (level+1)) syntax (level+1)
 
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
@@ -135,15 +136,15 @@ getArgParserDocs (AP name fallback doc fnext) = do
   otherDocs <- Ex.catch (getArgParserDocs $ fnext undefined) (\(_ :: Ex.SomeException) -> return [])
   if otherDocs /= [Empty]
     then
-          return $ ArgumentDoc name (fmap show fallback) doc : otherDocs
+          return $ ArgumentDoc name (fmap show fallback) (unpack doc) : otherDocs
     else
-          return [ArgumentDoc name (fmap show fallback) doc]
+          return [ArgumentDoc name (fmap show fallback) (unpack doc)]
 
 getArgParserDocs (APFailIf _ _ child) = getArgParserDocs child
 
 getArgParserDocs (APExample str child) = do
   childResults <- getArgParserDocs child
-  return $ ExampleDoc str:childResults
+  return $ ExampleDoc (unpack str):childResults
 
 -- We try to look at as little as possible, to avoid the risk of triggering an error.
 -- Yay laziness!

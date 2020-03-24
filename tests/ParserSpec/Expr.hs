@@ -5,13 +5,18 @@
 -- Allow us to use shorter forms of Var and Name.
 {-# LANGUAGE PatternSynonyms #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module ParserSpec.Expr (exprSpec) where
 
 -- Be explicit about what we import.
-import Prelude (Bool(True, False), String, ($))
+import Prelude (Bool(True, False), ($))
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
+
+import Data.Text.Lazy (Text)
 
 -- Parsed expression components.
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(ListE, (:$)), Symbol(Symbol))
@@ -28,9 +33,9 @@ import ParserSpec.Util ((-->), fapp, num, bool, stringLiteral, undefined, plus, 
 default (ℝ)
 
 -- Let us use the old syntax when defining Vars and Names.
-pattern Var :: String -> Expr
+pattern Var :: Text -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
-pattern Name :: String -> GIED.Pattern
+pattern Name :: Text -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 undefinedIssue :: Expectation -> Expectation

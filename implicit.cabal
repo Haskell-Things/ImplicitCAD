@@ -121,6 +121,7 @@ Executable extopenscad
                  vector-space,
                  filepath,
                  optparse-applicative >= 0.10.0,
+                 text,
                  implicit
    Ghc-options:
                -O2
@@ -151,6 +152,7 @@ Executable docgen
    Hs-source-dirs: programs
    build-depends:
                  base,
+                 text,
                  implicit
    ghc-options:
 --               -dynamic

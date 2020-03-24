@@ -44,6 +44,8 @@ import Text.Parsec (SourceName, parse, ParseError)
 
 import Text.Parsec.Error (errorMessages, showErrorMessages)
 
+import Data.Text.Lazy (pack)
+
 import Graphics.Implicit.ExtOpenScad.Parser.Util (patternMatcher)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchTok)
@@ -62,7 +64,7 @@ addConstants constants withCSG = do
     execAssignment :: Fastℕ -> String -> StateC Fastℕ
     execAssignment count assignment = do
       let pos = SourcePosition count 1 "cmdline_constants"
-          err = addMessage SyntaxError pos . show'
+          err = addMessage SyntaxError pos . pack . show'
           run (k, e) = evalExpr pos e >>= traverse_ (modifyVarLookup . varUnion) . matchPat k
       either err run $ parseAssignment "cmdline_constant" assignment
       pure $ count + 1
@@ -77,4 +79,4 @@ runExpr expression withCSG = do
       run expr = rawRunExpr initPos (defaultObjects withCSG) expr
       initPos = SourcePosition 1 1 "raw_expression"
       show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
-      oUndefined e = (OUndefined, [Message SyntaxError initPos $ show' e])
+      oUndefined e = (OUndefined, [Message SyntaxError initPos $ pack $ show' e])

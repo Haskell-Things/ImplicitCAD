@@ -9,11 +9,13 @@
 
 module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modifyVarLookup, lookupVar, pushVals, getVals, putVals, withPathShiftedBy, getPath, getRelPath, errorC, warnC, scadOptions) where
 
-import Prelude(FilePath, String, Maybe, ($), (<>), pure)
+import Prelude(FilePath, Maybe, ($), (<>), pure)
 
 import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(scadVars, oVals, sourceDir, messages, scadOpts))
 
 import Data.Map (lookup)
+
+import Data.Text.Lazy (Text)
 
 import "monads-tf" Control.Monad.State (modify, gets)
 
@@ -61,14 +63,14 @@ getRelPath relPath = do
 addMesg :: Message -> StateC ()
 addMesg m = modify $ \c -> c { messages = messages c <> pure m }
 
-addMessage :: MessageType -> SourcePosition -> String -> StateC ()
+addMessage :: MessageType -> SourcePosition -> Text -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
 
-errorC :: SourcePosition -> String -> StateC ()
+errorC :: SourcePosition -> Text -> StateC ()
 errorC = addMessage Error
 {-# INLINABLE errorC #-}
 
-warnC :: SourcePosition -> String -> StateC ()
+warnC :: SourcePosition -> Text -> StateC ()
 warnC = addMessage Warning
 {-# INLINABLE warnC #-}
 

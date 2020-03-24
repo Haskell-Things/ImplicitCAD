@@ -5,8 +5,11 @@
 
 -- An interpreter to run extended OpenScad code. outputs STL, OBJ, SVG, SCAD, PNG, DXF, or GCODE.
 
--- Enable additional syntax to make our code more readable.
+-- For matching the types of our OpenScad variables.
 {-# LANGUAGE ViewPatterns #-}
+
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
 
 -- Let's be explicit about what we're getting from where :)
 
@@ -47,6 +50,8 @@ import System.FilePath (splitExtension)
 
 -- For handling handles to output files.
 import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
+
+import Data.Text.Lazy (Text, unpack)
 
 -- | Our command line options.
 data ExtOpenScadOpts = ExtOpenScadOpts
@@ -237,11 +242,11 @@ export2 posFmt res output obj =
 messageOutputHandle :: ExtOpenScadOpts -> IO Handle
 messageOutputHandle args = maybe (return stdout) (`openFile` WriteMode) (messageOutputFile args)
 
-textOutOpenScad :: Message -> String
+textOutOpenScad :: Message -> Text
 textOutOpenScad  (Message _ _ msg) = "ECHO: " <> msg
 
-textOutBare :: Message -> String
-textOutBare (Message _ _ msg) = show msg
+textOutBare :: Message -> Text
+textOutBare (Message _ _ msg) = msg
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -355,8 +360,8 @@ run rawargs = do
 
     let textOutHandler =
           case () of
-            _ | openScadEcho args -> textOutOpenScad
-            _ | rawEcho args      -> textOutBare
+            _ | openScadEcho args -> unpack . textOutOpenScad
+            _ | rawEcho args      -> unpack . textOutBare
             _                     -> show
 
     hPutStr hMessageOutput $ unlines $ textOutHandler <$> filter isTextOut messages

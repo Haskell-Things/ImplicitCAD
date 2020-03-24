@@ -33,6 +33,8 @@ import System.Directory (getCurrentDirectory)
 
 import Data.Foldable (traverse_)
 
+import Data.Text.Lazy (pack)
+
 -- | Small wrapper of our parser to handle parse errors, etc.
 runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
 runOpenscad scadOpts constants source = do
@@ -52,4 +54,4 @@ runOpenscad scadOpts constants source = do
       let (obj2s, obj3s, _) = divideObjs $ oVals s
       in (scadVars s, obj2s, obj3s, messages s)
     show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
-    mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ show' e
+    mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ pack $ show' e

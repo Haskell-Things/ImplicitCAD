@@ -2,6 +2,9 @@
 -- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Parser.Util ((*<|>), (?:), tryMany, patternMatcher, sourcePosition, number, variable, boolean, scadString, scadUndefined) where
 
 import Prelude (String, Char, ($), foldl1, fmap, (.), pure, (*>), Bool(True, False), read, (**), (*), (==), (<>), (<$>), (<$))
@@ -25,6 +28,8 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchIdentifier, matchTok, ma
 
 import Data.Functor (($>))
 
+import Data.Text.Lazy (pack)
+
 infixr 1 *<|>
 (*<|>) :: GenParser tok u a -> ParsecT [tok] u Identity a -> ParsecT [tok] u Identity a
 a *<|> b = try a <|> b
@@ -40,7 +45,7 @@ tryMany = foldl1 (<|>) . fmap try
 patternMatcher :: GenParser Char st Pattern
 patternMatcher = "pattern" ?:
           (Wild <$ char '_')
-      <|> ( Name . Symbol <$> matchIdentifier)
+      <|> ( Name . Symbol . pack <$> matchIdentifier)
       <|> ( ListP <$> surroundedBy '[' (patternMatcher `sepBy` matchComma) ']' )
 
 -- expression parsers
@@ -75,7 +80,7 @@ number = ("number" ?:) $ do
 --   NOTE: abused by the parser for function calls.
 variable :: GenParser Char st Expr
 variable = "variable" ?:
-  Var . Symbol <$> matchIdentifier
+  Var . Symbol . pack <$> matchIdentifier
 
 -- | Parse a true or false value.
 boolean :: GenParser Char st Expr
@@ -85,7 +90,7 @@ boolean = "boolean" ?:
 -- | Parse a quoted string.
 --   FIXME: no \u unicode support?
 scadString :: GenParser Char st Expr
-scadString = "string" ?: LitE . OString <$>
+scadString = "string" ?: LitE . OString . pack <$>
     between
       (char '"')
       (matchTok '"')

@@ -6,6 +6,9 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample),
                                                   Symbol(Symbol),
                                                   Pattern(Wild, Name, ListP),
@@ -25,7 +28,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, String, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), undefined, and, zipWith, foldl1, Int)
+import Prelude(Eq, Show, Ord, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), undefined, and, zipWith, foldl1, Int)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
@@ -38,7 +41,7 @@ import Data.Map (Map, lookup, union)
 
 import Data.Maybe (fromMaybe)
 
-import Data.List (intercalate)
+import Data.Text.Lazy (Text, unpack, intercalate)
 
 import "monads-tf" Control.Monad.State (StateT)
 
@@ -57,17 +60,17 @@ type StateC = StateT CompState IO
 data ArgParser a
                  -- | For actual argument entries:
                  --   ArgParser (argument name) (default) (doc) (next Argparser...)
-                 = AP Symbol (Maybe OVal) String (OVal -> ArgParser a)
+                 = AP Symbol (Maybe OVal) Text (OVal -> ArgParser a)
                  -- | For returns:
                  --   ArgParserTerminator (return value)
                  | APTerminator a
                  -- | For failure:
                  --   ArgParserFailIf (test) (error message) (child for if true)
-                 | APFailIf Bool String (ArgParser a)
+                 | APFailIf Bool Text (ArgParser a)
                  --  An example, then next
-                 | APExample String (ArgParser a)
+                 | APExample Text (ArgParser a)
                  --  A string to run as a test, then invariants for the results, then next
-                 | APTest String [TestInvariant] (ArgParser a)
+                 | APTest Text [TestInvariant] (ArgParser a)
                  -- A branch where there are a number of possibilities for the parser underneath
                  | APBranch [ArgParser a]
 
@@ -103,7 +106,7 @@ instance Alternative ArgParser where
         (<|>) = mplus
         empty = mzero
 
-newtype Symbol = Symbol String
+newtype Symbol = Symbol Text
   deriving (Show, Eq, Ord)
 
 newtype VarLookup = VarLookup (Map Symbol OVal)
@@ -125,7 +128,7 @@ data Expr = Var Symbol
 data StatementI = StatementI SourcePosition (Statement StatementI)
     deriving (Show, Eq)
 
-data Statement st = Include String Bool
+data Statement st = Include Text Bool
                | Pattern :=  Expr
                | If Expr [st] [st]
                | NewModule  Symbol [(Symbol, Maybe Expr)] [st]
@@ -135,17 +138,17 @@ data Statement st = Include String Bool
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined
-         | OError [String]
+         | OError [Text]
          | OBool Bool
          | ONum ℝ
          | OList [OVal]
-         | OString String
+         | OString Text
          | OFunc (OVal -> OVal)
          -- Name, arguments, argument parsers.
          | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
          -- Name, implementation, arguments, whether the module accepts/requires a suite.
          | ONModule Symbol (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) [([(Symbol, Bool)],  Maybe Bool)]
-         | OVargsModule String (String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
+         | OVargsModule Symbol (Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
          | OObj2 SymbolicObj2
 
@@ -163,29 +166,31 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OUModule (Symbol name) arguments _) = "module " <> name <> " (" <> intercalate ", " (fmap showArg (fromMaybe [] arguments)) <> ") {}"
+    show (OUModule (Symbol name) arguments _) = "module " <> (unpack name) <> " (" <> (unpack $ intercalate ", " (fmap showArg $ fromMaybe [] arguments)) <> ") {}"
+      where
+        showArg :: (Symbol, Bool) -> Text
+        showArg (Symbol a, hasDefault) = if hasDefault
+                                         then a
+                                         else a <> "=..."
+    show (ONModule (Symbol name) _ instances) = unpack $ showInstances instances
       where
         showArg (Symbol a, hasDefault) = if hasDefault
                                          then a
                                          else a <> "=..."
-    show (ONModule (Symbol name) _ instances) = showInstances instances
-      where
-        showArg (Symbol a, hasDefault) = if hasDefault
-                                         then a
-                                         else a <> "=..."
-        showInstances :: [([(Symbol, Bool)], Maybe Bool)] -> String
+        showInstances :: [([(Symbol, Bool)], Maybe Bool)] -> Text
         showInstances [] = ""
-        showInstances [oneInstance] = "module " <> name <> showInstance oneInstance
-        showInstances multipleInstances = "Module " <> name <> "[ " <> intercalate ", " (fmap showInstance multipleInstances) <> " ]"
-        showInstance :: ([(Symbol, Bool)], Maybe Bool) -> String
+        showInstances [oneInstance] = "module " <> name <> (showInstance oneInstance)
+        showInstances multipleInstances = "Module " <> name <> "[ " <> (intercalate ", " (fmap showInstance multipleInstances)) <> " ]"
+        showInstance :: ([(Symbol, Bool)], Maybe Bool) -> Text
         showInstance (arguments, suiteInfo) = " (" <> intercalate ", " (fmap showArg arguments) <> ") {}" <> showSuiteInfo suiteInfo
+        showSuiteInfo :: Maybe Bool -> Text
         showSuiteInfo suiteInfo = case suiteInfo of
                           Just requiresSuite -> if requiresSuite
                                                 then " requiring suite {}"
                                                 else " accepting suite {}"
                           _ -> ""
-    show (OVargsModule name _) = "varargs module " <> name
-    show (OError msgs) = "Execution Error:\n" <> foldl1 (\a b -> a <> "\n" <> b) msgs
+    show (OVargsModule (Symbol name) _) = "varargs module " <> (unpack name)
+    show (OError msgs) = unpack $ "Execution Error:\n" <> foldl1 (\a b -> a <> "\n" <> b) msgs
     show (OObj2 obj) = "<obj2: " <> show obj <> ">"
     show (OObj3 obj) = "<obj3: " <> show obj <> ">"
 
@@ -210,11 +215,11 @@ data MessageType = TextOut -- text intetionally output by the ExtOpenScad progra
   deriving (Show, Eq)
 
 -- | An individual message.
-data Message = Message MessageType SourcePosition String
+data Message = Message MessageType SourcePosition Text
   deriving (Eq)
 
 instance Show Message where
-  show (Message mtype pos text) = show mtype <> " at " <> show pos <> ": " <> text
+  show (Message mtype pos text) = show mtype <> " at " <> show pos <> ": " <> (unpack text)
 
 -- | Options changing the behavior of the extended OpenScad engine.
 data ScadOpts = ScadOpts
@@ -227,7 +232,7 @@ varUnion :: VarLookup -> VarLookup -> VarLookup
 varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 
 -- | For programs using this API to perform variable lookups, after execution of an escad has completed.
-lookupVarIn :: String -> VarLookup -> Maybe OVal
+lookupVarIn :: Text -> VarLookup -> Maybe OVal
 lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
 newtype TestInvariant = EulerCharacteristic ℕ

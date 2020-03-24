@@ -33,8 +33,10 @@ import Control.Applicative ((<*), (<|>))
 
 import Data.Functor (($>))
 
+import Data.Text.Lazy (Text, pack)
+
 -- Let us use the old syntax when defining Names.
-pattern Name :: String -> GIED.Pattern
+pattern Name :: Text -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 data CompIdx = A1 | A2
@@ -106,7 +108,7 @@ include = statementI p <?> "include/use"
     p = flip Include
       <$> (matchInclude $> True <|> matchUse $> False)
       -- FIXME: better definition of valid filename characters.
-      <*> between (char '<') (matchTok '>') (many $ noneOf "<> ")
+      <*> (fmap pack $ between (char '<') (matchTok '>') (many $ noneOf "<> "))
 
 -- | An assignment (parser)
 assignment :: GenParser Char st StatementI
@@ -122,7 +124,7 @@ function = statementI p <?> "function"
     p :: GenParser Char st (Statement StatementI)
     p = (:=) <$> lval <*> rval
     lval :: GenParser Char st GIED.Pattern
-    lval = Name <$> (matchFunction *> matchIdentifier)
+    lval = Name . pack <$> (matchFunction *> matchIdentifier)
     rval :: GenParser Char st Expr
     rval = LamE <$> surroundedBy '(' (sepBy patternMatcher matchComma) ')' <*> (matchTok '=' *> expr0)
 
@@ -138,14 +140,14 @@ userModule :: GenParser Char st StatementI
 userModule = statementI p <?> "module call"
   where
     p :: GenParser Char st (Statement StatementI)
-    p = ModuleCall <$> fmap Symbol matchIdentifier <*> moduleArgsUnit <*> (suite *<|> (matchSemi $> []))
+    p = ModuleCall <$> fmap (Symbol . pack) matchIdentifier <*> moduleArgsUnit <*> (suite *<|> (matchSemi $> []))
 
 -- | declare a module.
 userModuleDeclaration :: GenParser Char st StatementI
 userModuleDeclaration = statementI p <?> "module declaration"
   where
     p :: GenParser Char st (Statement StatementI)
-    p = NewModule <$> fmap Symbol (matchModule *> matchIdentifier) <*> moduleArgsUnitDecl <*> suite
+    p = NewModule <$> fmap (Symbol . pack) (matchModule *> matchIdentifier) <*> moduleArgsUnitDecl <*> suite
 
 -- | parse the arguments passed to a module.
 moduleArgsUnit :: GenParser Char st [(Maybe Symbol, Expr)]
@@ -156,13 +158,13 @@ moduleArgsUnit =
             -- eg. a = 12
             symb <- matchIdentifier
             expr <- matchTok '=' *> expr0
-            pure (Just (Symbol symb), expr)
+            pure (Just (Symbol $ pack symb), expr)
         *<|> do
             -- eg. a(x,y) = 12
             symb <- matchIdentifier
             argVars <- surroundedBy '(' (sepBy matchIdentifier matchComma) ')'
             expr <- matchTok '=' *> expr0
-            pure (Just (Symbol symb), LamE (fmap Name argVars) expr)
+            pure (Just (Symbol $ pack symb), LamE (fmap (Name . pack) argVars) expr)
         *<|> do
             -- eg. 12
             expr <- expr0
@@ -178,7 +180,7 @@ moduleArgsUnitDecl =
         do
           symb <- matchIdentifier
           expr <- optionMaybe (matchTok '=' *> expr0)
-          pure (Symbol symb, expr)
+          pure ((Symbol $ pack symb), expr)
       ) matchComma)
       ')'
 

@@ -6,6 +6,9 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>), (<$>), traverse, (<$))
@@ -45,6 +48,8 @@ import Data.Foldable (traverse_, for_)
 
 import Data.Traversable (for)
 
+import Data.Text.Lazy (unpack, pack)
+
 import System.FilePath (takeDirectory)
 
 -- Run statements out of the OpenScad file.
@@ -60,7 +65,7 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
           for_ (toList match) $ \(Symbol varName, _) -> do
             maybeVar <- lookupVar (Symbol varName)
             when (isJust maybeVar)
-              (warnC sourcePos $ "redefining already defined object: " <> show varName)
+              (warnC sourcePos $ "redefining already defined object: " <> varName)
             modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
@@ -110,7 +115,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- Run the module.
               let
                 argsMapped = argMap evaluatedArgs $ mod' suiteResults
-              for_ (snd argsMapped) $ errorC sourcePos
+              for_ (pack <$> snd argsMapped) $ errorC sourcePos
               fromMaybe (pure []) (fst argsMapped)
             Just (ONModule _ implementation forms) -> do
               possibleInstances <- selectInstances forms
@@ -120,7 +125,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   []                      -> Nothing
                   ((_, suiteInfoFound):_) -> suiteInfoFound
               when (null possibleInstances) (do
-                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> show (ONModule (Symbol name) implementation forms)
+                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> (pack $ show (ONModule (Symbol name) implementation forms))
                                                 traverse_ (`checkOptions` True) $ fmap (Just . fst) forms
                                             )
               -- Ignore this for now, because all instances we define have the same suite requirements.
@@ -144,7 +149,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- Run the module.
               let
                 argsMapped = argMap evaluatedArgs $ implementation sourcePos suiteResults
-              for_ (snd argsMapped) $ errorC sourcePos
+              for_ (pack <$> snd argsMapped) $ errorC sourcePos
               fromMaybe (pure []) (fst argsMapped)
             Just (OVargsModule modname mod') -> do
               -- Evaluate all of the arguments.
@@ -228,9 +233,9 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 (errorC sourcePos $ "missingNotDefaultable: " <> show (length missingNotDefaultable))
                  -}
               when (not (null missingNotDefaultable) && makeWarnings)
-                (errorC sourcePos $ "Insufficient parameters. " <> parameterReport)
+                (errorC sourcePos $ "Insufficient parameters. " <> (pack parameterReport))
               when (not (null extraUnnamed) && isJust args && makeWarnings)
-                (errorC sourcePos $ "Too many parameters: " <> show (length extraUnnamed) <> " extra. " <> parameterReport)
+                (errorC sourcePos $ "Too many parameters: " <> (pack $ show $ length extraUnnamed) <> " extra. " <> (pack parameterReport))
               pure $ null missingNotDefaultable && null extraUnnamed
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
             namedParameters = mapMaybe fst
@@ -251,11 +256,11 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
     opts <- scadOptions
     if importsAllowed opts
       then do
-      name' <- getRelPath name
+      name' <- getRelPath (unpack name)
       content <- liftIO $ readFile name'
       case parseProgram name' content of
-        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> show e
-        Right sts -> withPathShiftedBy (takeDirectory name) $ do
+        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> (pack $ show e)
+        Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
             vals <- getVals
             putVals []
             runSuite sts

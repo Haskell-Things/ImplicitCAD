@@ -6,19 +6,35 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
+-- Allow us to use string literals for Text
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (String, Bool(True, False), Maybe(Just, Nothing), ($), (<>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
+
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
+
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
+
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
+
+import Data.Int (Int64)
+
 import Data.Map (Map, fromList, insert)
-import Data.List (genericIndex, genericLength, intercalate)
+
+import Data.List (genericIndex, genericLength)
+
 import Data.Foldable (for_)
+
+import qualified Data.Text.Lazy as TL (index)
+
+import Data.Text.Lazy (Text, intercalate, unpack, pack, length, singleton)
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
@@ -86,23 +102,24 @@ varArgModules =
        ,modVal "for" for
        ,modVal "color" executeSuite
     ] where
-        modVal name func = (Symbol name, OVargsModule name func)
+        modVal name func = (Symbol name, OVargsModule (Symbol name) func)
 
         -- execute only the child statement, without doing anything else. Useful for unimplemented functions.
-        executeSuite :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
-        executeSuite name pos _ suite runSuite = do
+        executeSuite :: Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        executeSuite (Symbol name) pos _ suite runSuite = do
             addMessage Warning pos $ "Module " <> name <> " not implemented"
             runSuite suite
 
-        echo :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        echo :: Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         echo _ pos args suite runSuite = do
             scadOpts <- scadOptions
             let
-                text :: [(Maybe Symbol, OVal)] -> String
-                text a = intercalate ", " $ fmap show' a
-                show' :: (Maybe Symbol, OVal) -> String
-                show' (Nothing, arg) = show arg
-                show' (Just (Symbol var), arg) = var <> " = " <> show arg
+                text :: [(Maybe Symbol, OVal)] -> Text
+                text a = intercalate ", " $ fmap (show') a
+                show' :: (Maybe Symbol, OVal) -> Text
+                show' (Nothing, arg) = pack $ show arg
+                show' (Just (Symbol var), arg) = var <> " = " <> (pack $ show arg)
+                showe' :: (Maybe Symbol, OVal) -> Text
                 showe' (Nothing, OString arg) = arg
                 showe' (Just (Symbol var), arg) = var <> " = " <> showe' (Nothing, arg)
                 showe' a = show' a
@@ -113,7 +130,7 @@ varArgModules =
             addMessage TextOut pos formattedMessage
             runSuite suite
 
-        for :: String -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
+        for :: Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ()
         for _ _ args suite runSuite =
             for_ (iterator args) $ \iter -> do
                 modifyVarLookup iter
@@ -163,7 +180,7 @@ defaultPolymorphicFunctions =
         (Symbol "list_gen", toOObj list_gen),
         (Symbol "<>", concatenate),
         (Symbol "len", toOObj olength),
-        (Symbol "str", toOObj (show :: OVal -> String))
+        (Symbol "str", toOObj (pack.show :: OVal -> Text))
     ] where
 
         -- Some key functions are written as OVals in optimizations attempts
@@ -229,7 +246,7 @@ defaultPolymorphicFunctions =
 
         negatefun (ONum n) = ONum (-n)
         negatefun (OList l) = OList $ fmap negatefun l
-        negatefun a = OError ["Can't negate " <> oTypeStr a <> "(" <> show a <> ")"]
+        negatefun a = OError ["Can't negate " <> oTypeStr a <> "(" <> (pack $ show a) <> ")"]
 
         {-numCompareToExprCompare :: (ℝ -> ℝ -> Bool) -> Oval -> OVal -> Bool
         numCompareToExprCompare f a b =
@@ -245,27 +262,27 @@ defaultPolymorphicFunctions =
               if n < genericLength l then l `genericIndex` n else OError ["List accessd out of bounds"]
         index (OString s) (ONum ind) =
             let
-                n :: ℕ
+                n :: Int64
                 n = floor ind
-            in if n < genericLength s then OString [s `genericIndex` n] else OError ["List accessd out of bounds"]
+            in if n < length s then OString (singleton (TL.index s n)) else OError ["List accessd out of bounds"]
         index a b = errorAsAppropriate "index" a b
 
         osplice (OList  list) (ONum a) (    ONum b    ) =
             OList   $ splice list (floor a) (floor b)
         osplice (OString str) (ONum a) (    ONum b    ) =
-            OString $ splice str  (floor a) (floor b)
+            OString . pack $ splice (unpack str)  (floor a) (floor b)
         osplice (OList  list)  OUndefined  (ONum b    ) =
             OList   $ splice list 0 (floor b)
         osplice (OString str)  OUndefined  (ONum b    ) =
-            OString $ splice str  0 (floor b)
+            OString . pack $ splice (unpack str)  0 (floor b)
         osplice (OList  list) (ONum a)      OUndefined  =
             OList   $ splice list (floor a) (genericLength list + 1)
         osplice (OString str) (ONum a)      OUndefined  =
-            OString $ splice str  (floor a) (genericLength str  + 1)
+            OString . pack $ splice (unpack str)  (floor a) (fromIntegral $ length str  + 1)
         osplice (OList  list)  OUndefined   OUndefined  =
             OList   $ splice list 0 (genericLength list + 1)
         osplice (OString str)  OUndefined   OUndefined =
-            OString $ splice str  0 (genericLength str  + 1)
+            OString . pack $ splice (unpack str)  0 (fromIntegral $ length str  + 1)
         osplice _ _ _ = OUndefined
 
         splice :: [a] -> ℕ -> ℕ -> [a]
@@ -303,6 +320,6 @@ defaultPolymorphicFunctions =
         ternary True a _ = a
         ternary False _ b = b
 
-        olength (OString s) = ONum $ genericLength s
+        olength (OString s) = ONum $ fromIntegral $ length s
         olength (OList s)   = ONum $ genericLength s
         olength a           = OError ["Can't take length of a " <> oTypeStr a <> "."]
