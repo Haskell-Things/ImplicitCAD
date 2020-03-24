@@ -27,14 +27,14 @@ Library
                   vector-space,
                   hspec,
                   text,
-                  monads-tf,
                   bytestring,
                   blaze-builder,
                   blaze-markup,
                   blaze-svg,
                   storable-endian,
                   JuicyPixels,
-                  transformers
+                  transformers,
+                  mtl
 
     Ghc-options:
                 -O2
@@ -46,7 +46,7 @@ Library
                 -Wall
                 -Wcompat
                 -Wmonomorphism-restriction
-                -Wmissing-local-signatures
+                -Wmissing-signatures
                 -Wmissing-export-lists
                 -Wmissing-import-lists
                 -Wmissing-home-modules
@@ -135,7 +135,7 @@ Executable extopenscad
                -Wall
                -Wcompat
                -Wmonomorphism-restriction
-               -Wmissing-local-signatures
+               -Wmissing-signatures
                -Wmissing-export-lists
                -Wmissing-import-lists
                -Wmissing-home-modules
@@ -160,7 +160,7 @@ Executable docgen
                -Wall
                -Wcompat
                -Wmonomorphism-restriction
-               -Wmissing-local-signatures
+               -Wmissing-signatures
                -Wmissing-export-lists
                -Wmissing-import-lists
                -Wmissing-home-modules
@@ -176,12 +176,14 @@ Executable implicitsnap
    Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
+                 aeson,
                  base,
                  bytestring,
                  implicit,
                  snap-core,
                  snap-server,
                  text,
+                 utf8-string,
                  vector-space
    Ghc-options:
                -threaded
@@ -195,7 +197,7 @@ Executable implicitsnap
                -Wall
                -Wcompat
                -Wmonomorphism-restriction
-               -Wmissing-local-signatures
+               -Wmissing-signatures
                -Wmissing-export-lists
                -Wmissing-import-lists
                -Wmissing-home-modules
@@ -222,7 +224,7 @@ Executable Benchmark
                -Wall
                -Wcompat
                -Wmonomorphism-restriction
-               -Wmissing-local-signatures
+               -Wmissing-signatures
                -Wmissing-export-lists
                -Wmissing-import-lists
                -Wmissing-home-modules
@@ -240,7 +242,10 @@ Test-suite test-implicit
                   base,
                   hspec,
                   implicit,
-                  parsec
+                  parsec,
+                  HUnit,
+                  hedgehog,
+                  hw-hspec-hedgehog
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
@@ -251,7 +256,7 @@ Test-suite test-implicit
                 -Wall
                 -Wcompat
                 -Wmonomorphism-restriction
-                -Wmissing-local-signatures
+                -Wmissing-signatures
                 -Wmissing-export-lists
                 -Wmissing-import-lists
                 -Wmissing-home-modules
@@ -268,6 +273,8 @@ Test-suite test-implicit
                   ExecSpec.Util
                   MessageSpec.Message
                   MessageSpec.Util
+                  PropertySpec
+                  PropertySpec.Exec
 
 Benchmark parser-bench
     Type: exitcode-stdio-1.0
@@ -288,7 +295,7 @@ Benchmark parser-bench
                 -Wall
                 -Wcompat
                 -Wmonomorphism-restriction
-                -Wmissing-local-signatures
+                -Wmissing-signatures
                 -Wmissing-export-lists
                 -Wmissing-import-lists
                 -Wmissing-home-modules
