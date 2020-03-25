@@ -46,8 +46,8 @@ argument name =
             val = fromOObj oObjVal
             errmsg :: Text
             errmsg = case oObjVal of
-                OError errs -> "error in computing value for argument " <> (pack $ show name)
-                             <> ": " <> fold errs
+                OError err -> "error in computing value for argument " <> (pack $ show name)
+                              <> ": " <>  err
                 _   ->  "arg " <> (pack $ show oObjVal) <> " not compatible with " <> (pack $ show name)
         -- Using /= Nothing would require Eq desiredType
         APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val

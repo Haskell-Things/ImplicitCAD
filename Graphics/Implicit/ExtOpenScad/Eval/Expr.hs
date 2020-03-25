@@ -132,9 +132,9 @@ evalExpr' (fexpr :$ argExprs) = do
                 (Nothing, Nothing) -> app' f l where
                     app' (OFunc f') (x:xs) = app (f' x) xs
                     app' a [] = a
-                    app' x _ = OError ["Can't apply arguments to " <> oTypeStr x]
-                (Just err, _     ) -> OError [err]
-                (_,      Just err) -> OError [err]
+                    app' x _ = OError $ "Can't apply arguments to " <> oTypeStr x
+                (Just err, _     ) -> OError err
+                (_,      Just err) -> OError err
 
 -- Evaluate a lambda function.
 evalExpr' (LamE pats fexpr) = do
@@ -142,7 +142,7 @@ evalExpr' (LamE pats fexpr) = do
         modify $ \s -> s { patterns = (fmap unpack $ patVars pat) <> patterns s}
         pure $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs <> xss)
-            Nothing -> OError ["Pattern match failed"]
+            Nothing -> OError "Pattern match failed"
     fval <- evalExpr' fexpr
     pure $ foldr ($) fval fparts
 

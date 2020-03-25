@@ -6,7 +6,7 @@
 -- We don't actually care, but when we compile our haskell examples, we do.
 {-# LANGUAGE PackageImports #-}
 
--- Allow us to use string literals for Text
+-- Allow us to use string literals to represent Text.
 {-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
@@ -192,8 +192,8 @@ defaultPolymorphicFunctions =
                 (OList []) -> ONum a
                 (OList n)  -> mult (ONum a) (OList n)
                 (ONum b)   -> mult (ONum a) (ONum b)
-                _          -> OError ["prod takes only lists or nums"]
-            _              -> OError ["prod takes only lists or nums"]
+                _          -> OError "prod takes only lists or nums"
+            _              -> OError "prod takes only lists or nums"
 
         mult (ONum a)  (ONum b)  = ONum  (a*b)
         mult (ONum a)  (OList b) = OList (fmap (mult (ONum a)) b)
@@ -218,7 +218,7 @@ defaultPolymorphicFunctions =
         concatenate = OFunc $ \x -> case x of
             (OList (y:ys)) -> foldl append y ys
             (OList [])     -> OList []
-            _              -> OError ["concat takes a list"]
+            _              -> OError "concat takes a list"
 
         append (OList   a) (OList   b) = OList   $ a<>b
         append (OString a) (OString b) = OString $ a<>b
@@ -231,8 +231,8 @@ defaultPolymorphicFunctions =
                 (OList []) -> ONum a
                 (OList n)  -> add (ONum a) (OList n)
                 (ONum b)   -> add (ONum a) (ONum b)
-                _          -> OError ["sum takes two lists or nums"]
-            _              -> OError ["sum takes two lists or nums"]
+                _          -> OError "sum takes two lists or nums"
+            _              -> OError "sum takes two lists or nums"
 
         add (ONum a) (ONum b) = ONum (a+b)
         add (ONum a)  (OList b) = OList (fmap (add (ONum a)) b)
@@ -246,25 +246,19 @@ defaultPolymorphicFunctions =
 
         negatefun (ONum n) = ONum (-n)
         negatefun (OList l) = OList $ fmap negatefun l
-        negatefun a = OError ["Can't negate " <> oTypeStr a <> "(" <> (pack $ show a) <> ")"]
-
-        {-numCompareToExprCompare :: (ℝ -> ℝ -> Bool) -> Oval -> OVal -> Bool
-        numCompareToExprCompare f a b =
-            case (fromOObj a :: Maybe ℝ, fromOObj b :: Maybe ℝ) of
-                (Just a, Just b) -> f a b
-                _ -> False-}
+        negatefun a = OError $ "Can't negate " <> oTypeStr a <> "(" <> (pack $ show a) <> ")"
 
         index (OList l) (ONum ind) =
             let
                 n :: ℕ
                 n = floor ind
             in
-              if n < genericLength l then l `genericIndex` n else OError ["List accessd out of bounds"]
+              if n < genericLength l then l `genericIndex` n else OError "List accessed out of bounds"
         index (OString s) (ONum ind) =
             let
                 n :: Int64
                 n = floor ind
-            in if n < length s then OString (singleton (TL.index s n)) else OError ["List accessd out of bounds"]
+            in if n < length s then OString (singleton (TL.index s n)) else OError "List accessed out of bounds"
         index a b = errorAsAppropriate "index" a b
 
         osplice (OList  list) (ONum a) (    ONum b    ) =
@@ -299,8 +293,8 @@ defaultPolymorphicFunctions =
 
         errorAsAppropriate _   err@(OError _)   _ = err
         errorAsAppropriate _   _   err@(OError _) = err
-        errorAsAppropriate name a b = OError
-            ["Can't " <> name <> " objects of types " <> oTypeStr a <> " and " <> oTypeStr b <> "."]
+        errorAsAppropriate name a b = OError $
+          "Can't " <> name <> " objects of types " <> oTypeStr a <> " and " <> oTypeStr b <> "."
 
         list_gen :: [ℝ] -> Maybe [ℝ]
         list_gen [a, b] = Just $ fmap fromInteger [(ceiling a).. (floor b)]
@@ -322,4 +316,4 @@ defaultPolymorphicFunctions =
 
         olength (OString s) = ONum $ fromIntegral $ length s
         olength (OList s)   = ONum $ genericLength s
-        olength a           = OError ["Can't take length of a " <> oTypeStr a <> "."]
+        olength a           = OError $ "Can't take length of a " <> oTypeStr a <> "."

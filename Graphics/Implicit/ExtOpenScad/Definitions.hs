@@ -134,7 +134,7 @@ data Statement st = Include Text Bool
 
 -- | Objects for our OpenSCAD-like language
 data OVal = OUndefined
-         | OError [Text]
+         | OError Text
          | OBool Bool
          | ONum ℝ
          | OList [OVal]
@@ -186,7 +186,7 @@ instance Show OVal where
                                                 else " accepting suite {}"
                           _ -> ""
     show (OVargsModule (Symbol name) _) = "varargs module " <> (unpack name)
-    show (OError msgs) = unpack $ "Execution Error:\n" <> foldl1 (\a b -> a <> "\n" <> b) msgs
+    show (OError msg) = unpack $ "Execution Error:\n" <> msg
     show (OObj2 obj) = "<obj2: " <> show obj <> ">"
     show (OObj3 obj) = "<obj3: " <> show obj <> ">"
 

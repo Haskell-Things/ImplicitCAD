@@ -63,17 +63,6 @@ instance OTypeMirror Bool where
     {-# INLINABLE fromOObj #-}
     toOObj = OBool
 
-{-
--- We don't actually use single chars, this is to compile lists of chars (AKA strings) after passing through OTypeMirror [a]'s fromOObj.
--- This lets us handle strings without overlapping the [a] case.
-instance OTypeMirror Char where
-    fromOObj (OString str) = Just . head $ unpack str
-    fromOObj _ = Nothing
-    {-# INLINABLE fromOObj #-}
-    fromOObjList (OString str) = Just $ unpack str
-    fromOObjList _ = Nothing
-    toOObj a = OString $ pack [a]
--}
 instance (OTypeMirror a) => OTypeMirror [a] where
     fromOObj = fromOObjList
     {-# INLINABLE fromOObj #-}
@@ -117,7 +106,7 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
     {-# INLINABLE fromOObj #-}
     toOObj f = OFunc $ \oObj ->
         case fromOObj oObj :: Maybe a of
-            Nothing  -> OError ["bad input type"]
+            Nothing  -> OError "bad input type"
             Just obj -> toOObj $ f obj
 
 instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
@@ -145,7 +134,7 @@ oTypeStr (OObj2          _ ) = "2D Object"
 oTypeStr (OObj3          _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe Text
-getErrors (OError er) = Just $ head er
+getErrors (OError er) = Just $ er
 getErrors (OList l)   = msum $ fmap getErrors l
 getErrors _           = Nothing
 
