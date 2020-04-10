@@ -118,3 +118,8 @@ statementSpec = do
       "module foo_bar ( x ) { }" --> single (NewModule (Symbol "foo_bar") [(Symbol "x", Nothing)] [])
     it "accepts argument with default" $
       "module foo_bar ( x = 1) { }" --> single (NewModule (Symbol "foo_bar") [(Symbol "x", Just $ num 1)] [])
+    it "accepts split lines" $ do
+      "module foo\n(\nbar\n)\n{}" --> single (NewModule (Symbol "foo") [(Symbol "bar", Nothing)] [])
+  describe "identifiers" $ do
+    it "accepts unicode" $
+      "module 💩 () { }" --> single (NewModule (Symbol "💩") [] [])
