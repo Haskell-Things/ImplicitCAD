@@ -9,7 +9,11 @@
 
 module Graphics.Implicit.ExtOpenScad.Parser.Lexer (whiteSpace, matchTrue, matchFalse, matchFunction, matchInclude, matchUse, matchIf, matchElse, matchModule, matchLet, matchUndef, matchTok, matchColon, matchSemi, matchComma, matchIdentifier, surroundedBy, matchLT, matchLE, matchGT, matchGE, matchEQ, matchNE, matchCAT, matchOR, matchAND, matchEXP, matchEach, lexer) where
 
-import Prelude (String, Char, Bool(True), (>>), pure)
+import Prelude (String, Char, Bool(True), (>>), pure, not, (&&), ($))
+
+import Data.List (notElem)
+
+import Data.Char (isSpace)
 
 import Data.Functor.Identity (Identity)
 
@@ -23,7 +27,7 @@ import Text.Parsec.Token (GenTokenParser, makeTokenParser, commentStart, comment
 
 import Text.Parsec (char, between)
 
-import Text.Parsec.Char (noneOf)
+import Text.Parsec.Char (noneOf, satisfy)
 
 import Data.Text.Lazy (Text)
 
@@ -35,8 +39,8 @@ openScadStyle
     , commentEnd = "*/"
     , commentLine = "//"
     , nestedComments = True
-    , identStart =  noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=1234567890"
-    , identLetter = noneOf " ,|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?="
+    , identStart =  satisfy $ \c -> notElem c (",|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=1234567890" :: String) && not (isSpace c)
+    , identLetter = satisfy $ \c -> notElem c (",|[]{}()+-*&^%#@!~`'\"\\/;:.,<>?=" :: String) && not (isSpace c)
     , reservedNames = ["module", "function", "if", "else", "let", "each", "true", "false", "undef", "include", "use"]
     , reservedOpNames= ["<=", ">=", "==", "!=", "&&", "||", "++", "^", "<", ">"]
     , caseSensitive = True
