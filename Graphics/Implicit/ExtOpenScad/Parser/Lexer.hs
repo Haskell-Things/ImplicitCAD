@@ -27,7 +27,7 @@ import Text.Parsec.Token (GenTokenParser, makeTokenParser, commentStart, comment
 
 import Text.Parsec (char, between)
 
-import Text.Parsec.Char (noneOf, satisfy)
+import Text.Parsec.Char (satisfy)
 
 import Data.Text.Lazy (Text)
 
