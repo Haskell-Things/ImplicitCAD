@@ -11,7 +11,7 @@
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
-import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe, foldr)
+import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
 import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
