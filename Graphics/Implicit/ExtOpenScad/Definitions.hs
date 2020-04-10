@@ -5,7 +5,9 @@
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample),
+{-# LANGUAGE DeriveFunctor #-}
+
+module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample),
                                                   Symbol(Symbol),
                                                   Pattern(Wild, Name, ListP),
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
@@ -24,14 +26,14 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), undefined, and, zipWith, foldl1, Int)
+import Prelude(Eq, Show, Ord, Maybe(Just), Bool(False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int)
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 
-import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, liftM, ap, return, (>=>))
+import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, ap, (>=>))
 
 import Data.Map (Map, lookup, union)
 
@@ -61,17 +63,15 @@ data ArgParser a
                  --   ArgParserTerminator (return value)
                  | APTerminator a
                  -- | For failure:
-                 --   ArgParserFailIf (test) (error message) (child for if true)
-                 | APFailIf Bool Text (ArgParser a)
+                 --   ArgParserFailIf (error message)
+                 | APFail Text
                  --  An example, then next
                  | APExample Text (ArgParser a)
                  --  A string to run as a test, then invariants for the results, then next
                  | APTest Text [TestInvariant] (ArgParser a)
                  -- A branch where there are a number of possibilities for the parser underneath
                  | APBranch [ArgParser a]
-
-instance Functor ArgParser where
-    fmap = liftM
+  deriving Functor
 
 instance Applicative ArgParser where
     pure = APTerminator
@@ -82,17 +82,16 @@ instance Monad ArgParser where
     -- Let's get the hard ones out of the way first.
     -- ArgParser actually
     (AP str fallback d f) >>= g = AP str fallback d (f >=> g)
-    (APFailIf b errmsg child) >>= g = APFailIf b errmsg (child >>= g)
+    (APFail errmsg) >>= _ = APFail errmsg
     -- These next two are easy, they just pass the work along to their child
     (APExample str child) >>= g = APExample str (child >>= g)
     (APTest str tests child) >>= g = APTest str tests (child >>= g)
     -- And an ArgParserTerminator happily gives away the value it contains
     (APTerminator a) >>= g = g a
     (APBranch bs) >>= g = APBranch $ fmap (>>= g) bs
-    return = pure
 
 instance MonadPlus ArgParser where
-    mzero = APFailIf True "" undefined
+    mzero = APFail ""
     mplus (APBranch as) (APBranch bs) = APBranch ( as  <>  bs )
     mplus (APBranch as) b             = APBranch ( as  <> [b] )
     mplus a             (APBranch bs) = APBranch ( a   :   bs )
