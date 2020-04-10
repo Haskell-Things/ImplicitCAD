@@ -6,7 +6,7 @@
 
 import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFailIf,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFail,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
 
 import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_)
@@ -140,8 +140,6 @@ getArgParserDocs (AP name fallback doc fnext) = do
     else
           return [ArgumentDoc name (fmap show fallback) (unpack doc)]
 
-getArgParserDocs (APFailIf _ _ child) = getArgParserDocs child
-
 getArgParserDocs (APExample str child) = do
   childResults <- getArgParserDocs child
   return $ ExampleDoc (unpack str):childResults
@@ -151,8 +149,9 @@ getArgParserDocs (APExample str child) = do
 
 getArgParserDocs (APTest _ _ child) = getArgParserDocs child
 
--- To look at this one would almost certainly be death (exception)
+-- To look at these would almost certainly be death (exception)
 getArgParserDocs (APTerminator _) = return [Empty]
+getArgParserDocs (APFail _) = return [Empty]
 
 -- This one confuses me.
 getArgParserDocs (APBranch children) = do
