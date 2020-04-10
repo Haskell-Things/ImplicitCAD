@@ -11,7 +11,7 @@
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
-import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
+import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe, foldr)
 import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
@@ -47,20 +47,19 @@ argument name =
                 OError err -> "error in computing value for argument " <> (pack $ show name)
                               <> ": " <>  err
                 _   ->  "arg " <> (pack $ show oObjVal) <> " not compatible with " <> (pack $ show name)
-        -- Using /= Nothing would require Eq desiredType
         maybe (APFail errmsg) APTerminator val
 {-# INLINABLE argument #-}
 
 -- | Inline documentation.
 doc :: forall a. ArgParser a -> Text -> ArgParser a
 doc (AP name defMaybeVal _ next) newDoc = AP name defMaybeVal newDoc next
-doc _ _ = error "Impossible!"
+doc _ _ = APFail "Impossible! doc"
 
 -- | An inline default value.
 defaultTo :: forall a. (OTypeMirror a) => ArgParser a -> a -> ArgParser a
 defaultTo (AP name _ doc' next) newDefVal =
     AP name (Just $ toOObj newDefVal) doc' next
-defaultTo _ _ = error "Impossible!"
+defaultTo _ _ = APFail "Impossible! defaultTo"
 
 -- | An inline example.
 example :: Text -> ArgParser ()
@@ -73,7 +72,7 @@ test str = APTest str [] (return ())
 eulerCharacteristic :: ArgParser a -> ℕ -> ArgParser a
 eulerCharacteristic (APTest str tests child) χ =
     APTest str (EulerCharacteristic χ : tests) child
-eulerCharacteristic _ _ = error "Impossible!"
+eulerCharacteristic _ _ = APFail "Impossible! eulerCharacteristic"
 
 -- * Tools for handeling ArgParsers
 
