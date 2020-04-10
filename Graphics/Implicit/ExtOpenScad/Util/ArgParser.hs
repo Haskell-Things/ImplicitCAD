@@ -11,10 +11,10 @@
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, doc, defaultTo, example, test, eulerCharacteristic, argMap) where
 
 -- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
-import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>))
+import Prelude(String, Maybe(Just, Nothing), ($), (<>), show, error, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
 import qualified Prelude as P (null)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFailIf, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
@@ -25,8 +25,6 @@ import Data.Map (fromList, lookup, delete)
 import qualified Data.Map as DM (null)
 
 import Data.Maybe (isNothing, fromJust, isJust)
-
-import Data.Foldable (fold)
 
 import Data.Text.Lazy (Text, pack, unpack)
 
@@ -50,7 +48,7 @@ argument name =
                               <> ": " <>  err
                 _   ->  "arg " <> (pack $ show oObjVal) <> " not compatible with " <> (pack $ show name)
         -- Using /= Nothing would require Eq desiredType
-        APFailIf (isNothing val) errmsg $ APTerminator $ fromJust val
+        maybe (APFail errmsg) APTerminator val
 {-# INLINABLE argument #-}
 
 -- | Inline documentation.
@@ -117,10 +115,7 @@ argMap2 unnamedArgs (VarLookup namedArgs) (AP name fallback _ f) =
 argMap2 a (VarLookup b) (APTerminator val) =
     (Just val, ["Unused arguments" | not (P.null a && DM.null b)])
 
-argMap2 a b (APFailIf testval err child) =
-    if testval
-    then (Nothing, [(unpack err)])
-    else argMap2 a b child
+argMap2 _ _ (APFail err) = (Nothing, [(unpack err)])
 
 argMap2 a b (APExample _ child) = argMap2 a b child
 
