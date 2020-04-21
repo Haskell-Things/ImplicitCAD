@@ -13,7 +13,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, fmap, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
+import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.))
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
 import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
@@ -174,7 +174,7 @@ extOpenScadOpts = ExtOpenScadOpts
 
 -- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
-readOutputFormat ext = lookup (fmap toLower ext) formatExtensions
+readOutputFormat ext = lookup (toLower <$> ext) formatExtensions
 
 -- | A Read instance for our output format. Used by 'auto' in our command line parser.
 --   Reads a string, and evaluates to the appropriate OutputFormat.
@@ -297,7 +297,7 @@ run rawargs = do
     let res = fromMaybe (getRes s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
         posDefExt = case format of
-                      Just f  -> Prelude.lookup f (fmap swap formatExtensions)
+                      Just f  -> Prelude.lookup f (swap <$> formatExtensions)
                       Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
 
     case (obj2s, obj3s) of
