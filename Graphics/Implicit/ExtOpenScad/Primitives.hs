@@ -414,7 +414,7 @@ scale = moduleWithSuite "scale" $ \_ children -> do
         scaleObjs stretch2 stretch3 =
             objMap (Prim.scale stretch2) (Prim.scale stretch3) children
     pure $ pure $ case v of
-        Left   x              -> scaleObjs (x,1) (x,1,1)
+        Left   x              -> scaleObjs (x,x) (x,x,x)
         Right (Left (x,y))    -> scaleObjs (x,y) (x,y,1)
         Right (Right (x,y,z)) -> scaleObjs (x,y) (x,y,z)
 
