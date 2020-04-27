@@ -62,7 +62,7 @@ primitiveModules =
   , onModIze rotate [([("a", noDefault), ("v", hasDefault)], requiredSuite)]
   , onModIze scale [([("v", noDefault)], requiredSuite)]
   , onModIze extrude [([("height", hasDefault), ("center", hasDefault), ("twist", hasDefault), ("scale", hasDefault), ("translate", hasDefault), ("r", hasDefault)], requiredSuite)]
-  , onModIze rotateExtrude [([("a", hasDefault), ("r", hasDefault), ("translate", hasDefault), ("rotate", hasDefault)], requiredSuite)]
+  , onModIze rotateExtrude [([("angle", hasDefault), ("r", hasDefault), ("translate", hasDefault), ("rotate", hasDefault)], requiredSuite)]
   , onModIze shell [([("w", noDefault)], requiredSuite)]
   , onModIze pack [([("size", noDefault), ("sep", noDefault)], requiredSuite)]
   , onModIze unit [([("unit", noDefault)], requiredSuite)]
@@ -467,7 +467,7 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
 rotateExtrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     example "rotate_extrude() translate(20) circle(10);"
-    totalRot     :: ℝ <- argument "a" `defaultTo` 360
+    totalRot     :: ℝ <- argument "angle" `defaultTo` 360
                     `doc` "angle to sweep"
     r            :: ℝ    <- argument "r"   `defaultTo` 0
     translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
