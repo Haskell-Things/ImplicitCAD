@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.Export.PolylineFormats (svg, hacklabLaserGCode, dxf2) where
 
-import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, unwords, fmap, snd, compare, min, max, length, foldl, mempty, (<>))
+import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, unwords, fmap, snd, compare, min, max, length, foldl, mempty, (<>), (<$>))
 
 import Graphics.Implicit.Definitions (Polyline(Polyline), ℝ, ℝ2)
 
@@ -40,7 +40,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       svg11 = docTypeSvg ! A.version "1.1"
                          ! A.width  (stringValue $ show (xmax-xmin) <> "mm")
                          ! A.height (stringValue $ show (ymax-ymin) <> "mm")
-                         ! A.viewbox (stringValue $ unwords . fmap show $ [0,0,xmax-xmin,ymax-ymin])
+                         ! A.viewbox (stringValue $ unwords $ show <$> [0,0,xmax-xmin,ymax-ymin])
 
       -- The reason this isn't totally straightforwards is that svg has different coordinate system
       -- and we need to compute the requisite translation.

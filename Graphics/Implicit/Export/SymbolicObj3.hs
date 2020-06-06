@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(fmap, zip, length, filter, (>), ($), null, (<>), foldMap, (.))
+import Prelude(zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3), Triangle, TriangleMesh(TriangleMesh))
 import Graphics.Implicit.Export.Render (getMesh)
@@ -193,7 +193,7 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
 
 symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
     let
-        boxes = fmap getBox3 objs
+        boxes = getBox3 <$> objs
         boxedObjs = zip boxes objs
 
         sepFree :: [((ℝ3, ℝ3), a)] -> ([a], [a])
