@@ -140,7 +140,7 @@ data OVal = OUndefined
          | OString Text
          | OFunc (OVal -> OVal)
          -- Name, arguments, argument parsers.
-         | OUModule Symbol (Maybe [(Symbol, Bool)]) ([OVal] -> ArgParser (StateC [OVal]))
+         | OUModule Symbol (Maybe [(Symbol, Bool)]) (VarLookup -> ArgParser (StateC [OVal]))
          -- Name, implementation, arguments, whether the module accepts/requires a suite.
          | ONModule Symbol (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) [([(Symbol, Bool)],  Maybe Bool)]
          | OVargsModule Symbol (Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
