@@ -84,9 +84,7 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
       let
         hasDefault = isJust defval
       pure (argName, hasDefault)
-    (VarLookup varlookup) <- getVarLookup
---  FIXME: \_? really?
-    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OUModule name (Just argNames) $ \_ -> do
+    runStatementI . StatementI sourcePos $ (Name name :=) $ LitE $ OUModule name (Just argNames) $ \(VarLookup varlookup) -> do
         newNameVals <- for argTemplate' $ \(argName, maybeDef) -> do
             val <- case maybeDef of
                 Just def -> argument argName `defaultTo` def
@@ -105,12 +103,13 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               optionsMatch <- checkOptions args True
               unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " <> name <> ".")
               evaluatedArgs <- evalArgs argsExpr
+              varLookup <- getVarLookup
               -- Evaluate the suite.
-              suiteResults <- runSuiteCapture varlookup suite
+              --suiteResults <- runSuiteCapture varlookup suite
               when (suite /= []) (errorC sourcePos $ "Suite provided, but module " <> name <> " does not accept one. Perhaps a missing semicolon?")
               -- Run the module.
               let
-                argsMapped = argMap evaluatedArgs $ mod' suiteResults
+                argsMapped = argMap evaluatedArgs $ mod' varLookup
               for_ (pack <$> snd argsMapped) $ errorC sourcePos
               fromMaybe (pure []) (fst argsMapped)
             Just (ONModule _ implementation forms) -> do
