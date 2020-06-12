@@ -70,13 +70,16 @@ module Graphics.Implicit.Definitions (
         ExtrudeRM,
         ExtrudeOnEdgeOf,
         RotateExtrude),
+    ExtrudeRMScale(C1, C2, Fn),
     fromℕtoℝ,
     fromFastℕtoℝ,
-    fromℝtoFloat
+    fromℝtoFloat,
+    toScaleFn,
+    isScaleID,
     )
 where
 
-import Prelude (Show, Double, Either, show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -141,6 +144,9 @@ instance Show (ℝ -> ℝ) where
 
 instance Show (ℝ -> ℝ2) where
     show _ = "<expand ℝ -> ℝ2>"
+
+instance Show (ℝ -> Either ℝ ℝ2) where
+    show _ = "<function ℝ -> Either ℝ ℝ2>"
 
 instance Show (ℝ2 -> ℝ) where
     show _ = "<collapse ℝ2 -> ℝ>"
@@ -276,7 +282,7 @@ data SymbolicObj3 =
     | ExtrudeRM
         ℝ                     -- rounding radius
         (Either ℝ (ℝ -> ℝ))   -- twist
-        (Either ℝ (ℝ -> ℝ))   -- scale
+        ExtrudeRMScale        -- scale
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
         SymbolicObj2          -- object to extrude
         (Either ℝ (ℝ2 -> ℝ))  -- height to extrude to
@@ -289,3 +295,20 @@ data SymbolicObj3 =
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
 
+data ExtrudeRMScale =
+      C1 ℝ                  -- constant ℝ
+    | C2 ℝ2                 -- constant ℝ2
+    | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
+    deriving Show
+
+toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
+toScaleFn (C1 s) _ = (s, s)
+toScaleFn (C2 s) _ = s
+toScaleFn (Fn f) z = case f z of
+    Left s -> (s, s)
+    Right s -> s
+
+isScaleID :: ExtrudeRMScale -> Bool
+isScaleID (C1 1) = True
+isScaleID (C2 (1, 1)) = True
+isScaleID _ = False

@@ -16,7 +16,7 @@ module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, to
 
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, flip, filter, not, return)
 
-import Graphics.Implicit.Definitions(ℝ, ℕ, SymbolicObj2, SymbolicObj3, fromℕtoℝ)
+import Graphics.Implicit.Definitions(ℝ, ℝ2, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1, C2, Fn), fromℕtoℝ)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3))
 
@@ -117,6 +117,16 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (Either a b) where
 
     toOObj (Right x) = toOObj x
     toOObj (Left  x) = toOObj x
+
+instance OTypeMirror ExtrudeRMScale where
+    fromOObj (fromOObj -> Just (x :: ℝ)) = Just $ C1 x
+    fromOObj (fromOObj -> Just (x :: ℝ2)) = Just $ C2 x
+    fromOObj (fromOObj -> Just (x :: (ℝ -> Either ℝ ℝ2))) = Just $ Fn x
+    fromOObj _ = Nothing
+
+    toOObj (C1 x) = toOObj x
+    toOObj (C2 x) = toOObj x
+    toOObj (Fn x) = toOObj x
 
 -- A string representing each type.
 oTypeStr :: OVal -> Text

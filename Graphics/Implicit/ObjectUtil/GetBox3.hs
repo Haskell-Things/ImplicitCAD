@@ -5,9 +5,9 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), (⋯*), fromFastℕtoℝ, fromFastℕ)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -141,17 +141,18 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
 
         (twistXmin, twistYmin, twistXmax, twistYmax) =
           let
-            scale' = case scale of
-                       Left  sval -> sval
-                       Right sfun -> maximum $ fmap (abs . sfun) hrange
-            smin v = min v (scale' * v)
-            smax v = max v (scale' * v)
+            both f (a, b) = (f a, f b)
+            (scalex', scaley') = case scale of
+              C1 s -> (s, s)
+              C2 s -> s
+              s -> both maximum . unzip $ both abs . toScaleFn s <$> hrange
+            smin s v = min v (s * v)
+            smax s v = max v (s * v)
             -- FIXME: assumes minimums are negative, and maximums are positive.
-            scaleVal d = scale' * d
-            scaleEach ((d1, d2),(d3, d4)) = (scaleVal d1, scaleVal d2, scaleVal d3, scaleVal d4) 
+            scaleEach ((d1, d2),(d3, d4)) = (scalex' * d1, scaley' * d2, scalex' * d3, scaley' * d4) 
           in case twist of
             Left twval -> if twval == 0
-                          then (smin x1, smin y1, smax x2, smax y2)
+                          then (smin scalex' x1, smin scaley' y1, smax scalex' x2, smax scaley' y2)
                           else scaleEach $ getBox2R symbObj twval
             Right _  -> scaleEach $ getBox2R symbObj 360 -- we can't range functions yet, so assume a full circle.
 
