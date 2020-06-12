@@ -12,7 +12,7 @@ import Prelude (($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Rig
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
 
 -- The parts of ImplicitCAD we know how to benchmark.
-import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeRM, rect3R)
+import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeRM, rect3R)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 
@@ -36,7 +36,7 @@ obj2d_1 =
 
 -- | An extruded version of obj2d_1, should be identical to the website's example, and example5.escad.
 object1 :: SymbolicObj3
-object1 = extrudeRM 0 (Right twist) (Left 1) (Left (0,0)) obj2d_1 (Left 40)
+object1 = extrudeRM 0 (Right twist) (C1 1) (Left (0,0)) obj2d_1 (Left 40)
     where
       twist :: ℝ -> ℝ
       twist h = 35*cos(h*2*pi/60)

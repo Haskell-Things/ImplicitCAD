@@ -10,7 +10,7 @@ import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, (⋅), minℝ)
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
 
@@ -139,13 +139,9 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
             (xTrans, yTrans) = case trans of
                                  Left  tval -> tval
                                  Right tfun -> tfun z
-        scaleVec :: Either ℝ (ℝ -> ℝ) -> ℝ -> ℝ2 -> ℝ2
-        scaleVec scale' s (x,y) =
-          case scale' of
-            Left sval  -> if sval == 1
-                          then (x,y)
-                          else (x/sval    , y/sval)
-            Right sfun ->      (x/sfun s, y/sfun s)
+        scaleVec :: ℝ -> ℝ2 -> ℝ2
+        scaleVec z (x, y) = let (sx, sy) = toScaleFn scale z
+                            in  (x / sx, y / sy)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
         rotateVec θ (x,y)
           | θ == 0    = (x,y)
@@ -159,7 +155,7 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
             res = rmax r
                 (obj
                  . rotateVec (-k*twistVal twist z h)
-                 . scaleVec scale z
+                 . scaleVec z
                  . translatePos translate z
                  $ (x,y))
                 (abs (z - h/2) - h/2)

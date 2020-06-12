@@ -74,7 +74,8 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                                    ExtrudeRM,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf
-                                                  )
+                                                  ),
+                                      ExtrudeRMScale
                                      )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
@@ -245,7 +246,7 @@ extrudeRotateR = ExtrudeRotateR
 
 extrudeRM :: ℝ
     -> Either ℝ (ℝ -> ℝ)
-    -> Either ℝ (ℝ -> ℝ)
+    -> ExtrudeRMScale
     -> Either ℝ2 (ℝ -> ℝ2)
     -> SymbolicObj2
     -> Either ℝ (ℝ2 -> ℝ)
