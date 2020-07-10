@@ -231,7 +231,8 @@ Executable implicitsnap
                -Wall-missed-specialisations
 --               -Werror
 
-Executable Benchmark
+Benchmark Benchmark
+   Type: exitcode-stdio-1.0
    Main-is: Benchmark.hs
    default-extensions: NoImplicitPrelude
    Default-Language: Haskell2010
