@@ -12,6 +12,24 @@ Maintainer:          Julia Longtin <julia.longtin@gmail.com>
 Homepage:            http://implicitcad.org/
 Category:            Graphics
 
+flag extopenscad
+  default:
+    True
+  description:
+    Builds extopenscad program
+
+flag docgen
+  default:
+    True
+  description:
+    Builds docgen program
+
+flag implicitsnap
+  default:
+    False
+  description:
+    Builds implicitsnap program
+
 Library
 
     Default-Extensions: NoImplicitPrelude
@@ -112,6 +130,8 @@ Library
                   Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
+   if !flag(extopenscad)
+     buildable: False
    Main-is: extopenscad.hs
    default-extensions: NoImplicitPrelude
    Default-Language: Haskell2010
@@ -146,6 +166,8 @@ Executable extopenscad
 --               -Werror
 
 Executable docgen
+   if !flag(docgen)
+     buildable: False
    main-is: docgen.hs
    default-extensions: NoImplicitPrelude
    Default-Language: Haskell2010
@@ -171,6 +193,8 @@ Executable docgen
 --               -Werror
 
 Executable implicitsnap
+   if !flag(implicitsnap)
+     buildable: False
    Main-is: implicitsnap.hs
    default-extensions: NoImplicitPrelude
    Default-Language: Haskell2010
@@ -207,7 +231,8 @@ Executable implicitsnap
                -Wall-missed-specialisations
 --               -Werror
 
-Executable Benchmark
+Benchmark Benchmark
+   Type: exitcode-stdio-1.0
    Main-is: Benchmark.hs
    default-extensions: NoImplicitPrelude
    Default-Language: Haskell2010
