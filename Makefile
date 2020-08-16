@@ -33,8 +33,8 @@ IMPLICITSNAPBIN=$(call exebin,${IMPLICITSNAP})
 IMPLICITSNAPDIR=$(call exedir,${IMPLICITSNAP})
 # The location of the benchmark binary, for benchmarking some implicitcad internals.
 BENCHMARK=Benchmark
-BENCHMARKBIN=$(call exebin,${BENCHMARK})
-BENCHMARKDIR=$(call exedir,${BENCHMARK})
+BENCHMARKBIN=${BENCHBUILDROOT}/Benchmark/build/Benchmark/Benchmark
+BENCHMARKDIR=${BENCHBUILDROOT}/Benchmark
 # The location of the documentation generator. for documenting (some of) the extopenscad language.
 DOCGEN=docgen
 DOCGENBIN=$(call exebin,${DOCGEN})
@@ -70,7 +70,10 @@ LIBFILES=$(shell find ${LIBDIR} -name '*.hs')
 LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi' -o -name '*.o')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
-EXECTARGETS=$(EXTOPENSCADBIN) $(IMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
+# don't try to compile implicitsnap unless the flag for compiling it has been set.
+MAYBEIMPLICITSNAPBIN=$(shell bash -c "[ -n \"$$(cat cabal.project.local | sed -n '/flags: .*+implicitsnap.*/p')\" ] && echo ${IMPLICITSNAPBIN}" )
+
+EXECTARGETS=$(EXTOPENSCADBIN) $(MAYBEIMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
 EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
