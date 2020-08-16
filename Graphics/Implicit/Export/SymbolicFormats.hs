@@ -78,7 +78,9 @@ buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 
 buildS3 (Rotate3 (x,y,z) obj) = call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
 
-buildS3  Rotate3V{} = error "Rotate3V not implemented."
+buildS3 (Rotate3V a v obj) = callNaked "rotate" [ "a=" <> bf (rad2deg a), "v=" <> bvect v ] [buildS3 obj]
+    where
+    bvect (x, y, z) = "[" <> fold (intersperse "," [bf x, bf y, bf z]) <> "]"
 
 buildS3 (Outset3 r obj) | r == 0 = call "outset" [] [buildS3 obj]
 
