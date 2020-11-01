@@ -147,7 +147,7 @@ Executable extopenscad
 --               -O2
                -optc-O3
                -threaded
-               -rtsopts
+               -rtsopts "-with-rtsopts -N -qg -t"
 --               -dynamic
                -- see GHC manual 8.2.1 section 6.5.1.
                -feager-blackholing
@@ -211,7 +211,7 @@ Executable implicitsnap
                  vector-space
    Ghc-options:
                -threaded
-               -rtsopts
+               -rtsopts "-with-rtsopts -N -qg -t"
 --               -O2
                -optc-O3
 --               -dynamic
@@ -275,6 +275,8 @@ Test-suite test-implicit
     Main-is: Main.hs
     Hs-source-dirs: tests
     Ghc-options:
+                -threaded
+                -rtsopts "-with-rtsopts -N -qg -t"
 --                -O2
                 -optc-O3
 --                -dynamic
