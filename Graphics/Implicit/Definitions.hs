@@ -190,6 +190,9 @@ newtype TriangleMesh = TriangleMesh [Triangle]
 -- | A normed triangle mesh is a mesh of normed triangles.
 newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
 
+instance NFData NormedTriangle where
+  rnf (NormedTriangle ((a, na), (b, nb), (c, nc))) = rnf ((a, na), (b, nb), (c, nc))
+
 instance NFData Triangle where
   rnf (Triangle (a,b,c)) = rnf (a,b,c)
 
