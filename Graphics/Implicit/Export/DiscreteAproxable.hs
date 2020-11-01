@@ -29,6 +29,8 @@ import Graphics.Implicit.Export.RayTrace (Color(Color), Camera(Camera), Light(Li
 
 import Codec.Picture (DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8), generateImage)
 
+import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+
 import Data.VectorSpace ((^+^), (^/), (*^), (^-^))
 
 import Data.AffineSpace ((.-^), (.+^))
@@ -48,7 +50,10 @@ instance DiscreteAproxable SymbolicObj3 TriangleMesh where
     discreteAprox = symbolicGetMesh
 
 instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
-    discreteAprox res obj = NormedTriangleMesh $ fmap (normTriangle res (getImplicit3 obj)) $ unmesh $ symbolicGetMesh res obj
+    discreteAprox res obj = NormedTriangleMesh
+        ([ normTriangle res (getImplicit3 obj) rawMesh
+            | rawMesh <- unmesh $ symbolicGetMesh res obj
+         ] `using` parBuffer 32 rdeepseq)
 
 -- FIXME: way too many magic numbers.
 -- FIXME: adjustable resolution!
