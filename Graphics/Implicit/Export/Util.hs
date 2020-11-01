@@ -21,7 +21,7 @@ default (ℝ)
 -- FIXME: magic numbers.
 normTriangle :: ℝ -> Obj3 -> Triangle -> NormedTriangle
 normTriangle res obj (Triangle (a,b,c)) =
-    NormedTriangle (normify a', normify b', normify c')
+    NormedTriangle ((a, normify a'), (b, normify b'), (c, normify c'))
         where
             normify = normVertex res obj
             a' = (a ^+^ r*^b ^+^ r*^c) ^/ 1.02
@@ -31,7 +31,7 @@ normTriangle res obj (Triangle (a,b,c)) =
             r = 0.01
 
 -- FIXME: magic numbers.
-normVertex :: ℝ -> Obj3 -> ℝ3 -> (ℝ3, ℝ3)
+normVertex :: ℝ -> Obj3 -> ℝ3 -> ℝ3
 normVertex res obj p =
     let
         -- D_vf(p) = ( f(p) - f(p+v) ) /|v|
@@ -44,7 +44,7 @@ normVertex res obj p =
         dx = d (1, 0, 0)
         dy = d (0, 1, 0)
         dz = d (0, 0, 1)
-    in (p, normalized (dx,dy,dz))
+    in normalized (dx,dy,dz)
 
 -- Get a centroid of a series of points.
 centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
