@@ -33,7 +33,8 @@ module Graphics.Implicit.Primitives (
                                      pack3,
                                      rotate,
                                      pack2,
-                                     implicit
+                                     implicit,
+                                     Object
                                     ) where
 
 import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
