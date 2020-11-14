@@ -41,36 +41,102 @@ import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeS
 -- We want Export to be a bit less polymorphic
 -- (so that types will collapse nicely)
 
-writeSVG :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeSVG
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-2)/ more time.
+    -> FilePath
+    -> SymbolicObj2
+    -> IO ()
 writeSVG = Export.writeSVG
 
-writeDXF2 :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeDXF2
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-2)/ more time.
+    -> FilePath
+    -> SymbolicObj2
+    -> IO ()
 writeDXF2 = Export.writeDXF2
 
-writeSTL :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeSTL
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writeSTL = Export.writeSTL
 
-writeBinSTL :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeBinSTL
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writeBinSTL = Export.writeBinSTL
 
-writeOBJ :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeOBJ
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writeOBJ = Export.writeOBJ
 
-writeSCAD2 :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeSCAD2
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-2)/ more time.
+    -> FilePath
+    -> SymbolicObj2
+    -> IO ()
 writeSCAD2 = Export.writeSCAD2
 
-writeSCAD3 :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeSCAD3
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writeSCAD3 = Export.writeSCAD3
 
-writeTHREEJS :: ℝ -> FilePath -> SymbolicObj3 -> IO ()
+writeTHREEJS
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writeTHREEJS = Export.writeTHREEJS
 
-writeGCodeHacklabLaser :: ℝ -> FilePath -> SymbolicObj2 -> IO ()
+writeGCodeHacklabLaser
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-2)/ more time.
+    -> FilePath
+    -> SymbolicObj2
+    -> IO ()
 writeGCodeHacklabLaser = Export.writeGCodeHacklabLaser
 
-writePNG2 :: ℝ -> FilePath -> SymbolicObj2  -> IO ()
+writePNG2
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-2)/ more time.
+    -> FilePath
+    -> SymbolicObj2
+    -> IO ()
 writePNG2 = Export.writePNG
 
-writePNG3 :: ℝ -> FilePath -> SymbolicObj3  -> IO ()
+writePNG3
+    :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
+          -- exports more faithful to the implicit model, at the expense of
+          -- taking /O(n^-3)/ more time.
+    -> FilePath
+    -> SymbolicObj3
+    -> IO ()
 writePNG3 = Export.writePNG
 
