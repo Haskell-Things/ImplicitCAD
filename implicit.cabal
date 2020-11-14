@@ -95,7 +95,7 @@ Library
                     Graphics.Implicit.Export.PolylineFormats
                     Graphics.Implicit.Export.DiscreteAproxable
                     -- These are exposed for docgen.
-                    Graphics.Implicit.ExtOpenScad.Primitives            
+                    Graphics.Implicit.ExtOpenScad.Primitives
 
     Other-modules:
                   Graphics.Implicit.FastIntUtil

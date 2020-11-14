@@ -121,7 +121,7 @@ allthree f (x,y,z) = (f x, f y, f z)
 
 -- Wrap the functions that convert datatypes.
 
--- | Convert from our Integral to our Rational. 
+-- | Convert from our Integral to our Rational.
 fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
 {-# INLINABLE fromℕtoℝ #-}
@@ -263,7 +263,7 @@ data SymbolicObj3 =
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3 -- rounding, start, stop.
     | Sphere ℝ -- radius
-    | Cylinder ℝ ℝ ℝ -- 
+    | Cylinder ℝ ℝ ℝ --
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]

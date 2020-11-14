@@ -120,7 +120,7 @@ circle ::
 circle   = Circle
 
 rectR ::
-    ℝ 				-- ^ Rounding of corners
+    ℝ               -- ^ Rounding of corners
     -> ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
     -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
@@ -245,21 +245,21 @@ extrudeR = ExtrudeR
 extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeRotateR = ExtrudeRotateR
 
-extrudeRM :: ℝ  			-- ^ rounding radius
-    -> Either ℝ (ℝ -> ℝ)	-- ^ twist
-    -> ExtrudeRMScale		-- ^ scale
-    -> Either ℝ2 (ℝ -> ℝ2)	-- ^ translate
-    -> SymbolicObj2			-- ^ object to extrude
-    -> Either ℝ (ℝ2 -> ℝ)	-- ^ height to extrude to
+extrudeRM :: ℝ              -- ^ rounding radius
+    -> Either ℝ (ℝ -> ℝ)    -- ^ twist
+    -> ExtrudeRMScale       -- ^ scale
+    -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
+    -> SymbolicObj2         -- ^ object to extrude
+    -> Either ℝ (ℝ2 -> ℝ)   -- ^ height to extrude to
     -> SymbolicObj3
 extrudeRM = ExtrudeRM
 
 
 rotateExtrude :: ℝ            -- ^ Angle to sweep to
-	-> (Maybe ℝ)             -- ^ Loop or path (rounded corner)
-	-> (Either ℝ2 (ℝ -> ℝ2)) -- ^ translate
-	-> (Either ℝ  (ℝ -> ℝ )) -- ^ rotate
-	-> SymbolicObj2          -- ^ object to extrude
+    -> (Maybe ℝ)              -- ^ Loop or path (rounded corner)
+    -> (Either ℝ2 (ℝ -> ℝ2))  -- ^ translate
+    -> (Either ℝ  (ℝ -> ℝ ))  -- ^ rotate
+    -> SymbolicObj2           -- ^ object to extrude
     -> SymbolicObj3
 rotateExtrude = RotateExtrude
 
