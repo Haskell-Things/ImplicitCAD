@@ -33,7 +33,8 @@ module Graphics.Implicit.Primitives (
                                      pack3,
                                      rotate,
                                      pack2,
-                                     implicit
+                                     implicit,
+                                     Object
                                     ) where
 
 import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
@@ -88,6 +89,7 @@ sphere ::
 
 sphere = Sphere
 
+-- | A rectangular prism, with rounded corners.
 rect3R ::
     ℝ                 -- ^ Rounding of corners
     -> ℝ3             -- ^ Bottom.. corner
@@ -96,6 +98,7 @@ rect3R ::
 
 rect3R = Rect3R
 
+-- | A conical frustum --- ie. a cylinder with different radii at either end.
 cylinder2 ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Second radius of the cylinder
@@ -119,16 +122,18 @@ circle ::
 
 circle   = Circle
 
+-- | A rectangle, with rounded corners.
 rectR ::
-    ℝ 				-- ^ Rounding of corners
+    ℝ               -- ^ Rounding radius (in mm) of corners
     -> ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
     -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
 
 rectR = RectR
 
+-- | A 2D polygon, with rounded corners.
 polygonR ::
-    ℝ                -- ^ Rouding of the polygon
+    ℝ                -- ^ Rounding radius (in mm) of the polygon
     -> [ℝ2]          -- ^ Verticies of the polygon
     -> SymbolicObj2  -- ^ Resulting polygon
 
@@ -136,6 +141,11 @@ polygonR = PolygonR
 
 -- $ Shared Operations
 
+-- | Operations available on both 2D and 3D objects. The obvious omission of
+-- rotation operations from this class are a technical limitation, and are
+-- instead provided by 'rotate' and 'rotate3'.
+--
+-- Library users shouldn't need to provide new instances of this class.
 class Object obj vec | obj -> vec where
 
     -- | Complement an Object
@@ -145,25 +155,25 @@ class Object obj vec | obj -> vec where
 
     -- | Rounded union
     unionR ::
-        ℝ        -- ^ The radius of rounding
+        ℝ        -- ^ The radius (in mm) of rounding
         -> [obj] -- ^ objects to union
         -> obj   -- ^ Resulting object
 
     -- | Rounded difference
     differenceR ::
-        ℝ        -- ^ The radius of rounding
+        ℝ        -- ^ The radius (in mm) of rounding
         -> [obj] -- ^ Objects to difference
         -> obj   -- ^ Resulting object
 
     -- | Rounded minimum
     intersectR ::
-        ℝ        -- ^ The radius of rounding
+        ℝ        -- ^ The radius (in mm) of rounding
         -> [obj] -- ^ Objects to intersect
         -> obj   -- ^ Resulting object
 
     -- | Translate an object by a vector of appropriate dimension.
     translate ::
-        vec      -- ^ Vector to translate by (Also: a is a vector, blah, blah)
+        vec      -- ^ Vector to translate by
         -> obj   -- ^ Object to translate
         -> obj   -- ^ Resulting object
 
@@ -238,42 +248,61 @@ intersect = intersectR 0
 
 -- 3D operations
 
-extrudeR :: ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
+-- | Extrude a 2d object upwards, with rounded corners.
+extrudeR
+    :: ℝ   -- ^ Rounding radius (in mm) of corners
+    -> SymbolicObj2
+    -> ℝ   -- ^ Extrusion height
+    -> SymbolicObj3
 extrudeR = ExtrudeR
 
 -- | This function is not implemented
 extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
 extrudeRotateR = ExtrudeRotateR
 
-extrudeRM :: ℝ  			-- ^ rounding radius
-    -> Either ℝ (ℝ -> ℝ)	-- ^ twist
-    -> ExtrudeRMScale		-- ^ scale
-    -> Either ℝ2 (ℝ -> ℝ2)	-- ^ translate
-    -> SymbolicObj2			-- ^ object to extrude
-    -> Either ℝ (ℝ2 -> ℝ)	-- ^ height to extrude to
+extrudeRM :: ℝ              -- ^ rounding radius (in mm)
+    -> Either ℝ (ℝ -> ℝ)    -- ^ twist
+    -> ExtrudeRMScale       -- ^ scale
+    -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
+    -> SymbolicObj2         -- ^ object to extrude
+    -> Either ℝ (ℝ2 -> ℝ)   -- ^ height to extrude to
     -> SymbolicObj3
 extrudeRM = ExtrudeRM
 
 
-rotateExtrude :: ℝ            -- ^ Angle to sweep to
-	-> (Maybe ℝ)             -- ^ Loop or path (rounded corner)
-	-> (Either ℝ2 (ℝ -> ℝ2)) -- ^ translate
-	-> (Either ℝ  (ℝ -> ℝ )) -- ^ rotate
-	-> SymbolicObj2          -- ^ object to extrude
+rotateExtrude :: ℝ            -- ^ Angle to sweep to (in rad)
+    -> (Maybe ℝ)              -- ^ Loop or path (rounded corner)
+    -> (Either ℝ2 (ℝ -> ℝ2))  -- ^ translate
+    -> (Either ℝ  (ℝ -> ℝ ))  -- ^ rotate
+    -> SymbolicObj2           -- ^ object to extrude
     -> SymbolicObj3
 rotateExtrude = RotateExtrude
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
+-- | Rotate a 3D object via an Euler angle, measured in radians, along the
+-- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
 rotate3 = Rotate3
 
-rotate3V :: ℝ -> ℝ3 -> SymbolicObj3 -> SymbolicObj3
+-- | Rotate a 3D object along an arbitrary axis.
+rotate3V
+    :: ℝ   -- ^ Angle of rotation
+    -> ℝ3  -- ^ Axis of rotation
+    -> SymbolicObj3
+    -> SymbolicObj3
 rotate3V = Rotate3V
 
 -- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
-pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
+-- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate
+-- of each object is dropped, and the resulting packed objects will all be on
+-- the same plane.
+pack3
+    :: ℝ2                  -- ^ Area to pack
+    -> ℝ                   -- ^ Separation between objects
+    -> [SymbolicObj3]      -- ^ Objects to pack
+    -> Maybe SymbolicObj3  -- ^ 'Just' if the objects could be packed into the given area
 pack3 (dx, dy) sep objs =
     let
         boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
@@ -289,7 +318,12 @@ pack3 (dx, dy) sep objs =
 rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
 
-pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
+-- | Attempt to pack multiple 2D objects into a fixed area.
+pack2
+    :: ℝ2                  -- ^ Area to pack
+    -> ℝ                   -- ^ Separation between objects
+    -> [SymbolicObj2]      -- ^ Objects to pack
+    -> Maybe SymbolicObj2  -- ^ 'Just' if the objects could be packed into the given area
 pack2 (dx, dy) sep objs =
     let
         withBoxes :: [(Box2, SymbolicObj2)]

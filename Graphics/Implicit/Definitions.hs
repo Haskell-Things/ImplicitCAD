@@ -91,10 +91,18 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
--- Let's make things a bit nicer. 
--- Following the math notation ℝ, ℝ², ℝ³...
+-- | A type synonym for 'Double'. When used in the context of positions or
+-- sizes, measured in units of millimeters. When used as in the context of
+-- a rotation, measured in radians.
 type ℝ = Double
+
+-- | A pair of two 'Double's. When used as an area or position vector, measured
+-- in millimeters squared.
 type ℝ2 = (ℝ,ℝ)
+
+-- | A triple of 'Double's. When used as a volume or position vector, measured
+-- in millimeters cubed. When used as a rotation, interpreted as Euler angles
+-- measured in radians.
 type ℝ3 = (ℝ,ℝ,ℝ)
 
 -- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
@@ -121,7 +129,7 @@ allthree f (x,y,z) = (f x, f y, f z)
 
 -- Wrap the functions that convert datatypes.
 
--- | Convert from our Integral to our Rational. 
+-- | Convert from our Integral to our Rational.
 fromℕtoℝ :: ℕ -> ℝ
 fromℕtoℝ = fromIntegral
 {-# INLINABLE fromℕtoℝ #-}
@@ -263,7 +271,7 @@ data SymbolicObj3 =
     -- Primitives
       Rect3R ℝ ℝ3 ℝ3 -- rounding, start, stop.
     | Sphere ℝ -- radius
-    | Cylinder ℝ ℝ ℝ -- 
+    | Cylinder ℝ ℝ ℝ --
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
