@@ -137,6 +137,7 @@ polygonR = PolygonR
 
 -- $ Shared Operations
 
+-- | Operations available on both 2D and 3D objects.
 class Object obj vec | obj -> vec where
 
     -- | Complement an Object
