@@ -184,6 +184,10 @@ writePNG2
     -> IO ()
 writePNG2 = Export.writePNG
 
+
+-- | Export a PNG of the 'SymbolicObj3'. The projection is with a front-facing
+-- camera, so the coordinate system is @(left to right, front to back, down to
+-- up)@.
 writePNG3
     :: ℝ  -- ^ Rendering resolution, in millimeters. Smaller values produce
           -- exports more faithful to the implicit model, at the expense of
