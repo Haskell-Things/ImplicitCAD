@@ -7,19 +7,72 @@
    this haskell library. -}
 
 module Graphics.Implicit (
-  module P,
-  module E,
-  module W,
+  -- * Types
+  W.ℝ,
+  W.ℝ2,
+  W.ℝ3,
+  SymbolicObj2 (),
+  SymbolicObj3 (),
+  W.ExtrudeRMScale(C1, C2, Fn),
+
+  -- * Shared operations
+  P.Object
+    ( P.translate,
+      P.scale,
+      P.complement,
+      P.unionR,
+      P.intersectR,
+      P.differenceR,
+      P.implicit,
+      P.shell
+    ),
+  P.union,
+  P.intersect,
+  P.difference,
+
+  -- * 2D primitive shapes
+  P.rectR,
+  P.circle,
+  P.polygonR,
+
+  -- * 2D operations
+  P.rotate,
+  P.pack2,
+
+  -- * 3D primitive shapes
+  P.rect3R,
+  P.sphere,
+  P.cylinder,
+  P.cylinder2,
+
+  -- * 3D operations
+  P.rotate3,
+  P.rotate3V,
+  P.pack3,
+
+  -- * Extrusions into 3D
+  P.extrudeR,
+  P.extrudeRM,
+  P.extrudeRotateR,
+  P.extrudeOnEdgeOf,
+  P.rotateExtrude,
+
+  -- * OpenScad support
+  E.runOpenscad,
+
+  -- * 2D exporters
   writeSVG,
+  writePNG2,
   writeDXF2,
+  writeSCAD2,
+  writeGCodeHacklabLaser,
+
+  -- * 3D exporters
   writeSTL,
   writeBinSTL,
   writeOBJ,
   writeTHREEJS,
-  writeSCAD2,
   writeSCAD3,
-  writeGCodeHacklabLaser,
-  writePNG2,
   writePNG3
 ) where
 
