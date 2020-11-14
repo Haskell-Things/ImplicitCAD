@@ -91,10 +91,18 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
--- Let's make things a bit nicer. 
--- Following the math notation ℝ, ℝ², ℝ³...
+-- | A type synonym for 'Double'. When used in the context of positions or
+-- sizes, measured in units of millimeters. When used as in the context of
+-- a rotation, measured in radians.
 type ℝ = Double
+
+-- | A pair of two 'Double's. When used as an area or position vector, measured
+-- in millimeters squared.
 type ℝ2 = (ℝ,ℝ)
+
+-- | A triple of 'Double's. When used as a volume or position vector, measured
+-- in millimeters cubed. When used as a rotation, interpreted as Euler angles
+-- measured in radians.
 type ℝ3 = (ℝ,ℝ,ℝ)
 
 -- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
