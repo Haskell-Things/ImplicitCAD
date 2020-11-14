@@ -295,7 +295,14 @@ rotate3V
 rotate3V = Rotate3V
 
 -- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
-pack3 :: ℝ2 -> ℝ -> [SymbolicObj3] -> Maybe SymbolicObj3
+-- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate
+-- of each object is dropped, and the resulting packed objects will all be on
+-- the same plane.
+pack3
+    :: ℝ2                  -- ^ Area to pack
+    -> ℝ                   -- ^ Separation between objects
+    -> [SymbolicObj3]      -- ^ Objects to pack
+    -> Maybe SymbolicObj3  -- ^ 'Just' if the objects could be packed into the given area
 pack3 (dx, dy) sep objs =
     let
         boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
@@ -311,7 +318,12 @@ pack3 (dx, dy) sep objs =
 rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
 
-pack2 :: ℝ2 -> ℝ -> [SymbolicObj2] -> Maybe SymbolicObj2
+-- | Attempt to pack multiple 2D objects into a fixed area.
+pack2
+    :: ℝ2                  -- ^ Area to pack
+    -> ℝ                   -- ^ Separation between objects
+    -> [SymbolicObj2]      -- ^ Objects to pack
+    -> Maybe SymbolicObj2  -- ^ 'Just' if the objects could be packed into the given area
 pack2 (dx, dy) sep objs =
     let
         withBoxes :: [(Box2, SymbolicObj2)]
