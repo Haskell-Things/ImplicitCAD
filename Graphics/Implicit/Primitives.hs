@@ -248,7 +248,12 @@ intersect = intersectR 0
 
 -- 3D operations
 
-extrudeR :: ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
+-- | Extrude a 2d object upwards, with rounded corners.
+extrudeR
+    :: ℝ   -- ^ Rounding radius (in mm) of corners
+    -> SymbolicObj2
+    -> ℝ   -- ^ Extrusion height
+    -> SymbolicObj3
 extrudeR = ExtrudeR
 
 -- | This function is not implemented
