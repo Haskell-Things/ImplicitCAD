@@ -52,7 +52,9 @@ Library
                   storable-endian,
                   JuicyPixels,
                   transformers,
-                  mtl
+                  mtl,
+                  QuickCheck,
+                  quickspec
 
     Ghc-options:
 --                -O2
