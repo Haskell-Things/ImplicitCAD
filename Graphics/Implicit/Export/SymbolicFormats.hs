@@ -8,9 +8,9 @@
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Prelude(Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
+import Prelude(fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ3, ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, ReflectX3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
+import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, ReflectX2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, ReflectX3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -51,6 +51,9 @@ callNaked = callToken ("", "")
 
 bvect3 :: ℝ3 -> Builder
 bvect3 (x, y, z) = "[" <> fold (intersperse "," [bf x, bf y, bf z]) <> "]"
+
+bvect2 :: ℝ2 -> Builder
+bvect2 (x, y) = "[" <> fold (intersperse "," [bf x, bf y]) <> "]"
 
 -- | First, the 3D objects.
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
@@ -135,8 +138,7 @@ buildS2 (RectR r (x1,y1) (x2,y2)) | r == 0 = call "translate" [bf x1, bf y1] [
 
 buildS2 (Circle r) = call "circle" [bf r] []
 
-buildS2 (PolygonR r points) | r == 0 = call "polygon" [buildVector [x,y] | (x,y) <- points] []
-    where buildVector comps = "[" <> fold (intersperse "," $  bf <$> comps) <> "]"
+buildS2 (PolygonR r points) | r == 0 = call "polygon" (fmap bvect2 points) []
 
 buildS2 (Complement2 obj) = call "complement" [] [buildS2 obj]
 
@@ -151,6 +153,8 @@ buildS2 (Translate2 (x,y) obj) = call "translate" [bf x, bf y] [buildS2 obj]
 buildS2 (Scale2 (x,y) obj)     = call "scale" [bf x, bf y] [buildS2 obj]
 
 buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
+
+buildS2 (ReflectX2 obj) = callNaked "mirror" [ "v=" <> bvect2 (1, 0) ] [buildS2 obj]
 
 buildS2 (Outset2 r obj) | r == 0 = call "outset" [] [buildS2 obj]
 
