@@ -37,7 +37,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude(mempty, Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
@@ -215,7 +215,8 @@ instance Object SymbolicObj2 ℝ2 where
     translate   = Translate2
     scale       = Scale2
     complement  = Complement2
-    unionR      = UnionR2
+    unionR _ [] = mempty
+    unionR r ss = UnionR2 r ss
     intersectR  = IntersectR2
     differenceR = DifferenceR2
     outset      = Outset2
