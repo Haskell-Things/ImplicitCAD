@@ -162,7 +162,8 @@ class Object obj vec | obj -> vec where
     -- | Rounded difference
     differenceR ::
         ℝ        -- ^ The radius (in mm) of rounding
-        -> [obj] -- ^ Objects to difference
+        -> obj   -- ^ Base object
+        -> [obj] -- ^ Objects to subtract from the base
         -> obj   -- ^ Resulting object
 
     -- | Rounded minimum
@@ -240,7 +241,7 @@ instance Object SymbolicObj3 ℝ3 where
 union :: Object obj vec => [obj] -> obj
 union = unionR 0
 
-difference :: Object obj vec => [obj] -> obj
+difference :: Object obj vec => obj -> [obj] -> obj
 difference = differenceR 0
 
 intersect :: Object obj vec => [obj] -> obj

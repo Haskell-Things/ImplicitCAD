@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
@@ -54,10 +54,10 @@ getImplicit3 (UnionR3 r symbObjs) =
 getImplicit3 (IntersectR3 r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
-getImplicit3 (DifferenceR3 r symbObjs) =
+getImplicit3 (DifferenceR3 r symbObj symbObjs) =
     let
-        tailObjs = getImplicit3 <$> tail symbObjs
-        headObj = getImplicit3 $ head symbObjs
+        tailObjs = getImplicit3 <$> symbObjs
+        headObj = getImplicit3 symbObj
         complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in

@@ -15,7 +15,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
+import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -350,8 +350,15 @@ difference = moduleWithSuite "difference" $ \_ children -> do
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
     pure $ pure $ if r > 0
-        then objReduce (Prim.differenceR r) (Prim.differenceR r) children
-        else objReduce  Prim.difference      Prim.difference     children
+        then objReduce (unsafeUncurry (Prim.differenceR r)) (unsafeUncurry (Prim.differenceR r)) children
+        else objReduce (unsafeUncurry  Prim.difference)     (unsafeUncurry  Prim.difference)     children
+  where
+    unsafeUncurry :: (a -> [a] -> c) -> [a] -> c
+    unsafeUncurry f = uncurry f . unsafeUncons
+
+    unsafeUncons :: [a] -> (a, [a])
+    unsafeUncons (a : as) = (a, as)
+    unsafeUncons _ = error "difference requires at least one element; zero given"
 
 translate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 translate = moduleWithSuite "translate" $ \_ children -> do
