@@ -229,7 +229,8 @@ instance Object SymbolicObj3 ℝ3 where
     translate   = Translate3
     scale       = Scale3
     complement  = Complement3
-    unionR      = UnionR3
+    unionR _ [] = mempty
+    unionR r ss = UnionR3 r ss
     intersectR  = IntersectR3
     differenceR = DifferenceR3
     outset      = Outset3
