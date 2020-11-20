@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude(Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
+import Graphics.Implicit.Definitions(ℝ3, ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, ReflectX3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -49,6 +49,9 @@ call = callToken ("[", "]")
 callNaked :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
 callNaked = callToken ("", "")
 
+bvect3 :: ℝ3 -> Builder
+bvect3 (x, y, z) = "[" <> fold (intersperse "," [bf x, bf y, bf z]) <> "]"
+
 -- | First, the 3D objects.
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
@@ -78,9 +81,9 @@ buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 
 buildS3 (Rotate3 (x,y,z) obj) = call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
 
-buildS3 (Rotate3V a v obj) = callNaked "rotate" [ "a=" <> bf (rad2deg a), "v=" <> bvect v ] [buildS3 obj]
-    where
-    bvect (x, y, z) = "[" <> fold (intersperse "," [bf x, bf y, bf z]) <> "]"
+buildS3 (Rotate3V a v obj) = callNaked "rotate" [ "a=" <> bf (rad2deg a), "v=" <> bvect3 v ] [buildS3 obj]
+
+buildS3 (ReflectX3 obj) = callNaked "mirror" [ "v=" <> bvect3 (1, 0, 0) ] [buildS3 obj]
 
 buildS3 (Outset3 r obj) | r == 0 = call "outset" [] [buildS3 obj]
 
