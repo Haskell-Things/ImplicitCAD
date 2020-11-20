@@ -6,6 +6,7 @@
 -- This module deliberately declares orphan instances of Show.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{-# LANGUAGE DeriveGeneric #-}
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -22,11 +23,11 @@ module Graphics.Implicit.Definitions (
     (⋅),
     (⋯*),
     (⋯/),
-    Polyline(Polyline),
+    Polyline(..),
     Polytri(Polytri),
-    Triangle(Triangle),
+    Triangle(..),
     NormedTriangle(NormedTriangle),
-    TriangleMesh(TriangleMesh),
+    TriangleMesh(..),
     NormedTriangleMesh(NormedTriangleMesh),
     Obj2,
     Obj3,
@@ -80,6 +81,8 @@ module Graphics.Implicit.Definitions (
 where
 
 import Prelude (Show, Eq, Ord, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+
+import GHC.Generics (Generic)
 
 import Data.Maybe (Maybe)
 
@@ -180,14 +183,14 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-newtype Polyline = Polyline [ℝ2]
+newtype Polyline = Polyline { getPolylinePoints :: [ℝ2] }
   deriving (Eq, Ord, Show)
 
 -- | A triangle in 2D space (a,b,c).
 newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
 
 -- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
-newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
+newtype Triangle = Triangle { getTrianglePoints :: (ℝ3, ℝ3, ℝ3) }
   deriving (Eq, Ord, Show)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
@@ -195,7 +198,7 @@ newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
 newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
-newtype TriangleMesh = TriangleMesh [Triangle]
+newtype TriangleMesh = TriangleMesh { getTriangleMeshTriangles :: [Triangle] }
   deriving (Eq, Ord, Show)
 
 -- | A normed triangle mesh is a mesh of normed triangles.
@@ -267,7 +270,7 @@ data SymbolicObj2 =
     | Shell2 ℝ SymbolicObj2
     -- Misc
     | EmbedBoxedObj2 BoxedObj2
-    deriving Show
+    deriving (Show, Generic)
 
 -- | A symbolic 3D format!
 data SymbolicObj3 =
@@ -307,13 +310,13 @@ data SymbolicObj3 =
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
-    deriving Show
+    deriving (Show, Generic)
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
     | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
-    deriving Show
+    deriving (Show, Generic)
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
 toScaleFn (C1 s) _ = (s, s)
