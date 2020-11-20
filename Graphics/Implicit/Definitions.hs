@@ -47,6 +47,7 @@ module Graphics.Implicit.Definitions (
         Translate2,
         Scale2,
         Rotate2,
+        ReflectX2,
         Shell2,
         Outset2,
         EmbedBoxedObj2),
@@ -259,6 +260,7 @@ data SymbolicObj2 =
     | Translate2 ℝ2 SymbolicObj2
     | Scale2 ℝ2 SymbolicObj2
     | Rotate2 ℝ SymbolicObj2
+    | ReflectX2 SymbolicObj2
     -- Boundary mods
     | Outset2 ℝ SymbolicObj2
     | Shell2 ℝ SymbolicObj2

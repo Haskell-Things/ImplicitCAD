@@ -4,11 +4,11 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(negate, Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, ReflectX2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
 
@@ -53,7 +53,7 @@ intersectBoxes (x:xs) = if nmaxx > nminx && nmaxy > nminy
                         then ((nminx, nminy), (nmaxx, nmaxy))
                         else emptyBox
   where
-    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2)) 
+    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2))
     ((xmin1, ymin1), (xmax1, ymax1)) = x
     ((xmin2, ymin2), (xmax2, ymax2)) = intersectBoxes xs
 
@@ -104,6 +104,9 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
+getBox2 (ReflectX2 symbObj) =
+    let ((x1,y1), (x2,y2)) = getBox2 symbObj
+     in ((negate x2, y1), (negate x1, y2))
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj
@@ -263,7 +266,7 @@ pointRBox (xStart, yStart) travel =
     twoAxis :: Axis -> Axis -> Direction -> Box2
     twoAxis start stop dir
       | (start == PosX && stop == NegX) ||
-        (start == PosY && stop == NegY) || 
+        (start == PosY && stop == NegY) ||
         (start == NegX && stop == PosX) ||
         (start == NegY && stop == PosY)  = crossOne start dir
     twoAxis start stop dir
@@ -310,7 +313,7 @@ pointRBox (xStart, yStart) travel =
     mixWith :: [ℝ2] -> Box2
     mixWith points = ((minimum xPoints, minimum yPoints), (maximum xPoints, maximum yPoints))
                      where
-                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)] 
+                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)]
     invertRotation :: Direction -> Direction
     invertRotation Clockwise = CounterClockwise
     invertRotation CounterClockwise = Clockwise
