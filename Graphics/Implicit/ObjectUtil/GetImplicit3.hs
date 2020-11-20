@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (id, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
@@ -171,21 +171,18 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
     let
         tau :: ℝ
         tau = 2 * pi
-        k :: ℝ
-        k   = tau / 360
-        totalRotation' = totalRotation*k
         obj = getImplicit2 symbObj
         capped = isJust round
         round' = fromMaybe 0 round
         translate' :: ℝ -> ℝ2
         translate' = Either.either
-                (\(a,b) θ -> (a*θ/totalRotation', b*θ/totalRotation'))
-                (. (/k))
+                (\(a,b) θ -> (a*θ/totalRotation, b*θ/totalRotation))
+                id
                 translate
         rotate' :: ℝ -> ℝ
         rotate' = Either.either
-                (\t θ -> t*θ/totalRotation' )
-                (. (/k))
+                (\t θ -> t*θ/totalRotation )
+                id
                 rotate
         twists = case rotate of
                    Left 0  -> True
@@ -199,9 +196,9 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 ns =
                     if capped
                     then -- we will cap a different way, but want leeway to keep the function cont
-                        [-1 .. ceiling $ (totalRotation' / tau) + 1]
+                        [-1 .. ceiling $ (totalRotation / tau) + 1]
                     else
-                        [0 .. floor $ (totalRotation' - θ) / tau]
+                        [0 .. floor $ (totalRotation - θ) / tau]
             n <- ns
             let
                 θvirt = fromℕtoℝ n * tau + θ
@@ -209,7 +206,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                 twist = rotate' θvirt
                 rz_pos = if twists
                         then let
-                            (c,s) = (cos (twist*k), sin (twist*k))
+                            (c,s) = (cos twist, sin twist)
                             (r',z') = (r-rshift, z-zshift)
                         in
                             (c*r' - s*z', c*z' + s*r')
@@ -217,7 +214,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
             pure $
               if capped
               then rmax round'
-                    (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
+                    (abs (θvirt - (totalRotation / 2)) - (totalRotation / 2))
                     (obj rz_pos)
               else obj rz_pos
 

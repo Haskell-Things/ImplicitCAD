@@ -15,7 +15,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
+import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -465,7 +465,7 @@ rotateExtrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     example "rotate_extrude() translate(20) circle(10);"
     totalRot     :: ℝ <- argument "angle" `defaultTo` 360
-                    `doc` "angle to sweep"
+                    `doc` "angle to sweep in degrees"
     r            :: ℝ    <- argument "r"   `defaultTo` 0
     translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (0,0)
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
@@ -476,7 +476,28 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
             || either ( /= (0,0)) (\f -> f 0 /= f totalRot) translateArg
             || either is360m (\f -> is360m (f 0 - f totalRot)) rotateArg
         capM = if cap then Just r else Nothing
-    pure $ pure $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
+    pure $ pure $ obj2UpMap (rotateExtrudeDegrees totalRot capM translateArg rotateArg) children
+
+
+-- | Like 'Prim.rotateExtrude', but operates in degrees instead of radians.
+-- This is a shim for scad, which expects this function to operate in degrees.
+rotateExtrudeDegrees
+    :: ℝ                     -- Angle to sweep to (in degs)
+    -> (Maybe ℝ)             -- Loop or path (rounded corner)
+    -> (Either ℝ2 (ℝ -> ℝ2)) -- translate
+    -> (Either ℝ  (ℝ -> ℝ )) -- rotate
+    -> SymbolicObj2          -- object to extrude
+    -> SymbolicObj3
+rotateExtrudeDegrees totalRot capM translateArg rotateArg =
+  Prim.rotateExtrude
+    (totalRot * k)
+    capM
+    (fmap (. (/k)) translateArg)
+    (fmap (. (/k)) rotateArg)
+  where
+    tau :: ℝ
+    tau = 2 * pi
+    k = tau / 360
 
 shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 shell = moduleWithSuite "shell" $ \_ children -> do
