@@ -314,6 +314,14 @@ data SymbolicObj3 =
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
 
+-- | Semigroup under 'Graphic.Implicit.Primitives.union'.
+instance Semigroup SymbolicObj3 where
+  a <> b = UnionR3 0 [a, b]
+
+-- | Monoid under 'Graphic.Implicit.Primitives.union'.
+instance Monoid SymbolicObj3 where
+  mempty = Rect3R 0 (0, 0, 0) (0, 0, 0)
+
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
