@@ -97,7 +97,7 @@ rect3R ::
     -> ℝ3             -- ^ Top right... corner
     -> SymbolicObj3   -- ^ Resuting cube
 
-rect3R r xyz1 xyz2 = translate xyz1 $ CubeR r (xyz2 ^-^ xyz1)
+rect3R r xyz1 xyz2 = translate xyz1 $ CubeR r $ xyz2 ^-^ xyz1
 
 -- | A rectangular prism, with rounded corners.
 cubeR ::
@@ -107,7 +107,7 @@ cubeR ::
     -> SymbolicObj3   -- ^ Resuting cube. (0,0,0) is bottom left if @center = False@,
                       -- otherwise it's the center.
 cubeR r False size = CubeR r size
-cubeR r True  size = translate (allthree (negate . (/ 2)) $ size) $ CubeR r size
+cubeR r True  size = translate (allthree (negate . (/ 2)) size) $ CubeR r size
 
 
 -- | A conical frustum --- ie. a cylinder with different radii at either end.
@@ -141,7 +141,7 @@ rectR ::
     -> ℝ2           -- ^ Top right corner
     -> SymbolicObj2 -- ^ Resulting square
 
-rectR r xy1 xy2 = translate xy1 $ SquareR r (xy2 ^-^ xy1)
+rectR r xy1 xy2 = translate xy1 $ SquareR r $ xy2 ^-^ xy1
 
 -- | A rectangle, with rounded corners.
 squareR ::
@@ -150,7 +150,7 @@ squareR ::
     -> ℝ2           -- ^ Size
     -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
 squareR r False size = SquareR r size
-squareR r True  size = translate (both (negate . (/ 2)) $ size) $ SquareR r size
+squareR r True  size = translate (both (negate . (/ 2)) size) $ SquareR r size
 
 -- | A 2D polygon, with rounded corners.
 polygonR ::
