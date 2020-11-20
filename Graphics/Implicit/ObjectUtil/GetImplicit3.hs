@@ -9,7 +9,7 @@ import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, 
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
+                                                   Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, ReflectX3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
 import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
@@ -100,6 +100,8 @@ getImplicit3 (Rotate3V θ axis symbObj) =
             v ^* cos θ
             - (axis' `cross3` v) ^* sin θ
             + (axis' ^* (axis' ⋅ (v ^* (1 - cos θ))))
+getImplicit3 (ReflectX3 symbObj) =
+    \(x,y,z) -> getImplicit3 symbObj (-x, y, z)
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) =
     let

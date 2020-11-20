@@ -63,6 +63,7 @@ module Graphics.Implicit.Definitions (
         Scale3,
         Rotate3,
         Rotate3V,
+        ReflectX3,
         Shell3,
         Outset3,
         EmbedBoxedObj3,
@@ -284,6 +285,7 @@ data SymbolicObj3 =
     | Scale3 ℝ3 SymbolicObj3
     | Rotate3 ℝ3 SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
+    | ReflectX3 SymbolicObj3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3
     | Shell3 ℝ SymbolicObj3

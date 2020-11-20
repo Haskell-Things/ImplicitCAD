@@ -5,9 +5,9 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(negate, Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, ReflectX3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -98,6 +98,9 @@ getBox3 (Rotate3 (a, b, c) symbObj) =
         ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
 
 getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
+getBox3 (ReflectX3 symbObj) =
+    let ((x1,y1,z1), (x2,y2,z2)) = getBox3 symbObj
+     in ((negate x2, y1, z1), (negate x1, y2, z2))
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =
     outsetBox (w/2) $ getBox3 symbObj
@@ -149,7 +152,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
             smin s v = min v (s * v)
             smax s v = max v (s * v)
             -- FIXME: assumes minimums are negative, and maximums are positive.
-            scaleEach ((d1, d2),(d3, d4)) = (scalex' * d1, scaley' * d2, scalex' * d3, scaley' * d4) 
+            scaleEach ((d1, d2),(d3, d4)) = (scalex' * d1, scaley' * d2, scalex' * d3, scaley' * d4)
           in case twist of
             Left twval -> if twval == 0
                           then (smin scalex' x1, smin scaley' y1, smax scalex' x2, smax scaley' y2)
