@@ -7,7 +7,7 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
+                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
@@ -65,7 +65,7 @@ outsetBox r (a,b) =
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
-getBox2 (RectR _ a b) = (a,b)
+getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
@@ -113,7 +113,7 @@ getBox2 (Outset2 d symbObj) =
 getBox2 (EmbedBoxedObj2 (_,box)) = box
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
---   Note: No implementations for RectR, Translate2, or Scale2 as they would be identical to the fallthrough.
+--   Note: No implementations for SquareR, Translate2, or Scale2 as they would be identical to the fallthrough.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 getBox2R (Circle r) _ = getBox2 $ Circle r
 getBox2R (PolygonR _ points) deg =

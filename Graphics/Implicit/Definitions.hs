@@ -37,7 +37,7 @@ module Graphics.Implicit.Definitions (
     BoxedObj2,
     BoxedObj3,
     SymbolicObj2(
-        RectR,
+        SquareR,
         Circle,
         PolygonR,
         Complement2,
@@ -51,7 +51,7 @@ module Graphics.Implicit.Definitions (
         Outset2,
         EmbedBoxedObj2),
     SymbolicObj3(
-        Rect3R,
+        CubeR,
         Sphere,
         Cylinder,
         Complement3,
@@ -247,7 +247,7 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      RectR ℝ ℝ2 ℝ2   -- rounding, start, stop.
+      SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
@@ -269,7 +269,7 @@ data SymbolicObj2 =
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      Rect3R ℝ ℝ3 ℝ3 -- rounding, start, stop.
+      CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- (Rounded) CSG
