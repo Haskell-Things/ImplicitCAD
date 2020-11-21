@@ -247,7 +247,7 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      SquareR ℝ ℝ2     -- rounding, size.
+      SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
