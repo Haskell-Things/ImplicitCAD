@@ -89,7 +89,7 @@ getBox3 (Scale3 s symbObj) =
 getBox3 (Rotate3 (a, b, c) symbObj) =
     let
         ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
-        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ Translate2 (v2, w1) $ SquareR 0 (v2-v1, w2-w1))
+        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ Translate2 (v1, w1) $ SquareR 0 (v2-v1, w2-w1))
         ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
         ((z1'', x1'), (z2'', x2')) = rotate z1' x1 z2' x2 b
         ((x1'', y1''), (x2'', y2'')) = rotate x1' y1' x2' y2' c
