@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbol
 
 import Prelude(fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(RectR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
@@ -39,7 +39,7 @@ symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbO
         orient (Polyline [_]) = Polyline []
 
 symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
-symbolicGetContour _ (RectR 0 (x1,y1) (x2,y2)) = [Polyline [ (x1,y1), (x2,y1), (x2,y2), (x1,y2), (x1,y1) ]]
+symbolicGetContour _ (SquareR 0 (dx,dy)) = [Polyline [ (0,0), (dx,0), (dx,dy), (0,dy), (0,0) ]]
 -- FIXME: magic number.
 symbolicGetContour res (Circle r) = [Polyline [ ( r*cos(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n), r*sin(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n) ) | m <- [0.. n] ]] where
     n :: Fastℕ
@@ -60,7 +60,7 @@ symbolicGetContourMesh res (Translate2 v obj) = (\(Polytri (a,b,c)) -> Polytri (
                                                 symbolicGetContourMesh res obj
 symbolicGetContourMesh res (Scale2 s@(a,b) obj) = (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s)) <$>
                                                   symbolicGetContourMesh (res/sc) obj where sc = max a b
-symbolicGetContourMesh _ (RectR 0 (x1,y1) (x2,y2)) = [Polytri ((x1,y1), (x2,y1), (x2,y2)), Polytri ((x2,y2), (x1,y2), (x1,y1)) ]
+symbolicGetContourMesh _ (SquareR 0 (dx,dy)) = [Polytri ((0,0), (dx,0), (dx,dy)), Polytri ((dx,dy), (0,dy), (0,0)) ]
 -- FIXME: magic number.
 symbolicGetContourMesh res (Circle r) =
     [ Polytri ((0,0),
