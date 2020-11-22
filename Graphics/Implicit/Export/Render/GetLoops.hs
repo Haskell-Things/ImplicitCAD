@@ -5,7 +5,7 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>))
+import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
 
 -- We're working with 3D points here.
 import Graphics.Implicit.Definitions (ℝ3)
@@ -24,7 +24,7 @@ import Data.List (partition)
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
 
-getLoops :: [[ℝ3]] -> [[[ℝ3]]]
+getLoops :: (Show a, Eq a) => [[a]] -> [[[a]]]
 getLoops a = getLoops' a []
 
 -- We will be actually doing the loop extraction with
@@ -35,7 +35,7 @@ getLoops a = getLoops' a []
 -- built.
 
 -- so we begin with the "building loop" being empty.
-getLoops' :: [[ℝ3]] -> [[ℝ3]] -> [[[ℝ3]]]
+getLoops' :: (Show a, Eq a) => [[a]] -> [[a]] -> [[[a]]]
 
 -- | If there aren't any segments, and the "building loop" is empty, produce no loops.
 getLoops' [] [] = []
@@ -53,7 +53,7 @@ getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) 
 -- Otherwise... something is really screwed up.
 getLoops' segs workingLoop =
     let
-        presEnd :: [[ℝ3]] -> ℝ3
+        presEnd :: [[a]] -> a
         presEnd = last . last
         connects (x:_) = x == presEnd workingLoop
         -- Handle the empty case.
