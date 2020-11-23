@@ -7,7 +7,7 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
+                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
                                                    PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
@@ -65,7 +65,7 @@ outsetBox r (a,b) =
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
-getBox2 (RectR _ a b) = (a,b)
+getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
@@ -113,7 +113,7 @@ getBox2 (Outset2 d symbObj) =
 getBox2 (EmbedBoxedObj2 (_,box)) = box
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
---   Note: No implementations for RectR, Translate2, or Scale2 as they would be identical to the fallthrough.
+--   Note: No implementations for SquareR, Translate2, or Scale2 as they would be identical to the fallthrough.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 getBox2R (Circle r) _ = getBox2 $ Circle r
 getBox2R (PolygonR _ points) deg =
@@ -160,12 +160,15 @@ pointRBox (xStart, yStart) travel =
   let
     k :: ℝ
     k = pi/180
-    -- distance betwen (0,0) and our target.
+    -- determine the distance of our input point from from the axis of rotation.
     distance = sqrt $ xStart*xStart + yStart*yStart
     -- radian starting position.
     θstart = atan2 yStart xStart
     -- logical starting position
     startPosition = positionOf distance $ absrad θstart
+
+    -- take the input point. rotate it. see where it stops.
+
     -- how far we should rotate our point.
     rotationAmount = travel * k
     -- what direction are we rotating.
@@ -184,6 +187,10 @@ pointRBox (xStart, yStart) travel =
         OnAxis NegX -> (-distance,0)
         OnAxis NegY -> (0,-distance)
         InQuadrant _ -> ( distance*cos θstop, distance*sin θstop)
+
+    -- observe what the initial position was, and what the end position is.
+    -- check which quadrants they're in, and what direction the rotation was.
+
     (minX, minY, maxX, maxY) = (min xStart xStop, min yStart yStop, max xStart xStop, max yStart yStop)
     positionOf :: ℝ -> ℝ -> Position
     positionOf d θpos
@@ -203,6 +210,10 @@ pointRBox (xStart, yStart) travel =
       | rad > (360*k) = rad `mod'` (360*k)
       | rad < 0       = absrad (360*k)+rad
       | otherwise     = rad
+
+    -- now, if you passed through an axis, then the box must be expanded to include distance from axis of rotation in that direction.
+    -- otherwise, put a box around the start and stop positions.
+
     noAxis :: Quadrant -> Quadrant -> Direction -> ℝ -> Box2
     noAxis q1 q2 dir amount
       | q1 == q2 && amount < 90*k && amount > -90*k = ((minX, minY), (maxX, maxY))
