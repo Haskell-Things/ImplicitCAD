@@ -109,10 +109,16 @@ getBox3 (Rotate3 (a, b, c) symbObj) =
 
 getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
 getBox3 (Mirror3 v symbObj) =
-    let (v1, v2) = getBox3 symbObj
+    let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
      in pointsBox
-          [ reflect v v1
-          , reflect v v2
+          [ reflect v p1
+          , reflect v (x1, y2, z1)
+          , reflect v (x2, y2, z1)
+          , reflect v (x2, y1, z1)
+          , reflect v (x1, y1, z2)
+          , reflect v (x2, y1, z2)
+          , reflect v (x1, y2, z2)
+          , reflect v p2
           ]
 -- Boundary mods
 getBox3 (Shell3 w symbObj) =

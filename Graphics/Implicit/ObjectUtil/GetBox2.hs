@@ -107,9 +107,11 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y2)
                   ]
 getBox2 (Mirror2 v symbObj) =
-    let (bl, tr) = getBox2 symbObj
-     in pointsBox [ reflect v bl
-                  , reflect v tr
+    let (p1@(x1, y1), p2@(x2, y2)) = getBox2 symbObj
+     in pointsBox [ reflect v p1
+                  , reflect v p2
+                  , reflect v (x1, y2)
+                  , reflect v (x2, y1)
                   ]
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
