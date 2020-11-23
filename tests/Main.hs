@@ -22,8 +22,12 @@ import MessageSpec.Message(programExec)
 
 import PropertySpec (propSpec)
 
+import qualified GoldenTestSpec as Golden
+
 main :: IO ()
 main = hspec $ do
+  -- run tests against the expression parsing engine.
+  describe "golden tests" Golden.spec
   -- run tests against the expression parsing engine.
   describe "expression parsing" exprSpec
   -- and now, against the statement parsing engine.
@@ -32,6 +36,6 @@ main = hspec $ do
   describe "expression execution" exprExec
   -- run tests against the evaluation engine, checking for messages.
   describe "program execution" programExec
-  
+
   -- Generate data to be evaluated, and ensure the properties hold.
   describe "property tests" propSpec

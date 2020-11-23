@@ -212,6 +212,7 @@ Test-suite test-implicit
                   text,
                   parsec,
                   HUnit,
+                  directory,
                   hedgehog,
                   hw-hspec-hedgehog
     Other-Modules:
@@ -224,6 +225,7 @@ Test-suite test-implicit
                   MessageSpec.Util
                   PropertySpec
                   PropertySpec.Exec
+                  GoldenTestSpec
 
 Benchmark parser-bench
     Import: binstuff
