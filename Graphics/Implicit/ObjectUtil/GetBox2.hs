@@ -4,15 +4,16 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(negate, Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, ReflectX2), minℝ)
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, Mirror2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
+import Graphics.Implicit.MathUtil (reflect)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -25,6 +26,7 @@ isEmpty ((a, b), (c, d)) = a==c || b==d
 
 -- | Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
+pointsBox [] = emptyBox
 pointsBox points =
     let
         (xs, ys) = unzip points
@@ -104,9 +106,11 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
-getBox2 (ReflectX2 symbObj) =
-    let ((x1,y1), (x2,y2)) = getBox2 symbObj
-     in ((negate x2, y1), (negate x1, y2))
+getBox2 (Mirror2 v symbObj) =
+    let (bl, tr) = getBox2 symbObj
+     in pointsBox [ reflect v bl
+                  , reflect v tr
+                  ]
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj

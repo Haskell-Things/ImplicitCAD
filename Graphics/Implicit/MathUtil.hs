@@ -1,18 +1,20 @@
--- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+{-# LANGUAGE FlexibleContexts #-}
+
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
+import Prelude (Fractional, Num, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
 import Data.List (sort, sortBy, (!!))
 
-import Data.VectorSpace (magnitude, normalized, (^-^), (^+^), (*^))
+import Data.VectorSpace ((<.>), Scalar, (^*), InnerSpace, magnitude, normalized, (^-^), (^+^), (*^))
 
 -- get the distance between two points.
 import Data.AffineSpace (distance)
@@ -143,3 +145,13 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
             else
                 tmap2 (presObj:) $ packSome otherBoxedObjs box
         packSome [] _ = ([], [])
+
+
+reflect
+    :: (InnerSpace v, Fractional (Scalar v))
+    => v  -- ^ Mirror axis
+    -> v  -- ^ Vector to transform
+    -> v
+reflect a v = v ^-^ (2 * ((v <.> a) / (a <.> a))) *^ a
+
+

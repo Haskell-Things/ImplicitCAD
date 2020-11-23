@@ -6,9 +6,9 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
 import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, ReflectX2, Shell2, Outset2, EmbedBoxedObj2))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
 
-import Graphics.Implicit.MathUtil (rminimum, rmaximum, distFromLineSeg)
+import Graphics.Implicit.MathUtil (reflect, rminimum, rmaximum, distFromLineSeg)
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub, genericIndex, genericLength)
@@ -82,8 +82,8 @@ getImplicit2 (Rotate2 θ symbObj) =
         obj = getImplicit2 symbObj
     in
         obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
-getImplicit2 (ReflectX2 symbObj) =
-    \(x,y) -> getImplicit2 symbObj (-x, y)
+getImplicit2 (Mirror2 v symbObj) =
+    getImplicit2 symbObj . reflect v
 -- Boundary mods
 getImplicit2 (Shell2 w symbObj) =
     \p -> let
