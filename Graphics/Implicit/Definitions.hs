@@ -79,7 +79,7 @@ module Graphics.Implicit.Definitions (
     )
 where
 
-import Prelude (Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -266,6 +266,14 @@ data SymbolicObj2 =
     | EmbedBoxedObj2 BoxedObj2
     deriving Show
 
+-- | Semigroup under 'Graphic.Implicit.Primitives.union'.
+instance Semigroup SymbolicObj2 where
+  a <> b = UnionR2 0 [a, b]
+
+-- | Monoid under 'Graphic.Implicit.Primitives.union'.
+instance Monoid SymbolicObj2 where
+  mempty = RectR 0 (0, 0) (0, 0)
+
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
@@ -305,6 +313,14 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving Show
+
+-- | Semigroup under 'Graphic.Implicit.Primitives.union'.
+instance Semigroup SymbolicObj3 where
+  a <> b = UnionR3 0 [a, b]
+
+-- | Monoid under 'Graphic.Implicit.Primitives.union'.
+instance Monoid SymbolicObj3 where
+  mempty = Rect3R 0 (0, 0, 0) (0, 0, 0)
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
