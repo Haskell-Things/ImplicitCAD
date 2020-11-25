@@ -26,7 +26,7 @@ import qualified GoldenSpec.Spec as Golden
 
 main :: IO ()
 main = hspec $ do
-  -- run tests against the expression parsing engine.
+  -- run the golden tests to ensure we haven't broken mesh generation
   describe "golden tests" Golden.spec
   -- run tests against the expression parsing engine.
   describe "expression parsing" exprSpec
