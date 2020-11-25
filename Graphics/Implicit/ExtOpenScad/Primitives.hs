@@ -19,7 +19,7 @@ import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), fromℕtoℝ, isScaleID)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule), ArgParser, Symbol(Symbol), StateC, SourcePosition)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule), ArgParser(APFail), Symbol(Symbol), StateC, SourcePosition)
 
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, example, test, eulerCharacteristic)
 
@@ -32,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (sphere, rect3R, rectR, translate, circle, polygonR, extrudeR, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeRM, rotateExtrude, shell, pack3, pack2)
 
-import Control.Monad (mplus)
+import Control.Monad (when, mplus)
 
 import Data.AffineSpace (distanceSq)
 
@@ -346,6 +346,7 @@ intersect = moduleWithSuite "intersection" $ \_ children -> do
 
 difference :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 difference = moduleWithSuite "difference" $ \_ children -> do
+    when (null children) $ APFail "Call to 'difference' requires at least one child"
     r :: ℝ <- argument "r"
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
@@ -358,6 +359,7 @@ difference = moduleWithSuite "difference" $ \_ children -> do
 
     unsafeUncons :: [a] -> (a, [a])
     unsafeUncons (a : as) = (a, as)
+    -- NOTE: This error is guarded against during the @null children@ check in the function body.
     unsafeUncons _ = error "difference requires at least one element; zero given"
 
 translate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
