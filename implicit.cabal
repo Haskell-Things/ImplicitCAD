@@ -225,7 +225,8 @@ Test-suite test-implicit
                   MessageSpec.Util
                   PropertySpec
                   PropertySpec.Exec
-                  GoldenTestSpec
+                  GoldenSpec.Spec
+                  GoldenSpec.Util
 
 Benchmark parser-bench
     Import: binstuff

@@ -1,21 +1,14 @@
 {-# LANGUAGE LambdaCase #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
-
-module GoldenTestSpec (spec) where
+module GoldenSpec.Util (golden) where
 
 import Control.Monad.IO.Class (liftIO)
-import Graphics.Implicit
-import Prelude
+import Graphics.Implicit (SymbolicObj3, writeSTL)
+import Prelude (Bool (True, False), String, Double, pure, (==), readFile, writeFile, (>>=), (<>), ($))
 import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO ( hClose )
 import System.IO (openTempFile)
-import Test.Hspec ( describe, it, shouldBe, Spec, SpecWith )
-
-
-spec :: Spec
-spec = describe "golden tests" $ do
-  golden 1 "box" $ cubeR 0 True (5, 5, 5)
+import Test.Hspec ( it, shouldBe, SpecWith )
 
 
 golden :: Double -> String -> SymbolicObj3 -> SpecWith ()

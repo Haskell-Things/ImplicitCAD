@@ -22,7 +22,7 @@ import MessageSpec.Message(programExec)
 
 import PropertySpec (propSpec)
 
-import qualified GoldenTestSpec as Golden
+import qualified GoldenSpec.Spec as Golden
 
 main :: IO ()
 main = hspec $ do
