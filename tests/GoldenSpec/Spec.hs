@@ -1,5 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
-
 module GoldenSpec.Spec (spec) where
 
 import GoldenSpec.Util (golden)
