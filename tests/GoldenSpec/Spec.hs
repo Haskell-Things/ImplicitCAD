@@ -8,5 +8,5 @@ import Test.Hspec ( describe, Spec )
 
 spec :: Spec
 spec = describe "golden tests" $ do
-  golden 1 "box" $ cubeR 0 True (5, 5, 5)
+  golden "box" 1 $ cubeR 0 True (5, 5, 5)
 
