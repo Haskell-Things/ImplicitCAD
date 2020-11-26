@@ -182,7 +182,7 @@ ${BENCHBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs ${BUILDROOT}/setup-c
 # Prepare to build.
 ${BUILDROOT}/setup-config: implicit.cabal
 	cabal new-update
-	cabal new-install --only-dependencies --upgrade-dependencies $(PROFILING)
+	cabal new-install --only-dependencies --upgrade-dependencies --overwrite-policy=always $(PROFILING)
 	cabal new-configure --enable-tests --enable-benchmarks $(PROFILING)
 
 # The setup command, used to perform administrative tasks (haddock, upload to hackage, clean, etc...).

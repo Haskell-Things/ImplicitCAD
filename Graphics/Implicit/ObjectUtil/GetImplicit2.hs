@@ -4,9 +4,9 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
+import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
 
 import Graphics.Implicit.MathUtil (reflect, rminimum, rmaximum, distFromLineSeg)
 
@@ -15,11 +15,10 @@ import Data.List (nub, genericIndex, genericLength)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 (RectR r (x1,y1) (x2,y2)) =
+getImplicit2 (SquareR r (dx, dy)) =
     \(x,y) -> let
-         (dx, dy) = (x2-x1, y2-y1)
     in
-         rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2]
+         rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -52,10 +51,10 @@ getImplicit2 (UnionR2 r symbObjs) =
         objs = fmap getImplicit2 symbObjs
     in
         rminimum r $ fmap ($p) objs
-getImplicit2 (DifferenceR2 r symbObjs) =
+getImplicit2 (DifferenceR2 r symbObj symbObjs) =
     let
         objs = fmap getImplicit2 symbObjs
-        obj = head objs
+        obj = getImplicit2 symbObj
         complement :: Obj2 -> ℝ2 -> ℝ
         complement obj' p = - obj' p
     in

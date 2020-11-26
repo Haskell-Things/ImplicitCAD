@@ -22,11 +22,11 @@ module Graphics.Implicit.Primitives (
                                      extrudeRotateR,
                                      extrudeOnEdgeOf,
                                      sphere,
-                                     rect3R,
+                                     cubeR, rect3R,
                                      circle,
                                      cylinder,
                                      cylinder2,
-                                     rectR,
+                                     squareR, rectR,
                                      polygonR,
                                      rotateExtrude,
                                      rotate3,
@@ -38,11 +38,11 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude((/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
+import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
-                                                   RectR,
+                                                   SquareR,
                                                    Circle,
                                                    PolygonR,
                                                    Complement2,
@@ -58,7 +58,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                                    EmbedBoxedObj2
                                                   ),
                                       SymbolicObj3(
-                                                   Rect3R,
+                                                   CubeR,
                                                    Sphere,
                                                    Cylinder,
                                                    Complement3,
@@ -83,6 +83,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                      )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
+import Data.VectorSpace (AdditiveGroup((^-^)))
 
 -- $ 3D Primitives
 
@@ -97,9 +98,20 @@ rect3R ::
     ℝ                 -- ^ Rounding of corners
     -> ℝ3             -- ^ Bottom.. corner
     -> ℝ3             -- ^ Top right... corner
-    -> SymbolicObj3   -- ^ Resuting cube - (0,0,0) is bottom left...
+    -> SymbolicObj3   -- ^ Resuting cube
 
-rect3R = Rect3R
+rect3R r xyz1 xyz2 = translate xyz1 $ CubeR r $ xyz2 ^-^ xyz1
+
+-- | A rectangular prism, with rounded corners.
+cubeR ::
+    ℝ                 -- ^ Rounding of corners
+    -> Bool           -- ^ Centered?
+    -> ℝ3             -- ^ Size
+    -> SymbolicObj3   -- ^ Resuting cube. (0,0,0) is bottom left if @center = False@,
+                      -- otherwise it's the center.
+cubeR r False size = CubeR r size
+cubeR r True  size = translate (allthree (negate . (/ 2)) size) $ CubeR r size
+
 
 -- | A conical frustum --- ie. a cylinder with different radii at either end.
 cylinder2 ::
@@ -130,9 +142,18 @@ rectR ::
     ℝ               -- ^ Rounding radius (in mm) of corners
     -> ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
-    -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
+    -> SymbolicObj2 -- ^ Resulting square
 
-rectR = RectR
+rectR r xy1 xy2 = translate xy1 $ SquareR r $ xy2 ^-^ xy1
+
+-- | A rectangle, with rounded corners.
+squareR ::
+    ℝ               -- ^ Rounding radius (in mm) of corners
+    -> Bool         -- ^ Centered?
+    -> ℝ2           -- ^ Size
+    -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
+squareR r False size = SquareR r size
+squareR r True  size = translate (both (negate . (/ 2)) size) $ SquareR r size
 
 -- | A 2D polygon, with rounded corners.
 polygonR ::
@@ -165,7 +186,8 @@ class Object obj vec | obj -> vec where
     -- | Rounded difference
     differenceR ::
         ℝ        -- ^ The radius (in mm) of rounding
-        -> [obj] -- ^ Objects to difference
+        -> obj   -- ^ Base object
+        -> [obj] -- ^ Objects to subtract from the base
         -> obj   -- ^ Resulting object
 
     -- | Rounded minimum
@@ -225,7 +247,8 @@ instance Object SymbolicObj2 ℝ2 where
     mirror      = Mirror2
     scale       = Scale2
     complement  = Complement2
-    unionR      = UnionR2
+    unionR _ [] = mempty
+    unionR r ss = UnionR2 r ss
     intersectR  = IntersectR2
     differenceR = DifferenceR2
     outset      = Outset2
@@ -239,7 +262,8 @@ instance Object SymbolicObj3 ℝ3 where
     mirror      = Mirror3
     scale       = Scale3
     complement  = Complement3
-    unionR      = UnionR3
+    unionR _ [] = mempty
+    unionR r ss = UnionR3 r ss
     intersectR  = IntersectR3
     differenceR = DifferenceR3
     outset      = Outset3
@@ -251,7 +275,7 @@ instance Object SymbolicObj3 ℝ3 where
 union :: Object obj vec => [obj] -> obj
 union = unionR 0
 
-difference :: Object obj vec => [obj] -> obj
+difference :: Object obj vec => obj -> [obj] -> obj
 difference = differenceR 0
 
 intersect :: Object obj vec => [obj] -> obj

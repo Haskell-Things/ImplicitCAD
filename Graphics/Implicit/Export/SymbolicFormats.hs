@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude(fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(RectR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
+import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -58,9 +58,7 @@ bvect2 (x, y) = "[" <> fold (intersperse "," [bf x, bf y]) <> "]"
 -- | First, the 3D objects.
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
-buildS3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) | r == 0 = call "translate" [bf x1, bf y1, bf z1] [
-                                            call "cube" [bf $ x2 - x1, bf $ y2 - y1, bf $ z2 - z1] []
-                                           ]
+buildS3 (CubeR r (w,d,h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
 
 buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
@@ -76,7 +74,7 @@ buildS3 (UnionR3 r objs) | r == 0 = call "union" [] $ buildS3 <$> objs
 
 buildS3 (IntersectR3 r objs) | r == 0 = call "intersection" [] $ buildS3 <$> objs
 
-buildS3 (DifferenceR3 r objs) | r == 0 = call "difference" [] $ buildS3 <$> objs
+buildS3 (DifferenceR3 r obj objs) | r == 0 = call "difference" [] $ buildS3 <$> obj : objs
 
 buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 obj]
 
@@ -115,10 +113,10 @@ buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 &&
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
-buildS3 Rect3R{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 CubeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(UnionR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(IntersectR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(DifferenceR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3(DifferenceR3 _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Outset3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Shell3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
@@ -132,9 +130,7 @@ buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting op
 
 buildS2 :: SymbolicObj2 -> Reader ℝ Builder
 
-buildS2 (RectR r (x1,y1) (x2,y2)) | r == 0 = call "translate" [bf x1, bf y1] [
-                                    call "cube" [bf $ x2 - x1, bf $ y2 - y1] []
-                                   ]
+buildS2 (SquareR r (w,h)) | r == 0 = call "cube" [bf w, bf h] []
 
 buildS2 (Circle r) = call "circle" [bf r] []
 
@@ -144,7 +140,7 @@ buildS2 (Complement2 obj) = call "complement" [] [buildS2 obj]
 
 buildS2 (UnionR2 r objs) | r == 0 = call "union" [] $ buildS2 <$> objs
 
-buildS2 (DifferenceR2 r objs) | r == 0 = call "difference" [] $ buildS2 <$> objs
+buildS2 (DifferenceR2 r obj objs) | r == 0 = call "difference" [] $ buildS2 <$> obj : objs
 
 buildS2 (IntersectR2 r objs) | r == 0 = call "intersection" [] $ buildS2 <$> objs
 
@@ -161,10 +157,10 @@ buildS2 (Outset2 r obj) | r == 0 = call "outset" [] [buildS2 obj]
 buildS2 (Shell2 r obj) | r == 0 =  call "shell" [] [buildS2 obj]
 
 -- Generate errors for rounding requests. OpenSCAD does not support rounding.
-buildS2 RectR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 SquareR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (PolygonR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (UnionR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS2 (DifferenceR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 (DifferenceR2 _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (IntersectR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (Outset2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (Shell2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."

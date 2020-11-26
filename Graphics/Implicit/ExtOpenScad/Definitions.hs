@@ -43,13 +43,13 @@ import Data.Text.Lazy (Text, unpack, intercalate)
 
 import Control.Monad.State (StateT)
 
--- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
+-- | The state of computation.
 data CompState = CompState
-  { scadVars  :: VarLookup
-  , oVals     :: [OVal]
-  , sourceDir :: FilePath
-  , messages  :: [Message]
-  , scadOpts  :: ScadOpts
+  { scadVars  :: VarLookup -- ^ A hash of variables and functions.
+  , oVals     :: [OVal]    -- ^ The result of geometry generating functions.
+  , sourceDir :: FilePath  -- ^ The path we are looking for includes in.
+  , messages  :: [Message] -- ^ Output strings, warnings, and errors generated during execution.
+  , scadOpts  :: ScadOpts  -- ^ Options controlling the execution of scad code.
   }
 
 type StateC = StateT CompState IO

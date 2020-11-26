@@ -5,9 +5,9 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (Rect3R, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, RectR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, SquareR, Translate2), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -43,7 +43,7 @@ outsetBox r (a,b) =
 -- Get a Box3 around the given object.
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
-getBox3 (Rect3R _ a b) = (a,b)
+getBox3 (CubeR _ size) = ((0, 0, 0), size)
 getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
@@ -64,7 +64,7 @@ getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
         right = maximum rights
         top = maximum tops
         out = maximum outs
-getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
+getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
 getBox3 (IntersectR3 _ symbObjs) =
     let
         boxes = fmap getBox3 symbObjs
@@ -99,7 +99,7 @@ getBox3 (Scale3 s symbObj) =
 getBox3 (Rotate3 (a, b, c) symbObj) =
     let
         ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
-        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ RectR 0 (v1, w1) (v2, w2))
+        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ Translate2 (v1, w1) $ SquareR 0 (v2-v1, w2-w1))
         ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
         ((z1'', x1'), (z2'', x2')) = rotate z1' x1 z2' x2 b
         ((x1'', y1''), (x2'', y2'')) = rotate x1' y1' x2' y2' c
