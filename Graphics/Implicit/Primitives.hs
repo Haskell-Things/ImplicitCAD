@@ -9,6 +9,7 @@
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
                                      translate,
+                                     mirror,
                                      scale,
                                      outset,
                                      complement, union, intersect, difference,
@@ -49,6 +50,7 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    DifferenceR2,
                                                    IntersectR2,
                                                    Translate2,
+                                                   Mirror2,
                                                    Scale2,
                                                    Rotate2,
                                                    Outset2,
@@ -64,6 +66,7 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    DifferenceR3,
                                                    IntersectR3,
                                                    Translate3,
+                                                   Mirror3,
                                                    Scale3,
                                                    Rotate3,
                                                    Rotate3V,
@@ -199,6 +202,12 @@ class Object obj vec | obj -> vec where
         -> obj   -- ^ Object to translate
         -> obj   -- ^ Resulting object
 
+    -- | Mirror an object across the hyperplane whose normal is a given vector.
+    mirror ::
+        vec      -- ^ Vector defining the hyperplane
+        -> obj   -- ^ Object to mirror
+        -> obj   -- ^ Resulting object
+
     -- | Scale an object
     scale ::
         vec     -- ^ Amount to scale by
@@ -235,6 +244,7 @@ class Object obj vec | obj -> vec where
 
 instance Object SymbolicObj2 ℝ2 where
     translate   = Translate2
+    mirror      = Mirror2
     scale       = Scale2
     complement  = Complement2
     unionR _ [] = mempty
@@ -249,6 +259,7 @@ instance Object SymbolicObj2 ℝ2 where
 
 instance Object SymbolicObj3 ℝ3 where
     translate   = Translate3
+    mirror      = Mirror3
     scale       = Scale3
     complement  = Complement3
     unionR _ [] = mempty

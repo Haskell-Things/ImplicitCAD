@@ -47,6 +47,7 @@ module Graphics.Implicit.Definitions (
         Translate2,
         Scale2,
         Rotate2,
+        Mirror2,
         Shell2,
         Outset2,
         EmbedBoxedObj2),
@@ -62,6 +63,7 @@ module Graphics.Implicit.Definitions (
         Scale3,
         Rotate3,
         Rotate3V,
+        Mirror3,
         Shell3,
         Outset3,
         EmbedBoxedObj3,
@@ -259,6 +261,7 @@ data SymbolicObj2 =
     | Translate2 ℝ2 SymbolicObj2
     | Scale2 ℝ2 SymbolicObj2
     | Rotate2 ℝ SymbolicObj2
+    | Mirror2 ℝ2 SymbolicObj2 -- mirror across the line whose normal is defined by the R2
     -- Boundary mods
     | Outset2 ℝ SymbolicObj2
     | Shell2 ℝ SymbolicObj2
@@ -290,6 +293,7 @@ data SymbolicObj3 =
     | Scale3 ℝ3 SymbolicObj3
     | Rotate3 ℝ3 SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
+    | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3
     | Shell3 ℝ SymbolicObj3

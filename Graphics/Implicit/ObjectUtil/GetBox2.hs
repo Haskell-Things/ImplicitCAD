@@ -8,11 +8,12 @@ import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), f
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, Mirror2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
+import Graphics.Implicit.MathUtil (reflect)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -25,6 +26,7 @@ isEmpty ((a, b), (c, d)) = a==c || b==d
 
 -- | Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
+pointsBox [] = emptyBox
 pointsBox points =
     let
         (xs, ys) = unzip points
@@ -103,6 +105,13 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x1, y2)
                   , rotate (x2, y1)
                   , rotate (x2, y2)
+                  ]
+getBox2 (Mirror2 v symbObj) =
+    let (p1@(x1, y1), p2@(x2, y2)) = getBox2 symbObj
+     in pointsBox [ reflect v p1
+                  , reflect v p2
+                  , reflect v (x1, y2)
+                  , reflect v (x2, y1)
                   ]
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
