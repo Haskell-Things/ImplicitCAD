@@ -4,15 +4,16 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, head, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, RectR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2), minℝ)
+                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
+                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, Mirror2), minℝ)
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
+import Graphics.Implicit.MathUtil (reflect)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -25,6 +26,7 @@ isEmpty ((a, b), (c, d)) = a==c || b==d
 
 -- | Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
+pointsBox [] = emptyBox
 pointsBox points =
     let
         (xs, ys) = unzip points
@@ -53,7 +55,7 @@ intersectBoxes (x:xs) = if nmaxx > nminx && nmaxy > nminy
                         then ((nminx, nminy), (nmaxx, nmaxy))
                         else emptyBox
   where
-    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2)) 
+    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2))
     ((xmin1, ymin1), (xmax1, ymax1)) = x
     ((xmin2, ymin2), (xmax2, ymax2)) = intersectBoxes xs
 
@@ -65,7 +67,7 @@ outsetBox r (a,b) =
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
-getBox2 (RectR _ a b) = (a,b)
+getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
@@ -76,7 +78,7 @@ getBox2 (Complement2 _) =
           infty = 1/0
 getBox2 (UnionR2 r symbObjs) =
   outsetBox r $ unionBoxes (fmap getBox2 symbObjs)
-getBox2 (DifferenceR2 _ symbObjs) = getBox2 $ head symbObjs
+getBox2 (DifferenceR2 _ symbObj _) = getBox2 symbObj
 getBox2 (IntersectR2 r symbObjs) =
   outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ fmap getBox2 symbObjs
 -- Simple transforms
@@ -104,6 +106,13 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
+getBox2 (Mirror2 v symbObj) =
+    let (p1@(x1, y1), p2@(x2, y2)) = getBox2 symbObj
+     in pointsBox [ reflect v p1
+                  , reflect v p2
+                  , reflect v (x1, y2)
+                  , reflect v (x2, y1)
+                  ]
 -- Boundary mods
 getBox2 (Shell2 w symbObj) =
     outsetBox (w/2) $ getBox2 symbObj
@@ -113,7 +122,7 @@ getBox2 (Outset2 d symbObj) =
 getBox2 (EmbedBoxedObj2 (_,box)) = box
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
---   Note: No implementations for RectR, Translate2, or Scale2 as they would be identical to the fallthrough.
+--   Note: No implementations for SquareR, Translate2, or Scale2 as they would be identical to the fallthrough.
 getBox2R :: SymbolicObj2 -> ℝ -> Box2
 getBox2R (Circle r) _ = getBox2 $ Circle r
 getBox2R (PolygonR _ points) deg =
@@ -129,7 +138,7 @@ getBox2R (UnionR2 r symObjs) deg =
     boxes = [ getBox2R obj deg| obj <- symObjs ]
   in
     outsetBox r $ unionBoxes boxes
-getBox2R (DifferenceR2 _ symObjs) deg = getBox2R (head symObjs) deg
+getBox2R (DifferenceR2 _ symObj _) deg = getBox2R symObj deg
 getBox2R (IntersectR2 r symObjs) deg =
   let
     boxes = [ getBox2R obj deg| obj <- symObjs ]
@@ -160,12 +169,15 @@ pointRBox (xStart, yStart) travel =
   let
     k :: ℝ
     k = pi/180
-    -- distance betwen (0,0) and our target.
+    -- determine the distance of our input point from from the axis of rotation.
     distance = sqrt $ xStart*xStart + yStart*yStart
     -- radian starting position.
     θstart = atan2 yStart xStart
     -- logical starting position
     startPosition = positionOf distance $ absrad θstart
+
+    -- take the input point. rotate it. see where it stops.
+
     -- how far we should rotate our point.
     rotationAmount = travel * k
     -- what direction are we rotating.
@@ -184,6 +196,10 @@ pointRBox (xStart, yStart) travel =
         OnAxis NegX -> (-distance,0)
         OnAxis NegY -> (0,-distance)
         InQuadrant _ -> ( distance*cos θstop, distance*sin θstop)
+
+    -- observe what the initial position was, and what the end position is.
+    -- check which quadrants they're in, and what direction the rotation was.
+
     (minX, minY, maxX, maxY) = (min xStart xStop, min yStart yStop, max xStart xStop, max yStart yStop)
     positionOf :: ℝ -> ℝ -> Position
     positionOf d θpos
@@ -203,6 +219,10 @@ pointRBox (xStart, yStart) travel =
       | rad > (360*k) = rad `mod'` (360*k)
       | rad < 0       = absrad (360*k)+rad
       | otherwise     = rad
+
+    -- now, if you passed through an axis, then the box must be expanded to include distance from axis of rotation in that direction.
+    -- otherwise, put a box around the start and stop positions.
+
     noAxis :: Quadrant -> Quadrant -> Direction -> ℝ -> Box2
     noAxis q1 q2 dir amount
       | q1 == q2 && amount < 90*k && amount > -90*k = ((minX, minY), (maxX, maxY))
@@ -263,7 +283,7 @@ pointRBox (xStart, yStart) travel =
     twoAxis :: Axis -> Axis -> Direction -> Box2
     twoAxis start stop dir
       | (start == PosX && stop == NegX) ||
-        (start == PosY && stop == NegY) || 
+        (start == PosY && stop == NegY) ||
         (start == NegX && stop == PosX) ||
         (start == NegY && stop == PosY)  = crossOne start dir
     twoAxis start stop dir
@@ -310,7 +330,7 @@ pointRBox (xStart, yStart) travel =
     mixWith :: [ℝ2] -> Box2
     mixWith points = ((minimum xPoints, minimum yPoints), (maximum xPoints, maximum yPoints))
                      where
-                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)] 
+                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)]
     invertRotation :: Direction -> Direction
     invertRotation Clockwise = CounterClockwise
     invertRotation CounterClockwise = Clockwise

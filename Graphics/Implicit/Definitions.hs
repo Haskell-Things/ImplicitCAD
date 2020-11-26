@@ -38,7 +38,7 @@ module Graphics.Implicit.Definitions (
     BoxedObj2,
     BoxedObj3,
     SymbolicObj2(
-        RectR,
+        SquareR,
         Circle,
         PolygonR,
         Complement2,
@@ -48,11 +48,12 @@ module Graphics.Implicit.Definitions (
         Translate2,
         Scale2,
         Rotate2,
+        Mirror2,
         Shell2,
         Outset2,
         EmbedBoxedObj2),
     SymbolicObj3(
-        Rect3R,
+        CubeR,
         Sphere,
         Cylinder,
         Complement3,
@@ -63,6 +64,7 @@ module Graphics.Implicit.Definitions (
         Scale3,
         Rotate3,
         Rotate3V,
+        Mirror3,
         Shell3,
         Outset3,
         EmbedBoxedObj3,
@@ -80,7 +82,7 @@ module Graphics.Implicit.Definitions (
     )
 where
 
-import Prelude (Show, Eq, Ord, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Eq, Ord, Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import GHC.Generics (Generic)
 
@@ -253,18 +255,19 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      RectR ℝ ℝ2 ℝ2   -- rounding, start, stop.
+      SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
     | Complement2 SymbolicObj2
     | UnionR2 ℝ [SymbolicObj2]
-    | DifferenceR2 ℝ [SymbolicObj2]
+    | DifferenceR2 ℝ SymbolicObj2 [SymbolicObj2]
     | IntersectR2 ℝ [SymbolicObj2]
     -- Simple transforms
     | Translate2 ℝ2 SymbolicObj2
     | Scale2 ℝ2 SymbolicObj2
     | Rotate2 ℝ SymbolicObj2
+    | Mirror2 ℝ2 SymbolicObj2 -- mirror across the line whose normal is defined by the R2
     -- Boundary mods
     | Outset2 ℝ SymbolicObj2
     | Shell2 ℝ SymbolicObj2
@@ -272,22 +275,31 @@ data SymbolicObj2 =
     | EmbedBoxedObj2 BoxedObj2
     deriving (Show, Generic)
 
+-- | Semigroup under 'Graphic.Implicit.Primitives.union'.
+instance Semigroup SymbolicObj2 where
+  a <> b = UnionR2 0 [a, b]
+
+-- | Monoid under 'Graphic.Implicit.Primitives.union'.
+instance Monoid SymbolicObj2 where
+  mempty = SquareR 0 (0, 0)
+
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      Rect3R ℝ ℝ3 ℝ3 -- rounding, start, stop.
+      CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
-    | DifferenceR3 ℝ [SymbolicObj3]
+    | DifferenceR3 ℝ SymbolicObj3 [SymbolicObj3]
     | IntersectR3 ℝ [SymbolicObj3]
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
     | Rotate3 ℝ3 SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
+    | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3
     | Shell3 ℝ SymbolicObj3
@@ -311,6 +323,14 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     deriving (Show, Generic)
+
+-- | Semigroup under 'Graphic.Implicit.Primitives.union'.
+instance Semigroup SymbolicObj3 where
+  a <> b = UnionR3 0 [a, b]
+
+-- | Monoid under 'Graphic.Implicit.Primitives.union'.
+instance Monoid SymbolicObj3 where
+  mempty = CubeR 0 (0, 0, 0)
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ

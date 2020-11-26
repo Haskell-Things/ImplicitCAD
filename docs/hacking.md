@@ -151,7 +151,7 @@ and put it in `Graphics.Implicit.Primitives`. However, to allow more powerful op
 
 ```haskell
 data SymbolicObj3 =
-	  Rect3R ℝ ℝ3 ℝ3
+	  CubeR ℝ ℝ3 ℝ3
 	| Sphere ℝ
 	...
 ```

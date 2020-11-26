@@ -66,7 +66,6 @@ mergedSquareTris sqTris =
         -- triangles...
         triTriangles :: [Triangle]
         triTriangles = [tri | Tris tris <- sqTris, tri <- unmesh tris ]
-        --concat $ fmap (\(Tris a) -> a) $ filter isTris sqTris
         -- We actually want to work on the quads, so we find those
         squaresFromTris :: [TriSquare]
         squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]

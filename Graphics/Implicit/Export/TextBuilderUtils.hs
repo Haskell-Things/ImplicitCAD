@@ -33,7 +33,7 @@ import Data.Text.Lazy.Builder.Int (decimal)
 toLazyText :: Builder -> Text
 toLazyText = toLazyTextWith defaultChunkSize
 
--- | Serialize a float in full precision
+-- | Serialize a value as a single precision float with an exponent attached.
 bf :: ℝ -> Builder
 bf value = formatRealFloat Exponent Nothing $ fromℝtoFloat value
 

@@ -5,14 +5,14 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, head, tail, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, Rect3R, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V,
+                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
-import Graphics.Implicit.MathUtil (rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 
@@ -30,10 +30,8 @@ default (ℝ)
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
-getImplicit3 (Rect3R r (x1,y1,z1) (x2,y2,z2)) =
-    \(x,y,z) -> let (dx, dy, dz) = (x2-x1, y2-y1, z2-z1)
-                in
-                  rmaximum r [abs (x-dx/2-x1) - dx/2, abs (y-dy/2-y1) - dy/2, abs (z-dz/2-z1) - dz/2]
+getImplicit3 (CubeR r (dx, dy, dz)) =
+    \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
     \(x,y,z) -> sqrt (x*x + y*y + z*z) - r
 getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
@@ -54,10 +52,10 @@ getImplicit3 (UnionR3 r symbObjs) =
 getImplicit3 (IntersectR3 r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
-getImplicit3 (DifferenceR3 r symbObjs) =
+getImplicit3 (DifferenceR3 r symbObj symbObjs) =
     let
-        tailObjs = getImplicit3 <$> tail symbObjs
-        headObj = getImplicit3 $ head symbObjs
+        tailObjs = getImplicit3 <$> symbObjs
+        headObj = getImplicit3 symbObj
         complement :: Obj3 -> ℝ3 -> ℝ
         complement obj' p = - obj' p
     in
@@ -100,6 +98,8 @@ getImplicit3 (Rotate3V θ axis symbObj) =
             v ^* cos θ
             - (axis' `cross3` v) ^* sin θ
             + (axis' ^* (axis' ⋅ (v ^* (1 - cos θ))))
+getImplicit3 (Mirror3 v symbObj) =
+    getImplicit3 symbObj . reflect v
 -- Boundary mods
 getImplicit3 (Shell3 w symbObj) =
     let
