@@ -92,7 +92,8 @@ Library
                   storable-endian,
                   JuicyPixels,
                   transformers,
-                  mtl
+                  mtl,
+                  linear
     Exposed-modules:
                     Graphics.Implicit
                     Graphics.Implicit.Definitions

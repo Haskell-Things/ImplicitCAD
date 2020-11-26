@@ -18,6 +18,7 @@ import Control.Monad.Reader (Reader, runReader, ask)
 import Data.List (intersperse)
 import Data.Function (fix)
 import Data.Foldable(fold, foldMap)
+import Graphics.Implicit.MathUtil (quaternionToEuler)
 
 default (ℝ)
 
@@ -80,7 +81,9 @@ buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 
 
 buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 
-buildS3 (Rotate3 (x,y,z) obj) = call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
+buildS3 (Rotate3 q obj) =
+  let (x,y,z) = quaternionToEuler q
+   in call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
 
 buildS3 (Rotate3V a v obj) = callNaked "rotate" [ "a=" <> bf (rad2deg a), "v=" <> bvect3 v ] [buildS3 obj]
 

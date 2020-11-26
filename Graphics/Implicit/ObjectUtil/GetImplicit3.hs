@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
-import Graphics.Implicit.MathUtil (reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (quaternionToEuler, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 
@@ -78,8 +78,9 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
         k = abs (sx*sy*sz) ** (1/3)
     in
         \p -> k * obj (p ⋯/ s)
-getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
+getImplicit3 (Rotate3 q symbObj) =
     let
+        (yz, zx, xy) = quaternionToEuler q
         obj = getImplicit3 symbObj
         rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
         rotateYZ θ obj' (x,y,z) = obj' ( x, y*cos θ + z*sin θ, z*cos θ - y*sin θ)

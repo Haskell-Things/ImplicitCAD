@@ -15,7 +15,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise, error)
+import Prelude(Double, (.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -403,10 +403,10 @@ rotate = moduleWithSuite "rotate" $ \_ children -> do
     pure $ pure $ caseOType a $
                ( \θ  ->
                           objMap (Prim.rotate $ deg2rad θ) (Prim.rotate3V (deg2rad θ) v) children
-        ) <||> ( \(yz,zx,xy) ->
-            objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (deg2rad yz, deg2rad zx, deg2rad xy) ) children
-        ) <||> ( \(yz,zx) ->
-            objMap id (Prim.rotate3 (deg2rad yz, deg2rad zx, 0)) children
+        ) <||> ( \(yz :: Double,zx :: Double,xy :: Double) ->
+            objMap (Prim.rotate $ deg2rad xy ) (Prim.rotate3 (error "oops") ) children
+        ) <||> ( \(yz :: Double,zx :: Double) ->
+            objMap id (Prim.rotate3 (error "oops")) children
         ) <||> const []
       where
         deg2rad :: ℝ -> ℝ

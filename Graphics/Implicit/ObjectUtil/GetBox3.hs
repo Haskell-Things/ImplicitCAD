@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (Cu
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import Data.VectorSpace ((^-^), (^+^))
-import Graphics.Implicit.MathUtil (reflect)
+import Graphics.Implicit.MathUtil (quaternionToEuler, reflect)
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
 
@@ -96,8 +96,8 @@ getBox3 (Scale3 s symbObj) =
         (sbx,sby,sbz) = s ⋯* b
     in
         ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
-getBox3 (Rotate3 (a, b, c) symbObj) =
-    let
+getBox3 (Rotate3 q symbObj) =
+    let (a, b, c) = quaternionToEuler q
         ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
         rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ Translate2 (v1, w1) $ SquareR 0 (v2-v1, w2-w1))
         ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
@@ -107,7 +107,7 @@ getBox3 (Rotate3 (a, b, c) symbObj) =
     in
         ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
 
-getBox3 (Rotate3V _ v symbObj) = getBox3 (Rotate3 v symbObj)
+getBox3 (Rotate3V _ _ _) = error "this has always been broken"
 getBox3 (Mirror3 v symbObj) =
     let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
      in pointsBox

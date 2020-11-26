@@ -84,6 +84,7 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Data.VectorSpace (AdditiveGroup((^-^)))
+import Linear (Quaternion)
 
 -- $ 3D Primitives
 
@@ -318,7 +319,7 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
-rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
+rotate3 :: Quaternion ℝ -> SymbolicObj3 -> SymbolicObj3
 rotate3 = Rotate3
 
 -- | Rotate a 3D object along an arbitrary axis.

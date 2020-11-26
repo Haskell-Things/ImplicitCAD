@@ -93,6 +93,8 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
+import Linear.Quaternion (Quaternion)
+
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
 -- a rotation, measured in radians.
@@ -291,7 +293,7 @@ data SymbolicObj3 =
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
-    | Rotate3 ℝ3 SymbolicObj3
+    | Rotate3 (Quaternion Double) SymbolicObj3
     | Rotate3V ℝ ℝ3 SymbolicObj3
     | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
     -- Boundary mods
