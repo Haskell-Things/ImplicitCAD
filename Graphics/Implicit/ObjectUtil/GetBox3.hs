@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), head, (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Translate2, Rotate2, SquareR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
@@ -54,7 +54,7 @@ getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
         right = maximum rights
         top = maximum tops
         out = maximum outs
-getBox3 (DifferenceR3 _ symbObjs)  = getBox3 $ head symbObjs
+getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
 getBox3 (IntersectR3 _ symbObjs) =
     let
         boxes = fmap getBox3 symbObjs
@@ -149,7 +149,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
             smin s v = min v (s * v)
             smax s v = max v (s * v)
             -- FIXME: assumes minimums are negative, and maximums are positive.
-            scaleEach ((d1, d2),(d3, d4)) = (scalex' * d1, scaley' * d2, scalex' * d3, scaley' * d4) 
+            scaleEach ((d1, d2),(d3, d4)) = (scalex' * d1, scaley' * d2, scalex' * d3, scaley' * d4)
           in case twist of
             Left twval -> if twval == 0
                           then (smin scalex' x1, smin scaley' y1, smax scalex' x2, smax scaley' y2)

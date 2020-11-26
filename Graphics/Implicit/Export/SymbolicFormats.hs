@@ -68,7 +68,7 @@ buildS3 (UnionR3 r objs) | r == 0 = call "union" [] $ buildS3 <$> objs
 
 buildS3 (IntersectR3 r objs) | r == 0 = call "intersection" [] $ buildS3 <$> objs
 
-buildS3 (DifferenceR3 r objs) | r == 0 = call "difference" [] $ buildS3 <$> objs
+buildS3 (DifferenceR3 r obj objs) | r == 0 = call "difference" [] $ buildS3 <$> obj : objs
 
 buildS3 (Translate3 (x,y,z) obj) = call "translate" [bf x, bf y, bf z] [buildS3 obj]
 
@@ -110,7 +110,7 @@ buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 &&
 buildS3 CubeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(UnionR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(IntersectR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(DifferenceR3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3(DifferenceR3 _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Outset3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Shell3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
@@ -135,7 +135,7 @@ buildS2 (Complement2 obj) = call "complement" [] [buildS2 obj]
 
 buildS2 (UnionR2 r objs) | r == 0 = call "union" [] $ buildS2 <$> objs
 
-buildS2 (DifferenceR2 r objs) | r == 0 = call "difference" [] $ buildS2 <$> objs
+buildS2 (DifferenceR2 r obj objs) | r == 0 = call "difference" [] $ buildS2 <$> obj : objs
 
 buildS2 (IntersectR2 r objs) | r == 0 = call "intersection" [] $ buildS2 <$> objs
 
@@ -153,7 +153,7 @@ buildS2 (Shell2 r obj) | r == 0 =  call "shell" [] [buildS2 obj]
 buildS2 SquareR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (PolygonR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (UnionR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS2 (DifferenceR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 (DifferenceR2 _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (IntersectR2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (Outset2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS2 (Shell2 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."

@@ -253,7 +253,7 @@ data SymbolicObj2 =
     -- (Rounded) CSG
     | Complement2 SymbolicObj2
     | UnionR2 ℝ [SymbolicObj2]
-    | DifferenceR2 ℝ [SymbolicObj2]
+    | DifferenceR2 ℝ SymbolicObj2 [SymbolicObj2]
     | IntersectR2 ℝ [SymbolicObj2]
     -- Simple transforms
     | Translate2 ℝ2 SymbolicObj2
@@ -283,7 +283,7 @@ data SymbolicObj3 =
     -- (Rounded) CSG
     | Complement3 SymbolicObj3
     | UnionR3 ℝ [SymbolicObj3]
-    | DifferenceR3 ℝ [SymbolicObj3]
+    | DifferenceR3 ℝ SymbolicObj3 [SymbolicObj3]
     | IntersectR3 ℝ [SymbolicObj3]
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3

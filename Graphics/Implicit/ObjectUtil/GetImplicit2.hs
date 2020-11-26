@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, head, tail, (.))
+import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Shell2, Outset2, EmbedBoxedObj2))
 
@@ -51,10 +51,10 @@ getImplicit2 (UnionR2 r symbObjs) =
         objs = fmap getImplicit2 symbObjs
     in
         rminimum r $ fmap ($p) objs
-getImplicit2 (DifferenceR2 r symbObjs) =
+getImplicit2 (DifferenceR2 r symbObj symbObjs) =
     let
         objs = fmap getImplicit2 symbObjs
-        obj = head objs
+        obj = getImplicit2 symbObj
         complement :: Obj2 -> ℝ2 -> ℝ
         complement obj' p = - obj' p
     in
