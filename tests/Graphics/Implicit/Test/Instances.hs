@@ -4,7 +4,7 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon) where
+module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
 
 import Data.VectorSpace (AdditiveGroup((^-^)))
 import qualified Graphics.Implicit as I
@@ -38,7 +38,7 @@ import Graphics.Implicit.Definitions
       allthree )
 import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
 import Prelude (Bool (True, False), Int, Double, Integer, (.), flip, uncurry, any, ($), (==), not, (>), (<), and, (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (++), round, (<=), filter )
-import QuickSpec ( Observe(observe) )
+import QuickSpec ( Observe(observe), (=~=) )
 import Test.QuickCheck
     ( Arbitrary(arbitrary, shrink),
       genericShrink,
