@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
-import Graphics.Implicit.MathUtil (quaternionToEuler, reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (temp_viaV3, quaternionToEuler, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 
@@ -24,6 +24,7 @@ import Data.Cross(cross3)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
+import qualified Linear as Q
 
 default (ℝ)
 
@@ -79,6 +80,7 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     in
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 q symbObj) =
+    -- getImplicit3 symbObj . temp_viaV3 (Q.rotate $ Q.conjugate q)
     let
         (yz, zx, xy) = quaternionToEuler q
         obj = getImplicit3 symbObj

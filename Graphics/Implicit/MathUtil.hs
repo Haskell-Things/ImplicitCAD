@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, temp_viaV3) where
 
 -- Explicitly include what we need from Prelude.
 import Prelude (RealFloat, (>=), signum, atan2, Fractional, Bool(True, False), Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
@@ -174,5 +174,10 @@ quaternionToEuler (Quaternion w (V3 x y z))=
                 False -> asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
-   in (pitch, roll, yaw)
+   in (roll, pitch, yaw)
+
+temp_viaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
+temp_viaV3 f (x, y, z) =
+  let V3 x' y' z' = f (V3 x y z)
+  in (x', y', z')
 
