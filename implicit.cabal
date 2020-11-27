@@ -230,6 +230,7 @@ Test-suite test-implicit
                   PropertySpec.Exec
                   GoldenSpec.Spec
                   GoldenSpec.Util
+                  Graphics.Implicit.Test.Instances
 
 Benchmark parser-bench
     Import: binstuff

@@ -1,22 +1,58 @@
-{-# LANGUAGE FlexibleInstances                     #-}
-{-# LANGUAGE MultiParamTypeClasses                 #-}
-{-# LANGUAGE TypeApplications                      #-}
-{-# OPTIONS_GHC -fno-warn-missing-import-lists     #-}
-{-# OPTIONS_GHC -fno-warn-monomorphism-restriction #-}
-{-# OPTIONS_GHC -fno-warn-orphans                  #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications      #-}
 
-module Graphics.Implicit.Spec where
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
-import           Data.AdditiveGroup (AdditiveGroup((^+^)))
-import           Data.VectorSpace (AdditiveGroup((^-^)))
+module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon) where
+
+import Data.VectorSpace (AdditiveGroup((^-^)))
 import qualified Graphics.Implicit as I
-import           Graphics.Implicit hiding (scale)
-import           Graphics.Implicit.Definitions
-import           Graphics.Implicit.Primitives hiding (scale)
-import           Prelude
-import           QuickSpec
-import           Test.QuickCheck hiding (Fn)
+import Graphics.Implicit
+    ( ExtrudeRMScale(Fn, C1, C2),
+      SymbolicObj3,
+      SymbolicObj2,
+      ℝ3,
+      ℝ2,
+      ℝ,
+      Object(shell, translate, unionR, intersectR, differenceR),
+      sphere,
+      cubeR,
+      cylinder2,
+      cylinder,
+      circle,
+      rectR,
+      polygonR,
+      extrudeR,
+      rotate3,
+      rotate3V,
+      rotate )
+import Graphics.Implicit.Definitions
+    ( SymbolicObj3(Cylinder, Complement3, UnionR3, DifferenceR3,
+                   IntersectR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3,
+                   Shell3, CubeR),
+      SymbolicObj2(SquareR, Complement2, UnionR2, DifferenceR2,
+                   IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
+                   PolygonR),
+      both,
+      allthree )
+import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
+import Prelude (Bool (True, False), Int, Double, Integer, (.), flip, uncurry, any, ($), (==), not, (>), (<), and, (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (++), round, (<=), filter )
+import QuickSpec ( Observe(observe) )
+import Test.QuickCheck
+    ( Arbitrary(arbitrary, shrink),
+      genericShrink,
+      choose,
+      oneof,
+      scale,
+      sized,
+      vectorOf,
+      Gen,
+      Positive(getPositive) )
 
+
+epsilon :: Int
+epsilon = 5
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
@@ -64,11 +100,11 @@ instance Arbitrary ExtrudeRMScale where
 
 ------------------------------------------------------------------------------
 instance Observe (ℝ2, ()) ℝ SymbolicObj2 where
-  observe p = quantize 3 . observe p . getImplicit
+  observe p = quantize epsilon . observe p . getImplicit
 
 
 instance Observe (ℝ3, ()) ℝ SymbolicObj3 where
-  observe p = quantize 3 . observe p . getImplicit
+  observe p = quantize epsilon . observe p . getImplicit
 
 
 ------------------------------------------------------------------------------
@@ -89,14 +125,14 @@ instance Quantizable a => Quantizable (b -> a) where
 
 instance Quantizable Double where
   quantize n r =
-    let pow = 10 ^ n
+    let pow = 10 ^ n :: Double
     in fromIntegral @Integer (round (r * pow)) / pow
 
 
 ------------------------------------------------------------------------------
 arbitraryObject :: (Arbitrary a, Arbitrary vec, Object a vec, Quantizable vec) => [Gen a]
 arbitraryObject =
-  [ translate   <$> fmap (quantize 3) arbitrary <*> decayArbitrary 2
+  [ translate   <$> fmap (quantize epsilon) arbitrary <*> decayArbitrary 2
   , I.scale     <$> arbitrary <*> decayArbitrary 2
   , unionR      <$> arbitraryPos <*> decayedList
   , intersectR  <$> arbitraryPos <*> decayedList
@@ -111,7 +147,7 @@ decayedList = do
   vectorOf n $ decayArbitrary $ n + 1
 
 arbitraryPos :: Gen Double
-arbitraryPos = quantize 3 . getPositive <$> arbitrary
+arbitraryPos = quantize epsilon . getPositive <$> arbitrary
 
 arbitraryV3 :: Gen ℝ3
 arbitraryV3 = (,,) <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
@@ -173,39 +209,4 @@ isValid3 s =
 ------------------------------------------------------------------------------
 boxSize :: (Object obj vec, AdditiveGroup vec) => obj -> vec
 boxSize = uncurry (flip (^-^)) . getBox
-
-
-sig :: Sig
-sig = signature
-  [ con "nothing" $ rect3R 0 (0, 0, 0) (0, 0, 0)
-  , con "sphere" sphere
-  , con "rect3R" rect3R
-  , con "rotate3" rotate3
-  , con "rectR" rectR
-  , con "extrudeR" extrudeR
-  , con "," $ (,) @Double @Double
-  , con ",," $ (,,) @Double @Double @Double
-  , monoObserve @SymbolicObj3
-  , monoObserve @SymbolicObj2
-  , mono @Double
-  , mono @(Double, Double)
-  , mono @(Double, Double, Double)
-  , withMaxTermSize 12
-  ]
-
-
-------------------------------------------------------------------------------
-test :: IO ()
-test = quickCheckWithTests 10000 $ \r xyz (Positive dx) (Positive dy) (Positive dz) ->
-      rect3R r xyz (xyz ^+^ (dx, dy, dz))
-  =~= translate xyz (cubeR r False (dx, dy, dz))
-
-test2 :: IO ()
-test2 = quickCheckWithTests 10000 $ \obj ->
-      obj
-  =~= rotate3 (2 * pi, 0, 0) obj
-
-
-quickCheckWithTests :: Testable prop => Int -> prop -> IO ()
-quickCheckWithTests n prop = quickCheckWith (stdArgs {maxSuccess = n}) prop
 
