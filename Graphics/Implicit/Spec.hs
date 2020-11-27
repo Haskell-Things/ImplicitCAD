@@ -1,7 +1,5 @@
 {-# LANGUAGE FlexibleInstances                     #-}
-{-# LANGUAGE LambdaCase                            #-}
 {-# LANGUAGE MultiParamTypeClasses                 #-}
-{-# LANGUAGE NumDecimals                           #-}
 {-# LANGUAGE TypeApplications                      #-}
 {-# OPTIONS_GHC -fno-warn-missing-import-lists     #-}
 {-# OPTIONS_GHC -fno-warn-monomorphism-restriction #-}
@@ -9,14 +7,11 @@
 
 module Graphics.Implicit.Spec where
 
-import           Data.Bool (bool)
-import           Data.List (sort)
+import           Data.AdditiveGroup (AdditiveGroup((^+^)))
 import           Data.VectorSpace (AdditiveGroup((^-^)))
-import           Debug.Trace (traceShowId)
 import qualified Graphics.Implicit as I
 import           Graphics.Implicit hiding (scale)
 import           Graphics.Implicit.Definitions
-import           Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable(discreteAprox))
 import           Graphics.Implicit.Primitives hiding (scale)
 import           Prelude
 import           QuickSpec
@@ -52,10 +47,10 @@ instance Arbitrary SymbolicObj3 where
       True -> oneof small
     where
       small =
-        [ -- sphere    <$> arbitraryPos
-        -- , cylinder  <$> arbitraryPos <*> arbitraryPos
-        -- , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
-          cubeR    <$> arbitraryPos <*> arbitrary <*> arbitraryV3
+        [ sphere    <$> arbitraryPos
+        , cylinder  <$> arbitraryPos <*> arbitraryPos
+        , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
+        , cubeR    <$> arbitraryPos <*> arbitrary <*> arbitraryV3
         ]
 
 instance Arbitrary ExtrudeRMScale where
@@ -68,19 +63,12 @@ instance Arbitrary ExtrudeRMScale where
 
 
 ------------------------------------------------------------------------------
-instance Observe () [Polyline] SymbolicObj2 where
-  observe _ = quantize 2 . discreteAprox 1
+instance Observe (ℝ2, ()) ℝ SymbolicObj2 where
+  observe p = quantize 3 . observe p . getImplicit
 
 
-instance Observe () TriangleMesh SymbolicObj3 where
-  observe _ obj
-    = quantize 2
-    . discreteAprox sample_size
-    $ obj
-    where
-      (origin, extent) = getBox obj
-      (dx, dy, dz) = extent ^-^ origin
-      sample_size = abs $ (dx * dy * dz) / 10
+instance Observe (ℝ3, ()) ℝ SymbolicObj3 where
+  observe p = quantize 3 . observe p . getImplicit
 
 
 ------------------------------------------------------------------------------
@@ -112,7 +100,6 @@ instance Quantizable Triangle where
 
 instance Quantizable TriangleMesh where
   quantize n = TriangleMesh . quantize n . getTriangleMeshTriangles
-
 
 
 ------------------------------------------------------------------------------
@@ -218,16 +205,16 @@ sig = signature
 
 ------------------------------------------------------------------------------
 test :: IO ()
-test = quickCheck $ \r (Small x1) (Small x2) (Small y1) (Small y2) (Small z1) (Small z2) ->
-  let [x1', x2'] = fmap fromInteger $ sort [x1, x2]
-      [y1', y2'] = fmap fromInteger $ sort [y1, y2]
-      [z1', z2'] = fmap fromInteger $ sort [z1, z2]
-      origin = (x1', y1', z1')
-   in rect3R r origin (x2', y2', z2')
-  =~= translate origin (rect3R r (0, 0, 0) (x2' - x1', y2' - y1', y2' - z1'))
+test = quickCheckWithTests 10000 $ \r xyz (Positive dx) (Positive dy) (Positive dz) ->
+      rect3R r xyz (xyz ^+^ (dx, dy, dz))
+  =~= translate xyz (cubeR r False (dx, dy, dz))
 
 test2 :: IO ()
-test2 = quickCheckWith (stdArgs {maxSuccess = 10000}) $ \obj ->
-      (quantize 2) (getBox obj)
-  =~= (quantize 2) (getBox (rotate3 (2 * pi, 0, 0) obj))
+test2 = quickCheckWithTests 10000 $ \obj ->
+      obj
+  =~= rotate3 (2 * pi, 0, 0) obj
+
+
+quickCheckWithTests :: Testable prop => Int -> prop -> IO ()
+quickCheckWithTests n prop = quickCheckWith (stdArgs {maxSuccess = n}) prop
 
