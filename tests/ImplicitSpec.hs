@@ -1,13 +1,19 @@
 module ImplicitSpec (spec) where
 
 import Prelude
-import Test.Hspec
+import Test.Hspec ( describe, it, Spec )
 import Graphics.Implicit.Test.Instances
-import Graphics.Implicit
-import Graphics.Implicit.Primitives
+    ( (=~=), Quantizable(quantize), epsilon )
+import Graphics.Implicit ( rotate3, rotate3V, Object )
+import Graphics.Implicit.Primitives ( Object(getBox) )
 import Test.QuickCheck
-import Data.Foldable
-import Data.VectorSpace
+    ( Arbitrary(arbitrary),
+      suchThat,
+      expectFailure,
+      forAll,
+      Testable(property) )
+import Data.Foldable ( for_ )
+import Data.VectorSpace ( (^*) )
 
 
 spec :: Spec
@@ -41,18 +47,27 @@ spec = do
   describe "rotation in arbitrary planes (observed by getImplicit)" $ do
     it "360 degrees is id" $
       property $ do
-        vec <- arbitrary `suchThat` (/= (0, 0, 0))
-        pure $
-          counterexample (show vec) $
-            rotate3V (2 * pi) vec
-              =~= id
-    it "360 degrees is id" $
+        forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+          rotate3V (2 * pi) vec
+            =~= id
+    it "(x + y = 360) degrees is id" $
       property $ \rads -> do
-        vec <- arbitrary `suchThat` (/= (0, 0, 0))
-        pure $
-          counterexample (show vec) $
-            rotate3V (2 * pi - rads) vec . rotate3V rads vec
-              =~= id
+        forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+          rotate3V (2 * pi - rads) vec . rotate3V rads vec
+            =~= id
+
+  -- NOTE(sandy): getBox is broken in HEAD, but fixed in #314
+  describe "rotation in arbitrary planes (observed by getBox)" $ do
+    it "360 degrees is id" $
+      expectFailure $ do
+        forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+          getQuantizedBox . rotate3V (2 * pi) vec
+            =~= getQuantizedBox
+    it "(x + y = 360) degrees is id" $
+      expectFailure $ \rads -> do
+        forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+          getQuantizedBox . rotate3V (2 * pi - rads) vec . rotate3V rads vec
+            =~= getQuantizedBox
 
 
 getQuantizedBox :: (Quantizable vec, Object obj vec) => obj -> (vec, vec)
