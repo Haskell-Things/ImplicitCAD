@@ -92,15 +92,6 @@ instance Quantizable Double where
     let pow = 10 ^ n
     in fromIntegral @Integer (round (r * pow)) / pow
 
-instance Quantizable Polyline where
-  quantize n = Polyline . quantize n . getPolylinePoints
-
-instance Quantizable Triangle where
-  quantize n = Triangle . quantize n . getTrianglePoints
-
-instance Quantizable TriangleMesh where
-  quantize n = TriangleMesh . quantize n . getTriangleMeshTriangles
-
 
 ------------------------------------------------------------------------------
 arbitraryObject :: (Arbitrary a, Arbitrary vec, Object a vec, Quantizable vec) => [Gen a]
