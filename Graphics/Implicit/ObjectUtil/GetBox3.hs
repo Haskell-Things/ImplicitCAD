@@ -7,12 +7,13 @@ module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), SymbolicObj2 (Rotate2, SquareR, Translate2), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import Data.VectorSpace ((^-^), (^+^))
-import Graphics.Implicit.MathUtil (quaternionToEuler, reflect)
+import Graphics.Implicit.MathUtil (alaV3, reflect)
+import qualified Linear.Quaternion as Q
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
 
@@ -97,16 +98,17 @@ getBox3 (Scale3 s symbObj) =
     in
         ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
 getBox3 (Rotate3 q symbObj) =
-    let (a, b, c) = quaternionToEuler q
-        ((x1, y1, z1), (x2, y2, z2)) = getBox3 symbObj
-        rotate v1 w1 v2 w2 angle = getBox2(Rotate2 angle $ Translate2 (v1, w1) $ SquareR 0 (v2-v1, w2-w1))
-        ((y1', z1'), (y2', z2')) = rotate y1 z1 y2 z2 a
-        ((z1'', x1'), (z2'', x2')) = rotate z1' x1 z2' x2 b
-        ((x1'', y1''), (x2'', y2'')) = rotate x1' y1' x2' y2' c
-        (xs, ys, zs) = ([x1'', x2''], [y1'', y2''], [z1'', z2''])
-    in
-        ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
-
+    let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
+     in pointsBox
+          [ alaV3 (Q.rotate q) p1
+          , alaV3 (Q.rotate q) (x1, y2, z1)
+          , alaV3 (Q.rotate q) (x2, y2, z1)
+          , alaV3 (Q.rotate q) (x2, y1, z1)
+          , alaV3 (Q.rotate q) (x1, y1, z2)
+          , alaV3 (Q.rotate q) (x2, y1, z2)
+          , alaV3 (Q.rotate q) (x1, y2, z2)
+          , alaV3 (Q.rotate q) p2
+          ]
 getBox3 (Rotate3V _ _ _) = error "this has always been broken"
 getBox3 (Mirror3 v symbObj) =
     let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj

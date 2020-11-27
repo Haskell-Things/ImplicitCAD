@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
 
-import Graphics.Implicit.MathUtil (temp_viaV3, quaternionToEuler, reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 
@@ -80,18 +80,7 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     in
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 q symbObj) =
-    -- getImplicit3 symbObj . temp_viaV3 (Q.rotate $ Q.conjugate q)
-    let
-        (yz, zx, xy) = quaternionToEuler q
-        obj = getImplicit3 symbObj
-        rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateYZ θ obj' (x,y,z) = obj' ( x, y*cos θ + z*sin θ, z*cos θ - y*sin θ)
-        rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateZX θ obj' (x,y,z) = obj' ( x*cos θ - z*sin θ, y, z*cos θ + x*sin θ)
-        rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateXY θ obj' (x,y,z) = obj' ( x*cos θ + y*sin θ, y*cos θ - x*sin θ, z)
-    in
-        rotateXY xy $ rotateZX zx $ rotateYZ yz obj
+    getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
 getImplicit3 (Rotate3V θ axis symbObj) =
     let
         axis' = normalized axis

@@ -5,9 +5,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, temp_viaV3) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3) where
 
 -- Explicitly include what we need from Prelude.
+import GHC.Generics
 import Prelude (RealFloat, (>=), signum, atan2, Fractional, Bool(True, False), Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
@@ -176,8 +177,11 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       yaw = atan2 siny_cosp cosy_cosp
    in (roll, pitch, yaw)
 
-temp_viaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
-temp_viaV3 f (x, y, z) =
+
+-- | Lift a function over 'V3' into a function over 'ℝ3'.
+alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
+alaV3 f (x, y, z) =
   let V3 x' y' z' = f (V3 x y z)
   in (x', y', z')
+{-# INLINABLE alaV3 #-}
 
