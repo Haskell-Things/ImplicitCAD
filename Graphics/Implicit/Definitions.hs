@@ -7,6 +7,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 {-# LANGUAGE DeriveGeneric #-}
+
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -23,11 +24,11 @@ module Graphics.Implicit.Definitions (
     (⋅),
     (⋯*),
     (⋯/),
-    Polyline(..),
+    Polyline(Polyline),
     Polytri(Polytri),
-    Triangle(..),
+    Triangle(Triangle),
     NormedTriangle(NormedTriangle),
-    TriangleMesh(..),
+    TriangleMesh(TriangleMesh),
     NormedTriangleMesh(NormedTriangleMesh),
     Obj2,
     Obj3,
@@ -82,9 +83,9 @@ module Graphics.Implicit.Definitions (
     )
 where
 
-import Prelude (Eq, Ord, Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
-
 import GHC.Generics (Generic)
+
+import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -185,23 +186,20 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-newtype Polyline = Polyline { getPolylinePoints :: [ℝ2] }
-  deriving (Eq, Ord, Show)
+newtype Polyline = Polyline [ℝ2]
 
 -- | A triangle in 2D space (a,b,c).
 newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
 
 -- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
-newtype Triangle = Triangle { getTrianglePoints :: (ℝ3, ℝ3, ℝ3) }
-  deriving (Eq, Ord, Show)
+newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
 newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
-newtype TriangleMesh = TriangleMesh { getTriangleMeshTriangles :: [Triangle] }
-  deriving (Eq, Ord, Show)
+newtype TriangleMesh = TriangleMesh [Triangle]
 
 -- | A normed triangle mesh is a mesh of normed triangles.
 newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
