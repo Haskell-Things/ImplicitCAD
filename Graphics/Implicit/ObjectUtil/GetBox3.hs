@@ -7,7 +7,7 @@ module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -109,7 +109,6 @@ getBox3 (Rotate3 q symbObj) =
           , alaV3 (Q.rotate q) (x1, y2, z2)
           , alaV3 (Q.rotate q) p2
           ]
-getBox3 (Rotate3V _ _ _) = error "this has always been broken"
 getBox3 (Mirror3 v symbObj) =
     let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
      in pointsBox

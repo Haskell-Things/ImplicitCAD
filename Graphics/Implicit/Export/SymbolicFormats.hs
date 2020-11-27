@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude(fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Rotate3V, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
+import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -84,8 +84,6 @@ buildS3 (Scale3 (x,y,z) obj) = call "scale" [bf x, bf y, bf z] [buildS3 obj]
 buildS3 (Rotate3 q obj) =
   let (x,y,z) = quaternionToEuler q
    in call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
-
-buildS3 (Rotate3V a v obj) = callNaked "rotate" [ "a=" <> bf (rad2deg a), "v=" <> bvect3 v ] [buildS3 obj]
 
 buildS3 (Mirror3 v obj) = callNaked "mirror" [ "v=" <> bvect3 v ] [buildS3 obj]
 

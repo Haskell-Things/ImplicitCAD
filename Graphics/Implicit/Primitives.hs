@@ -69,7 +69,6 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    Mirror3,
                                                    Scale3,
                                                    Rotate3,
-                                                   Rotate3V,
                                                    Outset3,
                                                    Shell3,
                                                    EmbedBoxedObj3,
@@ -81,10 +80,10 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                   ),
                                       ExtrudeRMScale
                                      )
-import Graphics.Implicit.MathUtil   (pack)
+import Graphics.Implicit.MathUtil   (packV3, pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Data.VectorSpace (AdditiveGroup((^-^)))
-import Linear (Quaternion)
+import Linear (axisAngle, Quaternion)
 
 -- $ 3D Primitives
 
@@ -328,7 +327,7 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
-rotate3V = Rotate3V
+rotate3V w xyz = Rotate3 $ axisAngle (packV3 xyz) w
 
 -- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 -- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate

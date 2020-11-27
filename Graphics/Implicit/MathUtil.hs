@@ -5,11 +5,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3) where
 
 -- Explicitly include what we need from Prelude.
-import GHC.Generics
-import Prelude (RealFloat, (>=), signum, atan2, Fractional, Bool(True, False), Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
+import Prelude ((.), RealFloat, (>=), signum, atan2, Fractional, Bool(True, False), Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -180,8 +179,14 @@ quaternionToEuler (Quaternion w (V3 x y z))=
 
 -- | Lift a function over 'V3' into a function over 'ℝ3'.
 alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
-alaV3 f (x, y, z) =
-  let V3 x' y' z' = f (V3 x y z)
-  in (x', y', z')
+alaV3 f = unpackV3 . f . packV3
 {-# INLINABLE alaV3 #-}
+
+packV3 :: (a, a, a) -> V3 a
+packV3 (x, y, z) = V3 x y z
+{-# INLINABLE packV3 #-}
+
+unpackV3 :: V3 a -> (a, a, a)
+unpackV3 (V3 a a2 a3) = (a, a2, a3)
+{-# INLINABLE unpackV3 #-}
 

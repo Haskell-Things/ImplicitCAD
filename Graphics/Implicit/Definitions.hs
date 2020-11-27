@@ -62,7 +62,6 @@ module Graphics.Implicit.Definitions (
         Translate3,
         Scale3,
         Rotate3,
-        Rotate3V,
         Mirror3,
         Shell3,
         Outset3,
@@ -294,7 +293,6 @@ data SymbolicObj3 =
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
     | Rotate3 (Quaternion Double) SymbolicObj3
-    | Rotate3V ℝ ℝ3 SymbolicObj3
     | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3

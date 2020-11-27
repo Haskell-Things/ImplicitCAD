@@ -9,22 +9,19 @@ import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, 
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
+                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
 
 import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
+import qualified Linear as Q
 
 import qualified Data.Either as Either (either)
 
-import Data.VectorSpace ((^*), normalized)
-
-import Data.Cross(cross3)
-
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
-import qualified Linear as Q
+import Data.VectorSpace (AdditiveGroup((^-^)))
 
 default (ℝ)
 
@@ -72,7 +69,7 @@ getImplicit3 (Translate3 v symbObj) =
     let
         obj = getImplicit3 symbObj
     in
-        \p -> obj (p - v)
+        \p -> obj (p ^-^ v)
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     let
         obj = getImplicit3 symbObj
@@ -81,15 +78,6 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 q symbObj) =
     getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
-getImplicit3 (Rotate3V θ axis symbObj) =
-    let
-        axis' = normalized axis
-        obj = getImplicit3 symbObj
-    in
-        \v -> obj $
-            v ^* cos θ
-            - (axis' `cross3` v) ^* sin θ
-            + (axis' ^* (axis' ⋅ (v ^* (1 - cos θ))))
 getImplicit3 (Mirror3 v symbObj) =
     getImplicit3 symbObj . reflect v
 -- Boundary mods
