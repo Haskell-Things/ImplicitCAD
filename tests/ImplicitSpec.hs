@@ -33,7 +33,6 @@ spec = do
             rotate3 (vec ^* (2 * pi - rads)) . rotate3 (vec ^* rads)
               =~= id
 
-      -- NOTE(sandy): getBox is broken in HEAD, but fixed in #314
       describe ("rotation in the " <> axis <> " plane (observed by getBox)") $ do
         it "360 degrees is id" $
           expectFailure $
@@ -56,7 +55,6 @@ spec = do
           rotate3V (2 * pi - rads) vec . rotate3V rads vec
             =~= id
 
-  -- NOTE(sandy): getBox is broken in HEAD, but fixed in #314
   describe "rotation in arbitrary planes (observed by getBox)" $ do
     it "360 degrees is id" $
       expectFailure $ do
