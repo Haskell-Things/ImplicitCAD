@@ -9,21 +9,19 @@ import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, 
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Rotate3V, Mirror3,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, (⋅), minℝ)
+                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
 
-import Graphics.Implicit.MathUtil (reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
+import qualified Linear as Q
 
 import qualified Data.Either as Either (either)
 
-import Data.VectorSpace ((^*), normalized)
-
-import Data.Cross(cross3)
-
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
+import Data.VectorSpace (AdditiveGroup((^-^)))
 
 default (ℝ)
 
@@ -71,33 +69,15 @@ getImplicit3 (Translate3 v symbObj) =
     let
         obj = getImplicit3 symbObj
     in
-        \p -> obj (p - v)
+        \p -> obj (p ^-^ v)
 getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
     let
         obj = getImplicit3 symbObj
         k = abs (sx*sy*sz) ** (1/3)
     in
         \p -> k * obj (p ⋯/ s)
-getImplicit3 (Rotate3 (yz, zx, xy) symbObj) =
-    let
-        obj = getImplicit3 symbObj
-        rotateYZ :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateYZ θ obj' (x,y,z) = obj' ( x, y*cos θ + z*sin θ, z*cos θ - y*sin θ)
-        rotateZX :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateZX θ obj' (x,y,z) = obj' ( x*cos θ - z*sin θ, y, z*cos θ + x*sin θ)
-        rotateXY :: ℝ -> (ℝ3 -> ℝ) -> (ℝ3 -> ℝ)
-        rotateXY θ obj' (x,y,z) = obj' ( x*cos θ + y*sin θ, y*cos θ - x*sin θ, z)
-    in
-        rotateXY xy $ rotateZX zx $ rotateYZ yz obj
-getImplicit3 (Rotate3V θ axis symbObj) =
-    let
-        axis' = normalized axis
-        obj = getImplicit3 symbObj
-    in
-        \v -> obj $
-            v ^* cos θ
-            - (axis' `cross3` v) ^* sin θ
-            + (axis' ^* (axis' ⋅ (v ^* (1 - cos θ))))
+getImplicit3 (Rotate3 q symbObj) =
+    getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
 getImplicit3 (Mirror3 v symbObj) =
     getImplicit3 symbObj . reflect v
 -- Boundary mods

@@ -64,7 +64,6 @@ module Graphics.Implicit.Definitions (
         Translate3,
         Scale3,
         Rotate3,
-        Rotate3V,
         Mirror3,
         Shell3,
         Outset3,
@@ -96,6 +95,8 @@ import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFast
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
+
+import Linear.Quaternion (Quaternion)
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -295,8 +296,7 @@ data SymbolicObj3 =
     -- Simple transforms
     | Translate3 ℝ3 SymbolicObj3
     | Scale3 ℝ3 SymbolicObj3
-    | Rotate3 ℝ3 SymbolicObj3
-    | Rotate3V ℝ ℝ3 SymbolicObj3
+    | Rotate3 (Quaternion ℝ) SymbolicObj3
     | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
     -- Boundary mods
     | Outset3 ℝ SymbolicObj3

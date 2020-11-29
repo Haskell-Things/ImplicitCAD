@@ -30,6 +30,7 @@ module Graphics.Implicit.Primitives (
                                      polygonR,
                                      rotateExtrude,
                                      rotate3,
+                                     rotateQ,
                                      rotate3V,
                                      pack3,
                                      rotate,
@@ -38,7 +39,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude((/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
@@ -69,7 +70,6 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    Mirror3,
                                                    Scale3,
                                                    Rotate3,
-                                                   Rotate3V,
                                                    Outset3,
                                                    Shell3,
                                                    EmbedBoxedObj3,
@@ -81,9 +81,10 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                   ),
                                       ExtrudeRMScale
                                      )
-import Graphics.Implicit.MathUtil   (pack)
+import Graphics.Implicit.MathUtil   (packV3, pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Data.VectorSpace (AdditiveGroup((^-^)))
+import Linear (V3(V3), axisAngle, Quaternion)
 
 -- $ 3D Primitives
 
@@ -319,7 +320,17 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
-rotate3 = Rotate3
+rotate3 (pitch, roll, yaw)
+  = Rotate3
+  $ axisAngle (V3 0 0 1) yaw
+  * axisAngle (V3 0 1 0) roll
+  * axisAngle (V3 1 0 0) pitch
+
+rotateQ
+    :: Quaternion ℝ
+    -> SymbolicObj3
+    -> SymbolicObj3
+rotateQ = Rotate3
 
 -- | Rotate a 3D object along an arbitrary axis.
 rotate3V
@@ -327,7 +338,7 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
-rotate3V = Rotate3V
+rotate3V w xyz = Rotate3 $ axisAngle (packV3 xyz) w
 
 -- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 -- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate

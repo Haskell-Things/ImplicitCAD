@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3) where
 
 -- Explicitly include what we need from Prelude.
 import Prelude (Fractional, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
@@ -18,6 +18,7 @@ import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^)
 
 -- get the distance between two points.
 import Data.AffineSpace (distance)
+import Linear (V3(V3), Quaternion(Quaternion))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -157,4 +158,35 @@ reflect
     -> v
 reflect a v = v ^-^ (2 * ((v <.> a) / (a <.> a))) *^ a
 
+
+-- | Convert a 'Quaternion' to its constituent euler angles.
+--
+-- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
+quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
+quaternionToEuler (Quaternion w (V3 x y z))=
+  let sinr_cosp = 2 * (w * x + y * z)
+      cosr_cosp = 1 - 2 * (x * x + y * y)
+      sinp = 2 * (w * y - z * x);
+      siny_cosp = 2 * (w * z + x * y);
+      cosy_cosp = 1 - 2 * (y * y + z * z);
+      pitch = case abs sinp >= 1 of
+                True -> signum sinp * pi / 2
+                False -> asin sinp
+      roll = atan2 sinr_cosp cosr_cosp
+      yaw = atan2 siny_cosp cosy_cosp
+   in (roll, pitch, yaw)
+
+
+-- | Lift a function over 'V3' into a function over 'ℝ3'.
+alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
+alaV3 f = unpackV3 . f . packV3
+{-# INLINABLE alaV3 #-}
+
+packV3 :: (a, a, a) -> V3 a
+packV3 (x, y, z) = V3 x y z
+{-# INLINABLE packV3 #-}
+
+unpackV3 :: V3 a -> (a, a, a)
+unpackV3 (V3 a a2 a3) = (a, a2, a3)
+{-# INLINABLE unpackV3 #-}
 
