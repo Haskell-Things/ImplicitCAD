@@ -34,7 +34,7 @@ import Graphics.Implicit
 
 import Graphics.Implicit.Definitions
     ( SymbolicObj3(Cylinder, Complement3, UnionR3, DifferenceR3,
-                   IntersectR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3,
+                   IntersectR3, Translate3, Scale3, Rotate3, Outset3,
                    Shell3, CubeR),
       SymbolicObj2(SquareR, Complement2, UnionR2, DifferenceR2,
                    IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
@@ -218,7 +218,7 @@ isValid3 (IntersectR3 _ _) = False  -- Bug #306
 isValid3 (Translate3 _ s) = isValid3 s
 isValid3 (Scale3 (x, y, z) s) = x > 0 && y > 0 && z > 0 && isValid3 s
 isValid3 (Rotate3 _ s) = isValid3 s
-isValid3 (Rotate3V _ _ s) = isValid3 s
+{- isValid3 (Rotate3V _ _ s) = isValid3 s -} 
 isValid3 (Outset3 _ s) = isValid3 s
 isValid3 (Shell3 _ s) = isValid3 s
 isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)

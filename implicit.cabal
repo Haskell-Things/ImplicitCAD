@@ -93,7 +93,7 @@ Library
                   JuicyPixels,
                   transformers,
                   mtl,
-                  linear
+                  linear,
                   QuickCheck,
                   quickspec
 
