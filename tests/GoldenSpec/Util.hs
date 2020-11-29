@@ -7,8 +7,7 @@ import Control.Monad.IO.Class (liftIO)
 import Graphics.Implicit (SymbolicObj3, writeSTL)
 import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), readFile, writeFile, (>>=), (<>), ($))
 import System.Directory (getTemporaryDirectory, doesFileExist)
-import System.IO ( hClose )
-import System.IO (openTempFile)
+import System.IO (hClose, openTempFile)
 import Test.Hspec ( it, shouldBe, SpecWith )
 
 

@@ -120,7 +120,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   []                      -> Nothing
                   ((_, suiteInfoFound):_) -> suiteInfoFound
               when (null possibleInstances) (do
-                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> (pack $ show (ONModule (Symbol name) implementation forms))
+                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> pack (show (ONModule (Symbol name) implementation forms))
                                                 traverse_ (`checkOptions` True) $ fmap (Just . fst) forms
                                             )
               -- Ignore this for now, because all instances we define have the same suite requirements.
@@ -228,9 +228,9 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 (errorC sourcePos $ "missingNotDefaultable: " <> show (length missingNotDefaultable))
                  -}
               when (not (null missingNotDefaultable) && makeWarnings)
-                (errorC sourcePos $ "Insufficient parameters. " <> (pack parameterReport))
+                (errorC sourcePos $ "Insufficient parameters. " <> pack parameterReport)
               when (not (null extraUnnamed) && isJust args && makeWarnings)
-                (errorC sourcePos $ "Too many parameters: " <> (pack $ show $ length extraUnnamed) <> " extra. " <> (pack parameterReport))
+                (errorC sourcePos $ "Too many parameters: " <> pack (show $ length extraUnnamed) <> " extra. " <> pack parameterReport)
               pure $ null missingNotDefaultable && null extraUnnamed
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
             namedParameters = mapMaybe fst
@@ -254,7 +254,7 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
       name' <- getRelPath (unpack name)
       content <- liftIO $ readFile name'
       case parseProgram name' content of
-        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> (pack $ show e)
+        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> pack (show e)
         Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
             vals <- getVals
             putVals []

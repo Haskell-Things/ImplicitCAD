@@ -7,9 +7,6 @@ module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 -- Explicitly include what we want from Prelude.
 import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
 
--- We're working with 3D points here.
-import Graphics.Implicit.Definitions (ℝ3)
-
 import Data.List (partition)
 
 -- | The goal of getLoops is to extract loops from a list of segments.

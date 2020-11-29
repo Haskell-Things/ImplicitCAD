@@ -9,7 +9,7 @@
 
 module Graphics.Implicit.Export.Util (normTriangle, normVertex, centroid) where
 
-import Prelude(Fractional, (/), (-), ($), foldl, realToFrac, length)
+import Prelude(Fractional, (/), (-), foldl, realToFrac, length)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), NormedTriangle(NormedTriangle))
 
@@ -48,7 +48,7 @@ normVertex res obj p =
 
 -- Get a centroid of a series of points.
 centroid :: (VectorSpace v, Fractional (Scalar v)) => [v] -> v
-centroid pts = foldl (^+^) zeroV pts ^/ (realToFrac $ length pts)
+centroid pts = foldl (^+^) zeroV pts ^/ realToFrac (length pts)
 {-# INLINABLE centroid #-}
 
 {-

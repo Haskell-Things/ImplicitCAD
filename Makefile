@@ -125,7 +125,7 @@ distclean: clean Setup
 	rm -rf dist-newstyle
 	rm -rf .stack-work
 	rm -f cabal.project.local
-	rm .ghc.environment.${ARCHITECTURE}-${OS}-${GHCVERSION}
+	rm -f .ghc.environment.${ARCHITECTURE}-${OS}-${GHCVERSION}
 	rm -f `find ./ -name "*~"`
 	rm -f `find ./ -name "\#*\#"`
 

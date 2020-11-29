@@ -23,6 +23,7 @@ import MessageSpec.Message(programExec)
 import PropertySpec (propSpec)
 
 import qualified GoldenSpec.Spec as Golden
+import qualified ImplicitSpec as Implicit
 
 main :: IO ()
 main = hspec $ do
@@ -39,3 +40,5 @@ main = hspec $ do
 
   -- Generate data to be evaluated, and ensure the properties hold.
   describe "property tests" propSpec
+
+  Implicit.spec

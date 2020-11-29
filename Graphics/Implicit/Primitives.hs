@@ -307,9 +307,9 @@ extrudeRM = ExtrudeRM
 
 
 rotateExtrude :: ℝ            -- ^ Angle to sweep to (in rad)
-    -> (Maybe ℝ)              -- ^ Loop or path (rounded corner)
-    -> (Either ℝ2 (ℝ -> ℝ2))  -- ^ translate
-    -> (Either ℝ  (ℝ -> ℝ ))  -- ^ rotate
+    -> Maybe ℝ                -- ^ Loop or path (rounded corner)
+    -> Either ℝ2 (ℝ -> ℝ2)    -- ^ translate
+    -> Either ℝ  (ℝ -> ℝ )    -- ^ rotate
     -> SymbolicObj2           -- ^ object to extrude
     -> SymbolicObj3
 rotateExtrude = RotateExtrude

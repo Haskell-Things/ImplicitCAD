@@ -6,6 +6,8 @@
 -- This module deliberately declares orphan instances of Show.
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{-# LANGUAGE DeriveGeneric #-}
+
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -79,6 +81,8 @@ module Graphics.Implicit.Definitions (
     isScaleID,
     )
 where
+
+import GHC.Generics (Generic)
 
 import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
@@ -268,7 +272,7 @@ data SymbolicObj2 =
     | Shell2 ℝ SymbolicObj2
     -- Misc
     | EmbedBoxedObj2 BoxedObj2
-    deriving Show
+    deriving (Show, Generic)
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj2 where
@@ -316,7 +320,7 @@ data SymbolicObj3 =
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
-    deriving Show
+    deriving (Show, Generic)
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj3 where
@@ -330,7 +334,7 @@ data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
     | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
-    deriving Show
+    deriving (Show, Generic)
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
 toScaleFn (C1 s) _ = (s, s)
