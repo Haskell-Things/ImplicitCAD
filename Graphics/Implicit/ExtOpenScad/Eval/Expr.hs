@@ -139,7 +139,7 @@ evalExpr' (fexpr :$ argExprs) = do
 -- Evaluate a lambda function.
 evalExpr' (LamE pats fexpr) = do
     fparts <- for pats $ \pat -> do
-        modify $ \s -> s { patterns = (fmap unpack $ patVars pat) <> patterns s}
+        modify $ \s -> s { patterns = (unpack <$> patVars pat) <> patterns s}
         pure $ \f xss -> OFunc $ \val -> case patMatch pat val of
             Just xs -> f (xs <> xss)
             Nothing -> OError "Pattern match failed"

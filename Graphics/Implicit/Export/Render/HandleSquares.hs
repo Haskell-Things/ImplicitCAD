@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
-import Prelude(foldMap, (<>), ($), fmap, concat, (.), (==), compare, error)
+import Prelude(foldMap, (<>), ($), fmap, concat, (.), (==), compare, error, otherwise, concatMap)
 
 import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -78,9 +78,9 @@ mergedSquareTris sqTris =
         -- Select for being the same range on X and then merge them on Y
         -- Then vice versa.
         joined = fmap
-            ( concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS)
-            . concat . (fmap joinYaligned) . groupWith (\(Sq _ _ _ yS) -> yS)
-            . concat . (fmap joinXaligned) . groupWith (\(Sq _ _ xS _) -> xS))
+            ( concatMap joinXaligned . groupWith (\(Sq _ _ xS _) -> xS)
+            . concatMap joinYaligned . groupWith (\(Sq _ _ _ yS) -> yS)
+            . concatMap joinXaligned . groupWith (\(Sq _ _ xS _) -> xS))
             planeAligned
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
@@ -97,12 +97,10 @@ joinXaligned quads@((Sq b z xS _):_) =
         orderedQuads = sortBy
             (\(Sq _ _ _ (ya,_)) (Sq _ _ _ (yb,_)) -> compare ya yb)
             quads
-        mergeAdjacent (pres@(Sq _ _ _ (y1a,y2a)) : next@(Sq _ _ _ (y1b,y2b)) : others) =
-            if y2a == y1b
-            then mergeAdjacent ((Sq b z xS (y1a,y2b)): others)
-            else if y1a == y2b
-            then mergeAdjacent ((Sq b z xS (y1b,y2a)): others)
-            else pres : mergeAdjacent (next : others)
+        mergeAdjacent (pres@(Sq _ _ _ (y1a,y2a)) : next@(Sq _ _ _ (y1b,y2b)) : others)
+          | y2a == y1b = mergeAdjacent (Sq b z xS (y1a,y2b) : others)
+          | y1a == y2b = mergeAdjacent (Sq b z xS (y1b,y2a) : others)
+          | otherwise  = pres : mergeAdjacent (next : others)
         mergeAdjacent a = a
     in
         mergeAdjacent orderedQuads
@@ -115,12 +113,10 @@ joinYaligned quads@((Sq b z _ yS):_) =
         orderedQuads = sortBy
             (\(Sq _ _ (xa,_) _) (Sq _ _ (xb,_) _) -> compare xa xb)
             quads
-        mergeAdjacent (pres@(Sq _ _ (x1a,x2a) _) : next@(Sq _ _ (x1b,x2b) _) : others) =
-            if x2a == x1b
-            then mergeAdjacent ((Sq b z (x1a,x2b) yS): others)
-            else if x1a == x2b
-            then mergeAdjacent ((Sq b z (x1b,x2a) yS): others)
-            else pres : mergeAdjacent (next : others)
+        mergeAdjacent (pres@(Sq _ _ (x1a,x2a) _) : next@(Sq _ _ (x1b,x2b) _) : others)
+          | x2a == x1b = mergeAdjacent (Sq b z (x1a,x2b) yS : others)
+          | x1a == x2b = mergeAdjacent (Sq b z (x1b,x2a) yS : others)
+          | otherwise  = pres : mergeAdjacent (next : others)
         mergeAdjacent a = a
     in
         mergeAdjacent orderedQuads

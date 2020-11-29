@@ -45,7 +45,7 @@ reducePolyline (Polyline ((x1,y1):(x2,y2):others)) =
 -- | Return the last result.
 reducePolyline l@(Polyline ((_:_))) = l
 -- Should not happen.
-reducePolyline (Polyline ([])) = error "empty polyline"
+reducePolyline (Polyline []) = error "empty polyline"
 
 {-cleanLoopsFromSegs =
     connectPolys

@@ -4,7 +4,7 @@
 -- FIXME: document why we need each of these.
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error)
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, tail, length, (/=), (+), error, print)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFail,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
 
@@ -72,14 +72,14 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
       forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
         case (posfallback, description) of
           (Nothing, "") ->
-            putStrLn $ "   * `" <> (unpack name)  <> "`"
+            putStrLn $ "   * `" <> unpack name  <> "`"
           (Just fallback, "") ->
-            putStrLn $ "   * `" <> (unpack name) <> " = " <> fallback <> "`"
+            putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
           (Nothing, _) -> do
-            putStrLn $ "   * `" <> (unpack name) <> "`"
+            putStrLn $ "   * `" <> unpack name <> "`"
             putStrLn $ "     " <> description
           (Just fallback, _) -> do
-            putStrLn $ "   * `" <> (unpack name) <> " = " <> fallback <> "`"
+            putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
             putStrLn $ "     " <> description
       putStrLn ""
 
@@ -155,7 +155,7 @@ getArgParserDocs (APFail _) = return [Empty]
 
 -- This one confuses me.
 getArgParserDocs (APBranch children) = do
-  putStrLn $ show $ length children
+  print (length children)
   otherDocs <- Ex.catch (getArgParserDocs (APBranch $ tail children)) (\(_ :: Ex.SomeException) -> return [])
   aResults <- getArgParserDocs $ head children
   if otherDocs /= [Empty]

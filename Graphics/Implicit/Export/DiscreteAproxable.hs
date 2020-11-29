@@ -11,7 +11,7 @@
 -- | A module for retrieving approximate represententations of objects.
 module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAprox) where
 
-import Prelude((-), (/), ($), (<), fmap, round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
+import Prelude((-), (/), ($), (<), round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
 
 -- Definitions for our number system, objects, and the things we can use to approximately represent objects.
 import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, Triangle, TriangleMesh(TriangleMesh), NormedTriangleMesh(NormedTriangleMesh))

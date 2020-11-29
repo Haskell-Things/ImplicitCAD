@@ -54,8 +54,7 @@ import Data.ByteString.Char8 (unpack)
 import Data.ByteString.UTF8 (fromString)
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy as BSL (toStrict)
-import Data.Text (Text)
-import Data.Text (pack)
+import Data.Text (Text, pack)
 import Data.Text.Lazy as TL (toStrict)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Aeson (encode)
@@ -159,12 +158,12 @@ executeAndExport content callback maybeFormat =
         showℝ val = fromString $ show val
         callbackF :: Bool -> Bool -> ℝ -> Text -> ByteString
         callbackF False is2D w msg =
-            callback <> "([null," <> (BSL.toStrict $ encode msg) <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
+            callback <> "([null," <> BSL.toStrict (encode msg) <> "," <> showB is2D <> "," <> showℝ w  <> "]);"
         callbackF True  is2D w msg =
-            callback <> "([new Shape()," <> (BSL.toStrict $ encode msg) <> "," <> showB is2D <> "," <> showℝ w <> "]);"
+            callback <> "([new Shape()," <> BSL.toStrict (encode msg) <> "," <> showB is2D <> "," <> showℝ w <> "]);"
         callbackS :: Text -> Text -> ByteString
         callbackS str          msg =
-            callback <> "([" <> (BSL.toStrict $ encode str) <> "," <> (BSL.toStrict $ encode msg) <> ",null,null]);"
+            callback <> "([" <> BSL.toStrict (encode str) <> "," <> BSL.toStrict (encode msg) <> ",null,null]);"
         scadOptions = generateScadOpts
         openscadProgram = runOpenscad scadOptions [] content
     in
@@ -195,7 +194,7 @@ executeAndExport content callback maybeFormat =
               output3d :: Text
               output3d         = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then (encodeUtf8 output3d) <> callbackF True False w (scadMessages <> unionWarning)
+            then encodeUtf8 output3d <> callbackF True False w (scadMessages <> unionWarning)
             else callbackS output3d (scadMessages <> unionWarning)
         (obj:objs, []   , _) -> do
           let target          = if null objs
@@ -208,7 +207,7 @@ executeAndExport content callback maybeFormat =
               output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
               output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
-            then (encodeUtf8 output3d) <> callbackF True True w (scadMessages <> unionWarning)
+            then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)
             else callbackS output2d (scadMessages <> unionWarning)
         ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
         _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"

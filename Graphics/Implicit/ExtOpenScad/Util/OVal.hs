@@ -144,7 +144,7 @@ oTypeStr (OObj2          _ ) = "2D Object"
 oTypeStr (OObj3          _ ) = "3D Object"
 
 getErrors :: OVal -> Maybe Text
-getErrors (OError er) = Just $ er
+getErrors (OError er) = Just er
 getErrors (OList l)   = msum $ fmap getErrors l
 getErrors _           = Nothing
 

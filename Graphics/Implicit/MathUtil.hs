@@ -8,13 +8,13 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Fractional, Num, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
+import Prelude (Fractional, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
 import Data.List (sort, sortBy, (!!))
 
-import Data.VectorSpace ((<.>), Scalar, (^*), InnerSpace, magnitude, normalized, (^-^), (^+^), (*^))
+import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^), (^+^), (*^))
 
 -- get the distance between two points.
 import Data.AffineSpace (distance)

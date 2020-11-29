@@ -44,9 +44,9 @@ argument name =
             val = fromOObj oObjVal
             errmsg :: Text
             errmsg = case oObjVal of
-                OError err -> "error in computing value for argument " <> (pack $ show name)
+                OError err -> "error in computing value for argument " <> pack (show name)
                               <> ": " <>  err
-                _   ->  "arg " <> (pack $ show oObjVal) <> " not compatible with " <> (pack $ show name)
+                _   ->  "arg " <> pack (show oObjVal) <> " not compatible with " <> pack (show name)
         maybe (APFail errmsg) APTerminator val
 {-# INLINABLE argument #-}
 
@@ -114,7 +114,7 @@ argMap2 unnamedArgs (VarLookup namedArgs) (AP name fallback _ f) =
 argMap2 a (VarLookup b) (APTerminator val) =
     (Just val, ["Unused arguments" | not (P.null a && DM.null b)])
 
-argMap2 _ _ (APFail err) = (Nothing, [(unpack err)])
+argMap2 _ _ (APFail err) = (Nothing, [unpack err])
 
 argMap2 a b (APExample _ child) = argMap2 a b child
 

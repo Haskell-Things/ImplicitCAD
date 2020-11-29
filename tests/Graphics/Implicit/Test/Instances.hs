@@ -6,8 +6,12 @@
 
 module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
 
+import Prelude (Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
+
 import Data.VectorSpace (AdditiveGroup((^-^)))
-import qualified Graphics.Implicit as I
+
+import qualified Graphics.Implicit as I (scale)
+
 import Graphics.Implicit
     ( ExtrudeRMScale(Fn, C1, C2),
       SymbolicObj3,
@@ -27,6 +31,7 @@ import Graphics.Implicit
       rotate3,
       rotate3V,
       rotate )
+
 import Graphics.Implicit.Definitions
     ( SymbolicObj3(Cylinder, Complement3, UnionR3, DifferenceR3,
                    IntersectR3, Translate3, Scale3, Rotate3, Rotate3V, Outset3,
@@ -36,9 +41,11 @@ import Graphics.Implicit.Definitions
                    PolygonR),
       both,
       allthree )
+
 import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
-import Prelude (Bool (True, False), Int, Double, Integer, (.), flip, uncurry, any, ($), (==), not, (>), (<), and, (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter )
+
 import QuickSpec ( Observe(observe), (=~=) )
+
 import Test.QuickCheck
     ( Arbitrary(arbitrary, shrink),
       genericShrink,
@@ -193,14 +200,11 @@ isValid2 (Outset2 _ s) = isValid2 s
 isValid2 (Shell2 _ s) = isValid2 s
 isValid2 s@(PolygonR _ ls) = length ls >= 3 &&
   let (dx, dy) = boxSize s
-   in not $ any (== 0) [dx, dy]
-isValid2 (SquareR _ (x0, y0)) = and
-  [ 0 < x0
-  , 0 < y0
-  ]
+   in notElem 0 [dx, dy]
+isValid2 (SquareR _ (x0, y0)) = (0 < x0) && (0 < y0)
 isValid2 s =  -- Otherwise, make sure it has > 0 volume
   let (dx, dy) = boxSize s
-   in not $ any (== 0) [dx, dy]
+   in notElem 0 [dx, dy]
 
 -- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
@@ -217,15 +221,11 @@ isValid3 (Rotate3 _ s) = isValid3 s
 isValid3 (Rotate3V _ _ s) = isValid3 s
 isValid3 (Outset3 _ s) = isValid3 s
 isValid3 (Shell3 _ s) = isValid3 s
-isValid3 (CubeR _ (x0, y0, z0)) = and
-  [ 0 < x0
-  , 0 < y0
-  , 0 < z0
-  ]
+isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)
 isValid3 (Cylinder _ r h) = r > 0 && h > 0
 isValid3 s =  -- Otherwise, make sure it has > 0 volume
   let (dx, dy, dz) = boxSize s
-   in not $ any (== 0) [dx, dy, dz]
+   in notElem 0 [dx, dy, dz]
 
 
 ------------------------------------------------------------------------------

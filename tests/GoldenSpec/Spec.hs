@@ -1,7 +1,7 @@
 module GoldenSpec.Spec (spec) where
 
 import GoldenSpec.Util (golden)
-import Graphics.Implicit
+import Graphics.Implicit (cubeR)
 import Prelude (($), Bool (True))
 import Test.Hspec ( describe, Spec )
 

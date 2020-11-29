@@ -2,17 +2,16 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- allow us to specify what package to import what module from.
--- We don't actually care, but when we compile our haskell examples, we do.
-{-# LANGUAGE PackageImports #-}
-
 -- Allow us to use string literals to represent Text.
 {-# LANGUAGE OverloadedStrings #-}
+
+-- Allow the use of \case
+{-# LANGUAGE LambdaCase #-}
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 
@@ -50,12 +49,12 @@ defaultObjects withCSG = VarLookup $ fromList $
 -- rand, lookup,
 
 defaultConstants :: [(Symbol, OVal)]
-defaultConstants = fmap (\(a,b) -> (a, toOObj (b :: ℝ) ))
+defaultConstants = (\(a,b) -> (a, toOObj (b :: ℝ))) <$>
     [(Symbol "pi", pi),
      (Symbol "PI", pi)]
 
 defaultFunctions :: [(Symbol, OVal)]
-defaultFunctions = fmap (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
+defaultFunctions = (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ))) <$>
     [
         (Symbol "sin",   sin),
         (Symbol "cos",   cos),
@@ -79,7 +78,7 @@ defaultFunctions = fmap (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ)))
     ]
 
 defaultFunctions2 :: [(Symbol, OVal)]
-defaultFunctions2 = fmap (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ) ))
+defaultFunctions2 = (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ))) <$>
     [
         (Symbol "max",   max),
         (Symbol "min",   min),
@@ -115,10 +114,10 @@ varArgModules =
             scadOpts <- scadOptions
             let
                 text :: [(Maybe Symbol, OVal)] -> Text
-                text a = intercalate ", " $ fmap (show') a
+                text a = intercalate ", " $ show' <$> a
                 show' :: (Maybe Symbol, OVal) -> Text
                 show' (Nothing, arg) = pack $ show arg
-                show' (Just (Symbol var), arg) = var <> " = " <> (pack $ show arg)
+                show' (Just (Symbol var), arg) = var <> " = " <> pack (show arg)
                 showe' :: (Maybe Symbol, OVal) -> Text
                 showe' (Nothing, OString arg) = arg
                 showe' (Just (Symbol var), arg) = var <> " = " <> showe' (Nothing, arg)
@@ -140,7 +139,7 @@ varArgModules =
             iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
             iterator [] = [id]
             iterator ((Nothing, _):iterators) = iterator iterators
-            iterator ((Just var, vals):iterators) = [outer . varify inner | inner <- fmap (insert var) (valsList vals), outer <- iterator iterators]
+            iterator ((Just var, vals):iterators) = [outer . varify inner | inner <- insert var <$> valsList vals, outer <- iterator iterators]
             -- convert the loop iterator variable's expression value to a list (possibly of one value)
             valsList :: OVal -> [OVal]
             valsList v@(OBool _) = [v]
@@ -185,10 +184,10 @@ defaultPolymorphicFunctions =
 
         -- Some key functions are written as OVals in optimizations attempts
 
-        prod = OFunc $ \x -> case x of
+        prod = OFunc $ \case
             (OList (y:ys)) -> foldl mult y ys
             (OList [])     -> ONum 1
-            (ONum a)       -> OFunc $ \y -> case y of
+            (ONum a)       -> OFunc $ \case
                 (OList []) -> ONum a
                 (OList n)  -> mult (ONum a) (OList n)
                 (ONum b)   -> mult (ONum a) (ONum b)
@@ -201,11 +200,11 @@ defaultPolymorphicFunctions =
         mult (OList a) (OList b) = OList $ zipWith mult a b
         mult a         b         = errorAsAppropriate "product" a b
 
-        divide = OFunc $ \x -> case x of
-            (ONum a) -> OFunc $ \y -> case y of
+        divide = OFunc $ \case
+            (ONum a) -> OFunc $ \case
                 (ONum b) -> ONum (a/b)
                 b        -> errorAsAppropriate "divide" (ONum a) b
-            a -> OFunc $ \y -> case y of
+            a -> OFunc $ \case
                 b -> div' a b
 
         div' (ONum a)  (ONum b) = ONum  (a/b)
@@ -215,7 +214,7 @@ defaultPolymorphicFunctions =
         omod (ONum a) (ONum b) = ONum . fromInteger $ mod (floor a) (floor b)
         omod a        b        = errorAsAppropriate "mod" a b
 
-        concatenate = OFunc $ \x -> case x of
+        concatenate = OFunc $ \case
             (OList (y:ys)) -> foldl append y ys
             (OList [])     -> OList []
             _              -> OError "concat takes a list"
@@ -224,10 +223,10 @@ defaultPolymorphicFunctions =
         append (OString a) (OString b) = OString $ a<>b
         append a           b           = errorAsAppropriate "concat" a b
 
-        sumtotal = OFunc $ \x -> case x of
+        sumtotal = OFunc $ \case
             (OList (y:ys)) -> foldl add y ys
             (OList [])     -> ONum 0
-            (ONum a)       -> OFunc $ \y -> case y of
+            (ONum a)       -> OFunc $ \case
                 (OList []) -> ONum a
                 (OList n)  -> add (ONum a) (OList n)
                 (ONum b)   -> add (ONum a) (ONum b)
@@ -245,8 +244,8 @@ defaultPolymorphicFunctions =
         sub a b = errorAsAppropriate "subtract" a b
 
         negatefun (ONum n) = ONum (-n)
-        negatefun (OList l) = OList $ fmap negatefun l
-        negatefun a = OError $ "Can't negate " <> oTypeStr a <> "(" <> (pack $ show a) <> ")"
+        negatefun (OList l) = OList $ negatefun <$> l
+        negatefun a = OError $ "Can't negate " <> oTypeStr a <> "(" <> pack (show a) <> ")"
 
         index (OList l) (ONum ind) =
             let
@@ -297,17 +296,15 @@ defaultPolymorphicFunctions =
           "Can't " <> name <> " objects of types " <> oTypeStr a <> " and " <> oTypeStr b <> "."
 
         list_gen :: [ℝ] -> Maybe [ℝ]
-        list_gen [a, b] = Just $ fmap fromInteger [(ceiling a).. (floor b)]
+        list_gen [a, b] = Just $ fromInteger <$> [(ceiling a).. (floor b)]
         list_gen [a, b, c] =
             let
                 nr = (c-a)/b
                 n :: ℝ
                 n  = fromInteger (floor nr)
             in if nr - n > 0
-            then Just $ fmap fromInteger
-                [(ceiling a), (ceiling (a+b)).. (floor (c - b*(nr -n)))]
-            else Just $ fmap fromInteger
-                [(ceiling a), (ceiling (a+b)).. (floor c)]
+            then Just $ fromInteger <$> [(ceiling a), (ceiling (a+b)).. (floor (c - b*(nr -n)))]
+            else Just $ fromInteger <$> [(ceiling a), (ceiling (a+b)).. (floor c)]
         list_gen _ = Nothing
 
         ternary :: Bool -> t -> t -> t

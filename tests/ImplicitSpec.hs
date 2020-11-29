@@ -1,6 +1,6 @@
 module ImplicitSpec (spec) where
 
-import Prelude
+import Prelude ((*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec ( describe, it, Spec )
 import Graphics.Implicit.Test.Instances
     ( (=~=), Quantizable(quantize), epsilon )

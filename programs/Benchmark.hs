@@ -59,10 +59,7 @@ object2 = squarePipe (10,10,10) 1 100
 -- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
 object3 =
-    difference
-        [ rect3R 1 (-1,-1,-1) (1,1,1)
-        , rect3R 1 (0,0,0) (2,2,2)
-        ]
+    difference (rect3R 1 (-1,-1,-1) (1,1,1)) [ rect3R 1 (0,0,0) (2,2,2)]
 
 -- | Example 13 - the rounded union of a cube and a sphere.
 object4 :: SymbolicObj3

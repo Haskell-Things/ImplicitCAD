@@ -199,8 +199,8 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
         sepFree :: [((ℝ3, ℝ3), a)] -> ([a], [a])
         sepFree ((box,obj):others) =
             if length (filter (box3sWithin r box) boxes) > 1
-            then first ((:) obj) $ sepFree others
-            else second ((:) obj) $ sepFree others
+            then first  (obj : ) $ sepFree others
+            else second (obj : ) $ sepFree others
         sepFree [] = ([],[])
 
         (dependants, independents) = sepFree boxedObjs
