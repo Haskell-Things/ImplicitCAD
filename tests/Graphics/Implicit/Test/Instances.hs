@@ -6,9 +6,9 @@
 
 module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
 
-import Prelude (Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
+import Prelude ((==), pure, Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
 
-import Data.VectorSpace (AdditiveGroup((^-^)))
+import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
 
 import qualified Graphics.Implicit as I (scale)
 
@@ -47,7 +47,7 @@ import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
 import QuickSpec ( Observe(observe), (=~=) )
 
 import Test.QuickCheck
-    ( Arbitrary(arbitrary, shrink),
+    (discard,  Arbitrary(arbitrary, shrink),
       genericShrink,
       choose,
       oneof,
@@ -57,6 +57,8 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
+import Linear (Quaternion, axisAngle)
+import Graphics.Implicit.MathUtil (packV3)
 
 ------------------------------------------------------------------------------
 -- | The number of decimal points we need to agree to assume two 'Double's are
@@ -107,6 +109,15 @@ instance Arbitrary ExtrudeRMScale where
     , C2 <$> arbitrary
     , Fn <$> arbitrary
     ]
+
+
+instance Arbitrary (Quaternion ℝ) where
+  arbitrary = do
+    q <- arbitrary
+    v <- arbitraryV3
+    case magnitudeSq v == 0.0 of
+      True  -> discard
+      False -> pure $ axisAngle (packV3 v) q
 
 
 ------------------------------------------------------------------------------
@@ -218,7 +229,6 @@ isValid3 (IntersectR3 _ _) = False  -- Bug #306
 isValid3 (Translate3 _ s) = isValid3 s
 isValid3 (Scale3 (x, y, z) s) = x > 0 && y > 0 && z > 0 && isValid3 s
 isValid3 (Rotate3 _ s) = isValid3 s
-{- isValid3 (Rotate3V _ _ s) = isValid3 s -} 
 isValid3 (Outset3 _ s) = isValid3 s
 isValid3 (Shell3 _ s) = isValid3 s
 isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)

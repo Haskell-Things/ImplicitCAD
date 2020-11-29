@@ -221,7 +221,8 @@ Test-suite test-implicit
                   hw-hspec-hedgehog,
                   quickspec,
                   QuickCheck,
-                  vector-space
+                  vector-space,
+                  linear
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
