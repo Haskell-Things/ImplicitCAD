@@ -5,10 +5,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3,bounding) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (==), (>=), signum, atan2, (.))
+import Prelude (fmap, Ord, Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (==), (>=), signum, atan2, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -19,6 +19,10 @@ import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^)
 -- get the distance between two points.
 import Data.AffineSpace (distance)
 import Linear (V3(V3), Quaternion(Quaternion))
+import Data.Coerce (coerce)
+import Data.Semigroup (Max(Max), Min(Min), Semigroup(sconcat))
+import Data.List.NonEmpty (NonEmpty ((:|)))
+import Control.Arrow (Arrow((&&&)))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -185,4 +189,11 @@ packV3 (x, y, z) = V3 x y z
 unpackV3 :: V3 a -> (a, a, a)
 unpackV3 (V3 a a2 a3) = (a, a2, a3)
 {-# INLINABLE unpackV3 #-}
+
+
+-- | @bounding def as@ returns the smallest and biggest elements in @as@
+-- respectively. If the list is empty, it instead returns @def@.
+bounding :: Ord a => (a, a) -> [a] -> (a, a)
+bounding e [] = e
+bounding _ (a : as) = coerce $ sconcat $ fmap (Min &&& Max) $ a :| as
 

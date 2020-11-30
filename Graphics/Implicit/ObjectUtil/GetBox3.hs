@@ -5,14 +5,14 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(uncurry, (<>), Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import Data.VectorSpace ((^-^), (^+^))
-import Graphics.Implicit.MathUtil (alaV3, reflect)
+import Graphics.Implicit.MathUtil (bounding, alaV3, reflect)
 import qualified Linear.Quaternion as Q
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
@@ -23,12 +23,10 @@ emptyBox = ((0,0,0), (0,0,0))
 
 -- | Define a Box3 around all of the given points.
 pointsBox :: [ℝ3] -> Box3
-pointsBox [] = emptyBox
-pointsBox points =
-    let
-        (xs, ys, zs) = unzip3 points
-    in
-        ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
+pointsBox = bounding emptyBox
+
+unionBoxes :: [Box3] -> Box3
+unionBoxes = bounding emptyBox . uncurry (<>) . unzip
 
 -- | Is a Box3 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
@@ -53,18 +51,11 @@ getBox3 (Complement3 _) =
         where
           infty :: (Fractional t) => t
           infty = 1/0
-getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
-    where
-        boxes = fmap getBox3 symbObjs
-        (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-        (lefts, bots, ins) = unzip3 leftbot
-        (rights, tops, outs) = unzip3 topright
-        left = minimum lefts
-        bot = minimum bots
-        inward = minimum ins
-        right = maximum rights
-        top = maximum tops
-        out = maximum outs
+getBox3 (UnionR3 r symbObjs)
+    = outsetBox r
+    . unionBoxes
+    . filter (not.isEmpty)
+    $ fmap getBox3 symbObjs
 getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
 getBox3 (IntersectR3 _ symbObjs) =
     let
