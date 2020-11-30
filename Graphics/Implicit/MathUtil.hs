@@ -8,11 +8,11 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2, (.))
+import Prelude (Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (==), (>=), signum, atan2, (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
-import Data.List (sort, sortBy, (!!))
+import Data.List (sort, sortBy)
 
 import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^), (^+^), (*^))
 
@@ -79,16 +79,14 @@ rmaximum ::
     -> ℝ   -- ^ resulting number
 rmaximum _ [] = 0
 rmaximum _ [a] = a
-rmaximum r [a,b]
-  | r == 0    = max a b
-  | otherwise = rmax r a b
-rmaximum r l
-  | r == 0    = maximum l
-  | otherwise =
-    let
-        tops = sortBy (flip compare) l
-    in
-        rmax r (head tops) (tops !! 1)
+rmaximum r l =
+  case sortBy (flip compare) l of
+    [] -> 0
+    [a] -> a
+    (a : b : _) ->
+      case r > 0 of
+        True  -> rmax r a b
+        False -> a
 
 -- | Like rmin but on a list.
 rminimum ::
@@ -97,16 +95,14 @@ rminimum ::
     -> ℝ   -- ^ resulting number
 rminimum _ [] = 0
 rminimum _ [a] = a
-rminimum r [a,b]
-  | r > 0     = rmin r a b
-  | otherwise = min a b
-rminimum r l
-  | r > 0 =
-    let
-        tops = sort l
-    in
-        rmin r (head tops) (tops !! 1)
-  | otherwise = minimum l
+rminimum r l =
+  case sort l of
+    [] -> 0
+    [a] -> a
+    (a : b : _) ->
+      case r > 0 of
+        True  -> rmin r a b
+        False -> a
 
 -- | Pack the given objects in a box the given size.
 pack ::
