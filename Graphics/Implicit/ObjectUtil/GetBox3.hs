@@ -57,6 +57,7 @@ getBox3 (UnionR3 r symbObjs)
     . filter (not.isEmpty)
     $ fmap getBox3 symbObjs
 getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
+getBox3 (IntersectR3 _ []) = emptyBox
 getBox3 (IntersectR3 _ symbObjs) =
     let
         boxes = fmap getBox3 symbObjs
