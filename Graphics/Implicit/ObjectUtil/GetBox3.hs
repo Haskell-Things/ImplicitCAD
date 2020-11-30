@@ -25,8 +25,14 @@ emptyBox = ((0,0,0), (0,0,0))
 pointsBox :: [ℝ3] -> Box3
 pointsBox = bounding emptyBox
 
+-- | Get a bounding box that contains all of the non-empty boxes. Returns
+-- 'emptyBox' if the list is empty.
 unionBoxes :: [Box3] -> Box3
-unionBoxes = bounding emptyBox . uncurry (<>) . unzip
+unionBoxes
+  = bounding emptyBox
+  . uncurry (<>)
+  . unzip
+  . filter (not . isEmpty)
 
 -- | Is a Box3 empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
@@ -54,7 +60,6 @@ getBox3 (Complement3 _) =
 getBox3 (UnionR3 r symbObjs)
     = outsetBox r
     . unionBoxes
-    . filter (not.isEmpty)
     $ fmap getBox3 symbObjs
 getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
 getBox3 (IntersectR3 _ []) = emptyBox
