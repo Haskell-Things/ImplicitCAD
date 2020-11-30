@@ -280,7 +280,7 @@ instance Semigroup SymbolicObj2 where
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
-  mempty = SquareR 0 (0, 0)
+  mempty = UnionR2 0 []
 
 -- | A symbolic 3D format!
 data SymbolicObj3 =
@@ -328,7 +328,7 @@ instance Semigroup SymbolicObj3 where
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj3 where
-  mempty = CubeR 0 (0, 0, 0)
+  mempty = UnionR3 0 []
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
