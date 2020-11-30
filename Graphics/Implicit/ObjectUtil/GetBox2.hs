@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(uncurry, Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
                                       SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
@@ -13,7 +13,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
-import Graphics.Implicit.MathUtil (reflect)
+import Graphics.Implicit.MathUtil (bounding, reflect)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -26,12 +26,7 @@ isEmpty ((a, b), (c, d)) = a==c || b==d
 
 -- | Define a Box2 around all of the given points.
 pointsBox :: [ℝ2] -> Box2
-pointsBox [] = emptyBox
-pointsBox points =
-    let
-        (xs, ys) = unzip points
-    in
-        ((minimum xs, minimum ys), (maximum xs, maximum ys))
+pointsBox = bounding emptyBox
 
 -- | Decompose a box into it's four corners.
 boxPoints :: Box2 -> [ℝ2]
@@ -39,13 +34,11 @@ boxPoints ((x1,y1),(x2,y2)) = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
 
 -- | Define a Box2 around all of the given boxes.
 unionBoxes :: [Box2] -> Box2
-unionBoxes boxes =
-    let
-        (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-        (lefts, bots) = unzip leftbot
-        (rights, tops) = unzip topright
-    in
-        ((minimum lefts, minimum bots), (maximum rights, maximum tops))
+unionBoxes
+  = bounding emptyBox
+  . uncurry (<>)
+  . unzip
+  . filter (not . isEmpty)
 
 -- | Define a Box2 that is the intersection of all of the given Box2s.
 intersectBoxes :: [Box2] -> Box2
