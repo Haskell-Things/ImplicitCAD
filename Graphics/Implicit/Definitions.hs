@@ -54,6 +54,8 @@ module Graphics.Implicit.Definitions (
         Outset2,
         EmbedBoxedObj2),
     SymbolicObj3(
+        Empty3,
+        Full3,
         CubeR,
         Sphere,
         Cylinder,
@@ -84,7 +86,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (($), Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -285,7 +287,9 @@ instance Monoid SymbolicObj2 where
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      CubeR ℝ ℝ3 -- rounding, size.
+      Empty3  -- ^ The empty object
+    | Full3   -- ^ The entirely full object
+    | CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- (Rounded) CSG
@@ -324,11 +328,19 @@ data SymbolicObj3 =
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj3 where
+  -- Empty3 is an identity for (<>)
+  Empty3 <> a = a
+  a <> Empty3 = a
+  -- Full3 is an annhilator
+  Full3 <> _ = Full3
+  _ <> Full3 = Full3
+  -- Otherwise don't introduce a UnionR3 constructor if we can avoid it
+  UnionR3 0 as <> UnionR3 0 bs = UnionR3 0 $ as <> bs
   a <> b = UnionR3 0 [a, b]
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj3 where
-  mempty = CubeR 0 (0, 0, 0)
+  mempty = Empty3
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ

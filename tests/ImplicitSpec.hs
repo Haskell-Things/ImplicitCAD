@@ -1,10 +1,13 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 module ImplicitSpec (spec) where
 
-import Prelude ((*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec ( describe, it, Spec )
 import Graphics.Implicit.Test.Instances
     ( (=~=), Quantizable(quantize), epsilon )
-import Graphics.Implicit ( rotate3, rotate3V, Object )
+import Graphics.Implicit
 import Graphics.Implicit.Primitives ( Object(getBox) )
 import Test.QuickCheck
     ( Arbitrary(arbitrary),
@@ -14,6 +17,8 @@ import Test.QuickCheck
       Testable(property) )
 import Data.Foldable ( for_ )
 import Data.VectorSpace ( (^*) )
+import Test.Hspec.QuickCheck (prop)
+import Graphics.Implicit.Definitions
 
 
 spec :: Spec
@@ -66,6 +71,35 @@ spec = do
         forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
           getQuantizedBox . rotate3V (2 * pi - rads) vec . rotate3V rads vec
             =~= getQuantizedBox
+
+  monoidSpec
+
+monoidSpec :: Spec
+monoidSpec = do
+  describe "monoid laws (getImplicit)" $ do
+    prop "a <> mempty = a" $ \obj ->
+      obj =~= obj <> mempty @SymbolicObj3
+    prop "mempty <> a = a" $ \obj ->
+      obj =~= mempty @SymbolicObj3 <> obj
+    prop "(a <> b) <> c = a <> (b <> c)" $ \a b (c :: SymbolicObj3) ->
+      (a <> b) <> c =~= a <> (b <> c)
+
+  describe "union (getImplicit)" $
+    prop "union [a] = a" $ \obj ->
+      union @SymbolicObj3 [obj] =~= obj
+
+  describe "mempty stays mempty (getImplicit)" $ do
+    -- prop "rect 0 = mempty" $
+      -- rect3R 0 0 0 =~= mempty
+    prop "rotate xyz mempty = mempty" $ \xyz ->
+      rotate3 xyz mempty =~= mempty
+    prop "translate xyz mempty = mempty" $ \xyz ->
+      translate @SymbolicObj3 xyz mempty =~= mempty
+
+
+
+
+
 
 
 getQuantizedBox :: (Quantizable vec, Object obj vec) => obj -> (vec, vec)

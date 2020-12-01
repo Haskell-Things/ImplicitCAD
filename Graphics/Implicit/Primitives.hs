@@ -39,6 +39,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
+import GHC.Generics
 import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
@@ -59,6 +60,8 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    EmbedBoxedObj2
                                                   ),
                                       SymbolicObj3(
+                                                   Empty3,
+                                                   Full3,
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
@@ -259,19 +262,23 @@ instance Object SymbolicObj2 ℝ2 where
     implicit a b= EmbedBoxedObj2 (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
-    translate   = Translate3
-    mirror      = Mirror3
-    scale       = Scale3
-    complement  = Complement3
-    unionR _ [] = mempty
-    unionR r ss = UnionR3 r ss
-    intersectR  = IntersectR3
-    differenceR = DifferenceR3
-    outset      = Outset3
-    shell       = Shell3
-    getBox      = getBox3
-    getImplicit = getImplicit3
-    implicit a b= EmbedBoxedObj3 (a,b)
+    translate _ Empty3         = Empty3
+    translate x s              = Translate3 x s
+    mirror _ Empty3            = Empty3
+    mirror x s                 = Mirror3 x s
+    scale _ Empty3             = Empty3
+    scale x s                  = Scale3 x s
+    complement (Complement3 s) = s
+    complement s               = Complement3 s
+    unionR _ []                = mempty
+    unionR r ss                = UnionR3 r ss
+    intersectR                 = IntersectR3
+    differenceR                = DifferenceR3
+    outset                     = Outset3
+    shell                      = Shell3
+    getBox                     = getBox3
+    getImplicit                = getImplicit3
+    implicit a b               = EmbedBoxedObj3 (a,b)
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0

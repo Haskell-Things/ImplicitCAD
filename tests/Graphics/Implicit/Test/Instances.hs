@@ -215,7 +215,7 @@ isValid2 s@(PolygonR _ ls) = length ls >= 3 &&
 isValid2 (SquareR _ (x0, y0)) = (0 < x0) && (0 < y0)
 isValid2 s =  -- Otherwise, make sure it has > 0 volume
   let (dx, dy) = boxSize s
-   in notElem 0 [dx, dy]
+   in all (> 0) [dx, dy]
 
 -- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
@@ -235,7 +235,7 @@ isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)
 isValid3 (Cylinder _ r h) = r > 0 && h > 0
 isValid3 s =  -- Otherwise, make sure it has > 0 volume
   let (dx, dy, dz) = boxSize s
-   in notElem 0 [dx, dy, dz]
+   in all (> 0) [dx, dy, dz]
 
 
 ------------------------------------------------------------------------------

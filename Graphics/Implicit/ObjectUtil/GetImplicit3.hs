@@ -5,10 +5,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (const, Fractional, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
-                                      SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
+                                      SymbolicObj3(Empty3, Full3, Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
 
@@ -25,9 +25,14 @@ import Data.VectorSpace (AdditiveGroup((^-^)))
 
 default (ℝ)
 
+infty :: Fractional t => t
+infty = 1 / 0
+
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
+getImplicit3 Empty3 = const infty
+getImplicit3 Full3 = const $ -infty
 getImplicit3 (CubeR r (dx, dy, dz)) =
     \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
@@ -44,6 +49,7 @@ getImplicit3 (Complement3 symbObj) =
         obj = getImplicit3 symbObj
     in
         \p -> - obj p
+getImplicit3 (UnionR3 _ []) = getImplicit3 Empty3
 getImplicit3 (UnionR3 r symbObjs) =
   \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
