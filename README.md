@@ -1,7 +1,7 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit)  [![Build Status](https://travis-ci.org/colah/ImplicitCAD.png?branch=master)](https://travis-ci.org/colah/ImplicitCAD)
+[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
 
 Introduction
 ------------
@@ -304,7 +304,9 @@ What works (January 26th, 2020 -- regressions are possible if not probable):
 What still needs to be done:
 
  - ~gcode generation for 3D printers, gcode generator config.~ -- now a seperate program, [HSlice](https://github.com/julialongtin/hslice/)!
- - Multi-material support.
+ - Multi-material / color support.
+ - Hull support.
+ - Minkowski sum support.
 
 And a wishlist of things to be done as we go:
  - More optimisation.
