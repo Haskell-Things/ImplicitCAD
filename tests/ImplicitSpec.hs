@@ -33,6 +33,7 @@ spec = do
     homomorphismSpec @SymbolicObj3
     monoidSpec @SymbolicObj3
     inverseSpec @SymbolicObj3
+    annihilationSpec @SymbolicObj3
 
 
 type TestInfrastructure obj vec test outcome =
@@ -88,6 +89,18 @@ inverseSpec = describe "inverses" $ do
   prop "complement inverse" $
     complement @obj . complement
       =~= id
+
+annihilationSpec
+    :: forall obj vec test outcome
+     . TestInfrastructure obj vec test outcome
+    => Spec
+annihilationSpec = describe "annihilation" $ do
+  prop "union/full" $ \obj ->
+    Full3 <> obj
+      =~= Full3
+  prop "union/full" $ \obj ->
+    obj <> Full3
+      =~= Full3
 
 
 identitySpec :: Spec
