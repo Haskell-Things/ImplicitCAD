@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
@@ -21,6 +21,10 @@ import Graphics.Implicit.Definitions
 import QuickSpec (Observe)
 
 
+------------------------------------------------------------------------------
+-- | Tests showing equivalencies between algebraic formulations of symbolic
+-- objects, in both 2d and 3d. Equality is observational, based on random
+-- sampling of the underlying 'getImplicit' function.
 spec :: Spec
 spec = do
   describe "symbolic obj 2" $ do
@@ -42,7 +46,9 @@ spec = do
     rotation3dSpec
 
 
-
+------------------------------------------------------------------------------
+-- | All the constraints we need in scope to parameterize tests by both 2d and
+-- 3d symbolic objects.
 type TestInfrastructure obj vec test outcome =
   ( Object obj vec
   , Observe test outcome obj
@@ -55,23 +61,28 @@ type TestInfrastructure obj vec test outcome =
   , Arbitrary vec
   )
 
+
+------------------------------------------------------------------------------
+-- | Tests proving that symbolic objects form a monoid.
 monoidSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
     => Spec
-monoidSpec = describe "monoid" $ do
-  describe "monoid laws" $ do
-    prop "a <> mempty = a" $ \obj ->
-      obj =~= obj <> mempty @obj
-    prop "mempty <> a = a" $ \obj ->
-      obj =~= mempty @obj <> obj
-    prop "(a <> b) <> c = a <> (b <> c)" $ \a b (c :: obj) ->
-      (a <> b) <> c =~= a <> (b <> c)
+monoidSpec = describe "monoid laws" $ do
+  prop "a <> mempty = a" $ \obj ->
+    obj =~= obj <> mempty @obj
 
-  prop "union [a] = a" $ \obj ->
-    union @obj [obj] =~= obj
+  prop "mempty <> a = a" $ \obj ->
+    obj =~= mempty @obj <> obj
+
+  prop "(a <> b) <> c = a <> (b <> c)" $ \a b (c :: obj) ->
+    (a <> b) <> c =~= a <> (b <> c)
 
 
+------------------------------------------------------------------------------
+-- | Tests showing that 'translate' is a no-op for both 'emptySpace' and
+-- 'fullSpace'. Additionally, that 'scale' is a no-op on 'emptySpace' (but not
+-- for 'fullSpace', because scaling by 0 is instead 'emptySpace').
 idempotenceSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -82,15 +93,14 @@ idempotenceSpec = describe "idempotence" $ do
       prop "idepotent wrt translate" $ \xyz ->
         translate xyz obj
           =~= obj
-      -- prop "idepotent wrt rotate" $ \xyz ->
-      --   rotate3 xyz obj
-      --     =~= obj
 
   prop "empty idepotent wrt scale" $ \xyz ->
     scale xyz emptySpace
       =~= emptySpace @obj
 
 
+------------------------------------------------------------------------------
+-- | Proofs of the invertability of operations.
 inverseSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -100,18 +110,24 @@ inverseSpec = describe "inverses" $ do
     complement @obj . complement
       =~= id
 
+
+------------------------------------------------------------------------------
+-- | Proofs that 'fullSpace' is an annhilative element with respect to union.
 annihilationSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
     => Spec
 annihilationSpec = describe "annihilation" $ do
-  prop "union/full" $ \obj ->
+  prop "full <> obj = full" $ \obj ->
     fullSpace <> obj
       =~= fullSpace @obj
-  prop "union/full" $ \obj ->
+  prop "obj <> full = full" $ \obj ->
     obj <> fullSpace
       =~= fullSpace @obj
 
+
+------------------------------------------------------------------------------
+-- | Misc proofs regarding 2d rotation.
 rotation2dSpec :: Spec
 rotation2dSpec = describe "2d rotation" $ do
   prop "360 degrees is id" $
@@ -127,6 +143,8 @@ rotation2dSpec = describe "2d rotation" $ do
       =~= rotate (rads1 + rads2)
 
 
+------------------------------------------------------------------------------
+-- | Misc proofs regarding 3d rotation.
 rotation3dSpec :: Spec
 rotation3dSpec = describe "3d rotation" $ do
   for_ [ ("YZ", (1, 0, 0))
@@ -155,15 +173,13 @@ rotation3dSpec = describe "3d rotation" $ do
       =~= rotateQ (q2 * q1)
 
 
+------------------------------------------------------------------------------
+-- | Misc identity proofs that should hold for all symbolic objects.
 identitySpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
     => Spec
 identitySpec = describe "identity" $ do
-  prop "complement inverse" $
-    complement @obj . complement
-      =~= id
-
   prop "complement empty" $
     complement @obj emptySpace
       =~= fullSpace
@@ -185,7 +201,13 @@ identitySpec = describe "identity" $ do
     differenceR @obj r obj []
       =~= obj
 
+  prop "union [a] = a" $ \obj ->
+    union @obj [obj] =~= obj
 
+
+------------------------------------------------------------------------------
+-- | Functions proving symbolic objects form homomorphisms with respect to
+-- translate and scale.
 homomorphismSpec
     :: forall obj vec test outcome
      . ( TestInfrastructure obj vec test outcome
@@ -203,6 +225,8 @@ homomorphismSpec = describe "homomorphism" $ do
       =~= scale (xyz1 * xyz2)
 
 
+------------------------------------------------------------------------------
+-- | Like 'prop', but for tests that are currently expected to fail.
 failingProp :: Testable prop => String -> prop -> SpecWith ()
 failingProp x = it x . expectFailure . property
 
