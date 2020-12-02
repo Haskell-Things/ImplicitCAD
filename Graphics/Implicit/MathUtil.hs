@@ -48,6 +48,8 @@ box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)
 -- Consider  max(x,y) = 0, the generated curve
 -- has a square-like corner. We replace it with a
 -- quarter of a circle
+--
+-- NOTE: rmax is not associative!
 rmax ::
     ℝ     -- ^ radius
     -> ℝ  -- ^ first number to round maximum
@@ -60,6 +62,8 @@ rmax r x y
                 else max x y
 
 -- | Rounded minimum
+--
+-- NOTE: rmin is not associative!
 rmin ::
     ℝ     -- ^ radius
     -> ℝ  -- ^ first number to round minimum
