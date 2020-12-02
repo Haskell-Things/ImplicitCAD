@@ -24,18 +24,18 @@ import QuickSpec (Observe)
 spec :: Spec
 spec = do
   describe "symbolic obj 2" $ do
-    idempotenceSpec @SymbolicObj2
-    identitySpec @SymbolicObj2
+    idempotenceSpec  @SymbolicObj2
+    identitySpec     @SymbolicObj2
     homomorphismSpec @SymbolicObj2
-    monoidSpec @SymbolicObj2
-    inverseSpec @SymbolicObj2
+    monoidSpec       @SymbolicObj2
+    inverseSpec      @SymbolicObj2
     annihilationSpec @SymbolicObj2
   describe "symbolic obj 3" $ do
-    idempotenceSpec @SymbolicObj3
-    identitySpec @SymbolicObj3
+    idempotenceSpec  @SymbolicObj3
+    identitySpec     @SymbolicObj3
     homomorphismSpec @SymbolicObj3
-    monoidSpec @SymbolicObj3
-    inverseSpec @SymbolicObj3
+    monoidSpec       @SymbolicObj3
+    inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
 
 
