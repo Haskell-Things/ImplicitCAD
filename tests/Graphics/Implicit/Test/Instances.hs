@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
 
-import Prelude ((==), pure, Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
+import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
 
 import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
 
@@ -59,6 +59,18 @@ import Test.QuickCheck
 
 import Linear (Quaternion, axisAngle)
 import Graphics.Implicit.MathUtil (packV3)
+
+
+data Insidedness = Inside | Outside | Surface
+  deriving (Eq, Ord, Show, Enum, Bounded)
+
+
+insidedness :: Double -> Insidedness
+insidedness 0 = Surface
+insidedness x =
+  case x < 0 of
+    True  -> Inside
+    False -> Outside
 
 ------------------------------------------------------------------------------
 -- | The number of decimal points we need to agree to assume two 'Double's are
@@ -123,15 +135,15 @@ instance Arbitrary (Quaternion ℝ) where
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj2's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ2, ()) ℝ SymbolicObj2 where
-  observe p = quantize epsilon . observe p . getImplicit
+instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
+  observe p = insidedness . observe p . getImplicit
 
 
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj3's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ3, ()) ℝ SymbolicObj3 where
-  observe p = quantize epsilon . observe p . getImplicit
+instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
+  observe p = insidedness . observe p . getImplicit
 
 
 ------------------------------------------------------------------------------
@@ -163,9 +175,9 @@ instance Quantizable Double where
 
 ------------------------------------------------------------------------------
 -- | An implementation of 'Arbitrary' for anything that is an 'Object'.
-arbitraryObject :: (Arbitrary a, Arbitrary vec, Object a vec, Quantizable vec) => [Gen a]
+arbitraryObject :: (Arbitrary a, Arbitrary vec, Object a vec) => [Gen a]
 arbitraryObject =
-  [ translate   <$> fmap (quantize epsilon) arbitrary <*> decayArbitrary 2
+  [ translate   <$> arbitrary <*> decayArbitrary 2
   , I.scale     <$> arbitrary <*> decayArbitrary 2
   , unionR      <$> arbitraryPos <*> decayedList
   , intersectR  <$> arbitraryPos <*> decayedList
@@ -181,11 +193,11 @@ decayedList = do
   n <- choose (1, 10)
   vectorOf n $ decayArbitrary $ n + 1
 
--- | Generate a quantized, arbitrary positive 'Double'. Useful for sizes.
+-- | Generate an arbitrary positive 'Double'. Useful for sizes.
 arbitraryPos :: Gen Double
-arbitraryPos = quantize epsilon . getPositive <$> arbitrary
+arbitraryPos = getPositive <$> arbitrary
 
--- | Generate a quantized, arbitrary positive 'ℝ3'. Useful for sizes.
+-- | Generate an arbitrary positive 'ℝ3'. Useful for sizes.
 arbitraryV3 :: Gen ℝ3
 arbitraryV3 = (,,) <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
 
