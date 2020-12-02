@@ -23,13 +23,16 @@ import QuickSpec (Observe)
 
 spec :: Spec
 spec = do
-  idempotenceSpec
-  identitySpec
   describe "symbolic obj 2" $ do
+    idempotenceSpec @SymbolicObj2
+    identitySpec @SymbolicObj2
     homomorphismSpec @SymbolicObj2
     monoidSpec @SymbolicObj2
     inverseSpec @SymbolicObj2
+    annihilationSpec @SymbolicObj2
   describe "symbolic obj 3" $ do
+    idempotenceSpec @SymbolicObj3
+    identitySpec @SymbolicObj3
     homomorphismSpec @SymbolicObj3
     monoidSpec @SymbolicObj3
     inverseSpec @SymbolicObj3
@@ -65,20 +68,23 @@ monoidSpec = describe "monoid" $ do
     union @obj [obj] =~= obj
 
 
-idempotenceSpec :: Spec
+idempotenceSpec
+    :: forall obj vec test outcome
+     . TestInfrastructure obj vec test outcome
+    => Spec
 idempotenceSpec = describe "idempotence" $ do
-  for_ [("empty", Empty3), ("full", Full3)] $ \(name, obj) ->
+  for_ [("empty", emptySpace @obj), ("full", fullSpace)] $ \(name, obj) ->
     describe name $ do
       prop "idepotent wrt translate" $ \xyz ->
         translate xyz obj
           =~= obj
-      prop "idepotent wrt rotate" $ \xyz ->
-        rotate3 xyz obj
-          =~= obj
+      -- prop "idepotent wrt rotate" $ \xyz ->
+      --   rotate3 xyz obj
+      --     =~= obj
 
   prop "empty idepotent wrt scale" $ \xyz ->
-    scale xyz Empty3
-      =~= Empty3
+    scale xyz emptySpace
+      =~= emptySpace @obj
 
 
 inverseSpec
@@ -96,14 +102,17 @@ annihilationSpec
     => Spec
 annihilationSpec = describe "annihilation" $ do
   prop "union/full" $ \obj ->
-    Full3 <> obj
-      =~= Full3
+    fullSpace <> obj
+      =~= fullSpace @obj
   prop "union/full" $ \obj ->
-    obj <> Full3
-      =~= Full3
+    obj <> fullSpace
+      =~= fullSpace @obj
 
 
-identitySpec :: Spec
+identitySpec
+    :: forall obj vec test outcome
+     . TestInfrastructure obj vec test outcome
+    => Spec
 identitySpec = describe "identity" $ do
   describe "getImplicit" $ do
     for_ [ ("YZ", (1, 0, 0))
@@ -129,27 +138,27 @@ identitySpec = describe "identity" $ do
           =~= id
 
   prop "complement inverse" $
-    complement @SymbolicObj3 . complement
+    complement @obj . complement
       =~= id
 
   prop "complement empty" $
-    complement Empty3
-      =~= Full3
+    complement @obj emptySpace
+      =~= fullSpace
 
   prop "complement full" $
-    complement Full3
-      =~= Empty3
+    complement @obj fullSpace
+      =~= emptySpace
 
   prop "difference of empty" $ \r objs ->
-    differenceR r Empty3 objs
-      =~= Empty3
+    differenceR @obj r emptySpace objs
+      =~= emptySpace
 
   failingProp "difference is complement" $ \objs ->
-    difference Full3 objs
+    difference @obj fullSpace objs
       =~= complement (union objs)
 
   prop "difference of obj" $ \r obj ->
-    differenceR @SymbolicObj3 r obj []
+    differenceR @obj r obj []
       =~= obj
 
 
