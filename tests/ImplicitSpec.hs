@@ -5,15 +5,15 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (describe, Spec)
+import Prelude (String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Test.Hspec (SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
 import Graphics.Implicit.Primitives (rotateQ)
 import Test.QuickCheck
-    ( Arbitrary(arbitrary),
+    (Testable, property, expectFailure,  Arbitrary(arbitrary),
       suchThat,
-      forAll )
+      forAll)
 import Data.Foldable ( for_ )
 import Data.VectorSpace (AdditiveGroup, (^+^),  (^*) )
 import Test.Hspec.QuickCheck (prop)
@@ -144,6 +144,10 @@ identitySpec = describe "identity" $ do
     differenceR r Empty3 objs
       =~= Empty3
 
+  failingProp "difference is complement" $ \objs ->
+    difference Full3 objs
+      =~= complement (union objs)
+
   prop "difference of obj" $ \r obj ->
     differenceR @SymbolicObj3 r obj []
       =~= obj
@@ -168,4 +172,8 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "rotate" $ \q1 q2 ->
     rotateQ q2 . rotateQ q1
       =~= rotateQ (q2 * q1)
+
+
+failingProp :: Testable prop => String -> prop -> SpecWith ()
+failingProp x = it x . expectFailure . property
 
