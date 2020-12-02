@@ -5,7 +5,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude ((+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
@@ -103,12 +103,26 @@ idempotenceSpec = describe "idempotence" $ do
 -- | Proofs of the invertability of operations.
 inverseSpec
     :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+     . ( TestInfrastructure obj vec test outcome
+       , Num vec
+       )
     => Spec
 inverseSpec = describe "inverses" $ do
   prop "complement inverse" $
     complement @obj . complement
       =~= id
+
+  prop "translate inverse" $ \xyz ->
+    translate @obj xyz . translate (negate xyz)
+      =~= id
+
+  -- TODO(sandy): there should be a scale inverse here, but it's a hard thing
+  -- to quantify over due to our lack of functors for R2 and R3.
+
+  -- -- prop "scale inverse" $
+  -- --   forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
+  -- --     scale @obj xyz . scale (invert xyz)
+  -- --       =~= id
 
 
 ------------------------------------------------------------------------------
@@ -142,6 +156,14 @@ rotation2dSpec = describe "2d rotation" $ do
     rotate rads2 . rotate rads2
       =~= rotate (rads1 + rads2)
 
+  prop "full idepotent wrt rotate" $ \rads ->
+    rotate rads fullSpace
+      =~= fullSpace
+
+  prop "empty idepotent wrt rotate" $ \rads ->
+    rotate rads emptySpace
+      =~= emptySpace
+
 
 ------------------------------------------------------------------------------
 -- | Misc proofs regarding 3d rotation.
@@ -171,6 +193,14 @@ rotation3dSpec = describe "3d rotation" $ do
   prop "rotate" $ \q1 q2 ->
     rotateQ q2 . rotateQ q1
       =~= rotateQ (q2 * q1)
+
+  prop "full idepotent wrt rotate" $ \xyz ->
+    rotate3 xyz fullSpace
+      =~= fullSpace
+
+  prop "empty idepotent wrt rotate" $ \xyz ->
+    rotate3 xyz emptySpace
+      =~= emptySpace
 
 
 ------------------------------------------------------------------------------
