@@ -6,7 +6,7 @@
 
 module Graphics.Implicit.Test.Instances (epsilon, observe, (=~=)) where
 
-import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
+import Prelude (Bounded, Enum, Show, Ord, Eq, (/=), (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
 
 import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
 
@@ -55,6 +55,7 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
+import Data.List (nub)
 import Linear (Quaternion, axisAngle)
 import Graphics.Implicit.MathUtil (packV3)
 
@@ -199,7 +200,7 @@ isValid2 (Scale2 (x, y) s) = x > 0 && y > 0 && isValid2 s
 isValid2 (Rotate2 _ s) = isValid2 s
 isValid2 (Outset2 _ s) = isValid2 s
 isValid2 (Shell2 _ s) = isValid2 s
-isValid2 s@(PolygonR _ ls) = length ls >= 3 &&
+isValid2 s@(PolygonR _ ls) = length ls >= 3 && nub ls /= ls &&
   let (dx, dy) = boxSize s
    in notElem 0 [dx, dy]
 isValid2 (SquareR _ (x0, y0)) = (0 < x0) && (0 < y0)
