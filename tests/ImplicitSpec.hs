@@ -5,7 +5,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude ((+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
@@ -30,6 +30,8 @@ spec = do
     monoidSpec       @SymbolicObj2
     inverseSpec      @SymbolicObj2
     annihilationSpec @SymbolicObj2
+    rotation2dSpec
+
   describe "symbolic obj 3" $ do
     idempotenceSpec  @SymbolicObj3
     identitySpec     @SymbolicObj3
@@ -37,6 +39,8 @@ spec = do
     monoidSpec       @SymbolicObj3
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
+    rotation3dSpec
+
 
 
 type TestInfrastructure obj vec test outcome =
@@ -108,35 +112,54 @@ annihilationSpec = describe "annihilation" $ do
     obj <> fullSpace
       =~= fullSpace @obj
 
+rotation2dSpec :: Spec
+rotation2dSpec = describe "2d rotation" $ do
+  prop "360 degrees is id" $
+    rotate (2 * pi)
+      =~= id
+
+  prop "(x + y = 360) degrees is id" $ \rads -> do
+      rotate (2 * pi - rads) . rotate rads
+        =~= id
+
+  failingProp "rotate" $ \rads1 rads2 ->
+    rotate rads2 . rotate rads2
+      =~= rotate (rads1 + rads2)
+
+
+rotation3dSpec :: Spec
+rotation3dSpec = describe "3d rotation" $ do
+  for_ [ ("YZ", (1, 0, 0))
+       , ("XZ", (0, 1, 0))
+       , ("XY", (0, 0, 1))
+       ] $ \(axis, vec) -> do
+    describe ("rotation in the " <> axis <> " plane") $ do
+      prop "360 degrees is id" $
+        rotate3 (vec ^* (2 * pi))
+          =~= id
+      prop "(x + y = 360) degrees is id" $ \rads ->
+        rotate3 (vec ^* (2 * pi - rads)) . rotate3 (vec ^* rads)
+          =~= id
+
+  prop "360 degrees is id" $
+    forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+      rotate3V (2 * pi) vec
+        =~= id
+  prop "(x + y = 360) degrees is id" $ \rads -> do
+    forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+      rotate3V (2 * pi - rads) vec . rotate3V rads vec
+        =~= id
+
+  prop "rotate" $ \q1 q2 ->
+    rotateQ q2 . rotateQ q1
+      =~= rotateQ (q2 * q1)
+
 
 identitySpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
     => Spec
 identitySpec = describe "identity" $ do
-  describe "getImplicit" $ do
-    for_ [ ("YZ", (1, 0, 0))
-         , ("XZ", (0, 1, 0))
-         , ("XY", (0, 0, 1))
-         ] $ \(axis, vec) -> do
-      describe ("rotation in the " <> axis <> " plane (observed by getImplicit)") $ do
-        prop "360 degrees is id" $
-          rotate3 (vec ^* (2 * pi))
-            =~= id
-        prop "(x + y = 360) degrees is id" $ \rads ->
-          rotate3 (vec ^* (2 * pi - rads)) . rotate3 (vec ^* rads)
-            =~= id
-
-  describe "rotation in arbitrary planes (observed by getImplicit)" $ do
-    prop "360 degrees is id" $
-      forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
-        rotate3V (2 * pi) vec
-          =~= id
-    prop "(x + y = 360) degrees is id" $ \rads -> do
-      forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
-        rotate3V (2 * pi - rads) vec . rotate3V rads vec
-          =~= id
-
   prop "complement inverse" $
     complement @obj . complement
       =~= id
@@ -153,7 +176,8 @@ identitySpec = describe "identity" $ do
     differenceR @obj r emptySpace objs
       =~= emptySpace
 
-  failingProp "difference is complement" $ \objs ->
+  -- TODO(sandy): Broken in 2d due to #328
+  prop "difference is complement" $ \objs ->
     difference @obj fullSpace objs
       =~= complement (union objs)
 
@@ -177,10 +201,6 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "scale" $ \xyz1 xyz2 ->
     scale @obj xyz2 . scale xyz1
       =~= scale (xyz1 * xyz2)
-
-  prop "rotate" $ \q1 q2 ->
-    rotateQ q2 . rotateQ q1
-      =~= rotateQ (q2 * q1)
 
 
 failingProp :: Testable prop => String -> prop -> SpecWith ()
