@@ -194,6 +194,10 @@ unpackV3 :: V3 a -> (a, a, a)
 unpackV3 (V3 a a2 a3) = (a, a2, a3)
 {-# INLINABLE unpackV3 #-}
 
+
+------------------------------------------------------------------------------
+-- | Haskell's standard library doesn't make floating-point infinity available
+-- in any convenient way, so we define it here.
 infty :: (Fractional t) => t
 infty = 1/0
 
