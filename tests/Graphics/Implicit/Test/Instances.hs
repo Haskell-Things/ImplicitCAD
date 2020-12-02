@@ -4,9 +4,9 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (epsilon, observe, (=~=)) where
 
-import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
+import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
 
 import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
 
@@ -38,9 +38,7 @@ import Graphics.Implicit.Definitions
                    Shell3, CubeR),
       SymbolicObj2(SquareR, Complement2, UnionR2, DifferenceR2,
                    IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
-                   PolygonR),
-      both,
-      allthree )
+                   PolygonR) )
 
 import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
 
@@ -145,32 +143,6 @@ instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
 instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
   observe p = insidedness . observe p . getImplicit
 
-
-------------------------------------------------------------------------------
--- | Types which can truncate their decimal points to a certain number of
--- digits.
-class Quantizable a where
-  quantize
-      :: Int  -- ^ The number of decimal points to keep
-      -> a
-      -> a
-
-instance Quantizable a => Quantizable [a] where
-  quantize n = fmap (quantize n)
-
-instance Quantizable a => Quantizable (a, a) where
-  quantize n = both (quantize n)
-
-instance Quantizable a => Quantizable (a, a, a) where
-  quantize n = allthree (quantize n)
-
-instance Quantizable a => Quantizable (b -> a) where
-  quantize n = fmap (quantize n)
-
-instance Quantizable Double where
-  quantize n r =
-    let pow = 10 ^ n :: Double
-    in fromIntegral @Integer (round (r * pow)) / pow
 
 
 ------------------------------------------------------------------------------
