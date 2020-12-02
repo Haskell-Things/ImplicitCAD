@@ -127,6 +127,14 @@ identitySpec = describe "identity" $ do
     complement Full3
       =~= Empty3
 
+  prop "difference of empty" $ \r objs ->
+    differenceR r Empty3 objs
+      =~= Empty3
+
+  prop "difference of obj" $ \r obj ->
+    differenceR @SymbolicObj3 r obj []
+      =~= obj
+
 
 homomorphismSpec
     :: forall obj vec test outcome
@@ -139,9 +147,11 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "translate" $ \xyz1 xyz2 ->
     translate @obj xyz2 . translate xyz1
       =~= translate (xyz1 ^+^ xyz2)
+
   prop "scale" $ \xyz1 xyz2 ->
     scale @obj xyz2 . scale xyz1
       =~= scale (xyz1 * xyz2)
+
   prop "rotate" $ \q1 q2 ->
     rotateQ q2 . rotateQ q1
       =~= rotateQ (q2 * q1)

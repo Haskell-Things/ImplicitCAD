@@ -68,6 +68,8 @@ getImplicit3 (UnionR3 r symbObjs) =
 getImplicit3 (IntersectR3 r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
+getImplicit3 (DifferenceR3 _ symbObj []) =
+  getImplicit3 symbObj
 getImplicit3 (DifferenceR3 r symbObj symbObjs) =
     let
         tailObjs = getImplicit3 <$> symbObjs
