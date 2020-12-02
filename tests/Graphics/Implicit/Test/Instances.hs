@@ -33,10 +33,10 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj3(Cylinder, Complement3, UnionR3, DifferenceR3,
+    ( SymbolicObj3(Full3, Empty3, Cylinder, Complement3, UnionR3, DifferenceR3,
                    IntersectR3, Translate3, Scale3, Rotate3, Outset3,
                    Shell3, CubeR),
-      SymbolicObj2(SquareR, Complement2, UnionR2, DifferenceR2,
+      SymbolicObj2(Full2, Empty2, SquareR, Complement2, UnionR2, DifferenceR2,
                    IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
                    PolygonR) )
 
@@ -182,6 +182,8 @@ decayArbitrary n = scale (`div` n) arbitrary
 -- | Determine if a 'SymbolicObj2' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
 isValid2 :: SymbolicObj2 -> Bool
+isValid2 Empty2 = True
+isValid2 Full2 = True
 isValid2 (Complement2 s) = isValid2 s
 isValid2 (UnionR2 _ []) = False  -- Bug #304
 isValid2 (UnionR2 _ l_s) = all isValid2 l_s
@@ -204,6 +206,8 @@ isValid2 s =  -- Otherwise, make sure it has > 0 volume
 -- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
 isValid3 :: SymbolicObj3 -> Bool
+isValid3 Empty3 = True
+isValid3 Full3 = True
 isValid3 (Complement3 s) = isValid3 s
 isValid3 (UnionR3 _ []) = False  -- Bug #304
 isValid3 (UnionR3 _ l_s) = all isValid3 l_s

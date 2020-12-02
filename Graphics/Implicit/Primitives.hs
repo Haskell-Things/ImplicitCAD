@@ -39,11 +39,12 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import GHC.Generics
 import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
+                                                   Empty2,
+                                                   Full2,
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,

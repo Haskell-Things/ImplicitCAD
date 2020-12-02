@@ -39,6 +39,8 @@ module Graphics.Implicit.Definitions (
     BoxedObj2,
     BoxedObj3,
     SymbolicObj2(
+        Empty2,
+        Full2,
         SquareR,
         Circle,
         PolygonR,
@@ -256,7 +258,9 @@ type BoxedObj3 = Boxed3 Obj3
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      SquareR ℝ ℝ2    -- rounding, size.
+      Empty2  -- ^ The empty object
+    | Full2   -- ^ The entirely full object
+    | SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- (Rounded) CSG
@@ -278,11 +282,22 @@ data SymbolicObj2 =
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj2 where
+  -- Empty2 is an identity for (<>)
+  Empty2 <> a = a
+  a <> Empty2 = a
+  -- Full2 is an annhilator
+  Full2 <> _ = Full2
+  _ <> Full2 = Full2
+  -- Otherwise don't introduce a UnionR2 constructor if we can avoid it
+  UnionR2 0 as <> UnionR2 0 bs = UnionR2 0 $ as <> bs
+  a <> UnionR2 0 bs = UnionR2 0 $ a : bs
+  UnionR2 0 as <> b = UnionR2 0 $ as <> [b]
   a <> b = UnionR2 0 [a, b]
+
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
-  mempty = SquareR 0 (0, 0)
+  mempty = Empty2
 
 -- | A symbolic 3D format!
 data SymbolicObj3 =
