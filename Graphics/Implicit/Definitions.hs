@@ -336,6 +336,8 @@ instance Semigroup SymbolicObj3 where
   _ <> Full3 = Full3
   -- Otherwise don't introduce a UnionR3 constructor if we can avoid it
   UnionR3 0 as <> UnionR3 0 bs = UnionR3 0 $ as <> bs
+  a <> UnionR3 0 bs = UnionR3 0 $ a : bs
+  UnionR3 0 as <> b = UnionR3 0 $ as <> [b]
   a <> b = UnionR3 0 [a, b]
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
