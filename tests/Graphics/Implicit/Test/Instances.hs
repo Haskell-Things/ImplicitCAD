@@ -20,7 +20,7 @@ import Graphics.Implicit
       ℝ2,
       ℝ,
       squareR,
-      Object(shell, translate, unionR, intersectR, differenceR),
+      Object(shell, translate, unionR, intersectR, differenceR, emptySpace, fullSpace),
       sphere,
       cubeR,
       cylinder2,
@@ -90,6 +90,8 @@ instance Arbitrary SymbolicObj2 where
         [ circle   <$> arbitrary
         , squareR  <$> arbitraryPos <*> arbitrary <*> arbitrary
         , polygonR <$> arbitraryPos <*> decayedList
+        , pure fullSpace
+        , pure emptySpace
         ]
 
 
@@ -110,6 +112,8 @@ instance Arbitrary SymbolicObj3 where
         , cylinder  <$> arbitraryPos <*> arbitraryPos
         , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
         , cubeR     <$> arbitraryPos <*> arbitrary    <*> arbitraryV3
+        , pure fullSpace
+        , pure emptySpace
         ]
 
 instance Arbitrary ExtrudeRMScale where

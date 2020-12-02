@@ -36,6 +36,8 @@ module Graphics.Implicit.Primitives (
                                      rotate,
                                      pack2,
                                      implicit,
+                                     emptySpace,
+                                     fullSpace,
                                      Object
                                     ) where
 
@@ -176,6 +178,11 @@ polygonR = PolygonR
 --
 -- Library users shouldn't need to provide new instances of this class.
 class Object obj vec | obj -> vec where
+    -- | The object that fills no space
+    emptySpace :: obj
+
+    -- | The object that fills the entire space
+    fullSpace :: obj
 
     -- | Complement an Object
     complement ::
@@ -248,27 +255,29 @@ class Object obj vec | obj -> vec where
 
 
 instance Object SymbolicObj2 ℝ2 where
-    translate   = Translate2
-    mirror      = Mirror2
-    scale       = Scale2
-    complement  = Complement2
-    unionR _ [] = mempty
-    unionR r ss = UnionR2 r ss
-    intersectR  = IntersectR2
-    differenceR = DifferenceR2
-    outset      = Outset2
-    shell       = Shell2
-    getBox      = getBox2
-    getImplicit = getImplicit2
-    implicit a b= EmbedBoxedObj2 (a,b)
+    emptySpace                 = Empty2
+    fullSpace                  = Full2
+    translate                  = Translate2
+    mirror                     = Mirror2
+    scale                      = Scale2
+    complement (Complement2 s) = s
+    complement s               = Complement2 s
+    unionR _ []                = mempty
+    unionR r ss                = UnionR2 r ss
+    intersectR                 = IntersectR2
+    differenceR                = DifferenceR2
+    outset                     = Outset2
+    shell                      = Shell2
+    getBox                     = getBox2
+    getImplicit                = getImplicit2
+    implicit a b               = EmbedBoxedObj2 (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
-    translate _ Empty3         = Empty3
-    translate x s              = Translate3 x s
-    mirror _ Empty3            = Empty3
-    mirror x s                 = Mirror3 x s
-    scale _ Empty3             = Empty3
-    scale x s                  = Scale3 x s
+    emptySpace                 = Empty3
+    fullSpace                  = Full3
+    translate                  = Translate3
+    mirror                     = Mirror3
+    scale                      = Scale3
     complement (Complement3 s) = s
     complement s               = Complement3 s
     unionR _ []                = mempty
