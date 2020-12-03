@@ -7,13 +7,13 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, Mirror2), minℝ)
+                                      SymbolicObj2(Shared2, Circle, Rotate2, SquareR, PolygonR), minℝ, SharedObj (..))
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
 import Graphics.Implicit.MathUtil (reflect)
+import Graphics.Implicit.ObjectUtil.GetBoxShared (getBoxShared)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -71,31 +71,7 @@ getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
-getBox2 (Complement2 _) =
-    ((-infty, -infty), (infty, infty))
-        where
-          infty :: (Fractional t) => t
-          infty = 1/0
-getBox2 (UnionR2 r symbObjs) =
-  outsetBox r $ unionBoxes (fmap getBox2 symbObjs)
-getBox2 (DifferenceR2 _ symbObj _) = getBox2 symbObj
-getBox2 (IntersectR2 r symbObjs) =
-  outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ fmap getBox2 symbObjs
 -- Simple transforms
-getBox2 (Translate2 v symbObj) =
-    let
-        (a,b) = getBox2 symbObj
-    in
-        if isEmpty (a,b)
-        then emptyBox
-        else (a^+^v, b^+^v)
-getBox2 (Scale2 s symbObj) =
-    let
-        (a,b) = getBox2 symbObj
-        (sax, say) = s ⋯* a
-        (sbx, sby) = s ⋯* b
-    in
-        ((min sax sbx, min say sby), (max sax sbx, max say sby))
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
@@ -106,20 +82,7 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
-getBox2 (Mirror2 v symbObj) =
-    let (p1@(x1, y1), p2@(x2, y2)) = getBox2 symbObj
-     in pointsBox [ reflect v p1
-                  , reflect v p2
-                  , reflect v (x1, y2)
-                  , reflect v (x2, y1)
-                  ]
--- Boundary mods
-getBox2 (Shell2 w symbObj) =
-    outsetBox (w/2) $ getBox2 symbObj
-getBox2 (Outset2 d symbObj) =
-    outsetBox d $ getBox2 symbObj
--- Misc
-getBox2 (EmbedBoxedObj2 (_,box)) = box
+getBox2 (Shared2 obj) = getBoxShared obj
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 --   Note: No implementations for SquareR, Translate2, or Scale2 as they would be identical to the fallthrough.
@@ -132,14 +95,14 @@ getBox2R (PolygonR _ points) deg =
     (pointValsX, pointValsY) = unzip (pointValsMin <> pointValsMax)
   in
     ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
-getBox2R (Complement2 symObj) _ = getBox2 $ Complement2 symObj
-getBox2R (UnionR2 r symObjs) deg =
+getBox2R (Shared2 (Complement symObj)) _ = getBox2 $ Shared2 (Complement symObj)
+getBox2R (Shared2 (UnionR r symObjs)) deg =
   let
     boxes = [ getBox2R obj deg| obj <- symObjs ]
   in
     outsetBox r $ unionBoxes boxes
-getBox2R (DifferenceR2 _ symObj _) deg = getBox2R symObj deg
-getBox2R (IntersectR2 r symObjs) deg =
+getBox2R (Shared2 (DifferenceR _ symObj _)) deg = getBox2R symObj deg
+getBox2R (Shared2 (IntersectR r symObjs)) deg =
   let
     boxes = [ getBox2R obj deg| obj <- symObjs ]
   in

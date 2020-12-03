@@ -8,9 +8,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
-                                      SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
+                                      SymbolicObj3(Shared3, Rotate3, CubeR, Sphere, Cylinder, ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ, SharedObj(..))
 
 import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
 
@@ -39,18 +37,18 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
 -- (Rounded) CSG
-getImplicit3 (Complement3 symbObj) =
+getImplicit3 (Shared3 (Complement symbObj)) =
     let
         obj = getImplicit3 symbObj
     in
         \p -> - obj p
-getImplicit3 (UnionR3 r symbObjs) =
+getImplicit3 (Shared3 (UnionR r symbObjs)) =
   \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
-getImplicit3 (IntersectR3 r symbObjs) =
+getImplicit3 (Shared3 (IntersectR r symbObjs)) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
-getImplicit3 (DifferenceR3 r symbObj symbObjs) =
+getImplicit3 (Shared3 (DifferenceR r symbObj symbObjs)) =
     let
         tailObjs = getImplicit3 <$> symbObjs
         headObj = getImplicit3 symbObj
@@ -65,12 +63,12 @@ getImplicit3 (DifferenceR3 r symbObj symbObjs) =
           else rmax r (headObj p) maxTail
 
 -- Simple transforms
-getImplicit3 (Translate3 v symbObj) =
+getImplicit3 (Shared3 (Translate v symbObj)) =
     let
         obj = getImplicit3 symbObj
     in
         \p -> obj (p ^-^ v)
-getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
+getImplicit3 (Shared3 (Scale s@(sx,sy,sz) symbObj)) =
     let
         obj = getImplicit3 symbObj
         k = abs (sx*sy*sz) ** (1/3)
@@ -78,21 +76,21 @@ getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
         \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 q symbObj) =
     getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
-getImplicit3 (Mirror3 v symbObj) =
+getImplicit3 (Shared3 (Mirror v symbObj)) =
     getImplicit3 symbObj . reflect v
 -- Boundary mods
-getImplicit3 (Shell3 w symbObj) =
+getImplicit3 (Shared3 (Shell w symbObj)) =
     let
         obj = getImplicit3 symbObj
     in
         \p -> abs (obj p) - w/2
-getImplicit3 (Outset3 d symbObj) =
+getImplicit3 (Shared3 (Outset d symbObj)) =
     let
         obj = getImplicit3 symbObj
     in
         \p -> obj p - d
 -- Misc
-getImplicit3 (EmbedBoxedObj3 (obj,_)) = obj
+getImplicit3 (Shared3 (EmbedBoxedObj (obj,_))) = obj
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) =
     let

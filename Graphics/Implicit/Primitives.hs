@@ -41,43 +41,25 @@ module Graphics.Implicit.Primitives (
 
 import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
-import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
+import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,
-                                                   Complement2,
-                                                   UnionR2,
-                                                   DifferenceR2,
-                                                   IntersectR2,
-                                                   Translate2,
-                                                   Mirror2,
-                                                   Scale2,
                                                    Rotate2,
-                                                   Outset2,
-                                                   Shell2,
-                                                   EmbedBoxedObj2
+                                                   Shared2
                                                   ),
                                       SymbolicObj3(
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
-                                                   Complement3,
-                                                   UnionR3,
-                                                   DifferenceR3,
-                                                   IntersectR3,
-                                                   Translate3,
-                                                   Mirror3,
-                                                   Scale3,
                                                    Rotate3,
-                                                   Outset3,
-                                                   Shell3,
-                                                   EmbedBoxedObj3,
                                                    ExtrudeR,
                                                    ExtrudeRotateR,
                                                    ExtrudeRM,
                                                    RotateExtrude,
-                                                   ExtrudeOnEdgeOf
+                                                   ExtrudeOnEdgeOf,
+                                                   Shared3
                                                   ),
                                       ExtrudeRMScale
                                      )
@@ -244,34 +226,34 @@ class Object obj vec | obj -> vec where
 
 
 instance Object SymbolicObj2 ℝ2 where
-    translate   = Translate2
-    mirror      = Mirror2
-    scale       = Scale2
-    complement  = Complement2
-    unionR _ [] = mempty
-    unionR r ss = UnionR2 r ss
-    intersectR  = IntersectR2
-    differenceR = DifferenceR2
-    outset      = Outset2
-    shell       = Shell2
-    getBox      = getBox2
-    getImplicit = getImplicit2
-    implicit a b= EmbedBoxedObj2 (a,b)
+    translate   a b   = Shared2 $ Translate a b
+    mirror      a b   = Shared2 $ Mirror a b
+    scale       a b   = Shared2 $ Scale a b
+    complement  a     = Shared2 $ Complement a
+    unionR _ []       = mempty
+    unionR r ss       = Shared2 $ UnionR r ss
+    intersectR  a b   = Shared2 $ IntersectR a b
+    differenceR a b c = Shared2 $ DifferenceR a b c
+    outset      a b   = Shared2 $ Outset a b
+    shell a b         = Shared2 $ Shell a b
+    getBox            = getBox2
+    getImplicit       = getImplicit2
+    implicit a b      = Shared2 $ EmbedBoxedObj (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
-    translate   = Translate3
-    mirror      = Mirror3
-    scale       = Scale3
-    complement  = Complement3
-    unionR _ [] = mempty
-    unionR r ss = UnionR3 r ss
-    intersectR  = IntersectR3
-    differenceR = DifferenceR3
-    outset      = Outset3
-    shell       = Shell3
-    getBox      = getBox3
-    getImplicit = getImplicit3
-    implicit a b= EmbedBoxedObj3 (a,b)
+    translate   a b   = Shared3 $ Translate a b
+    mirror      a b   = Shared3 $ Mirror a b
+    scale       a b   = Shared3 $ Scale a b
+    complement  a     = Shared3 $ Complement a
+    unionR _ []       = mempty
+    unionR r ss       = Shared3 $ UnionR r ss
+    intersectR  a b   = Shared3 $ IntersectR a b
+    differenceR a b c = Shared3 $ DifferenceR a b c
+    outset      a b   = Shared3 $ Outset a b
+    shell a b         = Shared3 $ Shell a b
+    getBox            = getBox3
+    getImplicit       = getImplicit3
+    implicit a b      = Shared3 $ EmbedBoxedObj (a,b)
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0

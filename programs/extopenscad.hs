@@ -22,7 +22,7 @@ import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeST
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2(Shared2), SymbolicObj3(Shared3), SharedObj(UnionR), ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -197,7 +197,7 @@ getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 --   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
-        ((x1,y1,z1),(x2,y2,z2)) = getBox3 (UnionR3 0 (obj:objs))
+        ((x1,y1,z1),(x2,y2,z2)) = getBox3 (Shared3 (UnionR 0 (obj:objs)))
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
@@ -206,7 +206,7 @@ getRes (vars, _, obj:objs, _) =
 --   FIXME: magic numbers.
 getRes (vars, obj:objs, _, _) =
     let
-        (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
+        (p1,p2) = getBox2 (Shared2 (UnionR 0 (obj:objs)))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
@@ -307,7 +307,7 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else UnionR3 0 (obj:objs)
+                     else Shared3 (UnionR 0 (obj:objs))
 
         if quiet args
           then return ()
@@ -331,7 +331,7 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else UnionR2 0 (obj:objs)
+                     else Shared2 (UnionR 0 (obj:objs))
 
         if quiet args
           then return ()

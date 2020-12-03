@@ -6,7 +6,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
 import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2), SharedObj (..))
 
 import Graphics.Implicit.MathUtil (reflect, rminimum, rmaximum, distFromLineSeg)
 
@@ -41,17 +41,17 @@ getImplicit2 (PolygonR _ points) =
     in
         minimum dists * if isIn then -1 else 1
 -- (Rounded) CSG
-getImplicit2 (Complement2 symbObj) =
+getImplicit2 (Shared2 (Complement symbObj)) =
     \p -> let
         obj = getImplicit2 symbObj
     in
         - obj p
-getImplicit2 (UnionR2 r symbObjs) =
+getImplicit2 (Shared2 (UnionR r symbObjs)) =
     \p -> let
         objs = fmap getImplicit2 symbObjs
     in
         rminimum r $ fmap ($p) objs
-getImplicit2 (DifferenceR2 r symbObj symbObjs) =
+getImplicit2 (Shared2 (DifferenceR r symbObj symbObjs)) =
     let
         objs = fmap getImplicit2 symbObjs
         obj = getImplicit2 symbObj
@@ -59,18 +59,18 @@ getImplicit2 (DifferenceR2 r symbObj symbObjs) =
         complement obj' p = - obj' p
     in
         \p -> rmaximum r . fmap ($p) $ obj:fmap complement (tail objs)
-getImplicit2 (IntersectR2 r symbObjs) =
+getImplicit2 (Shared2 (IntersectR r symbObjs)) =
     \p -> let
         objs = fmap getImplicit2 symbObjs
     in
         rmaximum r $ fmap ($p) objs
 -- Simple transforms
-getImplicit2 (Translate2 v symbObj) =
+getImplicit2 (Shared2 (Translate v symbObj)) =
     \p -> let
         obj = getImplicit2 symbObj
     in
         obj (p ^-^ v)
-getImplicit2 (Scale2 s@(sx,sy) symbObj) =
+getImplicit2 (Shared2 (Scale s@(sx,sy) symbObj)) =
     \p -> let
         obj = getImplicit2 symbObj
         k = abs $ max sx sy
@@ -81,19 +81,19 @@ getImplicit2 (Rotate2 θ symbObj) =
         obj = getImplicit2 symbObj
     in
         obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
-getImplicit2 (Mirror2 v symbObj) =
+getImplicit2 (Shared2 (Mirror v symbObj)) =
     getImplicit2 symbObj . reflect v
 -- Boundary mods
-getImplicit2 (Shell2 w symbObj) =
+getImplicit2 (Shared2 (Shell w symbObj)) =
     \p -> let
         obj = getImplicit2 symbObj
     in
         abs (obj p) - w/2
-getImplicit2 (Outset2 d symbObj) =
+getImplicit2 (Shared2 (Outset d symbObj)) =
     \p -> let
         obj = getImplicit2 symbObj
     in
         obj p - d
 -- Misc
-getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
+getImplicit2 (Shared2 (EmbedBoxedObj (obj,_))) = obj
 

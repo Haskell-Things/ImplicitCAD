@@ -125,6 +125,7 @@ Library
                   Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
+                  Graphics.Implicit.ObjectUtil.GetBoxShared
                   Graphics.Implicit.ObjectUtil.GetImplicit2
                   Graphics.Implicit.ObjectUtil.GetImplicit3
                   Graphics.Implicit.ExtOpenScad.Default

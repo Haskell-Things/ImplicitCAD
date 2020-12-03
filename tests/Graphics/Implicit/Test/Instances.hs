@@ -33,12 +33,9 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj3(Cylinder, Complement3, UnionR3, DifferenceR3,
-                   IntersectR3, Translate3, Scale3, Rotate3, Outset3,
-                   Shell3, CubeR),
-      SymbolicObj2(SquareR, Complement2, UnionR2, DifferenceR2,
-                   IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
-                   PolygonR),
+    ( SymbolicObj3(Cylinder, Shared3, CubeR, Rotate3),
+      SymbolicObj2(SquareR, Shared2, PolygonR, Rotate2),
+      SharedObj(..),
       both,
       allthree )
 
@@ -80,7 +77,7 @@ epsilon = 5
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
-  shrink = filter isValid2 . genericShrink
+  -- shrink = filter isValid2 . genericShrink
   arbitrary = sized $ \n ->
     case n <= 1 of
       False -> oneof $
@@ -97,7 +94,7 @@ instance Arbitrary SymbolicObj2 where
 
 -- TODO(sandy): Also generate all of the extrusion variants.
 instance Arbitrary SymbolicObj3 where
-  shrink = filter isValid3 . genericShrink
+  -- shrink = filter isValid3 . genericShrink
   arbitrary = sized $ \n ->
     case n <= 1 of
       False -> oneof $
@@ -210,17 +207,17 @@ decayArbitrary n = scale (`div` n) arbitrary
 -- | Determine if a 'SymbolicObj2' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
 isValid2 :: SymbolicObj2 -> Bool
-isValid2 (Complement2 s) = isValid2 s
-isValid2 (UnionR2 _ []) = False  -- Bug #304
-isValid2 (UnionR2 _ l_s) = all isValid2 l_s
-isValid2 (DifferenceR2 _ x l_s) = all isValid2 $ x : l_s
-isValid2 (IntersectR2 _ l_s@(_:_:_)) = all isValid2 l_s
-isValid2 (IntersectR2 _ _) = False  -- Bug #306
-isValid2 (Translate2 _ s) = isValid2 s
-isValid2 (Scale2 (x, y) s) = x > 0 && y > 0 && isValid2 s
+isValid2 (Shared2 (Complement s)) = isValid2 s
+isValid2 (Shared2 (UnionR _ [])) = False  -- Bug #304
+isValid2 (Shared2 (UnionR _ l_s)) = all isValid2 l_s
+isValid2 (Shared2 (DifferenceR _ x l_s)) = all isValid2 $ x : l_s
+isValid2 (Shared2 (IntersectR _ l_s@(_:_:_))) = all isValid2 l_s
+isValid2 (Shared2 (IntersectR _ _)) = False  -- Bug #306
+isValid2 (Shared2 (Translate _ s)) = isValid2 s
+isValid2 (Shared2 (Scale (x, y) s)) = x > 0 && y > 0 && isValid2 s
 isValid2 (Rotate2 _ s) = isValid2 s
-isValid2 (Outset2 _ s) = isValid2 s
-isValid2 (Shell2 _ s) = isValid2 s
+isValid2 (Shared2 (Outset _ s)) = isValid2 s
+isValid2 (Shared2 (Shell _ s)) = isValid2 s
 isValid2 s@(PolygonR _ ls) = length ls >= 3 &&
   let (dx, dy) = boxSize s
    in notElem 0 [dx, dy]
@@ -232,17 +229,17 @@ isValid2 s =  -- Otherwise, make sure it has > 0 volume
 -- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
 isValid3 :: SymbolicObj3 -> Bool
-isValid3 (Complement3 s) = isValid3 s
-isValid3 (UnionR3 _ []) = False  -- Bug #304
-isValid3 (UnionR3 _ l_s) = all isValid3 l_s
-isValid3 (DifferenceR3 _ x l_s) = all isValid3 $ x : l_s
-isValid3 (IntersectR3 _ l_s@(_:_:_)) = all isValid3 l_s
-isValid3 (IntersectR3 _ _) = False  -- Bug #306
-isValid3 (Translate3 _ s) = isValid3 s
-isValid3 (Scale3 (x, y, z) s) = x > 0 && y > 0 && z > 0 && isValid3 s
+isValid3 (Shared3 (Complement s)) = isValid3 s
+isValid3 (Shared3 (UnionR _ [])) = False  -- Bug #304
+isValid3 (Shared3 (UnionR _ l_s)) = all isValid3 l_s
+isValid3 (Shared3 (DifferenceR _ x l_s)) = all isValid3 $ x : l_s
+isValid3 (Shared3 (IntersectR _ l_s@(_:_:_))) = all isValid3 l_s
+isValid3 (Shared3 (IntersectR _ _)) = False  -- Bug #306
+isValid3 (Shared3 (Translate _ s)) = isValid3 s
+isValid3 (Shared3 (Scale (x, y, z) s)) = x > 0 && y > 0 && z > 0 && isValid3 s
 isValid3 (Rotate3 _ s) = isValid3 s
-isValid3 (Outset3 _ s) = isValid3 s
-isValid3 (Shell3 _ s) = isValid3 s
+isValid3 (Shared3 (Outset _ s)) = isValid3 s
+isValid3 (Shared3 (Shell _ s)) = isValid3 s
 isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)
 isValid3 (Cylinder _ r h) = r > 0 && h > 0
 isValid3 s =  -- Otherwise, make sure it has > 0 volume

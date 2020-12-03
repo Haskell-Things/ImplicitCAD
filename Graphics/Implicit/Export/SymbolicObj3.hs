@@ -9,7 +9,7 @@ module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
 import Prelude(zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(UnionR3), Triangle, TriangleMesh(TriangleMesh))
+import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), Triangle, TriangleMesh(TriangleMesh))
 import Graphics.Implicit.Export.Render (getMesh)
 import Graphics.Implicit.ObjectUtil (getBox3, getImplicit3)
 import Graphics.Implicit.MathUtil(box3sWithin)
@@ -21,7 +21,7 @@ symbolicGetMesh :: ℝ -> SymbolicObj3 -> TriangleMesh
 
 {--
 -- A translated objects mesh is its mesh translated.
-symbolicGetMesh res (Translate3 v obj) = 
+symbolicGetMesh res (Translate3 v obj) =
     fmap (\(a,b,c) -> (a S.+ v, b S.+ v, c S.+ v) ) (symbolicGetMesh res obj)
 
 -- A scaled objects mesh is its mesh scaled
@@ -34,7 +34,7 @@ symbolicGetMesh res (Scale3 s obj) =
     in fmap scaleTriangle mesh
 
 -- A couple triangles make a cube...
-symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) = 
+symbolicGetMesh _ (Rect3R 0 (x1,y1,z1) (x2,y2,z2)) =
     let
         square a b c d = [(a,b,c),(d,a,c)]
         rsquare a b c d = [(c,b,a),(c,a,d)]
@@ -65,20 +65,20 @@ symbolicGetMesh res (Sphere r) = half1 <> half2
         half2 = fold [ rsquare (f m1 m2) (f (m1+1) m2) (f (m1+1) (m2+1)) (f m1 (m2+1))
                         | m1 <- [m.. n-1], m2 <- [0.. m-1] ]
 
-{-symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb]) 
+{-symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb])
     | ha == hb && ra == rb = symbolicGetMesh res $ ExtrudeR ra (UnionR2 r [obja, objb]) ha
 
-symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb, ExtrudeR rc objc hc]) 
-    | ha == hb && ha == hc && ra == rb && ra == rc = 
+symbolicGetMesh res (UnionR3 r [ExtrudeR ra obja ha, ExtrudeR rb objb hb, ExtrudeR rc objc hc])
+    | ha == hb && ha == hc && ra == rb && ra == rc =
         symbolicGetMesh res $ ExtrudeR ra (UnionR2 r [obja, objb, objc]) ha-}
 
--- We can compute a mesh of a rounded, extruded object from it contour, 
+-- We can compute a mesh of a rounded, extruded object from it contour,
 -- contour filling trinagles, and magic.
 -- General approach:
 --   - generate sides by basically cross producting the contour.
 --   - generate the the top by taking the contour fill and
 --     calculating an appropriate z height.
-symbolicGetMesh res  (ExtrudeR r obj2 h) = 
+symbolicGetMesh res  (ExtrudeR r obj2 h) =
     let
         -- Get a Obj2 (magnitude descriptor object)
         obj2mag :: ℝ2 -> ℝ -- Obj2
@@ -96,7 +96,7 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
         -- The dh stuff is to compensate for rounding errors, etc, and ensure that
         -- the sides meet the top and bottom
         segToSide (x1,y1) (x2,y2) =
-            [((x1,y1,r-dh x1 y1), (x2,y2,r-dh x2 y2), (x2,y2,h-r+dh x2 y2)), 
+            [((x1,y1,r-dh x1 y1), (x2,y2,r-dh x2 y2), (x2,y2,h-r+dh x2 y2)),
              ((x1,y1,r-dh x1 y1), (x2,y2,h-r+dh x2 y2), (x1,y1,h-r+dh x1 y1)) ]
         -- Get a contour polyline for obj2, turn it into a list of segments
         segs = foldMap segify $ symbolicGetOrientedContour res obj2
@@ -109,14 +109,14 @@ symbolicGetMesh res  (ExtrudeR r obj2 h) =
         bottom_tris = fmap flipTri $ [((a1,a2,r-dh a1 a2), (b1,b2,r - dh b1 b2), (c1,c2,r - dh c1 c2))
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
         -- Same idea at the top.
-        top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2)) 
+        top_tris = [((a1,a2,h-r+dh a1 a2), (b1,b2,h-r+dh b1 b2), (c1,c2,h-r+dh c1 c2))
                 | ((a1,a2),(b1,b2),(c1,c2)) <- fill_tris]
     in
         -- Merge them all together! :)
-        side_tris <> bottom_tris <> top_tris 
+        side_tris <> bottom_tris <> top_tris
 
 
-symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) = 
+symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
     let
         -- Get a Obj2 (magnitude descriptor object)
         obj2mag :: Obj2 -- = ℝ2 -> ℝ
@@ -139,7 +139,7 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
         flipTri (a,b,c) = (a,c,b)
         -- The number of steps we're going to do the sides in:
         n = max 4 $ fromIntegral $ ceiling $ h' (0,0)/res
-        -- Turn a segment a--b into a list of triangles forming 
+        -- Turn a segment a--b into a list of triangles forming
         --    (a--b)×(r+(h-2r)*m/n,r+(h-2r)*(m+1)/n)
         -- The dh stuff is to compensate for rounding errors, etc, and ensure that
         -- the sides meet the top and bottom
@@ -156,8 +156,8 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
                 la2 = r-dh x2 y2  +  mainH2*m/n
                 lb2 = r-dh x2 y2  +  mainH2*(m+1)/n
             in
-                -- Resulting triangles: 
-                [((x1,y1,la1), (x2,y2,la2), (x2,y2,lb2)), 
+                -- Resulting triangles:
+                [((x1,y1,la1), (x2,y2,la2), (x2,y2,lb2)),
                  ((x1,y1,la1), (x2,y2,lb2), (x1,y1,lb1)) ]
         -- Get a contour polyline for obj2, turn it into a list of segments
         segs = foldMap segify $ symbolicGetOrientedContour res obj2
@@ -191,7 +191,7 @@ symbolicGetMesh res  (ExtrudeRM r twist scale translate obj2 h) =
         fmap transformTriangle (side_tris <> bottom_tris <> top_tris)
 -}
 
-symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
+symbolicGetMesh res inputObj@(Shared3 (UnionR r objs)) = TriangleMesh $
     let
         boxes = getBox3 <$> objs
         boxedObjs = zip boxes objs
@@ -210,7 +210,7 @@ symbolicGetMesh res inputObj@(UnionR3 r objs) = TriangleMesh $
     else if null dependants
     then foldMap (unmesh . symbolicGetMesh res) independents
     else  foldMap (unmesh . symbolicGetMesh res) independents
-        <> unmesh (symbolicGetMesh res (UnionR3 r dependants))
+        <> unmesh (symbolicGetMesh res (Shared3 (UnionR r dependants)))
 
 -- | If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj =

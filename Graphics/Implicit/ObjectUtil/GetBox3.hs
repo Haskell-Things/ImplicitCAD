@@ -5,129 +5,31 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
-import Data.VectorSpace ((^-^), (^+^))
-import Graphics.Implicit.MathUtil (alaV3, reflect)
+import Graphics.Implicit.MathUtil (alaV3)
 import qualified Linear.Quaternion as Q
+import Graphics.Implicit.ObjectUtil.GetBoxShared (corners, pointsBox, getBoxShared)
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
-
--- | An empty box.
-emptyBox :: Box3
-emptyBox = ((0,0,0), (0,0,0))
-
--- | Define a Box3 around all of the given points.
-pointsBox :: [ℝ3] -> Box3
-pointsBox [] = emptyBox
-pointsBox points =
-    let
-        (xs, ys, zs) = unzip3 points
-    in
-        ((minimum xs, minimum ys, minimum zs), (maximum xs, maximum ys, maximum zs))
-
--- | Is a Box3 empty?
--- | Really, this checks if it is one dimensional, which is good enough.
-isEmpty :: (Eq a2, Eq a1, Eq a) =>
-           ((a, a1, a2), (a, a1, a2)) -> Bool
-isEmpty ((a,b,c),(d,e,f)) = a==d || b==e || c==f
-
--- | Increase a boxes size by a rounding value.
-outsetBox :: ℝ -> Box3 -> Box3
-outsetBox r (a,b) =
-    (a ^-^ (r,r,r), b ^+^ (r,r,r))
 
 -- Get a Box3 around the given object.
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
+getBox3 (Shared3 obj) = getBoxShared obj
 getBox3 (CubeR _ size) = ((0, 0, 0), size)
 getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
-getBox3 (Complement3 _) =
-    ((-infty, -infty, -infty), (infty, infty, infty))
-        where
-          infty :: (Fractional t) => t
-          infty = 1/0
-getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
-    where
-        boxes = fmap getBox3 symbObjs
-        (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-        (lefts, bots, ins) = unzip3 leftbot
-        (rights, tops, outs) = unzip3 topright
-        left = minimum lefts
-        bot = minimum bots
-        inward = minimum ins
-        right = maximum rights
-        top = maximum tops
-        out = maximum outs
-getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
-getBox3 (IntersectR3 _ symbObjs) =
-    let
-        boxes = fmap getBox3 symbObjs
-        (leftbot, topright) = unzip boxes
-        (lefts, bots, ins) = unzip3 leftbot
-        (rights, tops, outs) = unzip3 topright
-        left = maximum lefts
-        bot = maximum bots
-        inward = maximum ins
-        right = minimum rights
-        top = minimum tops
-        out = minimum outs
-    in
-        if   top   > bot
-          && right > left
-          && out   > inward
-        then ((left,bot,inward),(right,top,out))
-        else emptyBox
 -- Simple transforms
-getBox3 (Translate3 v symbObj) =
-    let
-        (a,b) = getBox3 symbObj
-    in
-        (a^+^v, b^+^v)
-getBox3 (Scale3 s symbObj) =
-    let
-        (a,b) = getBox3 symbObj
-        (sax,say,saz) = s ⋯* a
-        (sbx,sby,sbz) = s ⋯* b
-    in
-        ((min sax sbx, min say sby, min saz sbz), (max sax sbx, max say sby, max saz sbz))
 getBox3 (Rotate3 q symbObj) =
-    let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
-     in pointsBox
-          [ alaV3 (Q.rotate q) p1
-          , alaV3 (Q.rotate q) (x1, y2, z1)
-          , alaV3 (Q.rotate q) (x2, y2, z1)
-          , alaV3 (Q.rotate q) (x2, y1, z1)
-          , alaV3 (Q.rotate q) (x1, y1, z2)
-          , alaV3 (Q.rotate q) (x2, y1, z2)
-          , alaV3 (Q.rotate q) (x1, y2, z2)
-          , alaV3 (Q.rotate q) p2
-          ]
-getBox3 (Mirror3 v symbObj) =
-    let (p1@(x1, y1, z1), p2@(x2, y2, z2)) = getBox3 symbObj
-     in pointsBox
-          [ reflect v p1
-          , reflect v (x1, y2, z1)
-          , reflect v (x2, y2, z1)
-          , reflect v (x2, y1, z1)
-          , reflect v (x1, y1, z2)
-          , reflect v (x2, y1, z2)
-          , reflect v (x1, y2, z2)
-          , reflect v p2
-          ]
--- Boundary mods
-getBox3 (Shell3 w symbObj) =
-    outsetBox (w/2) $ getBox3 symbObj
-getBox3 (Outset3 d symbObj) =
-    outsetBox d $ getBox3 symbObj
+    let box = getBox3 symbObj
+     in pointsBox $ fmap (alaV3 (Q.rotate q)) $ corners box
 -- Misc
-getBox3 (EmbedBoxedObj3 (_,box)) = box
 -- 2D Based
 getBox3 (ExtrudeR _ symbObj h) = ((x1,y1,0),(x2,y2,h))
     where

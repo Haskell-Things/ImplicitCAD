@@ -1,3 +1,7 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE PatternSynonyms #-}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, 2017, 2018, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
@@ -21,6 +25,7 @@ module Graphics.Implicit.Definitions (
     ℝ3,
     allthree,
     minℝ,
+    ComponentWiseMultable,
     (⋅),
     (⋯*),
     (⋯/),
@@ -38,41 +43,24 @@ module Graphics.Implicit.Definitions (
     Boxed3,
     BoxedObj2,
     BoxedObj3,
+    SharedObj(..),
     SymbolicObj2(
         SquareR,
         Circle,
         PolygonR,
-        Complement2,
-        UnionR2,
-        DifferenceR2,
-        IntersectR2,
-        Translate2,
-        Scale2,
         Rotate2,
-        Mirror2,
-        Shell2,
-        Outset2,
-        EmbedBoxedObj2),
+        Shared2),
     SymbolicObj3(
         CubeR,
         Sphere,
         Cylinder,
-        Complement3,
-        UnionR3,
-        IntersectR3,
-        DifferenceR3,
-        Translate3,
-        Scale3,
         Rotate3,
-        Mirror3,
-        Shell3,
-        Outset3,
-        EmbedBoxedObj3,
         ExtrudeR,
         ExtrudeRotateR,
         ExtrudeRM,
         ExtrudeOnEdgeOf,
-        RotateExtrude),
+        RotateExtrude,
+        Shared3),
     ExtrudeRMScale(C1, C2, Fn),
     fromℕtoℝ,
     fromFastℕtoℝ,
@@ -248,6 +236,22 @@ type BoxedObj3 = Boxed3 Obj3
 --instance Show BoxedObj3 where
 --    show _ = "<BoxedObj3>"
 
+data SharedObj obj vec
+  = Complement obj
+  | UnionR ℝ [obj]
+  | DifferenceR ℝ obj [obj]
+  | IntersectR ℝ [obj]
+  | Translate vec obj
+  | Scale vec obj
+  | Mirror vec obj -- mirror across the line whose normal is defined by the R2
+  | Outset ℝ obj
+  | Shell ℝ obj
+  | EmbedBoxedObj (vec -> ℝ, (vec, vec))
+  deriving (Generic)
+
+deriving instance (Show obj, Show vec, Show (vec -> ℝ))
+  => Show (SharedObj obj vec)
+
 -- | A symbolic 2D object format.
 --   We want to have symbolic objects so that we can
 --   accelerate rendering & give ideal meshes for simple
@@ -257,26 +261,15 @@ data SymbolicObj2 =
       SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
-    -- (Rounded) CSG
-    | Complement2 SymbolicObj2
-    | UnionR2 ℝ [SymbolicObj2]
-    | DifferenceR2 ℝ SymbolicObj2 [SymbolicObj2]
-    | IntersectR2 ℝ [SymbolicObj2]
     -- Simple transforms
-    | Translate2 ℝ2 SymbolicObj2
-    | Scale2 ℝ2 SymbolicObj2
     | Rotate2 ℝ SymbolicObj2
-    | Mirror2 ℝ2 SymbolicObj2 -- mirror across the line whose normal is defined by the R2
-    -- Boundary mods
-    | Outset2 ℝ SymbolicObj2
-    | Shell2 ℝ SymbolicObj2
-    -- Misc
-    | EmbedBoxedObj2 BoxedObj2
+    -- Lifting common objects
+    | Shared2 (SharedObj SymbolicObj2 ℝ2)
     deriving (Show, Generic)
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj2 where
-  a <> b = UnionR2 0 [a, b]
+  a <> b = Shared2 (UnionR 0 [a, b])
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
@@ -288,21 +281,8 @@ data SymbolicObj3 =
       CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
-    -- (Rounded) CSG
-    | Complement3 SymbolicObj3
-    | UnionR3 ℝ [SymbolicObj3]
-    | DifferenceR3 ℝ SymbolicObj3 [SymbolicObj3]
-    | IntersectR3 ℝ [SymbolicObj3]
     -- Simple transforms
-    | Translate3 ℝ3 SymbolicObj3
-    | Scale3 ℝ3 SymbolicObj3
     | Rotate3 (Quaternion ℝ) SymbolicObj3
-    | Mirror3 ℝ3 SymbolicObj3  -- mirror across the plane whose normal is the R3
-    -- Boundary mods
-    | Outset3 ℝ SymbolicObj3
-    | Shell3 ℝ SymbolicObj3
-    -- Misc
-    | EmbedBoxedObj3 BoxedObj3
     -- 2D based
     | ExtrudeR ℝ SymbolicObj2 ℝ
     | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
@@ -320,11 +300,12 @@ data SymbolicObj3 =
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
+    | Shared3 (SharedObj SymbolicObj3 ℝ3)
     deriving (Show, Generic)
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj3 where
-  a <> b = UnionR3 0 [a, b]
+  a <> b = Shared3 (UnionR 0 [a, b])
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj3 where

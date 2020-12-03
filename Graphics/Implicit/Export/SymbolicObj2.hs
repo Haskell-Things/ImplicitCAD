@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbol
 
 import Prelude(fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Translate2, Scale2), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Shared2), SharedObj(..), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
@@ -44,8 +44,8 @@ symbolicGetContour _ (SquareR 0 (dx,dy)) = [Polyline [ (0,0), (dx,0), (dx,dy), (
 symbolicGetContour res (Circle r) = [Polyline [ ( r*cos(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n), r*sin(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n) ) | m <- [0.. n] ]] where
     n :: Fastℕ
     n = max 5 $ ceiling $ 2*pi*r/res
-symbolicGetContour res (Translate2 v obj) = appOpPolylines (+ v) $ symbolicGetContour res obj
-symbolicGetContour res (Scale2 s@(a,b) obj) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
+symbolicGetContour res (Shared2 (Translate v obj)) = appOpPolylines (+ v) $ symbolicGetContour res obj
+symbolicGetContour res (Shared2 (Scale s@(a,b) obj)) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
     where sc = max a b
 symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
     (obj', (a,b)) -> getContour a b (res,res) obj'
@@ -56,9 +56,9 @@ appOpPolyline :: (ℝ2 -> ℝ2) -> Polyline -> Polyline
 appOpPolyline op (Polyline xs) = Polyline $ fmap op xs
 
 symbolicGetContourMesh :: ℝ ->  SymbolicObj2 -> [Polytri]
-symbolicGetContourMesh res (Translate2 v obj) = (\(Polytri (a,b,c)) -> Polytri (a + v, b + v, c + v)) <$>
+symbolicGetContourMesh res (Shared2 (Translate v obj)) = (\(Polytri (a,b,c)) -> Polytri (a + v, b + v, c + v)) <$>
                                                 symbolicGetContourMesh res obj
-symbolicGetContourMesh res (Scale2 s@(a,b) obj) = (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s)) <$>
+symbolicGetContourMesh res (Shared2 (Scale s@(a,b) obj)) = (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s)) <$>
                                                   symbolicGetContourMesh (res/sc) obj where sc = max a b
 symbolicGetContourMesh _ (SquareR 0 (dx,dy)) = [Polytri ((0,0), (dx,0), (dx,dy)), Polytri ((dx,dy), (0,dy), (0,0)) ]
 -- FIXME: magic number.
