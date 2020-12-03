@@ -5,12 +5,12 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
-                                      SymbolicObj3(Shared3, Rotate3, CubeR, Sphere, Cylinder, ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ, SharedObj(..))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, Obj3,
+                                      SymbolicObj3(Shared3, Rotate3, CubeR, Sphere, Cylinder, ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn)
 
-import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (alaV3, rmaximum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
@@ -19,7 +19,7 @@ import qualified Data.Either as Either (either)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
-import Data.VectorSpace (AdditiveGroup((^-^)))
+import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 
 default (ℝ)
 
@@ -36,61 +36,11 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
--- (Rounded) CSG
-getImplicit3 (Shared3 (Complement symbObj)) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> - obj p
-getImplicit3 (Shared3 (UnionR r symbObjs)) =
-  \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
-
-getImplicit3 (Shared3 (IntersectR r symbObjs)) =
-  \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
-
-getImplicit3 (Shared3 (DifferenceR r symbObj symbObjs)) =
-    let
-        tailObjs = getImplicit3 <$> symbObjs
-        headObj = getImplicit3 symbObj
-        complement :: Obj3 -> ℝ3 -> ℝ
-        complement obj' p = - obj' p
-    in
-      \p -> do
-        let
-          maxTail = rmaximum r $ fmap ($p) $ complement <$> tailObjs
-        if maxTail > -minℝ && maxTail < minℝ
-          then rmax r (headObj p) minℝ
-          else rmax r (headObj p) maxTail
-
 -- Simple transforms
-getImplicit3 (Shared3 (Translate v symbObj)) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> obj (p ^-^ v)
-getImplicit3 (Shared3 (Scale s@(sx,sy,sz) symbObj)) =
-    let
-        obj = getImplicit3 symbObj
-        k = abs (sx*sy*sz) ** (1/3)
-    in
-        \p -> k * obj (p ⋯/ s)
+
 getImplicit3 (Rotate3 q symbObj) =
     getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
-getImplicit3 (Shared3 (Mirror v symbObj)) =
-    getImplicit3 symbObj . reflect v
--- Boundary mods
-getImplicit3 (Shared3 (Shell w symbObj)) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> abs (obj p) - w/2
-getImplicit3 (Shared3 (Outset d symbObj)) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> obj p - d
--- Misc
-getImplicit3 (Shared3 (EmbedBoxedObj (obj,_))) = obj
+
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) =
     let
@@ -198,6 +148,8 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                     (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
                     (obj rz_pos)
               else obj rz_pos
+getImplicit3 (Shared3 obj) = getImplicitShared obj
+
 
 -- FIXME: implement this, or implement a fallthrough function.
 --getImplicit3 (ExtrudeRotateR) =

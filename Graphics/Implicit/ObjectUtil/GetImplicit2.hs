@@ -4,21 +4,20 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
+import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, cos, sin, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2), SharedObj (..))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2))
 
-import Graphics.Implicit.MathUtil (reflect, rminimum, rmaximum, distFromLineSeg)
+import Graphics.Implicit.MathUtil (rmaximum, distFromLineSeg)
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub, genericIndex, genericLength)
+import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
 getImplicit2 (SquareR r (dx, dy)) =
-    \(x,y) -> let
-    in
-         rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
+    \(x,y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -41,59 +40,10 @@ getImplicit2 (PolygonR _ points) =
     in
         minimum dists * if isIn then -1 else 1
 -- (Rounded) CSG
-getImplicit2 (Shared2 (Complement symbObj)) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        - obj p
-getImplicit2 (Shared2 (UnionR r symbObjs)) =
-    \p -> let
-        objs = fmap getImplicit2 symbObjs
-    in
-        rminimum r $ fmap ($p) objs
-getImplicit2 (Shared2 (DifferenceR r symbObj symbObjs)) =
-    let
-        objs = fmap getImplicit2 symbObjs
-        obj = getImplicit2 symbObj
-        complement :: Obj2 -> ℝ2 -> ℝ
-        complement obj' p = - obj' p
-    in
-        \p -> rmaximum r . fmap ($p) $ obj:fmap complement (tail objs)
-getImplicit2 (Shared2 (IntersectR r symbObjs)) =
-    \p -> let
-        objs = fmap getImplicit2 symbObjs
-    in
-        rmaximum r $ fmap ($p) objs
--- Simple transforms
-getImplicit2 (Shared2 (Translate v symbObj)) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        obj (p ^-^ v)
-getImplicit2 (Shared2 (Scale s@(sx,sy) symbObj)) =
-    \p -> let
-        obj = getImplicit2 symbObj
-        k = abs $ max sx sy
-    in
-        k * obj (p ⋯/ s)
 getImplicit2 (Rotate2 θ symbObj) =
     \(x,y) -> let
         obj = getImplicit2 symbObj
     in
         obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
-getImplicit2 (Shared2 (Mirror v symbObj)) =
-    getImplicit2 symbObj . reflect v
--- Boundary mods
-getImplicit2 (Shared2 (Shell w symbObj)) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        abs (obj p) - w/2
-getImplicit2 (Shared2 (Outset d symbObj)) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        obj p - d
--- Misc
-getImplicit2 (Shared2 (EmbedBoxedObj (obj,_))) = obj
+getImplicit2 (Shared2 obj) = getImplicitShared obj
 
