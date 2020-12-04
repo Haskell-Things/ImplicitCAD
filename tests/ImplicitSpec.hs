@@ -28,7 +28,6 @@ import Test.QuickCheck
 import Data.Foldable ( for_ )
 import Data.VectorSpace (AdditiveGroup, (^+^),  (^*) )
 import Test.Hspec.QuickCheck (prop)
-import Graphics.Implicit.Definitions ()
 import QuickSpec (Observe)
 import Data.Typeable ( Typeable, type (:~:)(Refl), eqT )
 
