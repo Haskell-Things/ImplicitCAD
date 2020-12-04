@@ -102,11 +102,11 @@ idempotenceSpec
 idempotenceSpec = describe "idempotence" $ do
   for_ [("empty", emptySpace @obj), ("full", fullSpace)] $ \(name, obj) ->
     describe name $ do
-      prop "idepotent wrt translate" $ \xyz ->
+      prop "idempotent wrt translate" $ \xyz ->
         translate xyz obj
           =~= obj
 
-  prop "empty idepotent wrt scale" $ \xyz ->
+  prop "empty idempotent wrt scale" $ \xyz ->
     scale xyz emptySpace
       =~= emptySpace @obj
 
@@ -168,11 +168,11 @@ rotation2dSpec = describe "2d rotation" $ do
     rotate rads2 . rotate rads2
       =~= rotate (rads1 + rads2)
 
-  prop "full idepotent wrt rotate" $ \rads ->
+  prop "full idempotent wrt rotate" $ \rads ->
     rotate rads fullSpace
       =~= fullSpace
 
-  prop "empty idepotent wrt rotate" $ \rads ->
+  prop "empty idempotent wrt rotate" $ \rads ->
     rotate rads emptySpace
       =~= emptySpace
 
@@ -206,11 +206,11 @@ rotation3dSpec = describe "3d rotation" $ do
     rotateQ q2 . rotateQ q1
       =~= rotateQ (q2 * q1)
 
-  prop "full idepotent wrt rotate" $ \xyz ->
+  prop "full idempotent wrt rotate" $ \xyz ->
     rotate3 xyz fullSpace
       =~= fullSpace
 
-  prop "empty idepotent wrt rotate" $ \xyz ->
+  prop "empty idempotent wrt rotate" $ \xyz ->
     rotate3 xyz emptySpace
       =~= emptySpace
 
