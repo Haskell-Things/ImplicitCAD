@@ -11,4 +11,7 @@ in    haskellCi.generalCi
             , cabal = [ haskellCi.Cabal.Cabal32 ]
             }
         )
+        // { on = [ haskellCi.Event.push
+                  , haskellCi.Event.pull_request ]
+           }
     : haskellCi.CI.Type
