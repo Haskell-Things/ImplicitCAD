@@ -5,14 +5,14 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(Eq, Bool(False), Fractional, Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(Eq, Bool(False), Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (Empty3, Full3, CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import Data.VectorSpace ((^-^), (^+^))
-import Graphics.Implicit.MathUtil (alaV3, reflect)
+import Graphics.Implicit.MathUtil (infty, alaV3, reflect)
 import qualified Linear.Quaternion as Q
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
@@ -44,15 +44,14 @@ outsetBox r (a,b) =
 -- Get a Box3 around the given object.
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
+getBox3 Empty3 = ((0, 0, 0), (0, 0, 0))
+getBox3 Full3 = ((-infty, -infty, -infty), (infty, infty, infty))
 getBox3 (CubeR _ size) = ((0, 0, 0), size)
 getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
 -- (Rounded) CSG
-getBox3 (Complement3 _) =
+getBox3 (Complement3 _) =  -- TODO(sandy): Not true of Full3
     ((-infty, -infty, -infty), (infty, infty, infty))
-        where
-          infty :: (Fractional t) => t
-          infty = 1/0
 getBox3 (UnionR3 r symbObjs) = outsetBox r ((left,bot,inward), (right,top,out))
     where
         boxes = fmap getBox3 symbObjs

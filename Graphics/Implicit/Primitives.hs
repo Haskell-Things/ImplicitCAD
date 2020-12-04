@@ -36,6 +36,8 @@ module Graphics.Implicit.Primitives (
                                      rotate,
                                      pack2,
                                      implicit,
+                                     emptySpace,
+                                     fullSpace,
                                      Object
                                     ) where
 
@@ -43,6 +45,8 @@ import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Not
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                       SymbolicObj2(
+                                                   Empty2,
+                                                   Full2,
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,
@@ -59,6 +63,8 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    EmbedBoxedObj2
                                                   ),
                                       SymbolicObj3(
+                                                   Empty3,
+                                                   Full3,
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
@@ -172,6 +178,11 @@ polygonR = PolygonR
 --
 -- Library users shouldn't need to provide new instances of this class.
 class Object obj vec | obj -> vec where
+    -- | The object that fills no space
+    emptySpace :: obj
+
+    -- | The object that fills the entire space
+    fullSpace :: obj
 
     -- | Complement an Object
     complement ::
@@ -244,34 +255,40 @@ class Object obj vec | obj -> vec where
 
 
 instance Object SymbolicObj2 ℝ2 where
-    translate   = Translate2
-    mirror      = Mirror2
-    scale       = Scale2
-    complement  = Complement2
-    unionR _ [] = mempty
-    unionR r ss = UnionR2 r ss
-    intersectR  = IntersectR2
-    differenceR = DifferenceR2
-    outset      = Outset2
-    shell       = Shell2
-    getBox      = getBox2
-    getImplicit = getImplicit2
-    implicit a b= EmbedBoxedObj2 (a,b)
+    emptySpace                 = Empty2
+    fullSpace                  = Full2
+    translate                  = Translate2
+    mirror                     = Mirror2
+    scale                      = Scale2
+    complement (Complement2 s) = s
+    complement s               = Complement2 s
+    unionR _ []                = mempty
+    unionR r ss                = UnionR2 r ss
+    intersectR                 = IntersectR2
+    differenceR                = DifferenceR2
+    outset                     = Outset2
+    shell                      = Shell2
+    getBox                     = getBox2
+    getImplicit                = getImplicit2
+    implicit a b               = EmbedBoxedObj2 (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
-    translate   = Translate3
-    mirror      = Mirror3
-    scale       = Scale3
-    complement  = Complement3
-    unionR _ [] = mempty
-    unionR r ss = UnionR3 r ss
-    intersectR  = IntersectR3
-    differenceR = DifferenceR3
-    outset      = Outset3
-    shell       = Shell3
-    getBox      = getBox3
-    getImplicit = getImplicit3
-    implicit a b= EmbedBoxedObj3 (a,b)
+    emptySpace                 = Empty3
+    fullSpace                  = Full3
+    translate                  = Translate3
+    mirror                     = Mirror3
+    scale                      = Scale3
+    complement (Complement3 s) = s
+    complement s               = Complement3 s
+    unionR _ []                = mempty
+    unionR r ss                = UnionR3 r ss
+    intersectR                 = IntersectR3
+    differenceR                = DifferenceR3
+    outset                     = Outset3
+    shell                      = Shell3
+    getBox                     = getBox3
+    getImplicit                = getImplicit3
+    implicit a b               = EmbedBoxedObj3 (a,b)
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0

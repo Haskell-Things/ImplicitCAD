@@ -5,14 +5,14 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
-                                      SymbolicObj3(Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
+                                      SymbolicObj3(Empty3, Full3, Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
                                                    ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
 
-import Graphics.Implicit.MathUtil (alaV3, reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil (infty, alaV3, reflect, rmaximum, rminimum, rmax)
 
 import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
@@ -28,6 +28,8 @@ default (ℝ)
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
+getImplicit3 Empty3 = const infty
+getImplicit3 Full3 = const $ -infty
 getImplicit3 (CubeR r (dx, dy, dz)) =
     \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
@@ -44,12 +46,27 @@ getImplicit3 (Complement3 symbObj) =
         obj = getImplicit3 symbObj
     in
         \p -> - obj p
+getImplicit3 (UnionR3 _ []) = getImplicit3 Empty3
+-- TODO(sandy): This is non-associative somehow. Fix it.
+-- Test case:
+--   UnionR3 0 (obj : [ UnionR3 0 objs ]) =~=
+--     UnionR3 0 (obj : objs)
+--
+-- Result:
+--   Falsified (after 82 tests and 51 shrinks):
+--     Scale3 (2.0,3.0,5.0) (Sphere 34.21)
+--     [ExtrudeR 0.0 (Shell2 17.56485601360011 (UnionR2 2.0027171946836613 [Shell2 1.5984749452135119 (Scale2 (1.0898601265130337,-0.29055538926420654) (PolygonR 0.23223027098261984 [(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0)
+--,  .0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0)]))])) 1.0,CubeR 0.0 (10.0,1.0,1.0)]
+--     ((0.0,0.0,0.0),())
+--     Inside /= Surface
 getImplicit3 (UnionR3 r symbObjs) =
   \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
 getImplicit3 (IntersectR3 r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
+getImplicit3 (DifferenceR3 _ symbObj []) =
+  getImplicit3 symbObj
 getImplicit3 (DifferenceR3 r symbObj symbObjs) =
     let
         tailObjs = getImplicit3 <$> symbObjs
