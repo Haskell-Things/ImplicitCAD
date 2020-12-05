@@ -29,17 +29,17 @@ normalize v =
 
 -- Get a function that describes the surface of the object.
 getImplicitShared :: (VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), Scalar vec ~ ℝ, ComponentWiseMultable vec) => SharedObj obj vec -> vec -> ℝ
-getImplicitShared ((Complement symbObj)) =
+getImplicitShared (Complement symbObj) =
   negate . getImplicit symbObj
 
-getImplicitShared ((UnionR r symbObjs)) =
+getImplicitShared (UnionR r symbObjs) =
   \p -> rminimum r $ fmap ($p) $ getImplicit <$> symbObjs
 
-getImplicitShared ((IntersectR r symbObjs)) =
+getImplicitShared (IntersectR r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit <$> symbObjs
-getImplicitShared ((DifferenceR _ symbObj [])) =
+getImplicitShared (DifferenceR _ symbObj []) =
   getImplicit symbObj
-getImplicitShared ((DifferenceR r symbObj symbObjs)) =
+getImplicitShared (DifferenceR r symbObj symbObjs) =
     let
         tailObjs = getImplicit <$> symbObjs
         headObj = getImplicit symbObj
@@ -53,29 +53,29 @@ getImplicitShared ((DifferenceR r symbObj symbObjs)) =
           else rmax r (headObj p) maxTail
 
 -- Simple transforms
-getImplicitShared ((Translate v symbObj)) =
+getImplicitShared (Translate v symbObj) =
     let
         obj = getImplicit symbObj
     in
         \p -> obj (p ^-^ v)
-getImplicitShared ((Scale s symbObj)) =
+getImplicitShared (Scale s symbObj) =
     let
         obj = getImplicit symbObj
         k = normalize s
     in
         \p -> k * obj (p ⋯/ s)
-getImplicitShared ((Mirror v symbObj)) =
+getImplicitShared (Mirror v symbObj) =
     getImplicit symbObj . reflect v
 -- Boundary mods
-getImplicitShared ((Shell w symbObj)) =
+getImplicitShared (Shell w symbObj) =
     let
         obj = getImplicit symbObj
     in
         \p -> abs (obj p) - w/2
-getImplicitShared ((Outset d symbObj)) =
+getImplicitShared (Outset d symbObj) =
     let
         obj = getImplicit symbObj
     in
         \p -> obj p - d
 -- Misc
-getImplicitShared ((EmbedBoxedObj (obj,_))) = obj
+getImplicitShared (EmbedBoxedObj (obj,_)) = obj
