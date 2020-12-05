@@ -17,7 +17,7 @@ import Data.List (nub)
 
 ------------------------------------------------------------------------------
 -- | Filter out equal consecutive elements in the list. This function will
--- additionally trim the last  element of the lst if it's equal to the first.
+-- additionally trim the last element of the list if it's equal to the first.
 scanUniqueCircular :: Eq a => [a] -> [a]
 scanUniqueCircular
     = fmap fst
@@ -122,4 +122,3 @@ getImplicit2 (Outset2 d symbObj) =
         obj p - d
 -- Misc
 getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
-
