@@ -1,9 +1,11 @@
+{-# LANGUAGE TypeApplications #-}
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs            #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graphics.Implicit.ObjectUtil.GetImplicitShared where
 
@@ -15,11 +17,18 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.MathUtil
     ( rmax, rmaximum, rminimum, reflect )
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
-import Data.VectorSpace (magnitude, Scalar, InnerSpace, AdditiveGroup((^-^)))
+import Data.VectorSpace ((<.>), magnitude, Scalar, InnerSpace, AdditiveGroup((^-^)))
+import Graphics.Implicit.ObjectUtil.GetBoxShared
+
+
+normalize :: forall vec. (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ) => vec -> Scalar vec
+normalize v =
+  let all1s = uniformV @vec 1
+   in abs (product (elements v)) ** (1 / (all1s <.> all1s))
 
 
 -- Get a function that describes the surface of the object.
-getImplicitShared :: (Object obj vec, InnerSpace vec, Fractional (Scalar vec), Scalar vec ~ ℝ, ComponentWiseMultable vec) => SharedObj obj vec -> vec -> ℝ
+getImplicitShared :: (VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), Scalar vec ~ ℝ, ComponentWiseMultable vec) => SharedObj obj vec -> vec -> ℝ
 getImplicitShared ((Complement symbObj)) =
   negate . getImplicit symbObj
 
@@ -51,7 +60,7 @@ getImplicitShared ((Translate v symbObj)) =
 getImplicitShared ((Scale s symbObj)) =
     let
         obj = getImplicit symbObj
-        k = magnitude s
+        k = normalize s
     in
         \p -> k * obj (p ⋯/ s)
 getImplicitShared ((Mirror v symbObj)) =

@@ -33,6 +33,7 @@ class VectorStuff vec where
   uniformV :: ℝ -> vec
   corners :: (vec, vec) -> [vec]
   pointwise :: (ℝ -> ℝ -> ℝ) -> vec -> vec -> vec
+  elements :: vec -> [ℝ]
 
 instance VectorStuff ℝ2 where
   uniformV x = (x, x)
@@ -43,6 +44,7 @@ instance VectorStuff ℝ2 where
     , p2
     ]
   pointwise f (x1, y1) (x2, y2) = (f x1 x2, f y1 y2)
+  elements (x, y) = [x, y]
 
 infty :: (Fractional t) => t
 infty = 1/0
@@ -60,6 +62,7 @@ instance VectorStuff ℝ3 where
     , p2
     ]
   pointwise f (x1, y1, z1) (x2, y2, z2) = (f x1 x2, f y1 y2, f z1 z2)
+  elements (x, y, z) = [x, y, z]
 
 bounding :: Ord a => (a, a) -> [a] -> (a, a)
 bounding e [] = e
