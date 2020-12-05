@@ -262,8 +262,7 @@ instance Object SymbolicObj2 ℝ2 where
     scale                      = Scale2
     complement (Complement2 s) = s
     complement s               = Complement2 s
-    unionR _ []                = mempty
-    unionR r ss                = UnionR2 r ss
+    unionR                     = UnionR2
     intersectR                 = IntersectR2
     differenceR                = DifferenceR2
     outset                     = Outset2
@@ -280,8 +279,7 @@ instance Object SymbolicObj3 ℝ3 where
     scale                      = Scale3
     complement (Complement3 s) = s
     complement s               = Complement3 s
-    unionR _ []                = mempty
-    unionR r ss                = UnionR3 r ss
+    unionR                     = UnionR3
     intersectR                 = IntersectR3
     differenceR                = DifferenceR3
     outset                     = Outset3

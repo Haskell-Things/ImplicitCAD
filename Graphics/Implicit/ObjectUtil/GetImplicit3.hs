@@ -47,18 +47,6 @@ getImplicit3 (Complement3 symbObj) =
     in
         \p -> - obj p
 getImplicit3 (UnionR3 _ []) = getImplicit3 Empty3
--- TODO(sandy): This is non-associative somehow. Fix it.
--- Test case:
---   UnionR3 0 (obj : [ UnionR3 0 objs ]) =~=
---     UnionR3 0 (obj : objs)
---
--- Result:
---   Falsified (after 82 tests and 51 shrinks):
---     Scale3 (2.0,3.0,5.0) (Sphere 34.21)
---     [ExtrudeR 0.0 (Shell2 17.56485601360011 (UnionR2 2.0027171946836613 [Shell2 1.5984749452135119 (Scale2 (1.0898601265130337,-0.29055538926420654) (PolygonR 0.23223027098261984 [(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0)
---,  .0),(0.0,0.0),(0.0,0.0),(0.0,0.0),(0.0,0.0)]))])) 1.0,CubeR 0.0 (10.0,1.0,1.0)]
---     ((0.0,0.0,0.0),())
---     Inside /= Surface
 getImplicit3 (UnionR3 r symbObjs) =
   \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
 
