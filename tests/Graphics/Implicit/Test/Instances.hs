@@ -58,7 +58,6 @@ import Test.QuickCheck
 import Data.List (nub)
 import Linear (Quaternion, axisAngle)
 import Graphics.Implicit.MathUtil (packV3)
-import Data.Bool (bool)
 
 
 data Insidedness = Inside | Outside | Surface
@@ -86,9 +85,8 @@ instance Arbitrary SymbolicObj2 where
         [ circle   <$> arbitrary
         , squareR  <$> arbitraryPos <*> arbitrary <*> arbitrary
         , polygonR <$> arbitraryPos <*> do
-            n <- choose (5, 10)
-            v <- nub <$> vectorOf n arbitrary
-            pure $ bool discard v $ length v >= 3
+            n <- choose (3, 10)
+            vectorOf n arbitrary
         , pure fullSpace
         , pure emptySpace
         ]
