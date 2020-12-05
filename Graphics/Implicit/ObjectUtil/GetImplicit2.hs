@@ -65,6 +65,7 @@ getImplicit2 (Complement2 symbObj) =
         obj = getImplicit2 symbObj
     in
         - obj p
+getImplicit2 (UnionR2 _ []) = getImplicit2 Empty2
 getImplicit2 (UnionR2 r symbObjs) =
     \p -> let
         objs = fmap getImplicit2 symbObjs
