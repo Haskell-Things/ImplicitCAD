@@ -36,6 +36,8 @@ module Graphics.Implicit.Primitives (
                                      rotate,
                                      pack2,
                                      implicit,
+                                     emptySpace,
+                                     fullSpace,
                                      Object
                                     ) where
 
@@ -43,6 +45,8 @@ import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Not
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
+                                                   Empty2,
+                                                   Full2,
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,
@@ -50,6 +54,8 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, Sha
                                                    Shared2
                                                   ),
                                       SymbolicObj3(
+                                                   Empty3,
+                                                   Full3,
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
@@ -154,6 +160,11 @@ polygonR = PolygonR
 --
 -- Library users shouldn't need to provide new instances of this class.
 class Object obj vec | obj -> vec where
+    -- | The object that fills no space
+    emptySpace :: obj
+
+    -- | The object that fills the entire space
+    fullSpace :: obj
 
     -- | Complement an Object
     complement ::
@@ -226,6 +237,8 @@ class Object obj vec | obj -> vec where
 
 
 instance Object SymbolicObj2 ℝ2 where
+    emptySpace        = Empty2
+    fullSpace         = Full2
     translate   a b   = Shared2 $ Translate a b
     mirror      a b   = Shared2 $ Mirror a b
     scale       a b   = Shared2 $ Scale a b
@@ -241,6 +254,8 @@ instance Object SymbolicObj2 ℝ2 where
     implicit a b      = Shared2 $ EmbedBoxedObj (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
+    emptySpace        = Empty3
+    fullSpace         = Full3
     translate   a b   = Shared3 $ Translate a b
     mirror      a b   = Shared3 $ Mirror a b
     scale       a b   = Shared3 $ Scale a b

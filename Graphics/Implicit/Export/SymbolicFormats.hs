@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude(fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(Shared2, SquareR, Circle, PolygonR, Rotate2), SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(..))
+import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(Empty2, Full2, Shared2, SquareR, Circle, PolygonR, Rotate2), SymbolicObj3(Empty3, Full3, Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(..))
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -58,6 +58,10 @@ bvect2 (x, y) = "[" <> fold (intersperse "," [bf x, bf y]) <> "]"
 
 -- | First, the 3D objects.
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
+
+buildS3 Empty3 = call "union" [] []
+
+buildS3 Full3 = buildS3 $ Shared3 $ Complement Empty3
 
 buildS3 (CubeR r (w,d,h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
 
@@ -131,7 +135,9 @@ buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting op
 
 buildS2 :: SymbolicObj2 -> Reader ℝ Builder
 
-buildS2 (SquareR r (w,h)) | r == 0 = call "cube" [bf w, bf h] []
+buildS2 Empty2 = call "union" [] []
+
+buildS2 Full2 = buildS2 $ Shared2 $ Complement Empty2
 
 buildS2 (Circle r) = call "circle" [bf r] []
 

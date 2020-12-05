@@ -7,7 +7,15 @@ module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, Box3, SymbolicObj3 (Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions
+    ( Fastℕ,
+      fromFastℕ,
+      ExtrudeRMScale(C2, C1),
+      SymbolicObj3(..),
+      Box3,
+      ℝ,
+      fromFastℕtoℝ,
+      toScaleFn )
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -21,6 +29,8 @@ import Graphics.Implicit.ObjectUtil.GetBoxShared (corners, pointsBox, getBoxShar
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Shared3 obj) = getBoxShared obj
+getBox3 Empty3 = ((0, 0, 0), (0, 0, 0))
+getBox3 Full3 = ((-infty, -infty, -infty), (infty, infty, infty))
 getBox3 (CubeR _ size) = ((0, 0, 0), size)
 getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
@@ -133,3 +143,6 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
 -- FIXME: add case for ExtrudeRotateR!
 getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"
+
+infty :: ℝ
+infty = error "not implemented"

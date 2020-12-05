@@ -25,7 +25,9 @@ module Graphics.Implicit (
       P.intersectR,
       P.differenceR,
       P.implicit,
-      P.shell
+      P.shell,
+      P.emptySpace,
+      P.fullSpace
     ),
   P.union,
   P.intersect,
@@ -82,7 +84,7 @@ import Prelude(FilePath, IO)
 
 -- The primitive objects, and functions for manipulating them.
 -- MAYBEFIXME: impliment slice operation, regularPolygon and zsurface primitives.
-import Graphics.Implicit.Primitives as P (rectR, rect3R, translate, scale, mirror, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeOnEdgeOf, sphere, cubeR, circle, cylinder, cylinder2, squareR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, Object)
+import Graphics.Implicit.Primitives as P (rectR, rect3R, translate, scale, mirror, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeOnEdgeOf, sphere, cubeR, circle, cylinder, cylinder2, squareR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, fullSpace, emptySpace, Object)
 
 -- The Extended OpenScad interpreter.
 import Graphics.Implicit.ExtOpenScad as E (runOpenscad)

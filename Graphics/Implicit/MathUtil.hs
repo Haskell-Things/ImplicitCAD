@@ -5,7 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3, infty) where
 
 -- Explicitly include what we need from Prelude.
 import Prelude (Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2, (.))
@@ -48,6 +48,8 @@ box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)
 -- Consider  max(x,y) = 0, the generated curve
 -- has a square-like corner. We replace it with a
 -- quarter of a circle
+--
+-- NOTE: rmax is not associative!
 rmax ::
     ℝ     -- ^ radius
     -> ℝ  -- ^ first number to round maximum
@@ -60,6 +62,8 @@ rmax r x y
                 else max x y
 
 -- | Rounded minimum
+--
+-- NOTE: rmin is not associative!
 rmin ::
     ℝ     -- ^ radius
     -> ℝ  -- ^ first number to round minimum
@@ -189,4 +193,11 @@ packV3 (x, y, z) = V3 x y z
 unpackV3 :: V3 a -> (a, a, a)
 unpackV3 (V3 a a2 a3) = (a, a2, a3)
 {-# INLINABLE unpackV3 #-}
+
+
+------------------------------------------------------------------------------
+-- | Haskell's standard library doesn't make floating-point infinity available
+-- in any convenient way, so we define it here.
+infty :: (Fractional t) => t
+infty = 1/0
 

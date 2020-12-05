@@ -45,12 +45,16 @@ module Graphics.Implicit.Definitions (
     BoxedObj3,
     SharedObj(..),
     SymbolicObj2(
+        Empty2,
+        Full2,
         SquareR,
         Circle,
         PolygonR,
         Rotate2,
         Shared2),
     SymbolicObj3(
+        Empty3,
+        Full3,
         CubeR,
         Sphere,
         Cylinder,
@@ -72,7 +76,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (($), Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -258,7 +262,9 @@ deriving instance (Show obj, Show vec, Show (vec -> ℝ))
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      SquareR ℝ ℝ2    -- rounding, size.
+      Empty2  -- ^ The empty object
+    | Full2   -- ^ The entirely full object
+    | SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- Simple transforms
@@ -271,14 +277,17 @@ data SymbolicObj2 =
 instance Semigroup SymbolicObj2 where
   a <> b = Shared2 (UnionR 0 [a, b])
 
+
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
-  mempty = SquareR 0 (0, 0)
+  mempty = Empty2
 
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      CubeR ℝ ℝ3 -- rounding, size.
+      Empty3  -- ^ The empty object
+    | Full3   -- ^ The entirely full object
+    | CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- Simple transforms
@@ -309,7 +318,7 @@ instance Semigroup SymbolicObj3 where
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj3 where
-  mempty = CubeR 0 (0, 0, 0)
+  mempty = Empty3
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ

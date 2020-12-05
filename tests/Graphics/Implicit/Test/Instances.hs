@@ -4,9 +4,9 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (Quantizable (quantize), epsilon, observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (epsilon, observe, (=~=)) where
 
-import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, Integer, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), fmap, (/), fromIntegral, (^), (*), (<>), round, (<=), filter, notElem)
+import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
 
 import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
 
@@ -20,7 +20,7 @@ import Graphics.Implicit
       ℝ2,
       ℝ,
       squareR,
-      Object(shell, translate, unionR, intersectR, differenceR),
+      Object(shell, translate, unionR, intersectR, differenceR, emptySpace, fullSpace),
       sphere,
       cubeR,
       cylinder2,
@@ -33,11 +33,6 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj3(Cylinder, Shared3, CubeR, Rotate3),
-      SymbolicObj2(SquareR, Shared2, PolygonR, Rotate2),
-      SharedObj(..),
-      both,
-      allthree )
 
 import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
 
@@ -54,8 +49,10 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
+import Data.List (nub)
 import Linear (Quaternion, axisAngle)
 import Graphics.Implicit.MathUtil (packV3)
+import Data.Bool (bool)
 
 
 data Insidedness = Inside | Outside | Surface
@@ -88,7 +85,12 @@ instance Arbitrary SymbolicObj2 where
       small =
         [ circle   <$> arbitrary
         , squareR  <$> arbitraryPos <*> arbitrary <*> arbitrary
-        , polygonR <$> arbitraryPos <*> decayedList
+        , polygonR <$> arbitraryPos <*> do
+            n <- choose (5, 10)
+            v <- nub <$> vectorOf n arbitrary
+            pure $ bool discard v $ length v >= 3
+        , pure fullSpace
+        , pure emptySpace
         ]
 
 
@@ -109,6 +111,8 @@ instance Arbitrary SymbolicObj3 where
         , cylinder  <$> arbitraryPos <*> arbitraryPos
         , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
         , cubeR     <$> arbitraryPos <*> arbitrary    <*> arbitraryV3
+        , pure fullSpace
+        , pure emptySpace
         ]
 
 instance Arbitrary ExtrudeRMScale where
@@ -142,32 +146,6 @@ instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
 instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
   observe p = insidedness . observe p . getImplicit
 
-
-------------------------------------------------------------------------------
--- | Types which can truncate their decimal points to a certain number of
--- digits.
-class Quantizable a where
-  quantize
-      :: Int  -- ^ The number of decimal points to keep
-      -> a
-      -> a
-
-instance Quantizable a => Quantizable [a] where
-  quantize n = fmap (quantize n)
-
-instance Quantizable a => Quantizable (a, a) where
-  quantize n = both (quantize n)
-
-instance Quantizable a => Quantizable (a, a, a) where
-  quantize n = allthree (quantize n)
-
-instance Quantizable a => Quantizable (b -> a) where
-  quantize n = fmap (quantize n)
-
-instance Quantizable Double where
-  quantize n r =
-    let pow = 10 ^ n :: Double
-    in fromIntegral @Integer (round (r * pow)) / pow
 
 
 ------------------------------------------------------------------------------
@@ -218,13 +196,7 @@ isValid2 (Shared2 (Scale (x, y) s)) = x > 0 && y > 0 && isValid2 s
 isValid2 (Rotate2 _ s) = isValid2 s
 isValid2 (Shared2 (Outset _ s)) = isValid2 s
 isValid2 (Shared2 (Shell _ s)) = isValid2 s
-isValid2 s@(PolygonR _ ls) = length ls >= 3 &&
-  let (dx, dy) = boxSize s
-   in notElem 0 [dx, dy]
-isValid2 (SquareR _ (x0, y0)) = (0 < x0) && (0 < y0)
-isValid2 s =  -- Otherwise, make sure it has > 0 volume
-  let (dx, dy) = boxSize s
-   in notElem 0 [dx, dy]
+isValid2 s@(PolygonR _ ls) = length ls >= 3 && nub ls == ls
 
 -- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
 -- accidentally generate a term which will crash when we attempt to render it.
@@ -244,7 +216,7 @@ isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)
 isValid3 (Cylinder _ r h) = r > 0 && h > 0
 isValid3 s =  -- Otherwise, make sure it has > 0 volume
   let (dx, dy, dz) = boxSize s
-   in notElem 0 [dx, dy, dz]
+   in all (> 0) [dx, dy, dz]
 
 
 ------------------------------------------------------------------------------

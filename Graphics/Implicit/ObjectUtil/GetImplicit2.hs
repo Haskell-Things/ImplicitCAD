@@ -4,11 +4,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, cos, sin, (.))
+import Prelude(const, abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, cos, sin, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2))
+import Graphics.Implicit.Definitions
+    ( ℕ, SymbolicObj2(..), Obj2, ℝ2, ℝ )
 
-import Graphics.Implicit.MathUtil (rmaximum, distFromLineSeg)
+import Graphics.Implicit.MathUtil
+    ( distFromLineSeg, rmaximum, infty )
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub, genericIndex, genericLength)
@@ -16,6 +18,8 @@ import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
+getImplicit2 Empty2 = const infty
+getImplicit2 Full2 = const $ -infty
 getImplicit2 (SquareR r (dx, dy)) =
     \(x,y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
 getImplicit2 (Circle r) =

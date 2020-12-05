@@ -8,6 +8,12 @@ module Graphics.Implicit.Primitives where
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ3, ℝ2, ℝ)
 
 class Object obj vec | obj -> vec where
+    -- | The object that fills no space
+    emptySpace :: obj
+
+    -- | The object that fills the entire space
+    fullSpace :: obj
+
     -- | Complement an Object
     complement ::
         obj     -- ^ Object to complement

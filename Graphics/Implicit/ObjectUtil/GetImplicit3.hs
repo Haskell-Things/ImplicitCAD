@@ -5,12 +5,12 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
+import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, Obj3,
-                                      SymbolicObj3(Shared3, Rotate3, CubeR, Sphere, Cylinder, ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn)
+import Graphics.Implicit.Definitions
+    ( ℕ, SymbolicObj3(..), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
-import Graphics.Implicit.MathUtil (alaV3, rmaximum, rmax)
+import Graphics.Implicit.MathUtil ( rmax, rmaximum, alaV3, infty )
 
 import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
@@ -26,6 +26,8 @@ default (ℝ)
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
+getImplicit3 Empty3 = const infty
+getImplicit3 Full3 = const $ -infty
 getImplicit3 (CubeR r (dx, dy, dz)) =
     \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
@@ -37,7 +39,6 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
 -- Simple transforms
-
 getImplicit3 (Rotate3 q symbObj) =
     getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
 

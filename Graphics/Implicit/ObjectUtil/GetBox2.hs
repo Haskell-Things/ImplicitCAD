@@ -4,16 +4,21 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Fractional, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(Bool, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Shared2, Circle, Rotate2, SquareR, PolygonR), minℝ, SharedObj (..))
+import Graphics.Implicit.Definitions
+    ( SymbolicObj2(..),
+      SharedObj(IntersectR, Complement, UnionR, DifferenceR),
+      Box2,
+      ℝ2,
+      ℝ,
+      minℝ )
 
 import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
-import Graphics.Implicit.MathUtil (reflect)
 import Graphics.Implicit.ObjectUtil.GetBoxShared (getBoxShared)
+import Graphics.Implicit.MathUtil (infty)
 
 -- | An empty box.
 emptyBox :: Box2
@@ -67,6 +72,8 @@ outsetBox r (a,b) =
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
+getBox2 Empty2 = emptyBox
+getBox2 Full2  = ((-infty, -infty), (infty, infty))
 getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
