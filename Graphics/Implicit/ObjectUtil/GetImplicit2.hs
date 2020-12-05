@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude((/=), uncurry, fst, Eq, zip, drop, (<>), (<$>), const, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, (.))
+import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, (<$>), const, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, (.))
 
 import Graphics.Implicit.Definitions (minℝ, ℝ, ℝ2, (⋯/), Obj2, SymbolicObj2(Empty2, Full2, SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
 
@@ -28,7 +28,7 @@ scanUniqueCircular
 ------------------------------------------------------------------------------
 -- | Given @[a, b, c, ... n]@, return the pairs @[(a, b), (b, c), ... (n, a)]@.
 circularPairs :: [a] -> [(a,a)]
-circularPairs as = zip as (drop 1 as <> as)
+circularPairs as = zip as $ drop 1 $ cycle as
 
 
 getImplicit2 :: SymbolicObj2 -> Obj2
