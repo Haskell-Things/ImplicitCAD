@@ -7,7 +7,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (pure, Maybe (Just, Nothing), negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
@@ -29,7 +29,6 @@ import Data.Foldable ( for_ )
 import Data.VectorSpace (AdditiveGroup, (^+^),  (^*) )
 import Test.Hspec.QuickCheck (prop)
 import QuickSpec (Observe)
-import Data.Typeable ( Typeable, type (:~:)(Refl), eqT )
 
 
 ------------------------------------------------------------------------------
@@ -218,9 +217,7 @@ rotation3dSpec = describe "3d rotation" $ do
 -- | Misc identity proofs that should hold for all symbolic objects.
 identitySpec
     :: forall obj vec test outcome
-     . ( TestInfrastructure obj vec test outcome
-       , Typeable obj
-       )
+     . TestInfrastructure obj vec test outcome
     => Spec
 identitySpec = describe "identity" $ do
   prop "complement empty" $
@@ -235,13 +232,9 @@ identitySpec = describe "identity" $ do
     differenceR @obj r emptySpace objs
       =~= emptySpace
 
-  case eqT @obj @SymbolicObj3 of
-    -- This test is broken in 2d due to #328, so only run it if we're in 3d.
-    Just Refl ->
-      prop "difference is complement" $ \objs ->
-        difference @obj fullSpace objs
-          =~= complement (union objs)
-    Nothing -> pure ()
+  prop "difference is complement" $ \objs ->
+    difference @obj fullSpace objs
+      =~= complement (union objs)
 
   prop "difference of obj" $ \r obj ->
     differenceR @obj r obj []
