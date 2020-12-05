@@ -4,17 +4,19 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
+import Prelude(const, abs, (-), (/), sqrt, (*), (+), mod, length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, tail, (.))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
+import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, (⋯/), Obj2, SymbolicObj2(Empty2, Full2, SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
 
-import Graphics.Implicit.MathUtil (reflect, rminimum, rmaximum, distFromLineSeg)
+import Graphics.Implicit.MathUtil (infty, reflect, rminimum, rmaximum, distFromLineSeg)
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub, genericIndex, genericLength)
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
+getImplicit2 Empty2 = const infty
+getImplicit2 Full2 = const $ -infty
 getImplicit2 (SquareR r (dx, dy)) =
     \(x,y) -> let
     in
@@ -51,6 +53,7 @@ getImplicit2 (UnionR2 r symbObjs) =
         objs = fmap getImplicit2 symbObjs
     in
         rminimum r $ fmap ($p) objs
+getImplicit2 (DifferenceR2 _ symbObj []) = getImplicit2 symbObj
 getImplicit2 (DifferenceR2 r symbObj symbObjs) =
     let
         objs = fmap getImplicit2 symbObjs
