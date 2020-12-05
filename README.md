@@ -34,8 +34,8 @@ Generally, normal OpenSCAD code should work. For example, save the following as 
 ```c
 // example1.scad -- The union of a square and a circle.
 union() {
-	square([80,80]);
-	translate ([80,80]) circle(30);
+        square([80,80]);
+        translate ([80,80]) circle(30);
 }
 ```
 
@@ -50,8 +50,8 @@ However, there are additional ImplicitCAD specific features. For example a round
 ```c
 //example2.escad -- A rounded union of a square and a circle.
 union(r=14) {
-	square([80,80]);
-	translate ([80,80]) circle(30);
+        square([80,80]);
+        translate ([80,80]) circle(30);
 }
 ```
 
@@ -152,9 +152,9 @@ ImplicitCAD also provides full programmatic functionality, like variable assignm
 // Example8.escad -- variable assignment in loops.
 a = 5;
 for (c = [1, 2, 3]) {
-	echo(c);
-	a = a*c;
-	echo(a);
+        echo(c);
+        a = a*c;
+        echo(a);
 }
 ```
 
@@ -260,9 +260,9 @@ Try ImplicitCAD!
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * install the dependencies: `cabal install --only-dependencies`
-	     * The previous step may fail, but it should tell you what's missing. 
-	     * Track down the relevant package in your package manager. You may need to install the -dev package.
-	 * Finally, to build and install implicitcad: `cabal configure && cabal install`
+         * The previous step may fail, but it should tell you what's missing.
+         * Track down the relevant package in your package manager. You may need to install the -dev package.
+     * Finally, to build and install implicitcad: `cabal configure && cabal install`
  3. Try it!
      * extopenscad test:
           * Make a test file: `echo "circle(30);" > test.escad`
