@@ -37,7 +37,8 @@ getImplicitShared ((UnionR r symbObjs)) =
 
 getImplicitShared ((IntersectR r symbObjs)) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit <$> symbObjs
-
+getImplicitShared ((DifferenceR _ symbObj [])) =
+  getImplicit symbObj
 getImplicitShared ((DifferenceR r symbObj symbObjs)) =
     let
         tailObjs = getImplicit <$> symbObjs
