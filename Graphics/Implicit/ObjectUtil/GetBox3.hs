@@ -7,7 +7,7 @@ module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
 import Prelude(uncurry, (<>), Eq, Bool(False), Either (Left, Right), (==), (||), max, (/), (-), (+), fmap, unzip, ($), (<$>), filter, not, (.), unzip3, minimum, maximum, min, (>), (&&), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
 
-import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (Empty3, Full3, CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
+import Graphics.Implicit.Definitions (ℝ3, ℝ, Fastℕ, Box3, SymbolicObj3 (Empty3, Full3, CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Shell3, Outset3, EmbedBoxedObj3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude), ExtrudeRMScale(C1, C2), (⋯*), fromFastℕtoℝ, fromFastℕ, toScaleFn)
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
@@ -61,7 +61,7 @@ getBox3 (UnionR3 r symbObjs)
     . unionBoxes
     $ fmap getBox3 symbObjs
 getBox3 (DifferenceR3 _ symbObj _)  = getBox3 symbObj
-getBox3 (IntersectR3 _ []) = emptyBox
+getBox3 (IntersectR3 _ []) = getBox3 Full3
 getBox3 (IntersectR3 _ symbObjs) =
     let
         boxes = fmap getBox3 symbObjs
@@ -225,5 +225,3 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
             else (x2 + xmax', y1 + ymin', y2 + ymax')
     in
         ((-r, -r, y1 + ymin'),(r, r, y2 + ymax'))
--- FIXME: add case for ExtrudeRotateR!
-getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"

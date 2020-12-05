@@ -73,7 +73,6 @@ module Graphics.Implicit.Definitions (
         Outset3,
         EmbedBoxedObj3,
         ExtrudeR,
-        ExtrudeRotateR,
         ExtrudeRM,
         ExtrudeOnEdgeOf,
         RotateExtrude),
@@ -324,7 +323,6 @@ data SymbolicObj3 =
     | EmbedBoxedObj3 BoxedObj3
     -- 2D based
     | ExtrudeR ℝ SymbolicObj2 ℝ
-    | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
     | ExtrudeRM
         ℝ                     -- rounding radius
         (Either ℝ (ℝ -> ℝ))   -- twist

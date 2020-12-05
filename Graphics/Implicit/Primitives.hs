@@ -19,7 +19,6 @@ module Graphics.Implicit.Primitives (
                                      getImplicit,
                                      extrudeR,
                                      extrudeRM,
-                                     extrudeRotateR,
                                      extrudeOnEdgeOf,
                                      sphere,
                                      cubeR, rect3R,
@@ -80,7 +79,6 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
                                                    Shell3,
                                                    EmbedBoxedObj3,
                                                    ExtrudeR,
-                                                   ExtrudeRotateR,
                                                    ExtrudeRM,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf
@@ -308,10 +306,6 @@ extrudeR
     -> ℝ   -- ^ Extrusion height
     -> SymbolicObj3
 extrudeR = ExtrudeR
-
--- | This function is not implemented
-extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
-extrudeRotateR = ExtrudeRotateR
 
 extrudeRM :: ℝ              -- ^ rounding radius (in mm)
     -> Either ℝ (ℝ -> ℝ)    -- ^ twist

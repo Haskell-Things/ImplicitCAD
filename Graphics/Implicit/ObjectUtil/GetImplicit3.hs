@@ -10,7 +10,7 @@ import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2
 import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
                                       SymbolicObj3(Empty3, Full3, Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
                                                    Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
+                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude), fromℕtoℝ, toScaleFn, minℝ)
 
 import Graphics.Implicit.MathUtil (infty, alaV3, reflect, rmaximum, rminimum, rmax)
 
@@ -218,6 +218,3 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                     (obj rz_pos)
               else obj rz_pos
 
--- FIXME: implement this, or implement a fallthrough function.
---getImplicit3 (ExtrudeRotateR) =
-getImplicit3 ExtrudeRotateR{} = error "ExtrudeRotateR unimplimented!"

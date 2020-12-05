@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude(fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(Empty2, Full2, SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Empty3, Full3, CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
+import Graphics.Implicit.Definitions(ℝ2, ℝ3, ℝ, SymbolicObj2(Empty2, Full2, SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Outset2, Shell2, EmbedBoxedObj2), SymbolicObj3(Empty3, Full3, CubeR, Sphere, Cylinder, Complement3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3, Mirror3, Outset3, Shell3, ExtrudeR, ExtrudeRM, EmbedBoxedObj3, RotateExtrude, ExtrudeOnEdgeOf), isScaleID)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -99,8 +99,6 @@ buildS3 (Shell3 r obj) | r == 0 = call "shell" [] [buildS3 obj]
 
 buildS3 (ExtrudeR r obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
 
-buildS3 (ExtrudeRotateR r twist obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
-
 -- FIXME: handle scale, center.
 buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 && isScaleID scale && translate == (0,0) = do
   res <- ask
@@ -125,7 +123,6 @@ buildS3(DifferenceR3 _ _ _) = error "cannot provide roundness when exporting ope
 buildS3(Outset3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(Shell3 _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3 ExtrudeRotateR {} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeRM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(EmbedBoxedObj3 _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
