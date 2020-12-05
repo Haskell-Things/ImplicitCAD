@@ -4,7 +4,7 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (epsilon, observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (observe, (=~=)) where
 
 import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
 
@@ -71,12 +71,6 @@ insidedness x =
   case x < 0 of
     True  -> Inside
     False -> Outside
-
-------------------------------------------------------------------------------
--- | The number of decimal points we need to agree to assume two 'Double's are
--- equal.
-epsilon :: Int
-epsilon = 5
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
