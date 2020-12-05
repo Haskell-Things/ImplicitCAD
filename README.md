@@ -196,8 +196,9 @@ Everything you saw above can be done with the Haskell API. For example, a simple
 import Graphics.Implicit
 
 out = union [
-	rectR 0 (-40,-40) (40,40),
-	translate (40,40) (circle 30) ]
+    squareR 0 True (80, 80)
+  , translate (40, 40) (circle 30)
+  ]
 
 main = writeSVG 2 "test.svg" out
 ```
@@ -212,8 +213,9 @@ A rounded union:
 import Graphics.Implicit
 
 out = unionR 14 [
-	rectR 0 (-40,-40) (40,40),
-	translate (40,40) (circle 30) ]
+    squareR 0 True (80, 80)
+  , translate (80, 80) (circle 30)
+  ]
 
 main = writeSVG 2 "test.svg" out
 ```
@@ -227,8 +229,9 @@ A simple 3D example:
 import Graphics.Implicit
 
 out = union [
-	rect3R 0 (0,0,0) (20,20,20),
-	translate (20,20,20) (sphere 15) ]
+    cubeR 0 False (20, 20, 20)
+  , translate (20, 20, 20) (sphere 15)
+  ]
 
 main = writeSTL 1 "test.stl" out
 ```
