@@ -87,6 +87,13 @@ pointsBox :: (AdditiveGroup vec, VectorStuff vec) => [vec] -> (vec, vec)
 pointsBox [] = emptyBox
 pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
 
+unionBoxes :: (AdditiveGroup vec, Eq vec, VectorStuff vec) => ℝ -> [(vec, vec)] -> (vec, vec)
+unionBoxes r
+  = outsetBox r
+  . pointsBox
+  . foldMap corners
+  . filter (not . isEmpty)
+
 -- | Is a box empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: (Eq a, AdditiveGroup a) => (a, a) -> Bool
@@ -103,12 +110,7 @@ getBoxShared Empty = emptyBox
 getBoxShared Full  = (uniformV (-infty), uniformV infty)
 -- (Rounded) CSG
 getBoxShared (Complement _) = (uniformV (-infty), uniformV infty)
-getBoxShared (UnionR r symbObjs)
-  = outsetBox r
-  $ pointsBox
-  $ foldMap corners
-  $ filter (not . isEmpty)
-  $ fmap getBox symbObjs
+getBoxShared (UnionR r symbObjs) = unionBoxes r $ fmap getBox symbObjs
 getBoxShared (DifferenceR _ symbObj _)  = getBox symbObj
 getBoxShared (IntersectR _ symbObjs) =
   intersectBoxes (uniformV (-infty), uniformV infty) $
