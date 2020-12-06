@@ -68,9 +68,9 @@ instance VectorStuff ℝ3 where
   elements (x, y, z) = [x, y, z]
 
 intersectBoxes
-    :: (VectorStuff a) => (a, a) -> [(a, a)] -> (a, a)
-intersectBoxes def [] = def
-intersectBoxes _ (b : boxes)
+    :: (VectorStuff a) => [(a, a)] -> (a, a)
+intersectBoxes [] = fullBox
+intersectBoxes (b : boxes)
   = foldr (biapp (pointwise max) (pointwise min)) b boxes
 
 
@@ -81,6 +81,10 @@ biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
 -- | An empty box.
 emptyBox :: AdditiveGroup vec => (vec, vec)
 emptyBox = (zeroV, zeroV)
+
+-- | A full box.
+fullBox :: (VectorStuff vec) => (vec, vec)
+fullBox = (uniformV (-infty), uniformV infty)
 
 -- | Define a box around all of the given points.
 pointsBox :: (AdditiveGroup vec, VectorStuff vec) => [vec] -> (vec, vec)
@@ -107,13 +111,13 @@ outsetBox r (a, b) = (a ^-^ uniformV r, b ^+^ uniformV r)
 getBoxShared :: forall obj vec. (Eq vec, VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), ComponentWiseMultable vec) => SharedObj obj vec -> (vec, vec)
 -- Primitives
 getBoxShared Empty = emptyBox
-getBoxShared Full  = (uniformV (-infty), uniformV infty)
+getBoxShared Full  = fullBox
 -- (Rounded) CSG
-getBoxShared (Complement _) = (uniformV (-infty), uniformV infty)
+getBoxShared (Complement _) = fullBox
 getBoxShared (UnionR r symbObjs) = unionBoxes r $ fmap getBox symbObjs
 getBoxShared (DifferenceR _ symbObj _)  = getBox symbObj
 getBoxShared (IntersectR _ symbObjs) =
-  intersectBoxes (uniformV (-infty), uniformV infty) $
+  intersectBoxes $
     fmap getBox symbObjs
 -- -- Simple transforms
 getBoxShared (Translate v symbObj) =

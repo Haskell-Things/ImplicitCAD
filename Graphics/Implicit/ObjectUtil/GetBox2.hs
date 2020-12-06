@@ -16,8 +16,7 @@ import Graphics.Implicit.Definitions
 
 
 import Data.Fixed (mod')
-import Graphics.Implicit.ObjectUtil.GetBoxShared (uniformV, emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
-import Graphics.Implicit.MathUtil (infty)
+import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
 
 
 -- Get a Box2 around the given object.
@@ -60,7 +59,7 @@ getBox2R (Shared2 (IntersectR r symObjs)) deg =
   let
     boxes = [ getBox2R obj deg| obj <- symObjs ]
   in
-    outsetBox r $ intersectBoxes (uniformV (-infty), uniformV infty) boxes
+    outsetBox r $ intersectBoxes boxes
 -- FIXME: implement Rotate2.
 -- Fallthrough: rotate the points of the containing box. no rounding.
 getBox2R symObj deg =
