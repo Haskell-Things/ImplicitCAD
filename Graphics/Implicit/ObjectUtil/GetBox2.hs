@@ -4,97 +4,29 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(Bool, Eq, (==), (||), unzip, minimum, maximum, ($), filter, not, (.), (/), fmap, (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(flip, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Box2, (⋯*),
-                                      SymbolicObj2(Empty2, Full2, Shell2, Outset2, Circle, Translate2, Rotate2, UnionR2, Scale2, SquareR,
-                                                   PolygonR, Complement2, DifferenceR2, IntersectR2, EmbedBoxedObj2, Mirror2), minℝ)
+import Graphics.Implicit.Definitions
+    ( SymbolicObj2(..),
+      SharedObj(IntersectR, Complement, UnionR, DifferenceR),
+      Box2,
+      ℝ2,
+      ℝ,
+      minℝ )
 
-import Data.VectorSpace ((^-^), (^+^))
 
 import Data.Fixed (mod')
-import Graphics.Implicit.MathUtil (infty, reflect)
+import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
 
--- | An empty box.
-emptyBox :: Box2
-emptyBox = ((0, 0), (0, 0))
-
--- | Is a Box2 empty?
--- | Really, this checks if it is one dimensional, which is good enough.
-isEmpty :: Box2 -> Bool
-isEmpty ((a, b), (c, d)) = a==c || b==d
-
--- | Define a Box2 around all of the given points.
-pointsBox :: [ℝ2] -> Box2
-pointsBox [] = emptyBox
-pointsBox points =
-    let
-        (xs, ys) = unzip points
-    in
-        ((minimum xs, minimum ys), (maximum xs, maximum ys))
-
--- | Decompose a box into it's four corners.
-boxPoints :: Box2 -> [ℝ2]
-boxPoints ((x1,y1),(x2,y2)) = [(x1,y1), (x1,y2), (x2,y1), (x2,y2)]
-
--- | Define a Box2 around all of the given boxes.
-unionBoxes :: [Box2] -> Box2
-unionBoxes boxes =
-    let
-        (leftbot, topright) = unzip $ filter (not.isEmpty) boxes
-        (lefts, bots) = unzip leftbot
-        (rights, tops) = unzip topright
-    in
-        ((minimum lefts, minimum bots), (maximum rights, maximum tops))
-
--- | Define a Box2 that is the intersection of all of the given Box2s.
-intersectBoxes :: [Box2] -> Box2
-intersectBoxes [] = emptyBox
-intersectBoxes [x] = x
-intersectBoxes (x:xs) = if nmaxx > nminx && nmaxy > nminy
-                        then ((nminx, nminy), (nmaxx, nmaxy))
-                        else emptyBox
-  where
-    ((nminx, nminy), (nmaxx, nmaxy)) = ((max xmin1 xmin2, max ymin1 ymin2), (min xmax1 xmax2, min ymax1 ymax2))
-    ((xmin1, ymin1), (xmax1, ymax1)) = x
-    ((xmin2, ymin2), (xmax2, ymax2)) = intersectBoxes xs
-
--- | Increase a boxes size by a rounding value.
-outsetBox :: ℝ -> Box2 -> Box2
-outsetBox r (a,b) =
-        (a ^-^ (r,r), b ^+^ (r,r))
 
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
-getBox2 Empty2 = emptyBox
-getBox2 Full2  = ((-infty, -infty), (infty, infty))
 getBox2 (SquareR _ size) = ((0, 0), size)
 getBox2 (Circle r) = ((-r, -r), (r,r))
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
-getBox2 (Complement2 _) =
-    ((-infty, -infty), (infty, infty))
-getBox2 (UnionR2 r symbObjs) =
-  outsetBox r $ unionBoxes (fmap getBox2 symbObjs)
-getBox2 (DifferenceR2 _ symbObj _) = getBox2 symbObj
-getBox2 (IntersectR2 r symbObjs) =
-  outsetBox r $ intersectBoxes $ filter (not.isEmpty) $ fmap getBox2 symbObjs
 -- Simple transforms
-getBox2 (Translate2 v symbObj) =
-    let
-        (a,b) = getBox2 symbObj
-    in
-        if isEmpty (a,b)
-        then emptyBox
-        else (a^+^v, b^+^v)
-getBox2 (Scale2 s symbObj) =
-    let
-        (a,b) = getBox2 symbObj
-        (sax, say) = s ⋯* a
-        (sbx, sby) = s ⋯* b
-    in
-        ((min sax sbx, min say sby), (max sax sbx, max say sby))
 getBox2 (Rotate2 θ symbObj) =
     let
         ((x1,y1), (x2,y2)) = getBox2 symbObj
@@ -105,20 +37,8 @@ getBox2 (Rotate2 θ symbObj) =
                   , rotate (x2, y1)
                   , rotate (x2, y2)
                   ]
-getBox2 (Mirror2 v symbObj) =
-    let (p1@(x1, y1), p2@(x2, y2)) = getBox2 symbObj
-     in pointsBox [ reflect v p1
-                  , reflect v p2
-                  , reflect v (x1, y2)
-                  , reflect v (x2, y1)
-                  ]
--- Boundary mods
-getBox2 (Shell2 w symbObj) =
-    outsetBox (w/2) $ getBox2 symbObj
-getBox2 (Outset2 d symbObj) =
-    outsetBox d $ getBox2 symbObj
--- Misc
-getBox2 (EmbedBoxedObj2 (_,box)) = box
+getBox2 (Shared2 obj) = getBoxShared obj
+
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 --   Note: No implementations for SquareR, Translate2, or Scale2 as they would be identical to the fallthrough.
@@ -131,14 +51,11 @@ getBox2R (PolygonR _ points) deg =
     (pointValsX, pointValsY) = unzip (pointValsMin <> pointValsMax)
   in
     ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
-getBox2R (Complement2 symObj) _ = getBox2 $ Complement2 symObj
-getBox2R (UnionR2 r symObjs) deg =
-  let
-    boxes = [ getBox2R obj deg| obj <- symObjs ]
-  in
-    outsetBox r $ unionBoxes boxes
-getBox2R (DifferenceR2 _ symObj _) deg = getBox2R symObj deg
-getBox2R (IntersectR2 r symObjs) deg =
+getBox2R (Shared2 (Complement symObj)) _ = getBox2 $ Shared2 (Complement symObj)
+getBox2R (Shared2 (UnionR r symObjs)) deg =
+    unionBoxes r $ fmap (flip getBox2R deg) symObjs
+getBox2R (Shared2 (DifferenceR _ symObj _)) deg = getBox2R symObj deg
+getBox2R (Shared2 (IntersectR r symObjs)) deg =
   let
     boxes = [ getBox2R obj deg| obj <- symObjs ]
   in
@@ -148,7 +65,7 @@ getBox2R (IntersectR2 r symObjs) deg =
 getBox2R symObj deg =
   let
     origBox = getBox2 symObj
-    points  = boxPoints origBox
+    points  = corners origBox
   in
     getBox2R (PolygonR 0 points) deg
 

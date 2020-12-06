@@ -1,18 +1,24 @@
-{-# LANGUAGE ViewPatterns #-}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns     #-}
+
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, (<$>), const, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, max, cos, sin, (.))
+import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
-import Graphics.Implicit.Definitions (minℝ, ℝ, ℝ2, (⋯/), Obj2, SymbolicObj2(Empty2, Full2, SquareR, Circle, PolygonR, Complement2, UnionR2, DifferenceR2, IntersectR2, Translate2, Scale2, Rotate2, Mirror2, Shell2, Outset2, EmbedBoxedObj2))
+import Graphics.Implicit.Definitions
+    ( SymbolicObj2(..), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
-import Graphics.Implicit.MathUtil (rmax, infty, reflect, rminimum, rmaximum, distFromLineSeg)
+import Graphics.Implicit.MathUtil
+    ( distFromLineSeg, rmaximum )
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub)
+import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
+
 
 
 ------------------------------------------------------------------------------
@@ -30,15 +36,10 @@ scanUniqueCircular
 circularPairs :: [a] -> [(a,a)]
 circularPairs as = zip as $ drop 1 $ cycle as
 
-
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 Empty2 = const infty
-getImplicit2 Full2 = const $ -infty
 getImplicit2 (SquareR r (dx, dy)) =
-    \(x,y) -> let
-    in
-         rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
+    \(x,y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
 getImplicit2 (Circle r) =
     \(x,y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -58,67 +59,12 @@ getImplicit2 (PolygonR _ (scanUniqueCircular -> points@(_:_:_:_))) =
         dists = fmap (distFromLineSeg p) pairs
     in
         minimum dists * if isIn then -1 else 1
-getImplicit2 (PolygonR _ _) = getImplicit2 Empty2
+getImplicit2 (PolygonR _ _) = getImplicitShared @SymbolicObj2 Empty
 -- (Rounded) CSG
-getImplicit2 (Complement2 symbObj) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        - obj p
-getImplicit2 (UnionR2 _ []) = getImplicit2 Empty2
-getImplicit2 (UnionR2 r symbObjs) =
-    \p -> let
-        objs = fmap getImplicit2 symbObjs
-    in
-        rminimum r $ fmap ($p) objs
-getImplicit2 (DifferenceR2 _ symbObj []) = getImplicit2 symbObj
-getImplicit2 (DifferenceR2 r symbObj symbObjs) =
-    let
-        tailObjs = getImplicit2 <$> symbObjs
-        headObj = getImplicit2 symbObj
-        complement :: Obj2 -> ℝ2 -> ℝ
-        complement obj' p = - obj' p
-    in
-      \p -> do
-        let
-          maxTail = rmaximum r $ fmap ($p) $ complement <$> tailObjs
-        if maxTail > -minℝ && maxTail < minℝ
-          then rmax r (headObj p) minℝ
-          else rmax r (headObj p) maxTail
-getImplicit2 (IntersectR2 r symbObjs) =
-    \p -> let
-        objs = fmap getImplicit2 symbObjs
-    in
-        rmaximum r $ fmap ($p) objs
--- Simple transforms
-getImplicit2 (Translate2 v symbObj) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        obj (p ^-^ v)
-getImplicit2 (Scale2 s@(sx,sy) symbObj) =
-    \p -> let
-        obj = getImplicit2 symbObj
-        k = abs $ max sx sy
-    in
-        k * obj (p ⋯/ s)
 getImplicit2 (Rotate2 θ symbObj) =
     \(x,y) -> let
         obj = getImplicit2 symbObj
     in
         obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
-getImplicit2 (Mirror2 v symbObj) =
-    getImplicit2 symbObj . reflect v
--- Boundary mods
-getImplicit2 (Shell2 w symbObj) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        abs (obj p) - w/2
-getImplicit2 (Outset2 d symbObj) =
-    \p -> let
-        obj = getImplicit2 symbObj
-    in
-        obj p - d
--- Misc
-getImplicit2 (EmbedBoxedObj2 (obj,_)) = obj
+getImplicit2 (Shared2 obj) = getImplicitShared obj
+

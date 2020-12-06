@@ -5,6 +5,7 @@
 -- FIXME: Required. why?
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
@@ -43,47 +44,25 @@ module Graphics.Implicit.Primitives (
 
 import Prelude((*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
-import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2,
+import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
-                                                   Empty2,
-                                                   Full2,
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,
-                                                   Complement2,
-                                                   UnionR2,
-                                                   DifferenceR2,
-                                                   IntersectR2,
-                                                   Translate2,
-                                                   Mirror2,
-                                                   Scale2,
                                                    Rotate2,
-                                                   Outset2,
-                                                   Shell2,
-                                                   EmbedBoxedObj2
+                                                   Shared2
                                                   ),
                                       SymbolicObj3(
-                                                   Empty3,
-                                                   Full3,
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
-                                                   Complement3,
-                                                   UnionR3,
-                                                   DifferenceR3,
-                                                   IntersectR3,
-                                                   Translate3,
-                                                   Mirror3,
-                                                   Scale3,
                                                    Rotate3,
-                                                   Outset3,
-                                                   Shell3,
-                                                   EmbedBoxedObj3,
                                                    ExtrudeR,
                                                    ExtrudeRotateR,
                                                    ExtrudeRM,
                                                    RotateExtrude,
-                                                   ExtrudeOnEdgeOf
+                                                   ExtrudeOnEdgeOf,
+                                                   Shared3
                                                   ),
                                       ExtrudeRMScale
                                      )
@@ -253,40 +232,30 @@ class Object obj vec | obj -> vec where
         -> (vec, vec)  -- ^ Bounding box
         -> obj         -- ^ Resulting object
 
+#define SHARED_OBJECT(shared) \
+    emptySpace        = shared Empty; \
+    fullSpace         = shared Full; \
+    translate   a b   = shared $ Translate a b; \
+    mirror      a b   = shared $ Mirror a b; \
+    scale       a b   = shared $ Scale a b; \
+    complement  a     = shared $ Complement a; \
+    unionR r ss       = shared $ UnionR r ss; \
+    intersectR  a b   = shared $ IntersectR a b; \
+    differenceR a b c = shared $ DifferenceR a b c; \
+    outset      a b   = shared $ Outset a b; \
+    shell a b         = shared $ Shell a b; \
+    implicit a b      = shared $ EmbedBoxedObj (a,b);
 
 instance Object SymbolicObj2 ℝ2 where
-    emptySpace                 = Empty2
-    fullSpace                  = Full2
-    translate                  = Translate2
-    mirror                     = Mirror2
-    scale                      = Scale2
-    complement (Complement2 s) = s
-    complement s               = Complement2 s
-    unionR                     = UnionR2
-    intersectR                 = IntersectR2
-    differenceR                = DifferenceR2
-    outset                     = Outset2
-    shell                      = Shell2
-    getBox                     = getBox2
-    getImplicit                = getImplicit2
-    implicit a b               = EmbedBoxedObj2 (a,b)
+    SHARED_OBJECT(Shared2)
+    getBox      = getBox2
+    getImplicit = getImplicit2
 
 instance Object SymbolicObj3 ℝ3 where
-    emptySpace                 = Empty3
-    fullSpace                  = Full3
-    translate                  = Translate3
-    mirror                     = Mirror3
-    scale                      = Scale3
-    complement (Complement3 s) = s
-    complement s               = Complement3 s
-    unionR                     = UnionR3
-    intersectR                 = IntersectR3
-    differenceR                = DifferenceR3
-    outset                     = Outset3
-    shell                      = Shell3
-    getBox                     = getBox3
-    getImplicit                = getImplicit3
-    implicit a b               = EmbedBoxedObj3 (a,b)
+    SHARED_OBJECT(Shared3)
+    getBox      = getBox3
+    getImplicit = getImplicit3
+
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0

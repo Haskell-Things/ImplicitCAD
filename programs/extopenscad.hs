@@ -16,13 +16,10 @@
 import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (*), (/), (==), (>), (**), (-), readFile, minimum, drop, error, fst, min, sqrt, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.), print)
 
 -- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
-import Graphics.Implicit (runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
-
--- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
-import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
+import Graphics.Implicit (unionR, runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -52,6 +49,7 @@ import System.FilePath (splitExtension)
 import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
 
 import Data.Text.Lazy (Text, unpack)
+import Graphics.Implicit.Primitives (Object(getBox))
 
 -- | Our command line options.
 data ExtOpenScadOpts = ExtOpenScadOpts
@@ -197,7 +195,7 @@ getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 --   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
-        ((x1,y1,z1),(x2,y2,z2)) = getBox3 (UnionR3 0 (obj:objs))
+        ((x1,y1,z1),(x2,y2,z2)) = getBox (unionR 0 (obj:objs))
         (x,y,z) = (x2-x1, y2-y1, z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
@@ -206,7 +204,7 @@ getRes (vars, _, obj:objs, _) =
 --   FIXME: magic numbers.
 getRes (vars, obj:objs, _, _) =
     let
-        (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
+        (p1,p2) = getBox (unionR 0 (obj:objs))
         (x,y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
@@ -307,11 +305,11 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else UnionR3 0 (obj:objs)
+                     else unionR 0 (obj:objs)
 
         if quiet args
           then return ()
-          else putStrLn $ objectMessage "3D" (inputFile args) output (show res) $ show $ getBox3 target
+          else putStrLn $ objectMessage "3D" (inputFile args) output (show res) $ show $ getBox target
 
         -- FIXME: construct and use a warning for this.
         if null objs
@@ -331,11 +329,11 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else UnionR2 0 (obj:objs)
+                     else unionR 0 (obj:objs)
 
         if quiet args
           then return ()
-          else putStrLn $ objectMessage "2D" (inputFile args) output (show res) $ show $ getBox2 target
+          else putStrLn $ objectMessage "2D" (inputFile args) output (show res) $ show $ getBox target
 
         -- FIXME: construct and use a warning for this.
         if null objs

@@ -6,21 +6,14 @@
 
 module Graphics.Implicit.Test.Instances (observe, (=~=)) where
 
-import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), flip, uncurry, ($), (>), (<), (&&), all, (>=), length, div, (<*>), (<$>), (+), (<>), (<=), filter, notElem)
+import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
-import Data.VectorSpace (magnitudeSq, AdditiveGroup((^-^)))
+import Data.VectorSpace (magnitudeSq)
 
-import qualified Graphics.Implicit as I (scale)
 
 import Graphics.Implicit
-    ( ExtrudeRMScale(Fn, C1, C2),
-      SymbolicObj3,
-      SymbolicObj2,
-      ℝ3,
-      ℝ2,
-      ℝ,
-      squareR,
-      Object(shell, translate, unionR, intersectR, differenceR, emptySpace, fullSpace),
+    ( squareR,
+      Object(emptySpace, fullSpace),
       sphere,
       cubeR,
       cylinder2,
@@ -33,19 +26,21 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj3(Full3, Empty3, Cylinder, Complement3, UnionR3, DifferenceR3,
-                   IntersectR3, Translate3, Scale3, Rotate3, Outset3,
-                   Shell3, CubeR),
-      SymbolicObj2(Full2, Empty2, SquareR, Complement2, UnionR2, DifferenceR2,
-                   IntersectR2, Translate2, Scale2, Rotate2, Outset2, Shell2,
-                   PolygonR) )
+    ( ExtrudeRMScale(..),
+      SymbolicObj2(Shared2),
+      SymbolicObj3(Shared3),
+      ℝ,
+      ℝ2,
+      ℝ3,
+      SharedObj(Outset, Translate, Scale, UnionR, IntersectR,
+                DifferenceR, Shell) )
 
-import Graphics.Implicit.Primitives ( Object(getBox, getImplicit) )
+import Graphics.Implicit.Primitives ( Object(getImplicit) )
 
 import QuickSpec ( Observe(observe), (=~=) )
 
 import Test.QuickCheck
-    (discard,  Arbitrary(arbitrary, shrink),
+    (CoArbitrary, discard,  Arbitrary(arbitrary, shrink),
       genericShrink,
       choose,
       oneof,
@@ -55,7 +50,6 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
-import Data.List (nub)
 import Linear (Quaternion, axisAngle)
 import Graphics.Implicit.MathUtil (packV3)
 
@@ -73,12 +67,13 @@ insidedness x =
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
-  shrink = filter isValid2 . genericShrink
+  shrink = genericShrink
   arbitrary = sized $ \n ->
     case n <= 1 of
       False -> oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
-        ] <> arbitraryObject <> small
+        , Shared2 <$> arbitrary
+        ] <> small
       True -> oneof small
     where
       small =
@@ -94,14 +89,15 @@ instance Arbitrary SymbolicObj2 where
 
 -- TODO(sandy): Also generate all of the extrusion variants.
 instance Arbitrary SymbolicObj3 where
-  shrink = filter isValid3 . genericShrink
+  shrink = genericShrink
   arbitrary = sized $ \n ->
     case n <= 1 of
       False -> oneof $
         [ rotate3  <$> arbitrary    <*> decayArbitrary 2
         , rotate3V <$> arbitrary    <*> arbitrary        <*> decayArbitrary 2
         , extrudeR <$> arbitraryPos <*> decayArbitrary 2 <*> arbitraryPos
-        ] <> arbitraryObject <> small
+        , Shared3 <$> arbitrary
+        ] <> small
       True -> oneof small
     where
       small =
@@ -112,6 +108,18 @@ instance Arbitrary SymbolicObj3 where
         , pure fullSpace
         , pure emptySpace
         ]
+
+instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj obj vec) where
+  shrink = genericShrink
+  arbitrary = oneof
+    [ Translate   <$> arbitrary <*> decayArbitrary 2
+    , Scale       <$> arbitrary <*> decayArbitrary 2
+    , UnionR      <$> arbitraryPos <*> decayedList
+    , IntersectR  <$> arbitraryPos <*> decayedList
+    , DifferenceR <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
+    , Shell       <$> arbitraryPos <*> decayArbitrary 2
+    , Outset      <$> arbitraryPos <*> decayArbitrary 2
+    ]
 
 instance Arbitrary ExtrudeRMScale where
   shrink = genericShrink
@@ -145,20 +153,6 @@ instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
   observe p = insidedness . observe p . getImplicit
 
 
-
-------------------------------------------------------------------------------
--- | An implementation of 'Arbitrary' for anything that is an 'Object'.
-arbitraryObject :: (Arbitrary a, Arbitrary vec, Object a vec) => [Gen a]
-arbitraryObject =
-  [ translate   <$> arbitrary <*> decayArbitrary 2
-  , I.scale     <$> arbitrary <*> decayArbitrary 2
-  , unionR      <$> arbitraryPos <*> decayedList
-  , intersectR  <$> arbitraryPos <*> decayedList
-  , differenceR <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
-  , shell       <$> arbitraryPos <*> decayArbitrary 2
-  ]
-
-
 -- | Generate a small list of 'Arbitrary' elements, splitting the current
 -- complexity budget between all of them.
 decayedList :: Arbitrary a => Gen [a]
@@ -177,57 +171,4 @@ arbitraryV3 = (,,) <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
 -- | Split the complexity budget by a factor of @n@.
 decayArbitrary :: Arbitrary a => Int -> Gen a
 decayArbitrary n = scale (`div` n) arbitrary
-
-
-------------------------------------------------------------------------------
--- | Determine if a 'SymbolicObj2' is well-constructed. Ensures we don't
--- accidentally generate a term which will crash when we attempt to render it.
-isValid2 :: SymbolicObj2 -> Bool
-isValid2 Empty2 = True
-isValid2 Full2 = True
-isValid2 (Complement2 s) = isValid2 s
-isValid2 (UnionR2 _ []) = False  -- Bug #304
-isValid2 (UnionR2 _ l_s) = all isValid2 l_s
-isValid2 (DifferenceR2 _ x l_s) = all isValid2 $ x : l_s
-isValid2 (IntersectR2 _ l_s@(_:_:_)) = all isValid2 l_s
-isValid2 (IntersectR2 _ _) = False  -- Bug #306
-isValid2 (Translate2 _ s) = isValid2 s
-isValid2 (Scale2 (x, y) s) = x > 0 && y > 0 && isValid2 s
-isValid2 (Rotate2 _ s) = isValid2 s
-isValid2 (Outset2 _ s) = isValid2 s
-isValid2 (Shell2 _ s) = isValid2 s
-isValid2 s@(PolygonR _ ls) = length ls >= 3 && nub ls == ls &&
-  let (dx, dy) = boxSize s
-   in notElem 0 [dx, dy]
-isValid2 (SquareR _ (x0, y0)) = (0 < x0) && (0 < y0)
-isValid2 s =  -- Otherwise, make sure it has > 0 volume
-  let (dx, dy) = boxSize s
-   in all (> 0) [dx, dy]
-
--- | Determine if a 'SymbolicObj3' is well-constructed. Ensures we don't
--- accidentally generate a term which will crash when we attempt to render it.
-isValid3 :: SymbolicObj3 -> Bool
-isValid3 Empty3 = True
-isValid3 Full3 = True
-isValid3 (Complement3 s) = isValid3 s
-isValid3 (UnionR3 _ []) = False  -- Bug #304
-isValid3 (UnionR3 _ l_s) = all isValid3 l_s
-isValid3 (DifferenceR3 _ x l_s) = all isValid3 $ x : l_s
-isValid3 (IntersectR3 _ l_s@(_:_:_)) = all isValid3 l_s
-isValid3 (IntersectR3 _ _) = False  -- Bug #306
-isValid3 (Translate3 _ s) = isValid3 s
-isValid3 (Scale3 (x, y, z) s) = x > 0 && y > 0 && z > 0 && isValid3 s
-isValid3 (Rotate3 _ s) = isValid3 s
-isValid3 (Outset3 _ s) = isValid3 s
-isValid3 (Shell3 _ s) = isValid3 s
-isValid3 (CubeR _ (x0, y0, z0)) = (0 < x0) && (0 < y0) && (0 < z0)
-isValid3 (Cylinder _ r h) = r > 0 && h > 0
-isValid3 s =  -- Otherwise, make sure it has > 0 volume
-  let (dx, dy, dz) = boxSize s
-   in all (> 0) [dx, dy, dz]
-
-
-------------------------------------------------------------------------------
-boxSize :: (Object obj vec, AdditiveGroup vec) => obj -> vec
-boxSize = uncurry (flip (^-^)) . getBox
 

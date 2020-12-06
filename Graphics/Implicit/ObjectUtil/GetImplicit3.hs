@@ -5,14 +5,12 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, fmap, minimum, ($), (**), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (>), (&&), (<), (==), otherwise, (<$>))
+import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, ℝ2, ℝ3, (⋯/), Obj3,
-                                      SymbolicObj3(Empty3, Full3, Shell3, UnionR3, IntersectR3, DifferenceR3, Translate3, Scale3, Rotate3,
-                                                   Outset3, CubeR, Sphere, Cylinder, Complement3, EmbedBoxedObj3, Mirror3,
-                                                   ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, ExtrudeRotateR), fromℕtoℝ, toScaleFn, minℝ)
+import Graphics.Implicit.Definitions
+    ( ℕ, SymbolicObj3(..), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
-import Graphics.Implicit.MathUtil (infty, alaV3, reflect, rmaximum, rminimum, rmax)
+import Graphics.Implicit.MathUtil ( rmax, rmaximum, alaV3, infty )
 
 import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
@@ -21,15 +19,13 @@ import qualified Data.Either as Either (either)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
-import Data.VectorSpace (AdditiveGroup((^-^)))
+import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 
 default (ℝ)
 
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
-getImplicit3 Empty3 = const infty
-getImplicit3 Full3 = const $ -infty
 getImplicit3 (CubeR r (dx, dy, dz)) =
     \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
@@ -40,64 +36,10 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
--- (Rounded) CSG
-getImplicit3 (Complement3 symbObj) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> - obj p
-getImplicit3 (UnionR3 _ []) = getImplicit3 Empty3
-getImplicit3 (UnionR3 r symbObjs) =
-  \p -> rminimum r $ fmap ($p) $ getImplicit3 <$> symbObjs
-
-getImplicit3 (IntersectR3 r symbObjs) =
-  \p -> rmaximum r $ fmap ($p) $ getImplicit3 <$> symbObjs
-
-getImplicit3 (DifferenceR3 _ symbObj []) =
-  getImplicit3 symbObj
-getImplicit3 (DifferenceR3 r symbObj symbObjs) =
-    let
-        tailObjs = getImplicit3 <$> symbObjs
-        headObj = getImplicit3 symbObj
-        complement :: Obj3 -> ℝ3 -> ℝ
-        complement obj' p = - obj' p
-    in
-      \p -> do
-        let
-          maxTail = rmaximum r $ fmap ($p) $ complement <$> tailObjs
-        if maxTail > -minℝ && maxTail < minℝ
-          then rmax r (headObj p) minℝ
-          else rmax r (headObj p) maxTail
-
 -- Simple transforms
-getImplicit3 (Translate3 v symbObj) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> obj (p ^-^ v)
-getImplicit3 (Scale3 s@(sx,sy,sz) symbObj) =
-    let
-        obj = getImplicit3 symbObj
-        k = abs (sx*sy*sz) ** (1/3)
-    in
-        \p -> k * obj (p ⋯/ s)
 getImplicit3 (Rotate3 q symbObj) =
     getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
-getImplicit3 (Mirror3 v symbObj) =
-    getImplicit3 symbObj . reflect v
--- Boundary mods
-getImplicit3 (Shell3 w symbObj) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> abs (obj p) - w/2
-getImplicit3 (Outset3 d symbObj) =
-    let
-        obj = getImplicit3 symbObj
-    in
-        \p -> obj p - d
--- Misc
-getImplicit3 (EmbedBoxedObj3 (obj,_)) = obj
+
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) =
     let
@@ -205,6 +147,8 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                     (abs (θvirt - (totalRotation' / 2)) - (totalRotation' / 2))
                     (obj rz_pos)
               else obj rz_pos
+getImplicit3 (Shared3 obj) = getImplicitShared obj
+
 
 -- FIXME: implement this, or implement a fallthrough function.
 --getImplicit3 (ExtrudeRotateR) =
