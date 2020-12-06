@@ -23,11 +23,23 @@ import Data.VectorSpace
 import Graphics.Implicit.MathUtil (infty,  reflect )
 
 
+------------------------------------------------------------------------------
+-- | Ad-hoc methods we need to share code between 2D and 3D. With the exception
+-- of 'corners', these are actually all standard methods of other classes,
+-- which we don't have access to due to the choice representation for R2 and
+-- R3.
+--
+-- This class is unnecessary if we were to implement #283.
 class VectorStuff vec where
+  -- | Equivalent to 'Prelude.pure'
   uniformV :: ℝ -> vec
-  corners :: (vec, vec) -> [vec]
+  -- | Equivalent to 'Control.Applicative.liftA2'
   pointwise :: (ℝ -> ℝ -> ℝ) -> vec -> vec -> vec
+  -- | Equivalent to 'Data.Foldable.toList'
   elements :: vec -> [ℝ]
+  -- | Given a bounding box, produce the points at each corner.
+  corners :: (vec, vec) -> [vec]
+
 
 instance VectorStuff ℝ2 where
   uniformV x = (x, x)
