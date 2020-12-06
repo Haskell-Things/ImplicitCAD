@@ -11,7 +11,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBoxShared where
 
-import Prelude
+import Prelude ((==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getBox) )
 import Graphics.Implicit.Definitions
@@ -20,14 +20,7 @@ import Data.VectorSpace
     ( AdditiveGroup((^+^), zeroV, (^-^)),
       InnerSpace,
       VectorSpace(Scalar) )
-import Graphics.Implicit.MathUtil ( reflect )
-import qualified Linear.Quaternion as Q
-import Data.Semigroup ( Semigroup(sconcat), Max(Max), Min(Min) )
-import Control.Arrow ((***),  Arrow((&&&)) )
-import Data.Semigroup ()
-import Data.List.NonEmpty (NonEmpty (..))
-import Data.Coerce ( coerce )
-import Data.Bifunctor (Bifunctor(bimap))
+import Graphics.Implicit.MathUtil (infty,  reflect )
 
 
 class VectorStuff vec where
@@ -47,9 +40,6 @@ instance VectorStuff ℝ2 where
   pointwise f (x1, y1) (x2, y2) = (f x1 x2, f y1 y2)
   elements (x, y) = [x, y]
 
-infty :: (Fractional t) => t
-infty = 1/0
-
 instance VectorStuff ℝ3 where
   uniformV x = (x, x, x)
   corners (p1@(x1, y1, z1), p2@(x2, y2, z2)) =
@@ -64,10 +54,6 @@ instance VectorStuff ℝ3 where
     ]
   pointwise f (x1, y1, z1) (x2, y2, z2) = (f x1 x2, f y1 y2, f z1 z2)
   elements (x, y, z) = [x, y, z]
-
-bounding :: Ord a => (a, a) -> [a] -> (a, a)
-bounding e [] = e
-bounding _ (a : as) = coerce $ sconcat $ fmap (Min &&& Max) $ a :| as
 
 intersectBoxes
     :: (VectorStuff a) => (a, a) -> [(a, a)] -> (a, a)
@@ -84,12 +70,12 @@ biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
 emptyBox :: AdditiveGroup vec => (vec, vec)
 emptyBox = (zeroV, zeroV)
 
--- | Define a Box3 around all of the given points.
+-- | Define a box around all of the given points.
 pointsBox :: (AdditiveGroup vec, VectorStuff vec) => [vec] -> (vec, vec)
 pointsBox [] = emptyBox
-pointsBox as = (foldr1 (pointwise min) as, foldr1 (pointwise max) as)
+pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
 
--- | Is a Box3 empty?
+-- | Is a box empty?
 -- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: (Eq a, AdditiveGroup a) => (a, a) -> Bool
 isEmpty (v1, v2) = (v1 ^-^ v2) == zeroV
@@ -98,7 +84,7 @@ isEmpty (v1, v2) = (v1 ^-^ v2) == zeroV
 outsetBox :: (AdditiveGroup a, VectorStuff a) => ℝ -> (a, a) -> (a, a)
 outsetBox r (a, b) = (a ^-^ uniformV r, b ^+^ uniformV r)
 
--- Get a Box3 around the given object.
+-- Get a box around the given object.
 getBoxShared :: forall obj vec. (Eq vec, VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), ComponentWiseMultable vec) => SharedObj obj vec -> (vec, vec)
 -- Primitives
 getBoxShared Empty = emptyBox
@@ -134,3 +120,4 @@ getBoxShared (Outset d symbObj) =
     outsetBox d $ getBox symbObj
 -- Misc
 getBoxShared (EmbedBoxedObj (_,box)) = box
+

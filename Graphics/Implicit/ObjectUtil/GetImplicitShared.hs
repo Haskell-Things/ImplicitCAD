@@ -11,15 +11,15 @@ module Graphics.Implicit.ObjectUtil.GetImplicitShared where
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getImplicit) )
-import Prelude
+import Prelude ((-), (*), (>), (<), (&&), (/), product, abs, (**), (<$>), fmap, (.), negate, ($), const, Fractional)
 import Graphics.Implicit.Definitions
     ( SharedObj(..), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 import Graphics.Implicit.MathUtil
-    ( rmax, rmaximum, rminimum, reflect )
+    (infty,  rmax, rmaximum, rminimum, reflect )
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import Data.VectorSpace ((<.>), Scalar, InnerSpace, AdditiveGroup((^-^)))
 import Graphics.Implicit.ObjectUtil.GetBoxShared
-    ( VectorStuff(elements, uniformV), infty )
+    ( VectorStuff(elements, uniformV) )
 
 
 normalize :: forall vec. (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ) => vec -> Scalar vec
