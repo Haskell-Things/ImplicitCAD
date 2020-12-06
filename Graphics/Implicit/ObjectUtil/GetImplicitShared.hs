@@ -24,7 +24,11 @@ import Graphics.Implicit.ObjectUtil.GetBoxShared
 
 ------------------------------------------------------------------------------
 -- | Normalize a dimensionality-polymorphic vector.
-normalize :: forall vec. (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ) => vec -> Scalar vec
+normalize
+    :: forall vec
+     . (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ)
+    => vec
+    -> Scalar vec
 normalize v =
   let all1s = uniformV @vec 1
    in abs (product (elements v)) ** (1 / (all1s <.> all1s))

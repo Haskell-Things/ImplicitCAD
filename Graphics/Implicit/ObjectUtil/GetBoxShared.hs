@@ -84,7 +84,8 @@ intersectBoxes (b : boxes)
 
 
 ------------------------------------------------------------------------------
--- | Apply two functions elementwise across pairs.
+-- | Apply two functions elementwise across pairs. This is the biapplicative
+-- operation specialized to pairs.
 biapp
     :: (a -> b -> c)
     -> (d -> e -> f)
