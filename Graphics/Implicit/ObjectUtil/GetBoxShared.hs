@@ -54,6 +54,7 @@ instance VectorStuff ℝ2 where
   {-# INLINABLE uniformV #-}
   {-# INLINABLE pointwise #-}
   {-# INLINABLE elements #-}
+  {-# INLINABLE corners #-}
 
 instance VectorStuff ℝ3 where
   uniformV x = (x, x, x)
@@ -72,6 +73,7 @@ instance VectorStuff ℝ3 where
   {-# INLINABLE uniformV #-}
   {-# INLINABLE pointwise #-}
   {-# INLINABLE elements #-}
+  {-# INLINABLE corners #-}
 
 
 ------------------------------------------------------------------------------
