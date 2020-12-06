@@ -51,6 +51,9 @@ instance VectorStuff ℝ2 where
     ]
   pointwise f (x1, y1) (x2, y2) = (f x1 x2, f y1 y2)
   elements (x, y) = [x, y]
+  {-# INLINABLE uniformV #-}
+  {-# INLINABLE pointwise #-}
+  {-# INLINABLE elements #-}
 
 instance VectorStuff ℝ3 where
   uniformV x = (x, x, x)
@@ -66,7 +69,13 @@ instance VectorStuff ℝ3 where
     ]
   pointwise f (x1, y1, z1) (x2, y2, z2) = (f x1 x2, f y1 y2, f z1 z2)
   elements (x, y, z) = [x, y, z]
+  {-# INLINABLE uniformV #-}
+  {-# INLINABLE pointwise #-}
+  {-# INLINABLE elements #-}
 
+
+------------------------------------------------------------------------------
+-- | Compute the intersection of dimensionality-polymorphic bounding boxes.
 intersectBoxes
     :: (VectorStuff a) => [(a, a)] -> (a, a)
 intersectBoxes [] = fullBox
@@ -74,23 +83,36 @@ intersectBoxes (b : boxes)
   = foldr (biapp (pointwise max) (pointwise min)) b boxes
 
 
-biapp :: (a -> b -> c) -> (d -> e -> f) -> (a, d) -> (b, e) -> (c, f)
+------------------------------------------------------------------------------
+-- | Apply two functions elementwise across pairs.
+biapp
+    :: (a -> b -> c)
+    -> (d -> e -> f)
+    -> (a, d)
+    -> (b, e)
+    -> (c, f)
 biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
+{-# INLINABLE biapp #-}
 
 
 -- | An empty box.
 emptyBox :: AdditiveGroup vec => (vec, vec)
 emptyBox = (zeroV, zeroV)
+{-# INLINABLE emptyBox #-}
 
 -- | A full box.
 fullBox :: (VectorStuff vec) => (vec, vec)
 fullBox = (uniformV (-infty), uniformV infty)
+{-# INLINABLE fullBox #-}
 
 -- | Define a box around all of the given points.
 pointsBox :: (AdditiveGroup vec, VectorStuff vec) => [vec] -> (vec, vec)
 pointsBox [] = emptyBox
 pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
 
+
+------------------------------------------------------------------------------
+-- | Compute the intersection of dimensionality-polymorphic bounding boxes.
 unionBoxes :: (AdditiveGroup vec, Eq vec, VectorStuff vec) => ℝ -> [(vec, vec)] -> (vec, vec)
 unionBoxes r
   = outsetBox r
