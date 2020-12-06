@@ -23,10 +23,8 @@ module Graphics.Implicit.Definitions (
     ℝ2,
     both,
     ℝ3,
-    allthree,
     minℝ,
     ComponentWiseMultable,
-    (⋅),
     (⋯*),
     (⋯/),
     Polyline(Polyline),
@@ -78,8 +76,6 @@ import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Rig
 
 import Data.Maybe (Maybe)
 
-import Data.VectorSpace (Scalar, InnerSpace, (<.>))
-
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
@@ -115,16 +111,6 @@ minℝ = 0.0000000000000002
 both :: (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
 {-# INLINABLE both #-}
-
--- | apply a function to all three items in the provided tuple.
-allthree :: (t -> b) -> (t, t, t) -> (b, b, b)
-allthree f (x,y,z) = (f x, f y, f z)
-{-# INLINABLE allthree #-}
-
--- | TODO: Find a better place for this
-(⋅) :: InnerSpace a => a -> a -> Scalar a
-(⋅) = (<.>)
-{-# INLINABLE (⋅) #-}
 
 -- Wrap the functions that convert datatypes.
 
