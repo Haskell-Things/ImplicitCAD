@@ -11,7 +11,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicitShared where
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getImplicit) )
-import Prelude ((-), (*), (>), (<), (&&), (/), product, abs, (**), (<$>), fmap, (.), negate, ($), const, Fractional)
+import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const, Fractional)
 import Graphics.Implicit.Definitions
     ( SharedObj(..), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 import Graphics.Implicit.MathUtil
@@ -53,51 +53,37 @@ getImplicitShared (Complement symbObj) =
   negate . getImplicit symbObj
 getImplicitShared (UnionR _ []) =
   getImplicitShared @obj Empty
-getImplicitShared (UnionR r symbObjs) =
-  \p -> rminimum r $ fmap ($p) $ getImplicit <$> symbObjs
+getImplicitShared (UnionR r symbObjs) = \p ->
+  rminimum r $ fmap (flip getImplicit p) symbObjs
 getImplicitShared (IntersectR _ []) =
   getImplicitShared @obj Full
-getImplicitShared (IntersectR r symbObjs) =
-  \p -> rmaximum r $ fmap ($p) $ getImplicit <$> symbObjs
+getImplicitShared (IntersectR r symbObjs) = \p ->
+  rmaximum r $ fmap (flip getImplicit p) symbObjs
 getImplicitShared (DifferenceR _ symbObj []) =
   getImplicit symbObj
 getImplicitShared (DifferenceR r symbObj symbObjs) =
-    let
-        tailObjs = getImplicit <$> symbObjs
-        headObj = getImplicit symbObj
-        complement obj' p = - obj' p
+    let headObj = getImplicit symbObj
     in
       \p -> do
         let
-          maxTail = rmaximum r $ fmap ($p) $ complement <$> tailObjs
+          maxTail = rmaximum r
+                  $ fmap (flip getImplicitShared p . Complement) symbObjs
         if maxTail > -minℝ && maxTail < minℝ
           then rmax r (headObj p) minℝ
           else rmax r (headObj p) maxTail
 
 -- Simple transforms
-getImplicitShared (Translate v symbObj) =
-    let
-        obj = getImplicit symbObj
-    in
-        \p -> obj (p ^-^ v)
-getImplicitShared (Scale s symbObj) =
-    let
-        obj = getImplicit symbObj
-        k = normalize s
-    in
-        \p -> k * obj (p ⋯/ s)
+getImplicitShared (Translate v symbObj) = \p ->
+  getImplicit symbObj (p ^-^ v)
+getImplicitShared (Scale s symbObj) = \p ->
+  normalize s * getImplicit symbObj (p ⋯/ s)
 getImplicitShared (Mirror v symbObj) =
     getImplicit symbObj . reflect v
 -- Boundary mods
-getImplicitShared (Shell w symbObj) =
-    let
-        obj = getImplicit symbObj
-    in
-        \p -> abs (obj p) - w/2
-getImplicitShared (Outset d symbObj) =
-    let
-        obj = getImplicit symbObj
-    in
-        \p -> obj p - d
+getImplicitShared (Shell w symbObj) = \p ->
+  abs (getImplicit symbObj p) - w/2
+getImplicitShared (Outset d symbObj) = \p ->
+  getImplicit symbObj p - d
 -- Misc
 getImplicitShared (EmbedBoxedObj (obj,_)) = obj
+
