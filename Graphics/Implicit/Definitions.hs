@@ -72,7 +72,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (($), Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -236,6 +236,9 @@ type BoxedObj3 = Boxed3 Obj3
 --instance Show BoxedObj3 where
 --    show _ = "<BoxedObj3>"
 
+-- | Means of constructing symbolic objects that are common between the 2D and
+-- 3D case. This type is parameterized on @obj@ and @vec@ so that
+-- 'SymbolicObj2' and 'SymbolicObj3' can instantiate it for their own purposes.
 data SharedObj obj vec
   = Empty  -- ^ The empty object
   | Full   -- ^ The entirely full object
@@ -245,7 +248,7 @@ data SharedObj obj vec
   | IntersectR ℝ [obj]
   | Translate vec obj
   | Scale vec obj
-  | Mirror vec obj -- mirror across the line whose normal is defined by the R2
+  | Mirror vec obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
   | EmbedBoxedObj (vec -> ℝ, (vec, vec))
