@@ -5,6 +5,7 @@
 -- FIXME: Required. why?
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE CPP #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
@@ -231,38 +232,30 @@ class Object obj vec | obj -> vec where
         -> (vec, vec)  -- ^ Bounding box
         -> obj         -- ^ Resulting object
 
+#define SHARED_OBJECT(shared) \
+    emptySpace        = shared Empty; \
+    fullSpace         = shared Full; \
+    translate   a b   = shared $ Translate a b; \
+    mirror      a b   = shared $ Mirror a b; \
+    scale       a b   = shared $ Scale a b; \
+    complement  a     = shared $ Complement a; \
+    unionR r ss       = shared $ UnionR r ss; \
+    intersectR  a b   = shared $ IntersectR a b; \
+    differenceR a b c = shared $ DifferenceR a b c; \
+    outset      a b   = shared $ Outset a b; \
+    shell a b         = shared $ Shell a b; \
+    implicit a b      = shared $ EmbedBoxedObj (a,b);
 
 instance Object SymbolicObj2 ℝ2 where
-    emptySpace        = Shared2 Empty
-    fullSpace         = Shared2 Full
-    translate   a b   = Shared2 $ Translate a b
-    mirror      a b   = Shared2 $ Mirror a b
-    scale       a b   = Shared2 $ Scale a b
-    complement  a     = Shared2 $ Complement a
-    unionR r ss       = Shared2 $ UnionR r ss
-    intersectR  a b   = Shared2 $ IntersectR a b
-    differenceR a b c = Shared2 $ DifferenceR a b c
-    outset      a b   = Shared2 $ Outset a b
-    shell a b         = Shared2 $ Shell a b
-    getBox            = getBox2
-    getImplicit       = getImplicit2
-    implicit a b      = Shared2 $ EmbedBoxedObj (a,b)
+    SHARED_OBJECT(Shared2)
+    getBox      = getBox2
+    getImplicit = getImplicit2
 
 instance Object SymbolicObj3 ℝ3 where
-    emptySpace        = Shared3 Empty
-    fullSpace         = Shared3 Full
-    translate   a b   = Shared3 $ Translate a b
-    mirror      a b   = Shared3 $ Mirror a b
-    scale       a b   = Shared3 $ Scale a b
-    complement  a     = Shared3 $ Complement a
-    unionR r ss       = Shared3 $ UnionR r ss
-    intersectR  a b   = Shared3 $ IntersectR a b
-    differenceR a b c = Shared3 $ DifferenceR a b c
-    outset      a b   = Shared3 $ Outset a b
-    shell a b         = Shared3 $ Shell a b
-    getBox            = getBox3
-    getImplicit       = getImplicit3
-    implicit a b      = Shared3 $ EmbedBoxedObj (a,b)
+    SHARED_OBJECT(Shared3)
+    getBox      = getBox3
+    getImplicit = getImplicit3
+
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0
