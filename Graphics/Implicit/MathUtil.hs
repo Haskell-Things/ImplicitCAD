@@ -200,4 +200,5 @@ unpackV3 (V3 a a2 a3) = (a, a2, a3)
 -- in any convenient way, so we define it here.
 infty :: (Fractional t) => t
 infty = 1/0
+{-# INLINABLE infty #-}
 

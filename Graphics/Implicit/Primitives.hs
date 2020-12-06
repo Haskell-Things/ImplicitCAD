@@ -41,7 +41,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude((*), (/), (.), mempty, negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude((*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
@@ -243,7 +243,6 @@ instance Object SymbolicObj2 ℝ2 where
     mirror      a b   = Shared2 $ Mirror a b
     scale       a b   = Shared2 $ Scale a b
     complement  a     = Shared2 $ Complement a
-    unionR _ []       = mempty
     unionR r ss       = Shared2 $ UnionR r ss
     intersectR  a b   = Shared2 $ IntersectR a b
     differenceR a b c = Shared2 $ DifferenceR a b c
@@ -260,7 +259,6 @@ instance Object SymbolicObj3 ℝ3 where
     mirror      a b   = Shared3 $ Mirror a b
     scale       a b   = Shared3 $ Scale a b
     complement  a     = Shared3 $ Complement a
-    unionR _ []       = mempty
     unionR r ss       = Shared3 $ UnionR r ss
     intersectR  a b   = Shared3 $ IntersectR a b
     differenceR a b c = Shared3 $ DifferenceR a b c
