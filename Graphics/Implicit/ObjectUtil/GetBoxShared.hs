@@ -122,7 +122,6 @@ unionBoxes r
   . filter (not . isEmpty)
 
 -- | Is a box empty?
--- | Really, this checks if it is one dimensional, which is good enough.
 isEmpty :: (Eq a, AdditiveGroup a) => (a, a) -> Bool
 isEmpty (v1, v2) = (v1 ^-^ v2) == zeroV
 
