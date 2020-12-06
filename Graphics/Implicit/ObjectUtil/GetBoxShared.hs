@@ -23,10 +23,11 @@ import Data.VectorSpace
 import Graphics.Implicit.MathUtil ( reflect )
 import qualified Linear.Quaternion as Q
 import Data.Semigroup ( Semigroup(sconcat), Max(Max), Min(Min) )
-import Control.Arrow ( Arrow((&&&)) )
+import Control.Arrow ((***),  Arrow((&&&)) )
 import Data.Semigroup ()
 import Data.List.NonEmpty (NonEmpty (..))
 import Data.Coerce ( coerce )
+import Data.Bifunctor (Bifunctor(bimap))
 
 
 class VectorStuff vec where
@@ -68,6 +69,17 @@ bounding :: Ord a => (a, a) -> [a] -> (a, a)
 bounding e [] = e
 bounding _ (a : as) = coerce $ sconcat $ fmap (Min &&& Max) $ a :| as
 
+intersectBoxes
+    :: (VectorStuff a) => (a, a) -> [(a, a)] -> (a, a)
+intersectBoxes def [] = def
+intersectBoxes _ (b : boxes)
+  = foldr (biapp (pointwise max) (pointwise min)) b boxes
+
+
+biapp :: (a -> b -> c) -> (d -> e -> f) -> (a, d) -> (b, e) -> (c, f)
+biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
+
+
 -- | An empty box.
 emptyBox :: AdditiveGroup vec => (vec, vec)
 emptyBox = (zeroV, zeroV)
@@ -98,25 +110,9 @@ getBoxShared (UnionR r symbObjs)
   $ filter (not . isEmpty)
   $ fmap getBox symbObjs
 getBoxShared (DifferenceR _ symbObj _)  = getBox symbObj
--- TODO(sandy): bug
-getBoxShared (IntersectR _ symbObjs) = getBoxShared $ UnionR 0 symbObjs
---     let
---         boxes = fmap getBoxShared symbObjs
---         (leftbot, topright) = unzip boxes
---         (lefts, bots, ins) = unzip3 leftbot
---         (rights, tops, outs) = unzip3 topright
---         left = maximum lefts
---         bot = maximum bots
---         inward = maximum ins
---         right = minimum rights
---         top = minimum tops
---         out = minimum outs
---     in
---         if   top   > bot
---           && right > left
---           && out   > inward
---         then ((left,bot,inward),(right,top,out))
---         else emptyBox
+getBoxShared (IntersectR _ symbObjs) =
+  intersectBoxes (uniformV (-infty), uniformV infty) $
+    fmap getBox symbObjs
 -- -- Simple transforms
 getBoxShared (Translate v symbObj) =
     let (a :: vec, b) = getBox symbObj
