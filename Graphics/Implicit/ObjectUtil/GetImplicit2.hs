@@ -7,13 +7,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 
-import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, const, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, cos, sin, (.), const, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, cos, sin, (.))
+import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
     ( SymbolicObj2(..), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
-    ( distFromLineSeg, rmaximum, infty )
+    ( distFromLineSeg, rmaximum )
 
 import Data.VectorSpace ((^-^))
 import Data.List (nub)
