@@ -45,8 +45,6 @@ import Prelude((*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), E
 
 import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
-                                                   Empty2,
-                                                   Full2,
                                                    SquareR,
                                                    Circle,
                                                    PolygonR,
@@ -54,8 +52,6 @@ import Graphics.Implicit.Definitions (both, allthree, ℝ, ℝ2, ℝ3, Box2, Sha
                                                    Shared2
                                                   ),
                                       SymbolicObj3(
-                                                   Empty3,
-                                                   Full3,
                                                    CubeR,
                                                    Sphere,
                                                    Cylinder,
@@ -237,8 +233,8 @@ class Object obj vec | obj -> vec where
 
 
 instance Object SymbolicObj2 ℝ2 where
-    emptySpace        = Empty2
-    fullSpace         = Full2
+    emptySpace        = Shared2 Empty
+    fullSpace         = Shared2 Full
     translate   a b   = Shared2 $ Translate a b
     mirror      a b   = Shared2 $ Mirror a b
     scale       a b   = Shared2 $ Scale a b
@@ -253,8 +249,8 @@ instance Object SymbolicObj2 ℝ2 where
     implicit a b      = Shared2 $ EmbedBoxedObj (a,b)
 
 instance Object SymbolicObj3 ℝ3 where
-    emptySpace        = Empty3
-    fullSpace         = Full3
+    emptySpace        = Shared3 Empty
+    fullSpace         = Shared3 Full
     translate   a b   = Shared3 $ Translate a b
     mirror      a b   = Shared3 $ Mirror a b
     scale       a b   = Shared3 $ Scale a b

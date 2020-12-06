@@ -45,16 +45,12 @@ module Graphics.Implicit.Definitions (
     BoxedObj3,
     SharedObj(..),
     SymbolicObj2(
-        Empty2,
-        Full2,
         SquareR,
         Circle,
         PolygonR,
         Rotate2,
         Shared2),
     SymbolicObj3(
-        Empty3,
-        Full3,
         CubeR,
         Sphere,
         Cylinder,
@@ -241,7 +237,9 @@ type BoxedObj3 = Boxed3 Obj3
 --    show _ = "<BoxedObj3>"
 
 data SharedObj obj vec
-  = Complement obj
+  = Empty  -- ^ The empty object
+  | Full   -- ^ The entirely full object
+  | Complement obj
   | UnionR ℝ [obj]
   | DifferenceR ℝ obj [obj]
   | IntersectR ℝ [obj]
@@ -253,6 +251,7 @@ data SharedObj obj vec
   | EmbedBoxedObj (vec -> ℝ, (vec, vec))
   deriving (Generic)
 
+
 deriving instance (Show obj, Show vec, Show (vec -> ℝ))
   => Show (SharedObj obj vec)
 
@@ -262,9 +261,7 @@ deriving instance (Show obj, Show vec, Show (vec -> ℝ))
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      Empty2  -- ^ The empty object
-    | Full2   -- ^ The entirely full object
-    | SquareR ℝ ℝ2    -- rounding, size.
+      SquareR ℝ ℝ2    -- rounding, size.
     | Circle ℝ        -- radius.
     | PolygonR ℝ [ℝ2] -- rounding, points.
     -- Simple transforms
@@ -280,14 +277,12 @@ instance Semigroup SymbolicObj2 where
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
-  mempty = Empty2
+  mempty = Shared2 Empty
 
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      Empty3  -- ^ The empty object
-    | Full3   -- ^ The entirely full object
-    | CubeR ℝ ℝ3 -- rounding, size.
+      CubeR ℝ ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- Simple transforms
@@ -318,7 +313,7 @@ instance Semigroup SymbolicObj3 where
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj3 where
-  mempty = Empty3
+  mempty = Shared3 Empty
 
 data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
@@ -6,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Graphics.Implicit.ObjectUtil.GetImplicitShared where
 
@@ -17,8 +17,9 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.MathUtil
     ( rmax, rmaximum, rminimum, reflect )
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
-import Data.VectorSpace ((<.>), magnitude, Scalar, InnerSpace, AdditiveGroup((^-^)))
+import Data.VectorSpace ((<.>), Scalar, InnerSpace, AdditiveGroup((^-^)))
 import Graphics.Implicit.ObjectUtil.GetBoxShared
+    ( VectorStuff(elements, uniformV), infty )
 
 
 normalize :: forall vec. (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ) => vec -> Scalar vec
@@ -28,13 +29,28 @@ normalize v =
 
 
 -- Get a function that describes the surface of the object.
-getImplicitShared :: (VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), Scalar vec ~ ℝ, ComponentWiseMultable vec) => SharedObj obj vec -> vec -> ℝ
+getImplicitShared
+    :: forall obj vec
+     . ( Object obj vec
+       , VectorStuff vec
+       , InnerSpace vec
+       , Fractional (Scalar vec)
+       , Scalar vec ~ ℝ
+       , ComponentWiseMultable vec
+       )
+    => SharedObj obj vec
+    -> vec
+    -> ℝ
+getImplicitShared Empty = const infty
+getImplicitShared Full = const $ -infty
 getImplicitShared (Complement symbObj) =
   negate . getImplicit symbObj
-
+getImplicitShared (UnionR _ []) =
+  getImplicitShared @obj Empty
 getImplicitShared (UnionR r symbObjs) =
   \p -> rminimum r $ fmap ($p) $ getImplicit <$> symbObjs
-
+getImplicitShared (IntersectR _ []) =
+  getImplicitShared @obj Full
 getImplicitShared (IntersectR r symbObjs) =
   \p -> rmaximum r $ fmap ($p) $ getImplicit <$> symbObjs
 getImplicitShared (DifferenceR _ symbObj []) =

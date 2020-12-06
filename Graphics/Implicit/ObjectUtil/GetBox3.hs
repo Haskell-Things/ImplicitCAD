@@ -29,8 +29,6 @@ import Graphics.Implicit.ObjectUtil.GetBoxShared (corners, pointsBox, getBoxShar
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Shared3 obj) = getBoxShared obj
-getBox3 Empty3 = ((0, 0, 0), (0, 0, 0))
-getBox3 Full3 = ((-infty, -infty, -infty), (infty, infty, infty))
 getBox3 (CubeR _ size) = ((0, 0, 0), size)
 getBox3 (Sphere r) = ((-r, -r, -r), (r,r,r))
 getBox3 (Cylinder h r1 r2) = ( (-r,-r,0), (r,r,h) ) where r = max r1 r2
@@ -144,5 +142,3 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
 -- FIXME: add case for ExtrudeRotateR!
 getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"
 
-infty :: ℝ
-infty = error "not implemented"

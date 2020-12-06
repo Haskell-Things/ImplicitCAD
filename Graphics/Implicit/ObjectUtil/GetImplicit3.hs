@@ -26,8 +26,6 @@ default (ℝ)
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
-getImplicit3 Empty3 = const infty
-getImplicit3 Full3 = const $ -infty
 getImplicit3 (CubeR r (dx, dy, dz)) =
     \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =

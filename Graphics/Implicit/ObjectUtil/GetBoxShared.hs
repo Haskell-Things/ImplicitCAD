@@ -101,6 +101,8 @@ outsetBox r (a, b) = (a ^-^ uniformV r, b ^+^ uniformV r)
 -- Get a Box3 around the given object.
 getBoxShared :: forall obj vec. (Eq vec, VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), ComponentWiseMultable vec) => SharedObj obj vec -> (vec, vec)
 -- Primitives
+getBoxShared Empty = emptyBox
+getBoxShared Full  = (uniformV (-infty), uniformV infty)
 -- (Rounded) CSG
 getBoxShared (Complement _) = (uniformV (-infty), uniformV infty)
 getBoxShared (UnionR r symbObjs)
