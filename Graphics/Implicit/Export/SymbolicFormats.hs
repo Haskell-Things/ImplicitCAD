@@ -52,6 +52,9 @@ call = callToken ("[", "]")
 callNaked :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
 callNaked = callToken ("", "")
 
+
+------------------------------------------------------------------------------
+-- | Class which allows us to build the contained objects in 'buildShared'.
 class Build obj where
   build :: obj -> Reader ℝ Builder
 
@@ -61,13 +64,20 @@ instance Build SymbolicObj2 where
 instance Build SymbolicObj3 where
   build = buildS3
 
+
+------------------------------------------------------------------------------
+-- | Unpack a dimensionality-polymorphic vector into multiple arguments.
 vectAsArgs :: VectorStuff vec => vec -> [Builder]
 vectAsArgs = fmap bf . elements
 
+------------------------------------------------------------------------------
+-- | Unpack a dimensionality-polymorphic vector into a single argument.
 bvect :: VectorStuff vec => vec -> Builder
 bvect v = "[" <> fold (intersperse "," $ vectAsArgs v) <> "]"
 
 
+------------------------------------------------------------------------------
+-- | Build the common combinators.
 buildShared :: forall obj vec. (Build obj, VectorStuff vec) => SharedObj obj vec -> Reader ℝ Builder
 
 buildShared Empty = call "union" [] []
