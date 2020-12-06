@@ -166,7 +166,8 @@ Executable extopenscad
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit
+                 implicit,
+                 linear
 
 Executable docgen
    Import: binstuff
