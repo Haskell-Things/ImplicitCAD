@@ -202,6 +202,7 @@ Benchmark Benchmark
    Build-depends:
                  base,
                  criterion,
+                 linear,
                  implicit
 
 Test-suite test-implicit
