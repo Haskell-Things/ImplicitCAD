@@ -8,7 +8,7 @@
 -- This module exposes three functions, which convert a triangle mesh to an output file.
 module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) where
 
-import Prelude (Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, (==), (||), (&&), filter, not, (<>))
+import Prelude ((-), Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, (==), (||), (&&), filter, not, (<>))
 
 import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh), ℕ, ℝ3, ℝ, fromℝtoFloat)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ)
@@ -22,22 +22,21 @@ import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian (LittleEndian(LE))
 
-import Data.VectorSpace (normalized, (^-^))
-import Data.Cross (cross3)
+import Linear (normalize, cross, V3(V3))
 
 unmesh :: TriangleMesh -> [Triangle]
 unmesh (TriangleMesh m) = m
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
-    normalized $ (b ^-^ a) `cross3` (c ^-^ a)
+    normalize $ (b - a) `cross` (c - a)
 
 -- | Removes triangles that are empty when converting their positions to Float resolution.
 cleanupTris :: TriangleMesh -> TriangleMesh
 cleanupTris tris =
     let
-        floatPoint :: (ℝ, ℝ, ℝ) -> (Float, Float, Float)
-        floatPoint (a,b,c) = (toFloat a, toFloat b, toFloat c)
+        floatPoint :: V3 ℝ -> (Float, Float, Float)
+        floatPoint (V3 a b c) = (toFloat a, toFloat b, toFloat c)
 
         -- | Does this triangle fail because it is constrained on two axises?
         isDegenerateTri2Axis :: Eq a => ((a, a, a),(a, a, a),(a, a, a)) -> Bool
@@ -52,7 +51,7 @@ cleanupTris tris =
             zsame :: Eq a => ((a, a, a), (a, a, a), (a, a, a)) -> Bool
             zsame ((_,_,z1),(_,_,z2),(_,_,z3)) = same (z1, z2, z3)
         isDegenerateTri :: Triangle -> Bool
-        isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri  
+        isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri
           where
             floatTri = (floatPoint a, floatPoint b, floatPoint c)
     in TriangleMesh $ filter (not . isDegenerateTri) (unmesh tris)
@@ -66,7 +65,7 @@ stl triangles = toLazyText $ stlHeader <> foldMap triangle (unmesh $ cleanupTris
         stlFooter :: Builder
         stlFooter = "endsolid ImplictCADExport\n"
         vector :: ℝ3 -> Builder
-        vector (x,y,z) = bf x <> " " <> bf y <> " " <> bf z
+        vector (V3 x y z) = bf x <> " " <> bf y <> " " <> bf z
         vertex :: ℝ3 -> Builder
         vertex v = "vertex " <> vector v
         triangle :: Triangle -> Builder
@@ -93,7 +92,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triang
           lengthField = fromWord32le $ toEnum $ length $ unmesh $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
           point :: ℝ3 -> BI.Builder
-          point (x,y,z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
+          point (V3 x y z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
           normalV ps = point $ normal ps
 
 jsTHREE :: TriangleMesh -> Text
@@ -115,7 +114,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                          <> "Shape.prototype.constructor = Shape;\n"
                 -- A vertex line; v (0.0, 0.0, 1.0) = "v(0.0,0.0,1.0);\n"
                 v :: ℝ3 -> Builder
-                v (x,y,z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
+                v (V3 x y z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
                 -- A face line
                 f :: ℕ -> ℕ -> ℕ -> Builder
                 f posa posb posc =

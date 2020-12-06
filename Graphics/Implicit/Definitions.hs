@@ -44,6 +44,8 @@ module Graphics.Implicit.Definitions (
     BoxedObj2,
     BoxedObj3,
     SharedObj(..),
+    V2(..),
+    V3(..),
     SymbolicObj2(
         SquareR,
         Circle,
@@ -85,6 +87,8 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 import Control.DeepSeq (NFData, rnf)
 
 import Linear.Quaternion (Quaternion)
+import Linear (V2(V2), V3(V3))
+import Control.Applicative (Applicative(liftA2))
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -93,12 +97,12 @@ type ℝ = Double
 
 -- | A pair of two 'Double's. When used as an area or position vector, measured
 -- in millimeters squared.
-type ℝ2 = (ℝ,ℝ)
+type ℝ2 = V2 ℝ
 
 -- | A triple of 'Double's. When used as a volume or position vector, measured
 -- in millimeters cubed. When used as a rotation, interpreted as Euler angles
 -- measured in radians.
-type ℝ3 = (ℝ,ℝ,ℝ)
+type ℝ3 = V3 ℝ
 
 -- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
 minℝ :: ℝ
@@ -157,20 +161,19 @@ instance Show (ℝ2 -> ℝ) where
 instance Show (ℝ3 -> ℝ) where
     show _ = "<collapse ℝ3 -> ℝ>"
 
--- TODO: Find a better way to do this?
--- | Add multiply and divide operators for two ℝ2s or ℝ3s.
+-- TODO(sandy): remove me
 class ComponentWiseMultable a where
     (⋯*) :: a -> a -> a
     (⋯/) :: a -> a -> a
 instance ComponentWiseMultable ℝ2 where
-    (x,y) ⋯* (x',y') = (x*x', y*y')
+    (⋯*) = liftA2 (*)
     {-# INLINABLE (⋯*) #-}
-    (x,y) ⋯/ (x',y') = (x/x', y/y')
+    (⋯/) = liftA2 (/)
     {-# INLINABLE (⋯/) #-}
 instance ComponentWiseMultable ℝ3 where
-    (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
+    (⋯*) = liftA2 (*)
     {-# INLINABLE (⋯*) #-}
-    (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
+    (⋯/) = liftA2 (/)
     {-# INLINABLE (⋯/) #-}
 
 -- | A chain of line segments, as in SVG or DXF.
@@ -325,13 +328,13 @@ data ExtrudeRMScale =
     deriving (Show, Generic)
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
-toScaleFn (C1 s) _ = (s, s)
+toScaleFn (C1 s) _ = V2 s s
 toScaleFn (C2 s) _ = s
 toScaleFn (Fn f) z = case f z of
-    Left s -> (s, s)
+    Left s -> V2 s s
     Right s -> s
 
 isScaleID :: ExtrudeRMScale -> Bool
 isScaleID (C1 1) = True
-isScaleID (C2 (1, 1)) = True
+isScaleID (C2 (V2 1 1)) = True
 isScaleID _ = False
