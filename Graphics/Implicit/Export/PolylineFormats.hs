@@ -34,6 +34,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       (xmin, xmax, ymin, ymax) = (xmin' - margin, xmax' + margin, ymin' - margin, ymax' + margin)
            where margin = strokeWidth / 2
                  ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)
+                 xs, ys :: [ℝ]
                  (xs,ys) = unzip $ fmap unpack $ foldMap pair plines
                  pair (Polyline a) = a
                  maxMinList :: [ℝ] -> (ℝ,ℝ)

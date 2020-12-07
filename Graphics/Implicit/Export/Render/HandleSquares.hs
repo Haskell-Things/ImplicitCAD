@@ -76,6 +76,7 @@ mergedSquareTris sqTris =
         -- For each plane:
         -- Select for being the same range on X and then merge them on Y
         -- Then vice versa.
+        joined :: [[TriSquare]]
         joined = fmap
             ( concatMap joinXaligned . groupWith (\(Sq _ _ xS _) -> xS)
             . concatMap joinYaligned . groupWith (\(Sq _ _ _ yS) -> yS)

@@ -39,6 +39,7 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
             [a,b,c]
         vertcode = foldMap v verts
         normcode = foldMap n norms
+        trianglecode :: Builder
         trianglecode = fold $ do
             n' <- fmap ((+1).(*3)) [0,1 .. length normedtriangles -1]
             let
