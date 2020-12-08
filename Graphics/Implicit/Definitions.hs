@@ -340,6 +340,8 @@ instance Show SymbolicObj3 where
     -- centered.
     CubeR d sz -> showCon "cubeR" @| d @| False @| sz
     Sphere d -> showCon "sphere" @| d
+    -- NB: The arguments to 'Cylinder' are backwards compared to 'cylinder' and
+    -- 'cylinder2'.
     Cylinder h r1 r2 | r1 == r2 ->
       showCon "cylinder" @| r1 @| h
     Cylinder h r1 r2 ->
