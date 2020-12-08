@@ -18,8 +18,13 @@ import Graphics.Implicit
       union,
       SymbolicObj2,
       SymbolicObj3,
-      Object(scale, emptySpace, fullSpace, complement, differenceR,
-             translate) )
+      scale,
+      emptySpace,
+      fullSpace,
+      complement,
+      differenceR,
+      translate,
+      Object )
 import Graphics.Implicit.Primitives (rotateQ)
 import Test.QuickCheck
     (Testable, property, expectFailure,  Arbitrary(arbitrary),

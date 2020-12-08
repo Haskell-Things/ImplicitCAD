@@ -13,7 +13,8 @@ import Data.VectorSpace (magnitudeSq)
 
 import Graphics.Implicit
     ( squareR,
-      Object(emptySpace, fullSpace),
+      emptySpace,
+      fullSpace,
       sphere,
       cubeR,
       cylinder2,
