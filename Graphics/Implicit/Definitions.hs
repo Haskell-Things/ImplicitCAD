@@ -145,12 +145,6 @@ fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac
 {-# INLINABLE fromℝtoFloat #-}
 
--- | add aditional instances to Show, for when we dump the intermediate form of objects.
---   FIXME: store functions in a dumpable form!
---   These instances cover functions
-instance Show (ℝ -> Either ℝ ℝ2) where
-    show _ = "<function ℝ -> Either ℝ ℝ2>"
-
 -- TODO: Find a better way to do this?
 -- | Add multiply and divide operators for two ℝ2s or ℝ3s.
 class ComponentWiseMultable a where
@@ -391,7 +385,13 @@ data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
     | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
-    deriving (Show, Generic)
+    deriving (Generic)
+
+instance Show ExtrudeRMScale where
+  showsPrec = flip $ \case
+    C1 r  -> showCon "C1" @| r
+    C2 r2 -> showCon "C2" @| r2
+    Fn _  -> showCon "Fn" @| Blackhole
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
 toScaleFn (C1 s) _ = (s, s)
