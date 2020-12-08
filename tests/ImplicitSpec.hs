@@ -8,7 +8,7 @@
 module ImplicitSpec (spec) where
 
 import Prelude (pure, negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (SpecWith, it, describe, Spec)
+import Test.Hspec (xit, SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
     ( difference,
@@ -271,5 +271,4 @@ homomorphismSpec = describe "homomorphism" $ do
 ------------------------------------------------------------------------------
 -- | Like 'prop', but for tests that are currently expected to fail.
 failingProp :: Testable prop => String -> prop -> SpecWith ()
-failingProp x = it x . expectFailure . property
-
+failingProp x = xit (x <> " (currently failing)") . expectFailure . property
