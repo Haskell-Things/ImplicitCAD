@@ -15,9 +15,9 @@ import Graphics.Implicit.Definitions
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
 
-import Data.VectorSpace ((^-^))
 import Data.List (nub)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
+import Linear (V2(V2))
 
 
 
@@ -38,18 +38,18 @@ circularPairs as = zip as $ drop 1 $ cycle as
 
 getImplicit2 :: SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 (SquareR r (dx, dy)) =
-    \(x,y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
+getImplicit2 (SquareR r (V2 dx dy)) =
+    \(V2 x y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
 getImplicit2 (Circle r) =
-    \(x,y) -> sqrt (x * x + y * y) - r
+    \(V2 x y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
 getImplicit2 (PolygonR _ (scanUniqueCircular -> points@(_:_:_:_))) =
     \p -> let
         pairs :: [(ℝ2,ℝ2)]
         pairs =  circularPairs points
-        relativePairs =  fmap (\(a,b) -> (a ^-^ p, b ^-^ p) ) pairs
+        relativePairs =  fmap (\(a,b) -> (a - p, b - p) ) pairs
         crossing_points =
-            [x2 ^-^ y2*(x2-x1)/(y2-y1) | ((x1,y1), (x2,y2)) <-relativePairs,
+            [x2 - y2*(x2-x1)/(y2-y1) | (V2 x1 y1, V2 x2 y2) <- relativePairs,
                ( (y2 <= 0) && (y1 >= 0) ) || ( (y2 >= 0) && (y1 <= 0) ) ]
         -- FIXME: use partition instead?
         seemsInRight = odd . length . filter (>0) $ nub crossing_points
@@ -62,9 +62,9 @@ getImplicit2 (PolygonR _ (scanUniqueCircular -> points@(_:_:_:_))) =
 getImplicit2 (PolygonR _ _) = getImplicitShared @SymbolicObj2 Empty
 -- (Rounded) CSG
 getImplicit2 (Rotate2 θ symbObj) =
-    \(x,y) -> let
+    \(V2 x y) -> let
         obj = getImplicit2 symbObj
     in
-        obj ( x*cos θ + y*sin θ, y*cos θ - x*sin θ)
+        obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
 getImplicit2 (Shared2 obj) = getImplicitShared obj
 

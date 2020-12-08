@@ -6,10 +6,7 @@
 
 module Graphics.Implicit.Test.Instances (observe, (=~=)) where
 
-import Prelude (Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
-
-import Data.VectorSpace (magnitudeSq)
-
+import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
 import Graphics.Implicit
     ( squareR,
@@ -41,7 +38,7 @@ import Graphics.Implicit.Primitives ( Object(getImplicit) )
 import QuickSpec ( Observe(observe), (=~=) )
 
 import Test.QuickCheck
-    (CoArbitrary, discard,  Arbitrary(arbitrary, shrink),
+    (CoArbitrary(coarbitrary), discard,  Arbitrary(arbitrary, shrink),
       genericShrink,
       choose,
       oneof,
@@ -51,8 +48,7 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
-import Linear (Quaternion, axisAngle)
-import Graphics.Implicit.MathUtil (packV3)
+import Linear (quadrance, V2(..), V3(..), Quaternion, axisAngle)
 
 
 data Insidedness = Inside | Outside | Surface
@@ -122,6 +118,21 @@ instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj
     , Outset      <$> arbitraryPos <*> decayArbitrary 2
     ]
 
+instance Arbitrary ℝ2 where
+  shrink = genericShrink
+  arbitrary = V2 <$> arbitrary <*> arbitrary
+
+instance Arbitrary ℝ3 where
+  shrink = genericShrink
+  arbitrary = V3 <$> arbitrary <*> arbitrary <*> arbitrary
+
+instance CoArbitrary ℝ2 where
+  coarbitrary (V2 a b) = coarbitrary (a, b)
+
+instance CoArbitrary ℝ3 where
+  coarbitrary (V3 a b c) = coarbitrary (a, b, c)
+
+
 instance Arbitrary ExtrudeRMScale where
   shrink = genericShrink
   arbitrary = oneof
@@ -135,9 +146,9 @@ instance Arbitrary (Quaternion ℝ) where
   arbitrary = do
     q <- arbitrary
     v <- arbitraryV3
-    case magnitudeSq v == 0.0 of
+    case quadrance v == 0.0 of
       True  -> discard
-      False -> pure $ axisAngle (packV3 v) q
+      False -> pure $ axisAngle v q
 
 
 ------------------------------------------------------------------------------
@@ -167,7 +178,7 @@ arbitraryPos = getPositive <$> arbitrary
 
 -- | Generate an arbitrary positive 'ℝ3'. Useful for sizes.
 arbitraryV3 :: Gen ℝ3
-arbitraryV3 = (,,) <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
+arbitraryV3 = fmap abs <$> arbitrary
 
 -- | Split the complexity budget by a factor of @n@.
 decayArbitrary :: Arbitrary a => Int -> Gen a
