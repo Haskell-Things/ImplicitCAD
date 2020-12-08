@@ -8,7 +8,7 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
+import Prelude (Num, Fractional, Bool(True, False), RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
@@ -195,4 +195,3 @@ quaternionToEuler (Quaternion w (V3 x y z))=
 infty :: (Fractional t) => t
 infty = 1/0
 {-# INLINABLE infty #-}
-
