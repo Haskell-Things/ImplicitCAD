@@ -46,7 +46,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(Num, (+), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude((+), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (ComponentWiseMultable, (⋯*), both, allthree, ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
                                       SymbolicObj2(
