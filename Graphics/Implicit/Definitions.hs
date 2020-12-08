@@ -7,13 +7,11 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- This module deliberately declares orphan instances of Show.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 {-# LANGUAGE DeriveGeneric #-}
 
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 
 -- Definitions of the types used when modeling, and a few operators.
 module Graphics.Implicit.Definitions (
@@ -67,12 +65,13 @@ module Graphics.Implicit.Definitions (
     fromℝtoFloat,
     toScaleFn,
     isScaleID,
+    quaternionToEuler,
     )
 where
 
 import GHC.Generics (Generic)
 
-import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -82,9 +81,14 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
-import Linear.Quaternion (Quaternion)
 import Linear (V2(V2), V3(V3))
+
+import Linear.Quaternion (Quaternion(Quaternion))
+
 import Control.Applicative (Applicative(liftA2))
+
+import Text.Show.Combinators
+    ( Show(showsPrec, show), (@|), showApp, showCon, PrecShowS)
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -129,25 +133,8 @@ fromℝtoFloat :: ℝ -> Float
 fromℝtoFloat = realToFrac
 {-# INLINABLE fromℝtoFloat #-}
 
--- | add aditional instances to Show, for when we dump the intermediate form of objects.
---   FIXME: store functions in a dumpable form!
---   These instances cover functions
-instance Show (ℝ -> ℝ) where
-    show _ = "<function ℝ>"
-
-instance Show (ℝ -> ℝ2) where
-    show _ = "<expand ℝ -> ℝ2>"
-
-instance Show (ℝ -> Either ℝ ℝ2) where
-    show _ = "<function ℝ -> Either ℝ ℝ2>"
-
-instance Show (ℝ2 -> ℝ) where
-    show _ = "<collapse ℝ2 -> ℝ>"
-
-instance Show (ℝ3 -> ℝ) where
-    show _ = "<collapse ℝ3 -> ℝ>"
-
--- TODO(sandy): remove me
+-- TODO: Find a better way to do this?
+-- | Add multiply and divide operators for two ℝ2s or ℝ3s.
 class ComponentWiseMultable a where
     (⋯*) :: a -> a -> a
     (⋯/) :: a -> a -> a
@@ -243,9 +230,34 @@ data SharedObj obj vec
   | EmbedBoxedObj (vec -> ℝ, (vec, vec))
   deriving (Generic)
 
+instance (Show obj, Show vec) => Show (SharedObj obj vec) where
+  showsPrec = flip $ \case
+     Empty                   -> showCon "emptySpace"
+     Full                    -> showCon "fullSpace"
+     Complement obj          -> showCon "complement"  @| obj
+     UnionR 0 l_obj          -> showCon "union"       @| l_obj
+     UnionR r l_obj          -> showCon "unionR"      @| r   @| l_obj
+     DifferenceR 0 obj l_obj -> showCon "difference"  @| obj @| l_obj
+     DifferenceR r obj l_obj -> showCon "differenceR" @| r   @| obj @| l_obj
+     IntersectR 0 l_obj      -> showCon "intersect"   @| l_obj
+     IntersectR r l_obj      -> showCon "intersectR"  @| r   @| l_obj
+     Translate vec obj       -> showCon "translate"   @| vec @| obj
+     Scale vec obj           -> showCon "scale"       @| vec @| obj
+     Mirror vec obj          -> showCon "mirror"      @| vec @| obj
+     Outset r obj            -> showCon "outset"      @| r   @| obj
+     Shell r obj             -> showCon "shell"       @| r   @| obj
+     EmbedBoxedObj _         -> showCon "implicit"    @| Blackhole
 
-deriving instance (Show obj, Show vec, Show (vec -> ℝ))
-  => Show (SharedObj obj vec)
+
+------------------------------------------------------------------------------
+-- | A type whose show instance is a hole @_@. Used for giving 'Show' instances
+-- to data types which contain functions or other unshowable things.
+data Blackhole = Blackhole
+
+instance Show Blackhole where
+  show _ = "_"
+
+
 
 -- | A symbolic 2D object format.
 --   We want to have symbolic objects so that we can
@@ -260,7 +272,20 @@ data SymbolicObj2 =
     | Rotate2 ℝ SymbolicObj2
     -- Lifting common objects
     | Shared2 (SharedObj SymbolicObj2 ℝ2)
-    deriving (Show, Generic)
+    deriving (Generic)
+
+instance Show SymbolicObj2 where
+  showsPrec = flip $ \case
+    -- NB: The False here is the centering argument, which has already been
+    -- transformed into a translate. The 'SquareR' constructor itself is never
+    -- centered.
+    SquareR r sz  -> showCon "squareR"  @| r @| False @| sz
+    Circle r      -> showCon "circle"   @| r
+    PolygonR r ps -> showCon "polygonR" @| r @| ps
+    Rotate2 v obj -> showCon "rotate"   @| v @| obj
+    Shared2 obj   -> flip showsPrec obj
+
+
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj2 where
@@ -297,7 +322,46 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     | Shared3 (SharedObj SymbolicObj3 ℝ3)
-    deriving (Show, Generic)
+    deriving (Generic)
+
+instance Show SymbolicObj3 where
+  showsPrec = flip $ \case
+    -- NB: The False here is the centering argument, which has already been
+    -- transformed into a translate. The 'CubeR' constructor itself is never
+    -- centered.
+    CubeR d sz -> showCon "cubeR" @| d @| False @| sz
+    Sphere d -> showCon "sphere" @| d
+    -- NB: The arguments to 'Cylinder' are backwards compared to 'cylinder' and
+    -- 'cylinder2'.
+    Cylinder h r1 r2 | r1 == r2 ->
+      showCon "cylinder" @| r1 @| h
+    Cylinder h r1 r2 ->
+      showCon "cylinder2" @| r1 @| r2 @| h
+    Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
+    ExtrudeR d s d2 -> showCon "extrudeR" @| d @| s @| d2
+    ExtrudeRotateR d d1 s d3 ->
+      showCon "extrudeRotateR" @| d @| d1 @| s @| d3
+    ExtrudeRM d edfdd e ep_ddfdp_dd s edfp_ddd ->
+      showCon "extrudeRM" @| d @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
+    RotateExtrude d md ep_ddfdp_dd edfdd s ->
+      showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
+    ExtrudeOnEdgeOf s s1 ->
+      showCon "extrudeOnEdgeOf" @| s @| s1
+    Shared3 s -> flip showsPrec s
+
+
+infixl 2 @||
+------------------------------------------------------------------------------
+-- | ImplicitCAD uses the pattern @Either a (b -> c)@ for many of its
+-- higher-order arguments. The left case is for constant values, but the right
+-- side is for things that should vary. Since we can't show functions, ths
+-- combinator works like '(@|)' except that it shows the left case and uses
+-- a hole for the right.
+(@||) :: Show a => PrecShowS -> Either a (b -> c) -> PrecShowS
+showF @|| x = showApp showF $ case x of
+  Left a  -> showCon "Left" @| a
+  Right _ -> showCon "Right" @| Blackhole
+
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj3 where
@@ -311,7 +375,13 @@ data ExtrudeRMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
     | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
-    deriving (Show, Generic)
+    deriving (Generic)
+
+instance Show ExtrudeRMScale where
+  showsPrec = flip $ \case
+    C1 r  -> showCon "C1" @| r
+    C2 r2 -> showCon "C2" @| r2
+    Fn _  -> showCon "Fn" @| Blackhole
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
 toScaleFn (C1 s) _ = V2 s s
@@ -324,3 +394,21 @@ isScaleID :: ExtrudeRMScale -> Bool
 isScaleID (C1 1) = True
 isScaleID (C2 (V2 1 1)) = True
 isScaleID _ = False
+
+-- | Convert a 'Quaternion' to its constituent euler angles.
+--
+-- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
+quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
+quaternionToEuler (Quaternion w (V3 x y z))=
+  let sinr_cosp = 2 * (w * x + y * z)
+      cosr_cosp = 1 - 2 * (x * x + y * y)
+      sinp = 2 * (w * y - z * x);
+      siny_cosp = 2 * (w * z + x * y);
+      cosy_cosp = 1 - 2 * (y * y + z * z);
+      pitch = case abs sinp >= 1 of
+                True -> signum sinp * pi / 2
+                False -> asin sinp
+      roll = atan2 sinr_cosp cosr_cosp
+      yaw = atan2 siny_cosp cosy_cosp
+   in (roll, pitch, yaw)
+

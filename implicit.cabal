@@ -95,7 +95,9 @@ Library
                   linear,
                   QuickCheck,
                   quickspec,
+                  show-combinators,
                   lens
+
 
     Exposed-modules:
                     Graphics.Implicit
