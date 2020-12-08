@@ -7,9 +7,6 @@
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- This module deliberately declares orphan instances of Show.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 {-# LANGUAGE DeriveGeneric #-}
 
 -- Required. FIXME: why?
