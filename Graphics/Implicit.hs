@@ -16,22 +16,22 @@ module Graphics.Implicit (
   W.ExtrudeRMScale(C1, C2, Fn),
 
   -- * Shared operations
-  P.Object
-    ( P.translate,
-      P.scale,
-      P.mirror,
-      P.complement,
-      P.unionR,
-      P.intersectR,
-      P.differenceR,
-      P.implicit,
-      P.shell,
-      P.emptySpace,
-      P.fullSpace
-    ),
+  P.Object (),
+  P.translate,
+  P.scale,
+  P.mirror,
+  P.complement,
   P.union,
+  P.unionR,
   P.intersect,
+  P.intersectR,
   P.difference,
+  P.differenceR,
+  P.implicit,
+  P.shell,
+  P.outset,
+  P.emptySpace,
+  P.fullSpace,
 
   -- * 2D primitive shapes
   P.squareR,
@@ -84,7 +84,7 @@ import Prelude(FilePath, IO)
 
 -- The primitive objects, and functions for manipulating them.
 -- MAYBEFIXME: impliment slice operation, regularPolygon and zsurface primitives.
-import Graphics.Implicit.Primitives as P (rectR, rect3R, translate, scale, mirror, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeOnEdgeOf, sphere, cubeR, circle, cylinder, cylinder2, squareR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, fullSpace, emptySpace, Object)
+import Graphics.Implicit.Primitives as P (rectR, rect3R, translate, scale, mirror, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeOnEdgeOf, sphere, cubeR, circle, cylinder, cylinder2, squareR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, fullSpace, emptySpace, outset, Object)
 
 -- The Extended OpenScad interpreter.
 import Graphics.Implicit.ExtOpenScad as E (runOpenscad)

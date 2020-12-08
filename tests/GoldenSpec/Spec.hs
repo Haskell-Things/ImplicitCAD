@@ -7,7 +7,6 @@ import GoldenSpec.Util (golden)
 import Graphics.Implicit
 import Prelude
 import Test.Hspec ( describe, Spec )
-import Graphics.Implicit.Primitives (Object(outset))
 import Linear
 
 default (Int)
@@ -15,7 +14,7 @@ default (Int)
 spec :: Spec
 spec = describe "golden tests" $ do
   golden "box" 1 $
-    cubeR 0 True (V3 5  5  5)
+    cubeR 0 True (V3 5 5 5)
 
   golden "example13" 1 $
     union [ rect3R 0 (V3 0 0 0) (V3 20 20 20)

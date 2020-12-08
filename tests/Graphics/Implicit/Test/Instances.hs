@@ -10,7 +10,8 @@ import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True,
 
 import Graphics.Implicit
     ( squareR,
-      Object(emptySpace, fullSpace),
+      emptySpace,
+      fullSpace,
       sphere,
       cubeR,
       cylinder2,

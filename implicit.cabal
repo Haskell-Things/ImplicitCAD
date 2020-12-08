@@ -94,7 +94,8 @@ Library
                   mtl,
                   linear,
                   QuickCheck,
-                  quickspec
+                  quickspec,
+                  lens
 
     Exposed-modules:
                     Graphics.Implicit
