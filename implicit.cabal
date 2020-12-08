@@ -82,7 +82,6 @@ Library
                   parallel,
                   containers,
                   deepseq,
-                  vector-space,
                   hspec,
                   text,
                   bytestring,
@@ -162,11 +161,11 @@ Executable extopenscad
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 vector-space,
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit
+                 implicit,
+                 linear
 
 Executable docgen
    Import: binstuff
@@ -194,7 +193,6 @@ Executable implicitsnap
                  snap-server,
                  text,
                  utf8-string,
-                 vector-space
 
 Benchmark Benchmark
    Import: binstuff
@@ -204,6 +202,7 @@ Benchmark Benchmark
    Build-depends:
                  base,
                  criterion,
+                 linear,
                  implicit
 
 Test-suite test-implicit
@@ -223,7 +222,6 @@ Test-suite test-implicit
                   hw-hspec-hedgehog,
                   quickspec,
                   QuickCheck,
-                  vector-space,
                   linear
     Other-Modules:
                   ParserSpec.Expr

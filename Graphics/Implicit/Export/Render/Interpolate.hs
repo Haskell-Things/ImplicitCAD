@@ -7,6 +7,7 @@ module Graphics.Implicit.Export.Render.Interpolate (interpolate) where
 import Prelude((*), (>), (<), (/=), (+), (-), (/), (==), (&&), abs)
 
 import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2)
+import Linear (V2(V2))
 
 default (Fastℕ, ℝ)
 -- Consider a function f(x):
@@ -44,11 +45,11 @@ default (Fastℕ, ℝ)
 -- FIXME: accept resolution on multiple axises.
 
 interpolate :: ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ -> ℝ
-interpolate (a,aval) (_,bval) _ _ | aval*bval > 0 = a
+interpolate (V2 a aval) (V2 _ bval) _ _ | aval*bval > 0 = a
 
 -- The obvious:
-interpolate (a, 0) _ _ _  = a
-interpolate _ (b, 0) _ _  = b
+interpolate (V2 a  0) _ _ _  = a
+interpolate _ (V2 b  0) _ _  = b
 
 -- It may seem, at first, that our task is trivial.
 -- Just use linear interpolation!
@@ -71,56 +72,18 @@ interpolate _ (b, 0) _ _  = b
 -- at it (shrink domain to guess within fromm (a,b) to (a',b'))
 -- :)
 
-{-interpolate (a,aval) (b,bval) f res =
-    let
-        -- a' and b' are just a and b shifted inwards slightly.
-        a' = (a*95+5*b)/100
-        b' = (b*95+5*a)/100
-        -- we evaluate at them.
-        a'val = f a'
-        b'val = f b'
-        -- ... so we can calculate the derivatives!
-        deriva = abs $ 20*(aval - a'val)
-        derivb = abs $ 20*(bval - b'val)
-        -- And if one side of the function is slow...
-    in if abs deriva < 0.1 || abs derivb < 0.1
-    -- We use a binary search interpolation!
-    then
-        -- The best case is that it crosses between a and a'
-        if aval*a'val < 0
-        then
-            interpolateBin 0 (a,aval) (a',a'val) f
-        -- Or between b' and b
-        else if bval*b'val < 0
-        then interpolateBin 0 (b',b'val) (b,bval) f
-        -- But in the worst case, we get to shrink to (a',b') :)
-        else interpolateBin 0 (a',a'val) (b',b'val) f
-    -- Otherwise, we use our friend, linear interpolation!
-    else
-        -- again...
-        -- The best case is that it crosses between a and a'
-        if aval*a'val < 0
-        then
-            interpolateLin 0 (a,aval) (a',a'val) f
-        -- Or between b' and b
-        else if bval*b'val < 0
-        then interpolateLin 0 (b',b'val) (b,bval) f
-        -- But in the worst case, we get to shrink to (a',b') :)
-        else interpolateLin 0 (a',a'val) (b',b'val) f
--}
-
-interpolate (a,aval) (b,bval) f _ =
+interpolate (V2 a aval) (V2 b bval) f _ =
     -- Make sure aval > bval, then pass to interpolateLin
     if aval > bval
-    then interpolateLin 0 (a,aval) (b,bval) f
-    else interpolateLin 0 (b,bval) (a,aval) f
+    then interpolateLin 0 (V2 a aval) (V2 b bval) f
+    else interpolateLin 0 (V2 b bval) (V2 a aval) f
 
 -- Yay, linear interpolation!
 
 -- Try the answer linear interpolation gives us...
 -- (n is to cut us off if recursion goes too deep)
 interpolateLin :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
-interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
+interpolateLin n (V2 a aval) (V2 b bval) obj | aval /= bval=
     let
         -- Interpolate and evaluate
         mid :: ℝ
@@ -129,7 +92,7 @@ interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
     -- Are we done?
     in if midval == 0
     then mid
-    -- 
+    --
     else let
         (a', a'val, b', b'val, improveRatio) =
             if midval > 0
@@ -144,32 +107,32 @@ interpolateLin n (a, aval) (b, bval) obj | aval /= bval=
     -- to zero than the previous one.
     in if improveRatio < 0.3 && n < 4
     -- And we continue on.
-    then interpolateLin (n+1) (a', a'val) (b', b'val) obj
+    then interpolateLin (n+1) (V2 a' a'val) (V2 b' b'val) obj
     -- But if not, we switch to binary interpolate, which is
     -- immune to this problem
-    else interpolateBin (n+1) (a', a'val) (b', b'val) obj
+    else interpolateBin (n+1) (V2 a' a'val) (V2 b' b'val) obj
 
 -- And a fallback:
-interpolateLin _ (a, _) _ _ = a
+interpolateLin _ (V2 a  _) _ _ = a
 
 -- Now for binary searching!
 interpolateBin :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
 
 -- The termination case:
 
-interpolateBin 5 (a,aval) (b,bval) _ =
+interpolateBin 5 (V2 a aval) (V2 b bval) _ =
     if abs aval < abs bval
     then a
     else b
 
 -- Otherwise, have fun with mid!
 
-interpolateBin n (a,aval) (b,bval) f =
+interpolateBin n (V2 a aval) (V2 b bval) f =
     let
         mid :: ℝ
         mid = (a+b)/2
         midval = f mid
     in if midval > 0
-    then interpolateBin (n+1) (mid,midval) (b,bval) f
-    else interpolateBin (n+1) (a,aval) (mid,midval) f
+    then interpolateBin (n+1) (V2 mid midval) (V2 b bval) f
+    else interpolateBin (n+1) (V2 a aval) (V2 mid midval) f
 

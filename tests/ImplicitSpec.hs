@@ -7,7 +7,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (pure, negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (SpecWith, it, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
@@ -26,9 +26,9 @@ import Test.QuickCheck
       suchThat,
       forAll)
 import Data.Foldable ( for_ )
-import Data.VectorSpace (AdditiveGroup, (^+^),  (^*) )
 import Test.Hspec.QuickCheck (prop)
 import QuickSpec (Observe)
+import Linear ( V3(V3), (^*) )
 
 
 ------------------------------------------------------------------------------
@@ -179,9 +179,9 @@ rotation2dSpec = describe "2d rotation" $ do
 -- | Misc proofs regarding 3d rotation.
 rotation3dSpec :: Spec
 rotation3dSpec = describe "3d rotation" $ do
-  for_ [ ("YZ", (1, 0, 0))
-       , ("XZ", (0, 1, 0))
-       , ("XY", (0, 0, 1))
+  for_ [ ("YZ", V3 1 0 0)
+       , ("XZ", V3 0 1 0)
+       , ("XY", V3 0 0 1)
        ] $ \(axis, vec) -> do
     describe ("rotation in the " <> axis <> " plane") $ do
       prop "360 degrees is id" $
@@ -192,11 +192,11 @@ rotation3dSpec = describe "3d rotation" $ do
           =~= id
 
   prop "360 degrees is id" $
-    forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+    forAll (arbitrary `suchThat` (/= pure 0)) $ \vec ->
       rotate3V (2 * pi) vec
         =~= id
   prop "(x + y = 360) degrees is id" $ \rads -> do
-    forAll (arbitrary `suchThat` (/= (0, 0, 0))) $ \vec ->
+    forAll (arbitrary `suchThat` (/= pure 0)) $ \vec ->
       rotate3V (2 * pi - rads) vec . rotate3V rads vec
         =~= id
 
@@ -251,13 +251,12 @@ homomorphismSpec
     :: forall obj vec test outcome
      . ( TestInfrastructure obj vec test outcome
        , Num vec
-       , AdditiveGroup vec
        )
     => Spec
 homomorphismSpec = describe "homomorphism" $ do
   prop "translate" $ \xyz1 xyz2 ->
     translate @obj xyz2 . translate xyz1
-      =~= translate (xyz1 ^+^ xyz2)
+      =~= translate (xyz1 + xyz2)
 
   prop "scale" $ \xyz1 xyz2 ->
     scale @obj xyz2 . scale xyz1

@@ -20,6 +20,8 @@ import qualified Text.Blaze.Svg11.Attributes as A (version, width, height, viewb
 import Data.List (sortBy)
 
 import Data.Foldable (fold, foldMap, traverse_)
+import Linear ( V2(V2) )
+import Data.List (foldl')
 
 default (ℝ)
 
@@ -32,7 +34,8 @@ svg plines = renderSvg . svg11 . svg' $ plines
       (xmin, xmax, ymin, ymax) = (xmin' - margin, xmax' + margin, ymin' - margin, ymax' + margin)
            where margin = strokeWidth / 2
                  ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)
-                 (xs,ys) = unzip $ foldMap pair plines
+                 xs, ys :: [ℝ]
+                 (xs,ys) = unzip $ fmap unpack $ foldMap pair plines
                  pair (Polyline a) = a
                  maxMinList :: [ℝ] -> (ℝ,ℝ)
                  maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
@@ -50,7 +53,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       svg' polylines = thinBlueGroup $ traverse_ poly polylines
 
       poly (Polyline line) = polyline ! A.points pointList
-          where pointList = toValue $ toLazyText $ fold [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (x,y) <- line]
+          where pointList = toValue $ toLazyText $ fold [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (V2 x y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth (stringValue $ show strokeWidth) ! A.fill "none" -- obj
@@ -103,13 +106,13 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         foldMap buildVertex singlePolyline <>
         "  0\n" <> "SEQEND\n"
       buildVertex :: ℝ2 -> Builder
-      buildVertex (x1,y1) =
+      buildVertex (V2 x1 y1) =
         "  0\n" <>"VERTEX\n" <>
         "  8\n" <>"0\n" <>
         "  10\n" <> buildTruncFloat x1 <> "\n" <>
         "  20\n" <> buildTruncFloat y1 <> "\n"
       (dxfxmin, dxfxmax, dxfymin, dxfymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
-      (xs, ys) = unzip $ foldMap pair plines
+      (xs, ys) = unzip $ fmap unpack $ foldMap pair plines
       pair :: Polyline -> [ℝ2]
       pair (Polyline x) = x
 
@@ -120,15 +123,18 @@ orderPolylines =
     polylineRadius :: Polyline -> ℝ
     polylineRadius polyline' = max (xmax' - xmin') (ymax' - ymin')
       where
-        ((xmin', xmax'), (ymin', ymax')) = polylineRadius' [polyline']
+        (V2 xmin'  xmax', V2 ymin' ymax') = polylineRadius' [polyline']
         polylineRadius' :: [Polyline] -> (ℝ2, ℝ2)
         polylineRadius' lines = (maxMinList xs,maxMinList ys)
           where
-            (xs,ys) = unzip $ foldMap pair lines
+            (xs,ys) = unzip $ fmap unpack $ foldMap pair lines
             pair (Polyline a) = a
-            maxMinList :: [ℝ] -> (ℝ,ℝ)
-            maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
-            maxMinList [] = (0,0)
+            maxMinList :: [ℝ] -> (ℝ2)
+            maxMinList (x:others) = foldl' (\(V2 l h) y -> V2 (min l y) (max h y)) (V2 x x) others
+            maxMinList [] = V2 0 0
+
+unpack :: V2 a -> (a, a)
+unpack (V2 x y) = (x, y)
 
 -- | Gcode generation for the laser cutter in HackLab. Complies with https://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
 --   FIXME: parameters would be nice.
@@ -147,7 +153,7 @@ hacklabLaserGCode polylines = toLazyText $ gcodeHeader <> foldMap interpretPolyl
                     <> "G00 X0.0 Y0.0 (move to 0)\n"
                     <> "M2 (end)"
       gcodeXY :: ℝ2 -> Builder
-      gcodeXY (x,y) = "X" <> buildTruncFloat x <> " Y" <> buildTruncFloat y
+      gcodeXY (V2 x y) = "X" <> buildTruncFloat x <> " Y" <> buildTruncFloat y
       interpretPolyline :: Polyline -> Builder
       interpretPolyline (Polyline (start:others)) =
         "G00 " <> gcodeXY start
