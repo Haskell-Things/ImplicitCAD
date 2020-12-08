@@ -11,41 +11,40 @@ module Graphics.Implicit.ObjectUtil.GetImplicitShared where
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getImplicit) )
-import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const, Fractional)
+import Prelude (Num, flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
 import Graphics.Implicit.Definitions
     ( SharedObj(..), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 import Graphics.Implicit.MathUtil
     (infty,  rmax, rmaximum, rminimum, reflect )
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
-import Data.VectorSpace ((<.>), Scalar, InnerSpace, AdditiveGroup((^-^)))
 import Graphics.Implicit.ObjectUtil.GetBoxShared
     ( VectorStuff(elements, uniformV) )
+import Linear (Metric(dot))
 
 
 ------------------------------------------------------------------------------
 -- | Normalize a dimensionality-polymorphic vector.
 normalize
-    :: forall vec
-     . (VectorStuff vec, InnerSpace vec, Scalar vec ~ ℝ)
-    => vec
-    -> Scalar vec
+    :: forall f
+     . (VectorStuff (f ℝ), Metric f)
+    => f ℝ
+    -> ℝ
 normalize v =
-  let all1s = uniformV @vec 1
-   in abs (product (elements v)) ** (1 / (all1s <.> all1s))
+  let all1s = uniformV @(f ℝ) 1
+   in abs (product (elements v)) ** (1 / (all1s `dot` all1s))
 
 
 -- Get a function that describes the surface of the object.
 getImplicitShared
-    :: forall obj vec
-     . ( Object obj vec
-       , VectorStuff vec
-       , InnerSpace vec
-       , Fractional (Scalar vec)
-       , Scalar vec ~ ℝ
-       , ComponentWiseMultable vec
+    :: forall obj f
+     . ( Object obj (f ℝ)
+       , VectorStuff (f ℝ)
+       , ComponentWiseMultable (f ℝ)
+       , Num (f ℝ)
+       , Metric f
        )
-    => SharedObj obj vec
-    -> vec
+    => SharedObj obj (f ℝ)
+    -> f ℝ
     -> ℝ
 getImplicitShared Empty = const infty
 getImplicitShared Full = const $ -infty
@@ -74,7 +73,7 @@ getImplicitShared (DifferenceR r symbObj symbObjs) =
 
 -- Simple transforms
 getImplicitShared (Translate v symbObj) = \p ->
-  getImplicit symbObj (p ^-^ v)
+  getImplicit symbObj (p - v)
 getImplicitShared (Scale s symbObj) = \p ->
   normalize s * getImplicit symbObj (p ⋯/ s)
 getImplicitShared (Mirror v symbObj) =

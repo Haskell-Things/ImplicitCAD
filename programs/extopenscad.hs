@@ -30,13 +30,13 @@ import Data.Char (toLower)
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
 
+import Linear
+import Linear.Affine
+
 -- Functions and types for dealing with the types used by runOpenscad.
 
 -- The definition of the symbol type, so we can access variables, and see the requested resolution.
 import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, OVal(ONum), lookupVarIn, Message(Message), MessageType(TextOut), ScadOpts(ScadOpts))
-
--- Operator to subtract two points. Used when defining the resolution of a 2d object.
-import Data.AffineSpace ((.-.))
 
 import Control.Applicative ((<$>), (<*>), many)
 
@@ -195,8 +195,8 @@ getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 --   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
-        ((x1,y1,z1),(x2,y2,z2)) = getBox (unionR 0 (obj:objs))
-        (x,y,z) = (x2-x1, y2-y1, z2-z1)
+        ((V3 x1 y1 z1),(V3 x2 y2 z2)) = getBox (unionR 0 (obj:objs))
+        (V3 x y z) = V3 (x2-x1) (y2-y1) (z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
@@ -205,7 +205,7 @@ getRes (vars, _, obj:objs, _) =
 getRes (vars, obj:objs, _, _) =
     let
         (p1,p2) = getBox (unionR 0 (obj:objs))
-        (x,y) = p2 .-. p1
+        (V2 x y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y) / 30)

@@ -16,6 +16,7 @@ import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, from
 
 import Control.Monad.Reader (Reader, runReader, ask)
 
+import Linear ( V3(V3), V2(V2) )
 import Data.List (intersperse)
 import Data.Function (fix)
 import Data.Foldable(fold, foldMap)
@@ -115,7 +116,7 @@ buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
 buildS3 (Shared3 obj) = buildShared obj
 
-buildS3 (CubeR r (w,d,h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
+buildS3 (CubeR r (V3 w d h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
 
 buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
@@ -135,7 +136,7 @@ buildS3 (ExtrudeR r obj h) | r == 0 = callNaked "linear_extrude" ["height = " <>
 buildS3 (ExtrudeRotateR r twist obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
 -- FIXME: handle scale, center.
-buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 && isScaleID scale && translate == (0,0) = do
+buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 && isScaleID scale && translate == (V2 0 0) = do
   res <- ask
   let
     twist' = case twist of

@@ -6,7 +6,7 @@
 
 -- Let's be explicit about where things come from :)
 
-import Prelude (($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Right), fromIntegral, (<>), (<$>))
+import Prelude (pure, ($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Left, Right), fromIntegral, (<>), (<$>))
 
 -- Use criterion for benchmarking. see <http://www.serpentine.com/criterion/>
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
@@ -18,6 +18,7 @@ import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 
 -- The variables defining distance and counting in our world.
 import Graphics.Implicit.Definitions (ℝ, Fastℕ)
+import Linear
 
 -- Haskell representations of objects to benchmark.
 
@@ -28,15 +29,15 @@ obj2d_1 :: SymbolicObj2
 obj2d_1 =
     unionR 8
         [ circle 10
-        , translate (22,0) $ circle 10
-        , translate (0,22) $ circle 10
-        , translate (-22,0) $ circle 10
-        , translate (0,-22) $ circle 10
+        , translate (V2 22 0) $ circle 10
+        , translate (V2 0 22) $ circle 10
+        , translate (V2 (-22) 0) $ circle 10
+        , translate (V2 0 (-22)) $ circle 10
         ]
 
 -- | An extruded version of obj2d_1, should be identical to the website's example, and example5.escad.
 object1 :: SymbolicObj3
-object1 = extrudeRM 0 (Right twist) (C1 1) (Left (0,0)) obj2d_1 (Left 40)
+object1 = extrudeRM 0 (Right twist) (C1 1) (Left (V2 0 0)) obj2d_1 (Left 40)
     where
       twist :: ℝ -> ℝ
       twist h = 35*cos(h*2*pi/60)
@@ -48,8 +49,8 @@ object2 = squarePipe (10,10,10) 1 100
       squarePipe :: (ℝ,ℝ,ℝ) -> ℝ -> ℝ -> SymbolicObj3
       squarePipe (x,y,z) diameter precision =
             union
-            ((\start-> translate start
-                   $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
+            ((\(a, b, c)-> translate (V3 a b c)
+                   $ rect3R 0 (pure 0) (pure diameter)
                   )
              <$>
               zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100::Fastℕ])
@@ -59,13 +60,13 @@ object2 = squarePipe (10,10,10) 1 100
 -- | A third 3d object to benchmark.
 object3 :: SymbolicObj3
 object3 =
-    difference (rect3R 1 (-1,-1,-1) (1,1,1)) [ rect3R 1 (0,0,0) (2,2,2)]
+    difference (rect3R 1 (pure (-1)) (pure 1)) [ rect3R 1 (pure 0) (pure 2)]
 
 -- | Example 13 - the rounded union of a cube and a sphere.
 object4 :: SymbolicObj3
 object4 = union [
-                rect3R 0 (0,0,0) (20,20,20),
-                translate (20,20,20) (sphere 15) ]
+                rect3R 0 (pure 0) (pure 20),
+                translate (pure 20) (sphere 15) ]
 
 -- | Benchmark a 2D object.
 obj2Benchmarks :: String -> String -> SymbolicObj2 -> Benchmark

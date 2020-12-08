@@ -6,7 +6,8 @@ module Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2) where
 
 import Graphics.Implicit.Definitions (BoxedObj2, ℝ2)
 
-import Data.VectorSpace ((^-^), (^+^), (^/))
+import Prelude ((+), (-))
+import Linear ((^/))
 
 -- | Slightly stretch the bounding box of an object, in order to
 --   ensure that during mesh generation, there are no problems because
@@ -15,6 +16,6 @@ rebound2 :: BoxedObj2 -> BoxedObj2
 rebound2 (obj, (a,b)) =
     let
         d :: ℝ2
-        d = (b ^-^ a) ^/ 10
+        d = (b - a) ^/ 10
     in
-        (obj, (a ^-^ d, b ^+^ d))
+        (obj, (a - d, b + d))

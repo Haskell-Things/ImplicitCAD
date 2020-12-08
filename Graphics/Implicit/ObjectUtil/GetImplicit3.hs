@@ -1,16 +1,16 @@
--- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (const, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
 
 import Graphics.Implicit.Definitions
     ( ℕ, SymbolicObj3(..), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
-import Graphics.Implicit.MathUtil ( rmax, rmaximum, alaV3, infty )
+import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
 import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
@@ -20,17 +20,20 @@ import qualified Data.Either as Either (either)
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
+import Linear (V3(V3))
+import Graphics.Implicit.Definitions (V2(V2))
+
 
 default (ℝ)
 
 -- Get a function that describes the surface of the object.
 getImplicit3 :: SymbolicObj3 -> Obj3
 -- Primitives
-getImplicit3 (CubeR r (dx, dy, dz)) =
-    \(x,y,z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
+getImplicit3 (CubeR r (V3 dx dy dz)) =
+    \(V3 x y z) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 (Sphere r) =
-    \(x,y,z) -> sqrt (x*x + y*y + z*z) - r
-getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
+    \(V3 x y z) -> sqrt (x*x + y*y + z*z) - r
+getImplicit3 (Cylinder h r1 r2) = \(V3 x y z) ->
     let
         d = sqrt (x*x + y*y) - ((r2-r1)/h*z+r1)
         θ = atan2 (r2-r1) h
@@ -38,20 +41,20 @@ getImplicit3 (Cylinder h r1 r2) = \(x,y,z) ->
         max (d * cos θ) (abs (z-h/2) - (h/2))
 -- Simple transforms
 getImplicit3 (Rotate3 q symbObj) =
-    getImplicit3 symbObj . alaV3 (Q.rotate $ Q.conjugate q)
+    getImplicit3 symbObj . Q.rotate (Q.conjugate q)
 
 -- 2D Based
 getImplicit3 (ExtrudeR r symbObj h) =
     let
         obj = getImplicit2 symbObj
     in
-        \(x,y,z) -> rmax r (obj (x,y)) (abs (z - h/2) - h/2)
+        \(V3 x y z) -> rmax r (obj (V2 x y)) (abs (z - h/2) - h/2)
 getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
     let
         obj = getImplicit2 symbObj
-        height' (x,y) = case height of
+        height' (V2 x y) = case height of
             Left n -> n
-            Right f -> f (x,y)
+            Right f -> f (V2 x y)
         -- FIXME: twist functions should have access to height, if height is allowed to vary.
         twistVal :: Either ℝ (ℝ -> ℝ) -> ℝ -> ℝ -> ℝ
         twistVal twist' z h =
@@ -61,30 +64,30 @@ getImplicit3 (ExtrudeRM r twist scale translate symbObj height) =
                                   else twval * (z / h)
                    Right twfun -> twfun z
         translatePos :: Either ℝ2 (ℝ -> ℝ2) -> ℝ -> ℝ2 -> ℝ2
-        translatePos trans z (x, y) = (x - xTrans, y - yTrans)
+        translatePos trans z (V2 x y) = V2 (x - xTrans) (y - yTrans)
           where
-            (xTrans, yTrans) = case trans of
+            (V2 xTrans yTrans) = case trans of
                                  Left  tval -> tval
                                  Right tfun -> tfun z
         scaleVec :: ℝ -> ℝ2 -> ℝ2
-        scaleVec z (x, y) = let (sx, sy) = toScaleFn scale z
-                            in  (x / sx, y / sy)
+        scaleVec z (V2 x y) = let (V2 sx sy) = toScaleFn scale z
+                               in V2 (x / sx) (y / sy)
         rotateVec :: ℝ -> ℝ2 -> ℝ2
-        rotateVec θ (x,y)
-          | θ == 0    = (x,y)
-          | otherwise = (x*cos θ + y*sin θ, y*cos θ - x*sin θ)
+        rotateVec θ (V2 x y)
+          | θ == 0    = V2 x y
+          | otherwise = V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
         k :: ℝ
         k = pi/180
     in
-        \(x,y,z) ->
+        \(V3 x y z) ->
           let
-            h = height' (x,y)
+            h = height' $ V2 x y
             res = rmax r
                 (obj
                  . rotateVec (-k*twistVal twist z h)
                  . scaleVec z
                  . translatePos translate z
-                 $ (x,y))
+                 $ V2 x y )
                 (abs (z - h/2) - h/2)
           in
             res
@@ -93,7 +96,7 @@ getImplicit3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         obj1 = getImplicit2 symbObj1
         obj2 = getImplicit2 symbObj2
     in
-        \(x,y,z) -> obj1 (obj2 (x,y), z)
+        \(V3 x y z) -> obj1 $ V2 (obj2 (V2 x y)) z
 getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
     let
         tau :: ℝ
@@ -106,7 +109,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
         round' = fromMaybe 0 round
         translate' :: ℝ -> ℝ2
         translate' = Either.either
-                (\(a,b) θ -> (a*θ/totalRotation', b*θ/totalRotation'))
+                (\(V2 a b) θ -> V2 (a*θ/totalRotation') (b*θ/totalRotation'))
                 (. (/k))
                 translate
         rotate' :: ℝ -> ℝ
@@ -118,7 +121,7 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
                    Left 0  -> True
                    _       -> False
     in
-        \(x,y,z) -> minimum $ do
+        \(V3 x y z) -> minimum $ do
             let
                 r = sqrt $ x*x + y*y
                 θ = atan2 y x
@@ -132,15 +135,15 @@ getImplicit3 (RotateExtrude totalRotation round translate rotate symbObj) =
             n <- ns
             let
                 θvirt = fromℕtoℝ n * tau + θ
-                (rshift, zshift) = translate' θvirt
+                (V2 rshift zshift) = translate' θvirt
                 twist = rotate' θvirt
                 rz_pos = if twists
                         then let
                             (c,s) = (cos (twist*k), sin (twist*k))
                             (r',z') = (r-rshift, z-zshift)
                         in
-                            (c*r' - s*z', c*z' + s*r')
-                        else (r - rshift, z - zshift)
+                            V2 (c*r' - s*z') (c*z' + s*r')
+                        else V2 (r - rshift) (z - zshift)
             pure $
               if capped
               then rmax round'

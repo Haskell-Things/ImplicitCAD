@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
-import Prelude(zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
+import Prelude(pure, zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), Triangle, TriangleMesh(TriangleMesh))
 import Graphics.Implicit.Export.Render (getMesh)
@@ -33,7 +33,7 @@ symbolicGetMesh res inputObj@(Shared3 (UnionR r objs)) = TriangleMesh $
         (dependants, independents) = sepFree boxedObjs
     in if null independents
     then case rebound3 (getImplicit3 inputObj, getBox3 inputObj) of
-        (obj, (a,b)) -> unmesh $ getMesh a b (res,res,res) obj
+        (obj, (a,b)) -> unmesh $ getMesh a b (pure res) obj
     else if null dependants
     then foldMap (unmesh . symbolicGetMesh res) independents
     else  foldMap (unmesh . symbolicGetMesh res) independents
@@ -43,7 +43,7 @@ symbolicGetMesh res inputObj@(Shared3 (UnionR r objs)) = TriangleMesh $
 symbolicGetMesh res obj =
   -- Use rebound3 to stretch bounding box.
   case rebound3 (getImplicit3 obj, getBox3 obj) of
-    (obj', (a,b)) -> getMesh a b (res,res,res) obj'
+    (obj', (a,b)) -> getMesh a b (pure res) obj'
 
 unmesh :: TriangleMesh -> [Triangle]
 unmesh (TriangleMesh m) = m

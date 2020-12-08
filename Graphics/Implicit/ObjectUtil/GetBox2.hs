@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(flip, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(pure, flip, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions
     ( SymbolicObj2(..),
@@ -17,26 +17,20 @@ import Graphics.Implicit.Definitions
 
 import Data.Fixed (mod')
 import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
+import Linear (V2(V2))
 
 
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
-getBox2 (SquareR _ size) = ((0, 0), size)
-getBox2 (Circle r) = ((-r, -r), (r,r))
+getBox2 (SquareR _ size) = (pure 0, size)
+getBox2 (Circle r) = (pure (-r), pure r)
 getBox2 (PolygonR _ points) = pointsBox points
 -- (Rounded) CSG
 -- Simple transforms
 getBox2 (Rotate2 θ symbObj) =
-    let
-        ((x1,y1), (x2,y2)) = getBox2 symbObj
-        rotate (x,y) = (x*cos θ - y*sin θ, x*sin θ + y*cos θ)
-    in
-        pointsBox [ rotate (x1, y1)
-                  , rotate (x1, y2)
-                  , rotate (x2, y1)
-                  , rotate (x2, y2)
-                  ]
+    let rotate (V2 x y) = V2 (x*cos θ - y*sin θ) (x*sin θ + y*cos θ)
+     in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
 getBox2 (Shared2 obj) = getBoxShared obj
 
 
@@ -48,9 +42,11 @@ getBox2R (PolygonR _ points) deg =
   let
     pointRBoxes = [ pointRBox point deg | point <- points ]
     (pointValsMin, pointValsMax) = unzip pointRBoxes
-    (pointValsX, pointValsY) = unzip (pointValsMin <> pointValsMax)
+    unbox :: ℝ2 -> (ℝ, ℝ)
+    unbox (V2 x y) = (x, y)
+    (pointValsX, pointValsY) = unzip $ fmap unbox $ pointValsMin <> pointValsMax
   in
-    ((minimum pointValsX, minimum pointValsY), (maximum pointValsX, maximum pointValsY))
+    (V2 (minimum pointValsX)( minimum pointValsY), V2 (maximum pointValsX) (maximum pointValsY))
 getBox2R (Shared2 (Complement symObj)) _ = getBox2 $ Shared2 (Complement symObj)
 getBox2R (Shared2 (UnionR r symObjs)) deg =
     unionBoxes r $ fmap (flip getBox2R deg) symObjs
@@ -81,7 +77,7 @@ data Direction = Clockwise | CounterClockwise
 
 -- | put a box around a point, and all of the locations it will be at during an x degree arc around (0,0).
 pointRBox :: ℝ2 -> ℝ -> Box2
-pointRBox (xStart, yStart) travel =
+pointRBox (V2 xStart yStart) travel =
   let
     k :: ℝ
     k = pi/180
@@ -139,9 +135,12 @@ pointRBox (xStart, yStart) travel =
     -- now, if you passed through an axis, then the box must be expanded to include distance from axis of rotation in that direction.
     -- otherwise, put a box around the start and stop positions.
 
+    distanceBox :: Box2
+    distanceBox = (pure (-distance), pure distance)
+
     noAxis :: Quadrant -> Quadrant -> Direction -> ℝ -> Box2
     noAxis q1 q2 dir amount
-      | q1 == q2 && amount < 90*k && amount > -90*k = ((minX, minY), (maxX, maxY))
+      | q1 == q2 && amount < 90*k && amount > -90*k = (V2 minX  minY, V2 maxX maxY)
       | dir == Clockwise && q1 == UpperLeft  = oneAxis PosY q2 dir amount
       | dir == Clockwise && q1 == LowerRight = oneAxis PosX q2 dir amount
       | dir == Clockwise && q1 == LowerLeft  = oneAxis NegY q2 dir amount
@@ -150,7 +149,7 @@ pointRBox (xStart, yStart) travel =
       | dir == CounterClockwise && q1 == UpperLeft  = oneAxis PosY q2 dir amount
       | dir == CounterClockwise && q1 == LowerLeft  = oneAxis NegX q2 dir amount
       | dir == CounterClockwise && q1 == LowerRight = oneAxis NegY q2 dir amount
-    noAxis _ _ _ _ = ((-distance, -distance), (distance, distance))
+    noAxis _ _ _ _ = distanceBox
     oneAxis :: Axis -> Quadrant -> Direction -> ℝ -> Box2
     oneAxis axis quadrant dir amount
       | dir == Clockwise &&
@@ -158,13 +157,13 @@ pointRBox (xStart, yStart) travel =
         ((axis == PosX && quadrant == LowerRight) ||
          (axis == NegY && quadrant == LowerLeft)  ||
          (axis == NegX && quadrant == UpperLeft)  ||
-         (axis == PosY && quadrant == UpperRight))  = ((minX, minY), (maxX, maxY))
+         (axis == PosY && quadrant == UpperRight))  = (V2 minX minY, V2 maxX maxY)
       | dir == CounterClockwise &&
         amount < 90*k && amount > -90*k &&
         ((axis == PosX && quadrant == UpperRight) ||
          (axis == PosY && quadrant == UpperLeft)  ||
          (axis == NegX && quadrant == LowerLeft)  ||
-         (axis == NegY && quadrant == LowerRight))  = ((minX, minY), (maxX, maxY))
+         (axis == NegY && quadrant == LowerRight))  = (V2 minX minY, V2 maxX maxY)
       | dir == Clockwise &&
         ((axis == PosX && quadrant == LowerLeft)  ||
          (axis == NegY && quadrant == UpperLeft)  ||
@@ -195,7 +194,7 @@ pointRBox (xStart, yStart) travel =
          (axis == NegY && quadrant == LowerLeft)  ||
          (axis == NegX && quadrant == UpperLeft)  ||
          (axis == PosY && quadrant == UpperRight))  = crossThree axis
-      | otherwise = ((-distance, -distance), (distance, distance))
+      | otherwise = distanceBox
     twoAxis :: Axis -> Axis -> Direction -> Box2
     twoAxis start stop dir
       | (start == PosX && stop == NegX) ||
@@ -207,15 +206,15 @@ pointRBox (xStart, yStart) travel =
         (start == NegY && stop == NegX) ||
         (start == NegX && stop == PosY) ||
         (start == PosY && stop == PosX)  = if dir == Clockwise
-                                           then ((minX, minY), (maxX, maxY))
+                                           then (V2 minX minY, V2 maxX maxY)
                                            else crossTwo start dir
       | (start == PosX && stop == PosY) ||
         (start == PosY && stop == NegX) ||
         (start == NegX && stop == NegY) ||
         (start == NegY && stop == PosX)  = if dir == CounterClockwise
-                                           then ((minX, minY), (maxX, maxY))
+                                           then (V2 minX minY, V2 maxX maxY)
                                            else crossTwo start dir
-    twoAxis _ _ _ = ((-distance, -distance), (distance, distance))
+    twoAxis _ _ _ = distanceBox
     crossOne :: Axis -> Direction -> Box2
     crossOne start dir
       | (start == PosX && dir == Clockwise)        ||
@@ -226,7 +225,7 @@ pointRBox (xStart, yStart) travel =
         (start == PosX && dir == CounterClockwise)  = mixWith [(0, distance)]
       | (start == PosY && dir == Clockwise)        ||
         (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0)]
-      | otherwise = ((-distance, -distance), (distance, distance))
+      | otherwise = distanceBox
     crossTwo :: Axis -> Direction -> Box2
     crossTwo start dir
       | (start == PosX && dir == Clockwise)        ||
@@ -237,14 +236,15 @@ pointRBox (xStart, yStart) travel =
         (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0), ( 0, distance)]
       | (start == NegY && dir == Clockwise)        ||
         (start == PosX && dir == CounterClockwise)  = mixWith [(-distance, 0), ( 0, distance)]
-      | otherwise = ((-distance, -distance), (distance, distance))
+      | otherwise = distanceBox
     crossThree :: Axis -> Box2
     crossThree PosX = mixWith [( 0, distance), (-distance, 0), ( 0,-distance)]
     crossThree PosY = mixWith [(-distance, 0), ( 0,-distance), ( distance, 0)]
     crossThree NegX = mixWith [( 0,-distance), ( distance, 0), ( 0, distance)]
     crossThree NegY = mixWith [( distance, 0), ( 0, distance), (-distance, 0)]
-    mixWith :: [ℝ2] -> Box2
-    mixWith points = ((minimum xPoints, minimum yPoints), (maximum xPoints, maximum yPoints))
+    -- TODO(sandy): clean me up to not use pairs
+    mixWith :: [(ℝ,ℝ)] -> Box2
+    mixWith points = (V2 (minimum xPoints) (minimum yPoints), V2 (maximum xPoints) (maximum yPoints))
                      where
                        (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)]
     invertRotation :: Direction -> Direction
@@ -252,7 +252,7 @@ pointRBox (xStart, yStart) travel =
     invertRotation CounterClockwise = Clockwise
   in
     case rotationDirection of
-      None -> ((xStart, yStart),(xStart, yStart))
+      None -> (V2 xStart yStart, V2 xStart  yStart)
       Rotation dir -> case rotationAmount of
                  amount | amount < 360*k && amount > -360*k ->
                           case startPosition of
@@ -266,5 +266,5 @@ pointRBox (xStart, yStart) travel =
                                              InQuadrant stopquadrant -> noAxis quadrant stopquadrant dir travel
                                              CenterPoint -> emptyBox
                  _                         ->
-                            ((-distance, -distance), (distance, distance))
+                            (pure (-distance), pure distance)
 

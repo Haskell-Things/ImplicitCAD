@@ -11,16 +11,16 @@
 
 module Graphics.Implicit.ObjectUtil.GetBoxShared where
 
-import Prelude ((==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
+import Prelude (Num, (-), (+), pure, (==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getBox) )
 import Graphics.Implicit.Definitions
     ( SharedObj(..), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
-import Data.VectorSpace
-    ( AdditiveGroup((^+^), zeroV, (^-^)),
-      InnerSpace,
-      VectorSpace(Scalar) )
 import Graphics.Implicit.MathUtil (infty,  reflect )
+import Linear (Metric, V2(V2))
+import Data.Foldable (Foldable(toList))
+import Control.Applicative (Applicative(liftA2))
+import Graphics.Implicit.Definitions (V3(V3))
 
 
 ------------------------------------------------------------------------------
@@ -42,34 +42,34 @@ class VectorStuff vec where
 
 
 instance VectorStuff ℝ2 where
-  uniformV x = (x, x)
-  corners (p1@(x1, y1), p2@(x2, y2)) =
+  uniformV = pure
+  corners (p1@(V2 x1 y1), p2@(V2 x2 y2)) =
     [ p1
-    , (x1, y2)
-    , (x2, y1)
+    , V2 x1 y2
+    , V2 x2 y1
     , p2
     ]
-  pointwise f (x1, y1) (x2, y2) = (f x1 x2, f y1 y2)
-  elements (x, y) = [x, y]
+  pointwise = liftA2
+  elements = toList
   {-# INLINABLE uniformV #-}
   {-# INLINABLE pointwise #-}
   {-# INLINABLE elements #-}
   {-# INLINABLE corners #-}
 
 instance VectorStuff ℝ3 where
-  uniformV x = (x, x, x)
-  corners (p1@(x1, y1, z1), p2@(x2, y2, z2)) =
+  uniformV = pure
+  corners (p1@(V3 x1 y1 z1), p2@(V3 x2 y2 z2)) =
     [ p1
-    , (x1, y2, z1)
-    , (x2, y2, z1)
-    , (x2, y1, z1)
-    , (x1, y1, z2)
-    , (x2, y1, z2)
-    , (x1, y2, z2)
+    , V3 x1 y2 z1
+    , V3 x2 y2 z1
+    , V3 x2 y1 z1
+    , V3 x1 y1 z2
+    , V3 x2 y1 z2
+    , V3 x1 y2 z2
     , p2
     ]
-  pointwise f (x1, y1, z1) (x2, y2, z2) = (f x1 x2, f y1 y2, f z1 z2)
-  elements (x, y, z) = [x, y, z]
+  pointwise = liftA2
+  elements  = toList
   {-# INLINABLE uniformV #-}
   {-# INLINABLE pointwise #-}
   {-# INLINABLE elements #-}
@@ -99,8 +99,8 @@ biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
 
 
 -- | An empty box.
-emptyBox :: AdditiveGroup vec => (vec, vec)
-emptyBox = (zeroV, zeroV)
+emptyBox :: (Applicative f, Num a) => (f a, f a)
+emptyBox = (pure 0, pure 0)
 {-# INLINABLE emptyBox #-}
 
 -- | A full box.
@@ -109,14 +109,14 @@ fullBox = (uniformV (-infty), uniformV infty)
 {-# INLINABLE fullBox #-}
 
 -- | Define a box around all of the given points.
-pointsBox :: (AdditiveGroup vec, VectorStuff vec) => [vec] -> (vec, vec)
+pointsBox :: (Applicative f, Num a, VectorStuff (f a)) => [f a] -> (f a, f a)
 pointsBox [] = emptyBox
 pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
 
 
 ------------------------------------------------------------------------------
 -- | Compute the intersection of dimensionality-polymorphic bounding boxes.
-unionBoxes :: (AdditiveGroup vec, Eq vec, VectorStuff vec) => ℝ -> [(vec, vec)] -> (vec, vec)
+unionBoxes :: (VectorStuff (f a), Applicative f, Eq (f a), Num a, Num (f a)) => ℝ -> [(f a, f a)] -> (f a, f a)
 unionBoxes r
   = outsetBox r
   . pointsBox
@@ -124,15 +124,19 @@ unionBoxes r
   . filter (not . isEmpty)
 
 -- | Is a box empty?
-isEmpty :: (Eq a, AdditiveGroup a) => (a, a) -> Bool
-isEmpty (v1, v2) = (v1 ^-^ v2) == zeroV
+isEmpty :: (Eq (f a), Applicative f, Num a, Num (f a)) => (f a, f a) -> Bool
+isEmpty (v1, v2) = (v1 - v2) == pure 0
 
 -- | Increase a boxes size by a rounding value.
-outsetBox :: (AdditiveGroup a, VectorStuff a) => ℝ -> (a, a) -> (a, a)
-outsetBox r (a, b) = (a ^-^ uniformV r, b ^+^ uniformV r)
+outsetBox :: (VectorStuff a, Num a) => ℝ -> (a, a) -> (a, a)
+outsetBox r (a, b) = (a - uniformV r, b + uniformV r)
 
 -- Get a box around the given object.
-getBoxShared :: forall obj vec. (Eq vec, VectorStuff vec, Object obj vec, InnerSpace vec, Fractional (Scalar vec), ComponentWiseMultable vec) => SharedObj obj vec -> (vec, vec)
+getBoxShared
+    :: forall obj f a
+     .  ( Applicative f, Object obj (f a), VectorStuff (f a), Eq (f a), Num (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
+    => SharedObj obj (f a)
+    -> (f a, f a)
 -- Primitives
 getBoxShared Empty = emptyBox
 getBoxShared Full  = fullBox
@@ -145,11 +149,11 @@ getBoxShared (IntersectR _ symbObjs) =
     fmap getBox symbObjs
 -- -- Simple transforms
 getBoxShared (Translate v symbObj) =
-    let (a :: vec, b) = getBox symbObj
-     in (a ^+^ v, b ^+^ v)
+    let (a :: f a, b) = getBox symbObj
+     in (a + v, b + v)
 getBoxShared (Scale s symbObj) =
     let
-        (a :: vec, b) = getBox symbObj
+        (a :: f a, b) = getBox symbObj
         sa = s ⋯* a
         sb = s ⋯* b
      in pointsBox [sa, sb]
