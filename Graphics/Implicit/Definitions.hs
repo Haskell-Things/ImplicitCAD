@@ -266,6 +266,10 @@ instance (Show obj, Show vec) => Show (SharedObj obj vec) where
      Shell r obj             -> showCon "shell"       @| r   @| obj
      EmbedBoxedObj _         -> showCon "implicit"    @| Blackhole
 
+
+------------------------------------------------------------------------------
+-- | A type whose show instance is a hole @_@. Used for giving 'Show' instances
+-- to data types which contain functions or other unshowable things.
 data Blackhole = Blackhole
 
 instance Show Blackhole where
@@ -290,6 +294,9 @@ data SymbolicObj2 =
 
 instance Show SymbolicObj2 where
   showsPrec = flip $ \case
+    -- NB: The False here is the centering argument, which has already been
+    -- transformed into a translate. The 'SquareR' constructor itself is never
+    -- centered.
     SquareR r sz  -> showCon "squareR"  @| r @| False @| sz
     Circle r      -> showCon "circle"   @| r
     PolygonR r ps -> showCon "polygonR" @| r @| ps
@@ -337,30 +344,39 @@ data SymbolicObj3 =
 
 instance Show SymbolicObj3 where
   showsPrec = flip $ \case
-     CubeR d sz -> showCon "cubeR" @| d @| False @| sz
-     Sphere d -> showCon "sphere" @| d
-     Cylinder h r1 r2 | r1 == r2 ->
-       showCon "cylinder" @| r1 @| h
-     Cylinder h r1 r2 ->
-       showCon "cylinder2" @| r1 @| r2 @| h
-     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
-     ExtrudeR d s d2 -> showCon "extrudeR" @| d @| s @| d2
-     ExtrudeRotateR d d1 s d3 ->
-       showCon "extrudeRotateR" @| d @| d1 @| s @| d3
-     ExtrudeRM d edfdd e ep_ddfdp_dd s edfp_ddd ->
-       showCon "extrudeRM" @| d @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
-     RotateExtrude d md ep_ddfdp_dd edfdd s ->
-       showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
-     ExtrudeOnEdgeOf s s1 ->
-       showCon "extrudeOnEdgeOf" @| s @| s1
-     Shared3 s -> flip showsPrec s
+    -- NB: The False here is the centering argument, which has already been
+    -- transformed into a translate. The 'CubeR' constructor itself is never
+    -- centered.
+    CubeR d sz -> showCon "cubeR" @| d @| False @| sz
+    Sphere d -> showCon "sphere" @| d
+    Cylinder h r1 r2 | r1 == r2 ->
+      showCon "cylinder" @| r1 @| h
+    Cylinder h r1 r2 ->
+      showCon "cylinder2" @| r1 @| r2 @| h
+    Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
+    ExtrudeR d s d2 -> showCon "extrudeR" @| d @| s @| d2
+    ExtrudeRotateR d d1 s d3 ->
+      showCon "extrudeRotateR" @| d @| d1 @| s @| d3
+    ExtrudeRM d edfdd e ep_ddfdp_dd s edfp_ddd ->
+      showCon "extrudeRM" @| d @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
+    RotateExtrude d md ep_ddfdp_dd edfdd s ->
+      showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
+    ExtrudeOnEdgeOf s s1 ->
+      showCon "extrudeOnEdgeOf" @| s @| s1
+    Shared3 s -> flip showsPrec s
+
 
 infixl 2 @||
+------------------------------------------------------------------------------
+-- | ImplicitCAD uses the pattern @Either a (b -> c)@ for many of its
+-- higher-order arguments. The left case is for constant values, but the right
+-- side is for things that should vary. Since we can't show functions, ths
+-- combinator works like '(@|)' except that it shows the left case and uses
+-- a hole for the right.
 (@||) :: Show a => PrecShowS -> Either a (b -> c) -> PrecShowS
 showF @|| x = showApp showF $ case x of
   Left a  -> showCon "Left" @| a
   Right _ -> showCon "Right" @| Blackhole
-
 
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
