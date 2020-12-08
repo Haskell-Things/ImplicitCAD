@@ -95,7 +95,7 @@ Library
                   linear,
                   QuickCheck,
                   quickspec,
-                  show-combinators
+                  show-combinators,
                   lens
 
 
