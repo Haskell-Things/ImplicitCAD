@@ -165,6 +165,9 @@ class ( ComponentWiseMultable vec
       , AdditiveGroup vec
       ) => Object obj vec
       | obj -> vec where
+
+    -- | A 'Prism'' for including 'SharedObj's in @obj@. Prefer using 'Shared'
+    -- instead of this.
     _Shared :: Prism' obj (SharedObj obj vec)
 
     -- | Get the bounding box an object
@@ -176,6 +179,13 @@ class ( ComponentWiseMultable vec
     getImplicit ::
         obj           -- ^ Object to get implicit function of
         -> (vec -> ℝ) -- ^ Implicit function
+
+-- | A pattern that abstracts over 'Shared2' and 'Shared3'.
+pattern Shared :: Object obj vec => SharedObj obj vec -> obj
+pattern Shared v <- (preview _Shared -> Just v)
+  where
+    Shared v = _Shared # v
+
 
 -- | Translate an object by a vector of appropriate dimension.
 translate
@@ -300,12 +310,6 @@ instance Object SymbolicObj3 ℝ3 where
     _         -> Nothing
   getBox      = getBox3
   getImplicit = getImplicit3
-
-
-pattern Shared :: Object obj vec => SharedObj obj vec -> obj
-pattern Shared v <- (preview _Shared -> Just v)
-  where
-    Shared v = _Shared # v
 
 
 union :: Object obj vec => [obj] -> obj
