@@ -95,7 +95,8 @@ Library
                   mtl,
                   linear,
                   QuickCheck,
-                  quickspec
+                  quickspec,
+                  show-combinators
 
     Exposed-modules:
                     Graphics.Implicit

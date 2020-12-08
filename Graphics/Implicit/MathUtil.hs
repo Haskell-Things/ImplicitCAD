@@ -5,10 +5,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, alaV3, packV3, unpackV3, infty) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2, (.))
+import Prelude (Fractional, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
 
@@ -18,7 +18,7 @@ import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^)
 
 -- get the distance between two points.
 import Data.AffineSpace (distance)
-import Linear (V3(V3), Quaternion(Quaternion))
+import Linear (V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -161,25 +161,6 @@ reflect
     -> v  -- ^ Vector to transform
     -> v
 reflect a v = v ^-^ (2 * ((v <.> a) / (a <.> a))) *^ a
-
-
--- | Convert a 'Quaternion' to its constituent euler angles.
---
--- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
-quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
-quaternionToEuler (Quaternion w (V3 x y z))=
-  let sinr_cosp = 2 * (w * x + y * z)
-      cosr_cosp = 1 - 2 * (x * x + y * y)
-      sinp = 2 * (w * y - z * x);
-      siny_cosp = 2 * (w * z + x * y);
-      cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = case abs sinp >= 1 of
-                True -> signum sinp * pi / 2
-                False -> asin sinp
-      roll = atan2 sinr_cosp cosr_cosp
-      yaw = atan2 siny_cosp cosy_cosp
-   in (roll, pitch, yaw)
-
 
 -- | Lift a function over 'V3' into a function over 'ℝ3'.
 alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
