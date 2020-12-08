@@ -5,38 +5,34 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, infty) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Fractional, Bool, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (.))
+import Prelude (Num, Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
 import Data.List (sort, sortBy, (!!))
-
-import Data.VectorSpace ((<.>), Scalar, InnerSpace, magnitude, normalized, (^-^), (^+^), (*^))
-
--- get the distance between two points.
-import Data.AffineSpace (distance)
-import Linear (V3(V3))
+import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion))
+import Graphics.Implicit.Definitions (V2(V2), V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
 distFromLineSeg p (a,b) = distance p closest
     where
-        ab = b ^-^ a
-        ap = p ^-^ a
+        ab = b - a
+        ap = p - a
         d :: ℝ
-        d  = normalized ab ⋅ ap
+        d  = normalize ab `dot` ap
         -- the closest point to p on the line segment.
         closest :: ℝ2
         closest
             | d < 0 = a
-            | d > magnitude ab = b
-            | otherwise = a ^+^ d *^ normalized ab
+            | d > norm ab = b
+            | otherwise = a + d *^ normalize ab
 
 box3sWithin :: ℝ -> (ℝ3, ℝ3) -> (ℝ3, ℝ3) -> Bool
-box3sWithin r ((ax1, ay1, az1),(ax2, ay2, az2)) ((bx1, by1, bz1),(bx2, by2, bz2)) =
+box3sWithin r (V3 ax1 ay1 az1, V3 ax2 ay2 az2) (V3 bx1 by1 bz1, V3 bx2 by2 bz2) =
     let
         near (a1, a2) (b1, b2) = not $ (a2 + r < b1) || (b2 + r < a1)
     in
@@ -121,7 +117,7 @@ pack ::
 pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
     where
         compareBoxesByY :: Box2 -> Box2 -> Ordering
-        compareBoxesByY  ((_, ay1), (_, ay2))  ((_, by1), (_, by2)) =
+        compareBoxesByY  (V2 _ ay1, V2 _ ay2)  (V2 _ by1, V2 _ by2) =
                 compare (abs $ by2-by1) (abs $ ay2-ay1)
 
         sortedObjs = sortBy
@@ -134,16 +130,16 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
         tmap2 f (a,b) = (a, f b)
 
         packSome :: [(Box2,a)] -> Box2 -> ([(ℝ2,a)], [(Box2,a)])
-        packSome (presObj@(((x1,y1),(x2,y2)),obj):otherBoxedObjs) box@((bx1, by1), (bx2, by2)) =
+        packSome (presObj@((V2 x1 y1,V2 x2 y2),obj):otherBoxedObjs) box@(V2 bx1 by1, V2 bx2 by2) =
             if abs (x2 - x1) <= abs (bx2-bx1) && abs (y2 - y1) <= abs (by2-by1)
             then
                 let
-                    row = tmap1 (((bx1-x1,by1-y1), obj):) $
-                        packSome otherBoxedObjs ((bx1+x2-x1+sep, by1), (bx2, by1 + y2-y1))
+                    row = tmap1 ((V2 (bx1-x1) (by1-y1), obj):) $
+                        packSome otherBoxedObjs (V2 (bx1+x2-x1+sep) by1, V2 bx2 (by1 + y2-y1))
                     rowAndUp =
                         if abs (by2-by1) - abs (y2-y1) > sep
                         then tmap1 (fst row <> ) $
-                            packSome (snd row) ((bx1, by1 + y2-y1+sep), (bx2, by2))
+                            packSome (snd row) (V2 bx1 (by1 + y2-y1+sep), V2 bx2 by2)
                         else row
                 in
                     rowAndUp
@@ -155,12 +151,13 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 -- | Reflect a vector across a hyperplane defined by its normal vector.
 --
 -- From https://en.wikipedia.org/wiki/Reflection_(mathematics)#Reflection_through_a_hyperplane_in_n_dimensions
+--     -> ℝ2
 reflect
-    :: (InnerSpace v, Fractional (Scalar v))
-    => v  -- ^ Mirror axis
-    -> v  -- ^ Vector to transform
-    -> v
-reflect a v = v ^-^ (2 * ((v <.> a) / (a <.> a))) *^ a
+    :: (Num (f a), Fractional a, Metric f)
+    => f a  -- ^ Mirror axis
+    -> f a  -- ^ Vector to transform
+    -> f a
+reflect a v = v - (2 * ((v `dot` a) / (a `dot` a))) *^ a
 
 -- | Lift a function over 'V3' into a function over 'ℝ3'.
 alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
@@ -175,6 +172,22 @@ unpackV3 :: V3 a -> (a, a, a)
 unpackV3 (V3 a a2 a3) = (a, a2, a3)
 {-# INLINABLE unpackV3 #-}
 
+-- | Convert a 'Quaternion' to its constituent euler angles.
+--
+-- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
+quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
+quaternionToEuler (Quaternion w (V3 x y z))=
+  let sinr_cosp = 2 * (w * x + y * z)
+      cosr_cosp = 1 - 2 * (x * x + y * y)
+      sinp = 2 * (w * y - z * x);
+      siny_cosp = 2 * (w * z + x * y);
+      cosy_cosp = 1 - 2 * (y * y + z * z);
+      pitch = case abs sinp >= 1 of
+                True -> signum sinp * pi / 2
+                False -> asin sinp
+      roll = atan2 sinr_cosp cosr_cosp
+      yaw = atan2 siny_cosp cosy_cosp
+   in (roll, pitch, yaw)
 
 ------------------------------------------------------------------------------
 -- | Haskell's standard library doesn't make floating-point infinity available

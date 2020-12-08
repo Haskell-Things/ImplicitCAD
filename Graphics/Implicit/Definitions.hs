@@ -21,10 +21,8 @@ module Graphics.Implicit.Definitions (
     ℝ2,
     both,
     ℝ3,
-    allthree,
     minℝ,
     ComponentWiseMultable,
-    (⋅),
     (⋯*),
     (⋯/),
     Polyline(Polyline),
@@ -42,6 +40,8 @@ module Graphics.Implicit.Definitions (
     BoxedObj2,
     BoxedObj3,
     SharedObj(..),
+    V2(..),
+    V3(..),
     SymbolicObj2(
         SquareR,
         Circle,
@@ -75,19 +75,20 @@ import Prelude (atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), (
 
 import Data.Maybe (Maybe)
 
-import Data.VectorSpace (Scalar, InnerSpace, (<.>))
-
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
-import Linear (V3(V3))
+import Linear (V2(V2), V3(V3))
+
 import Linear.Quaternion (Quaternion(Quaternion))
 
+import Control.Applicative (Applicative(liftA2))
+
 import Text.Show.Combinators
-    ( Show(showsPrec, show), (@|), showApp, showCon, PrecShowS )
+    ( Show(showsPrec, show), (@|), showApp, showCon, PrecShowS)
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -96,12 +97,12 @@ type ℝ = Double
 
 -- | A pair of two 'Double's. When used as an area or position vector, measured
 -- in millimeters squared.
-type ℝ2 = (ℝ,ℝ)
+type ℝ2 = V2 ℝ
 
 -- | A triple of 'Double's. When used as a volume or position vector, measured
 -- in millimeters cubed. When used as a rotation, interpreted as Euler angles
 -- measured in radians.
-type ℝ3 = (ℝ,ℝ,ℝ)
+type ℝ3 = V3 ℝ
 
 -- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
 minℝ :: ℝ
@@ -114,16 +115,6 @@ minℝ = 0.0000000000000002
 both :: (t -> b) -> (t, t) -> (b, b)
 both f (x,y) = (f x, f y)
 {-# INLINABLE both #-}
-
--- | apply a function to all three items in the provided tuple.
-allthree :: (t -> b) -> (t, t, t) -> (b, b, b)
-allthree f (x,y,z) = (f x, f y, f z)
-{-# INLINABLE allthree #-}
-
--- | TODO: Find a better place for this
-(⋅) :: InnerSpace a => a -> a -> Scalar a
-(⋅) = (<.>)
-{-# INLINABLE (⋅) #-}
 
 -- Wrap the functions that convert datatypes.
 
@@ -148,14 +139,14 @@ class ComponentWiseMultable a where
     (⋯*) :: a -> a -> a
     (⋯/) :: a -> a -> a
 instance ComponentWiseMultable ℝ2 where
-    (x,y) ⋯* (x',y') = (x*x', y*y')
+    (⋯*) = liftA2 (*)
     {-# INLINABLE (⋯*) #-}
-    (x,y) ⋯/ (x',y') = (x/x', y/y')
+    (⋯/) = liftA2 (/)
     {-# INLINABLE (⋯/) #-}
 instance ComponentWiseMultable ℝ3 where
-    (x,y,z) ⋯* (x',y',z') = (x*x', y*y', z*z')
+    (⋯*) = liftA2 (*)
     {-# INLINABLE (⋯*) #-}
-    (x,y,z) ⋯/ (x',y',z') = (x/x', y/y', z/z')
+    (⋯/) = liftA2 (/)
     {-# INLINABLE (⋯/) #-}
 
 -- | A chain of line segments, as in SVG or DXF.
@@ -393,15 +384,15 @@ instance Show ExtrudeRMScale where
     Fn _  -> showCon "Fn" @| Blackhole
 
 toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
-toScaleFn (C1 s) _ = (s, s)
+toScaleFn (C1 s) _ = V2 s s
 toScaleFn (C2 s) _ = s
 toScaleFn (Fn f) z = case f z of
-    Left s -> (s, s)
+    Left s -> V2 s s
     Right s -> s
 
 isScaleID :: ExtrudeRMScale -> Bool
 isScaleID (C1 1) = True
-isScaleID (C2 (1, 1)) = True
+isScaleID (C2 (V2 1 1)) = True
 isScaleID _ = False
 
 -- | Convert a 'Quaternion' to its constituent euler angles.

@@ -7,100 +7,102 @@ import GoldenSpec.Util (golden)
 import Graphics.Implicit
 import Prelude
 import Test.Hspec ( describe, Spec )
-import Graphics.Implicit.Primitives (Object(outset))
+import Linear
 
 default (Int)
 
 spec :: Spec
 spec = describe "golden tests" $ do
   golden "box" 1 $
-    cubeR 0 True (5, 5, 5)
+    cubeR 0 True (V3 5 5 5)
 
   golden "example13" 1 $
-    union [ rect3R 0 (0,0,0) (20,20,20)
-          , translate (20,20,20) (sphere 15)
+    union [ rect3R 0 (V3 0 0 0) (V3 20 20 20)
+          , translate (V3 20 20 20) (sphere 15)
           ]
 
   golden "example16" 1 $
-    implicit (\(x,y,z) -> x^4 + y^4 + z^4 - 15000) ((-20,-20,-20),(20,20,20))
+    implicit
+      (\(V3 x y z) -> x^4 + y^4 + z^4 - 15000)
+      ( V3 (-20) (-20) (-20) ,V3 20 20 20)
 
   golden "example17" 1 $
     let
       squarePipe :: ℝ3 -> ℝ -> ℝ -> SymbolicObj3
-      squarePipe (x,y,z) diameter precision =
+      squarePipe (V3 x y z) diameter precision =
             union
-            ((\start-> translate start
-               $ rect3R 0 (0,0,0) (diameter,diameter,diameter)
+            ((\(a, b, c) -> translate (V3 a b c)
+               $ rect3R 0 (V3 0 0 0) (V3 diameter diameter diameter)
              )
              <$>
               zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100])
                    (fmap (\n->(fromIntegral n/precision)*y) [0..100])
                    (fmap (\n->(fromIntegral n/precision)*z) [0..100]))
-     in squarePipe (10,10,10) 1 100
+     in squarePipe (V3 10 10 10) 1 100
 
   golden "wheel-well" 1 $
     differenceR 0.0
-      (translate (6.0,-0.0,-44.5)
+      (translate (V3 6.0 (-0.0) (-44.5))
         (unionR 0.0
-          [ translate (-17.0,0.0,0.0)
-              (translate (0.0,0.0,38.0)
-                (rotate3 (0, pi / 2, 0)
-                  (translate (3.0,-0.0,-17.0)
+          [ translate (V3 (-17.0) 0.0 0.0)
+              (translate (V3 0.0 0.0 38.0)
+                (rotate3 (V3 0 (pi / 2) 0)
+                  (translate (V3 3.0 (-0.0) (-17.0))
                     (unionR 0.0
-                      [ translate (0.0,0.0,-0.0)
+                      [ translate (V3 0.0 0.0 (-0.0))
                           (intersectR 0.0
                             [ shell 2.0
                                 (outset 5.0
                                   (cylinder 35.0 28.0))
                             , cylinder 50.0 28.0
-                            , translate (11.0,0.0,0.0)
-                                (translate (-50.0,0.0,0.0)
-                                  (translate (0.0,0.0,14.0)
-                                    (translate (-50.0,-50.0,-14.0)
-                                      (cubeR 0.0 False (100.0,100.0,28.0)))))
+                            , translate (V3 11.0 0.0 0.0)
+                                (translate (V3 (-50.0) 0.0 0.0)
+                                  (translate (V3 0.0 0.0 14.0)
+                                    (translate (V3 (-50.0) (-50.0) (-14.0))
+                                      (cubeR 0.0 False (V3 100.0 100.0 28.0)))))
                             ])
                       ]))))
-          , translate (-2.0,0.0,0.0)
-              (translate (12.0,0.0,0.0)
-                (translate (0.0,0.0,24.0)
-                  (translate (0.0,0.0,-0.0)
+          , translate (V3 (-2.0) 0.0 0.0)
+              (translate (V3 12.0 0.0 0.0)
+                (translate (V3 0.0 0.0 24.0)
+                  (translate (V3 0.0 0.0 (-0.0))
                     (unionR 0.0
                       [ intersectR 0.0
-                        [ translate (0.0,0.0,31.5)
+                        [ translate (V3 0.0 0.0 31.5)
                             (shell 2.0
-                              (scale (1.1578947368421053,1.1363636363636365,1.0307692307692307)
-                                (translate (-9.5,-11.0,-32.5)
-                                  (cubeR 0.0 False (19.0,22.0,65.0)))))
-                        , translate (-12.0,-13.500000000000002,0.0)
-                            (cubeR 0.0 False (24.0,27.0,2.0))
+                              (scale (V3 1.1578947368421053 1.1363636363636365 1.0307692307692307)
+                                (translate (V3 (-9.5) (-11.0) (-32.5))
+                                  (cubeR 0.0 False (V3 19.0 22.0 65.0)))))
+                        , translate (V3 (-12.0) (-13.500000000000002) 0.0)
+                            (cubeR 0.0 False (V3 24.0 27.0 2.0))
                         ]
                       ]))))
           ]))
-      [ translate (6.0,-0.0,-44.5)
+      [ translate (V3 6.0 (-0.0) (-44.5))
           (unionR 0.0
-            [ translate (-17.0,0.0,0.0)
-                (translate (0.0,0.0,38.0)
-                  (rotate3 (0, pi / 2, 0)
-                    (translate (3.0,-0.0,-17.0)
+            [ translate (V3 (-17.0) 0.0 0.0)
+                (translate (V3 0.0 0.0 38.0)
+                  (rotate3 (V3 0 (pi / 2) 0)
+                    (translate (V3 3.0 (-0.0) (-17.0))
                       (unionR 0.0
-                        [ translate (0.0,0.0,0.0)
-                            (translate (0.0,0.0,17.0)
-                              (translate (-0.0,-0.0,11.0)
+                        [ translate (V3 0.0 0.0 0.0)
+                            (translate (V3 0.0 0.0 17.0)
+                              (translate (V3 (-0.0) (-0.0) 11.0)
                                 (unionR 0.0
-                                  [ translate (0.0,0.0,-0.0)
+                                  [ translate (V3 0.0 0.0 (-0.0))
                                       (cylinder 3.0 6.0)
-                                  , translate (0.0,0.0,0.0)
-                                      (translate (0.0,0.0,-28.0)
+                                  , translate (V3 0.0 0.0 0.0)
+                                      (translate (V3 0.0 0.0 (-28.0))
                                         (cylinder 35.0 28.0))
                                   ])))
                         ]))))
-            , translate (-2.0,0.0,0.0)
-                (translate (12.0,0.0,0.0)
-                  (translate (0.0,0.0,24.0)
-                    (translate (0.0,0.0,-0.0)
-                      (translate (0.0,0.0,32.5)
-                        (translate (-9.5,-11.0,-32.5)
-                          (cubeR 0.0 False (19.0,22.0,65.0)))))))
+            , translate (V3 (-2.0) 0.0 0.0)
+                (translate (V3 12.0 0.0 0.0)
+                  (translate (V3 0.0 0.0 24.0)
+                    (translate (V3 0.0 0.0 (-0.0))
+                      (translate (V3 0.0 0.0 32.5)
+                        (translate (V3 (-9.5) (-11.0) (-32.5))
+                          (cubeR 0.0 False (V3 19.0 22.0 65.0)))))))
             ])
       ]
 
@@ -110,18 +112,18 @@ spec = describe "golden tests" $ do
     cylinder 16.76324 21.02933
 
   golden "arbitrary2" 1 $
-    translate (24.07554,26.31483,24.96913)
-     . scale (3.6096,4.9768,2.9848)
-     . translate (-1.2054,-0.4034,-0.725975)
-     $ cubeR 0.45186 False (2.41095,0.8068,1.45195)
+    translate (V3 24.07554 26.31483 24.96913)
+     . scale (V3 3.6096 4.9768 2.9848)
+     . translate (V3 (-1.2054) (-0.4034) (-0.725975))
+     $ cubeR 0.45186 False (V3 2.41095 0.8068 1.45195)
 
   golden "arbitrary3" 1 $
     differenceR 1.8 (sphere 4.6)
-      [ rotate3 (-0.3, 0.4, 0.36)
-          $ scale (1, 1.3, 1.4)
+      [ rotate3 (V3 (-0.3)  0.4  0.36)
+          $ scale (V3 1  1.3  1.4)
           $ cylinder2 0.6 0.74 1
       , sphere 1.2
-      , rotate3 (0.54, -0.45, -0.58) $ cubeR 1.4 True (1.5, 1.81, 1.82)
+      , rotate3 (V3 0.54  (-0.45)  (-0.58)) $ cubeR 1.4 True (V3 1.5  1.81  1.82)
       , cylinder2 1.7 1.5 3.5
       , sphere 1.54
       ]
@@ -129,12 +131,13 @@ spec = describe "golden tests" $ do
   golden "arbitrary4" 1 $
     unionR 1.8
       [ sphere 4.6
-      , rotate3 (-0.3, 0.4, 0.36)
-          $ scale (1, 1.3, 1.4)
+      , rotate3 (V3 (-0.3)  0.4  0.36)
+          $ scale (V3 1  1.3  1.4)
           $ cylinder2 0.6 0.74 1
       , sphere 1.2
-      , rotate3 (0.54, -0.45, -0.58) $ cubeR 1.4 True (1.5, 1.81, 1.82)
+      , rotate3 (V3 0.54  (-0.45)  (-0.58)) $ cubeR 1.4 True (V3 1.5  1.81  1.82)
       , cylinder2 1.7 1.5 3.5
       , sphere 1.54
       ]
+
 

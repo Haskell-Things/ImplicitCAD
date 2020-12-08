@@ -16,7 +16,7 @@ module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, to
 
 import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, flip, filter, not, return)
 
-import Graphics.Implicit.Definitions(ℝ, ℝ2, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1, C2, Fn), fromℕtoℝ)
+import Graphics.Implicit.Definitions(V2, ℝ, ℝ2, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1, C2, Fn), fromℕtoℝ)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3))
 
@@ -30,6 +30,8 @@ import Data.Text.Lazy (Text)
 
 -- for some minimal paralellism.
 import Control.Parallel.Strategies (runEval, rpar, rseq)
+import Linear (V2(V2))
+import Graphics.Implicit.Definitions (V3(V3))
 
 -- Convert OVals (and Lists of OVals) into a given Haskell type
 class OTypeMirror a where
@@ -85,12 +87,25 @@ instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (a,b) where
     {-# INLINABLE fromOObj #-}
     toOObj (a,b) = OList [toOObj a, toOObj b]
 
+instance (OTypeMirror a) => OTypeMirror (V2 a) where
+    fromOObj (OList [fromOObj -> Just a,fromOObj -> Just b]) = Just (V2 a b)
+    fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj (V2 a b) = OList [toOObj a, toOObj b]
+
 instance (OTypeMirror a, OTypeMirror b, OTypeMirror c) => OTypeMirror (a,b,c) where
     fromOObj (OList [fromOObj -> Just a,fromOObj -> Just b,fromOObj -> Just c]) =
         Just (a,b,c)
     fromOObj _ = Nothing
     {-# INLINABLE fromOObj #-}
     toOObj (a,b,c) = OList [toOObj a, toOObj b, toOObj c]
+
+instance (OTypeMirror a) => OTypeMirror (V3 a) where
+    fromOObj (OList [fromOObj -> Just a,fromOObj -> Just b,fromOObj -> Just c]) =
+        Just (V3 a b c)
+    fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj (V3 a b c) = OList [toOObj a, toOObj b, toOObj c]
 
 instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
     fromOObj (OFunc f) =  Just $ \input ->
