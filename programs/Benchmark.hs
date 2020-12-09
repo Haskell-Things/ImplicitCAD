@@ -18,7 +18,9 @@ import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 
 -- The variables defining distance and counting in our world.
 import Graphics.Implicit.Definitions (ℝ, Fastℕ)
-import Linear
+
+-- Vectors.
+import Linear(V2(V2), V3(V3))
 
 -- Haskell representations of objects to benchmark.
 

@@ -30,8 +30,11 @@ import Data.Char (toLower)
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
 
-import Linear
-import Linear.Affine
+-- To construct vectors of ℝs.
+import Linear (V2(V2), V3(V3))
+
+-- An operator for vector subtraction.
+import Linear.Affine((.-.))
 
 -- Functions and types for dealing with the types used by runOpenscad.
 

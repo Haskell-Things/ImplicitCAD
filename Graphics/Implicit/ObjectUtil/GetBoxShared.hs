@@ -9,13 +9,13 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeSynonymInstances   #-}
 
-module Graphics.Implicit.ObjectUtil.GetBoxShared where
+module Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(uniformV, elements, corners), intersectBoxes, emptyBox, pointsBox, unionBoxes, outsetBox, getBoxShared) where
 
 import Prelude (Num, (-), (+), pure, (==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getBox) )
 import Graphics.Implicit.Definitions
-    ( SharedObj(..), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
+    ( SharedObj(Empty, Full, Complement, UnionR, DifferenceR, IntersectR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
 import Graphics.Implicit.MathUtil (infty,  reflect )
 import Linear (Metric, V2(V2))
 import Data.Foldable (Foldable(toList))
@@ -134,7 +134,7 @@ outsetBox r (a, b) = (a - uniformV r, b + uniformV r)
 -- Get a box around the given object.
 getBoxShared
     :: forall obj f a
-     .  ( Applicative f, Object obj (f a), VectorStuff (f a), Eq (f a), Num (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
+     .  ( Applicative f, Object obj (f a), VectorStuff (f a), Eq (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
     => SharedObj obj (f a)
     -> (f a, f a)
 -- Primitives

@@ -8,7 +8,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
 
 import Graphics.Implicit.Definitions
-    ( ℕ, SymbolicObj3(..), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( ℕ, SymbolicObj3(CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, ExtrudeRotateR), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 

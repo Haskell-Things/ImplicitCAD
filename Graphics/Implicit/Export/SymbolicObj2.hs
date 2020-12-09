@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbol
 
 import Prelude(pure, fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Shared2), SharedObj(..), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Shared2), SharedObj(Translate, Scale), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
 import Linear ( Metric(norm), V2(V2), (^/) )
 

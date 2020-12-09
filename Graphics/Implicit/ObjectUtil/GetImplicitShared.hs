@@ -7,18 +7,20 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Graphics.Implicit.ObjectUtil.GetImplicitShared where
+module Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared, normalize) where
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getImplicit) )
-import Prelude (Num, flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
+import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
 import Graphics.Implicit.Definitions
-    ( SharedObj(..), ComponentWiseMultable((⋯/)), ℝ, minℝ )
+    ( SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 import Graphics.Implicit.MathUtil
     (infty,  rmax, rmaximum, rminimum, reflect )
+
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import Graphics.Implicit.ObjectUtil.GetBoxShared
     ( VectorStuff(elements, uniformV) )
+
 import Linear (Metric(dot))
 
 
@@ -40,7 +42,6 @@ getImplicitShared
      . ( Object obj (f ℝ)
        , VectorStuff (f ℝ)
        , ComponentWiseMultable (f ℝ)
-       , Num (f ℝ)
        , Metric f
        )
     => SharedObj obj (f ℝ)

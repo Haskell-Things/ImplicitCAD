@@ -10,7 +10,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj2(..), SharedObj (Empty), Obj2, ℝ2, ℝ )
+    ( SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )

@@ -24,7 +24,7 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( ExtrudeRMScale(..),
+    ( ExtrudeRMScale(C1,C2,Fn),
       SymbolicObj2(Shared2),
       SymbolicObj3(Shared3),
       ℝ,
@@ -48,12 +48,10 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
-import Linear (quadrance, V2(..), V3(..), Quaternion, axisAngle)
-
+import Linear (quadrance, V2(V2), V3(V3), Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
-
 
 insidedness :: Double -> Insidedness
 insidedness 0 = Surface
