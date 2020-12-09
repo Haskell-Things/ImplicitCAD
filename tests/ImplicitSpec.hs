@@ -7,8 +7,8 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (pure, negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (xit, SpecWith, it, describe, Spec)
+import Prelude (pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
     ( difference,
@@ -118,9 +118,7 @@ idempotenceSpec = describe "idempotence" $ do
 -- | Proofs of the invertability of operations.
 inverseSpec
     :: forall obj vec test outcome
-     . ( TestInfrastructure obj vec test outcome
-       , Num vec
-       )
+     . TestInfrastructure obj vec test outcome
     => Spec
 inverseSpec = describe "inverses" $ do
   prop "complement inverse" $
@@ -254,9 +252,7 @@ identitySpec = describe "identity" $ do
 -- translate and scale.
 homomorphismSpec
     :: forall obj vec test outcome
-     . ( TestInfrastructure obj vec test outcome
-       , Num vec
-       )
+     . TestInfrastructure obj vec test outcome
     => Spec
 homomorphismSpec = describe "homomorphism" $ do
   prop "translate" $ \xyz1 xyz2 ->

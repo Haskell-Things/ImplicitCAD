@@ -11,12 +11,14 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, SquareR, Circle, PolygonR, Rotate2), SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(..), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, SquareR, Circle, PolygonR, Rotate2), SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
 
-import Linear ( V3(V3), V2(V2) )
+-- For constructing vectors of ℝs.
+import Linear (V3(V3), V2(V2))
+
 import Data.List (intersperse)
 import Data.Function (fix)
 import Data.Foldable(fold, foldMap)

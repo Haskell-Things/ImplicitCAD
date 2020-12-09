@@ -48,7 +48,21 @@ module Graphics.Implicit.Primitives (
 
 import Prelude(Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2, SharedObj(..),
+import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
+                                      SharedObj(Empty,
+                                                Full,
+                                                Translate,
+                                                Empty,
+                                                Scale,
+                                                Complement,
+                                                Outset,
+                                                Mirror,
+                                                Shell,
+                                                UnionR,
+                                                DifferenceR,
+                                                IntersectR,
+                                                EmbedBoxedObj
+                                               ),
                                       SymbolicObj2(
                                                    SquareR,
                                                    Circle,
@@ -238,7 +252,7 @@ mirror v s = Shared $ Mirror v s
 -- | Outset of an object.
 outset
     :: Object obj vec
-    => ℝ        -- ^ distance to outset
+    => ℝ     -- ^ distance to outset
     -> obj   -- ^ object to outset
     -> obj   -- ^ resulting object
 outset _ s@(Shared Empty) = s
@@ -249,7 +263,7 @@ outset v s = Shared $ Outset v s
 -- | Make a shell of an object.
 shell
     :: Object obj vec
-    => ℝ        -- ^ width of shell
+    => ℝ     -- ^ width of shell
     -> obj   -- ^ object to take shell of
     -> obj   -- ^ resulting shell
 shell _ s@(Shared Empty) = s
@@ -269,13 +283,14 @@ unionR r ss = Shared $ UnionR r ss
 -- | Rounded difference
 differenceR
     :: Object obj vec
-    => ℝ        -- ^ The radius (in mm) of rounding
+    => ℝ     -- ^ The radius (in mm) of rounding
     -> obj   -- ^ Base object
     -> [obj] -- ^ Objects to subtract from the base
     -> obj   -- ^ Resulting object
 differenceR _ s [] = s
 differenceR _ s@(Shared Empty) _ = s
 differenceR r s ss = Shared $ DifferenceR r s ss
+{-# INLINABLE differenceR #-}
 
 -- | Rounded minimum
 intersectR

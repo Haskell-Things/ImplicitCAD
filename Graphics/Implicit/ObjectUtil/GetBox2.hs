@@ -7,16 +7,18 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 import Prelude(pure, flip, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj2(..),
+    ( SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2),
       SharedObj(IntersectR, Complement, UnionR, DifferenceR),
       Box2,
       ℝ2,
       ℝ,
       minℝ )
 
-
 import Data.Fixed (mod')
+
 import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
+
+-- To construct vectors of ℝs.
 import Linear (V2(V2))
 
 

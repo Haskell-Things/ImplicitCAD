@@ -11,7 +11,7 @@ import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
       ExtrudeRMScale(C2, C1),
-      SymbolicObj3(..),
+      SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR),
       Box3,
       ℝ,
       fromFastℕtoℝ,
