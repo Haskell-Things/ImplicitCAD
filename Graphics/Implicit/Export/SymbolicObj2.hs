@@ -16,9 +16,7 @@ import Linear ( Metric(norm), V2(V2), (^/) )
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
-import Graphics.Implicit.ObjectUtil (getImplicit2, getBox2)
-
-import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
+import Graphics.Implicit.ObjectUtil (getImplicit2)
 
 import Graphics.Implicit.Export.Render (getContour)
 
@@ -53,8 +51,7 @@ symbolicGetContour res (Circle r) =
 symbolicGetContour res (Shared2 (Translate v obj)) = appOpPolylines (+ v) $ symbolicGetContour res obj
 symbolicGetContour res (Shared2 (Scale s@(V2 a b) obj)) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
     where sc = max a b
-symbolicGetContour res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-    (obj', (a,b)) -> getContour a b (pure res) obj'
+symbolicGetContour res obj = getContour (pure res) obj
 
 appOpPolylines :: (ℝ2 -> ℝ2) -> [Polyline] -> [Polyline]
 appOpPolylines op = fmap (appOpPolyline op)
@@ -78,5 +75,4 @@ symbolicGetContourMesh res (Circle r) =
     where
       n :: Fastℕ
       n = max 5 $ ceiling $ 2*pi*r/res
-symbolicGetContourMesh res obj = case rebound2 (getImplicit2 obj, getBox2 obj) of
-    (obj', (a,b)) -> getContourMesh a b (pure res) obj'
+symbolicGetContourMesh res obj = getContourMesh (pure res) obj

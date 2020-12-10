@@ -7,7 +7,11 @@ module Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh) where
 
 import Prelude(fmap, Bool(True, False), ($), (-), (+), (/), (*), (<=), ceiling, max, div, floor)
 
-import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri(Polytri), Obj2, (⋯/), (⋯*), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℕ, ℝ, ℝ2, Polytri(Polytri), Obj2, SymbolicObj2, (⋯/), (⋯*), fromℕtoℝ, fromℕ)
+
+import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
+
+import Graphics.Implicit.ObjectUtil (getBox2, getImplicit2)
 
 import Linear ( V2(V2) )
 
@@ -19,9 +23,12 @@ import Data.Foldable (fold)
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer, parList)
 
 -- | Get an array of triangles describing the interior of a 2D object.
-getContourMesh :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polytri]
-getContourMesh p1 p2 res obj =
+getContourMesh :: ℝ2 -> SymbolicObj2 -> [Polytri]
+getContourMesh res symObj =
     let
+        -- Grow bounds a little to avoid sampling at exact bounds
+        (obj, (p1, p2)) = rebound2 (getImplicit2 symObj, getBox2 symObj)
+
         -- | How much space are we rendering?
         d = p2 - p1
 

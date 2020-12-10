@@ -10,7 +10,13 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude((-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+
+import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
+
+import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
+
+import Graphics.Implicit.ObjectUtil (getBox2, getImplicit2, getBox3, getImplicit3)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
@@ -66,9 +72,12 @@ import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
 
-getMesh :: ℝ3 -> ℝ3 -> ℝ3 -> Obj3 -> TriangleMesh
-getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
+getMesh :: ℝ3 -> SymbolicObj3 -> TriangleMesh
+getMesh res@(V3 xres yres zres) symObj =
     let
+        -- Grow bounds a little to avoid sampling at exact bounds
+        (obj, (p1@(V3 x1 y1 z1), p2)) = rebound3 (getImplicit3 symObj, getBox3 symObj)
+
         -- How much space are we rendering?
         d = p2 - p1
 
@@ -177,9 +186,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
       mergedSquareTris . fold . fold $ fold sqTris
 
 -- | getContour gets a polyline describing the edge of a 2D object.
-getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
+getContour :: ℝ2 -> SymbolicObj2 -> [Polyline]
+getContour res@(V2 xres yres) symObj =
     let
+        -- Grow bounds a little to avoid sampling at exact bounds
+        (obj, (p1@(V2 x1 y1), p2)) = rebound2 (getImplicit2 symObj, getBox2 symObj)
+
         -- | The size of the region we're being asked to search.
         d = p2 - p1
 
