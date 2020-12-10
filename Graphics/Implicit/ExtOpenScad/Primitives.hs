@@ -381,9 +381,9 @@ translate = moduleWithSuite "translate" $ \_ children -> do
             v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
                 `doc` "vector to translate by"
             pure $ case v of
-                Left          x       -> (V3 x 0 0)
-                Right (Left  (V2 x y)  ) -> (V3 x y 0)
-                Right (Right (V3 x y z)) -> (V3 x y z)
+                Left          x       -> V3 x 0 0
+                Right (Left  (V2 x y)  ) -> V3 x y 0
+                Right (Right (V3 x y z)) -> V3 x y z
     pure $ pure $
         objMap (Prim.translate (V2 x y)) (Prim.translate (V3 x y z)) children
 
@@ -395,7 +395,7 @@ rotate = moduleWithSuite "rotate" $ \_ children -> do
     a <- argument "a"
         `doc` "value to rotate by; angle or list of angles"
     v <- argument "v"
-        `defaultTo` (V3 0 0 1)
+        `defaultTo` V3 0 0 1
         `doc` "Vector to rotate around if a is a single angle"
     -- caseOType matches depending on whether size can be coerced into
     -- the right object. See Graphics.Implicit.ExtOpenScad.Util

@@ -62,7 +62,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             -- | Size of the image to produce.
             (V2 w h) = V2 150 150 :: ℝ2
             obj = getImplicit3 symbObj
-            box@((V3 x1 y1 z1), (V3 _ y2 z2)) = getBox3 symbObj
+            box@(V3 x1 y1 z1, V3 _ y2 z2) = getBox3 symbObj
             av :: ℝ -> ℝ -> ℝ
             av a b = (a+b)/2
             avY = av y1 y2
@@ -114,7 +114,7 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer mya myb = mycolor
                 where
-                    xy a b = (V2 x1 y2 .-^ (V2 (dxy-dx) (dy-dxy))^/2) .+^ dxy*^(V2 (a/w) (-b/h))
+                    xy a b = (V2 x1 y2 .-^ V2 (dxy-dx) (dy-dxy) ^/2) .+^ dxy *^ V2 (a/w) (-b/h)
                     s = 0.25 :: ℝ
                     V2 a' b' = V2 (realToFrac mya) (realToFrac myb) :: ℝ2
                     mycolor = colorToPixelRGBA8 $ average [objColor $ xy a' b', objColor $ xy a' b',

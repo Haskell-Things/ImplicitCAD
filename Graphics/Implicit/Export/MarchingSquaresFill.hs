@@ -35,7 +35,7 @@ getContourMesh p1 p2 res obj =
         gridPos n' m = p1 + d ⋯* ((fromℕtoℝ `fmap` m) ⋯/ (fromℕtoℝ `fmap` n'))
 
         -- | Alternate Grid mapping funcs
-        toGrid :: ℝ2 -> (V2 ℕ)
+        toGrid :: ℝ2 -> V2 ℕ
         toGrid f = floor `fmap` ((fromℕtoℝ `fmap` n) ⋯* (f - p1) ⋯/ d)
 
         -- | Evaluate obj on a grid, in parallel.
@@ -60,13 +60,13 @@ getContourMesh p1 p2 res obj =
 getSquareTriangles :: ℝ2 -> ℝ2 -> Obj2 -> [Polytri]
 getSquareTriangles (V2 x1 y1) (V2 x2 y2) obj =
     let
-        (V2 x y) = (V2 x1 y1)
+        (V2 x y) = V2 x1 y1
 
         -- Let's evaluate obj at four corners...
-        x1y1 = obj (V2 x1 y1)
-        x2y1 = obj (V2 x2 y1)
-        x1y2 = obj (V2 x1 y2)
-        x2y2 = obj (V2 x2 y2)
+        x1y1 = obj $ V2 x1 y1
+        x2y1 = obj $ V2 x2 y1
+        x1y2 = obj $ V2 x1 y2
+        x2y2 = obj $ V2 x2 y2
 
         -- And the center point..
         c = obj $ V2 ((x1+x2)/2) ((y1+y2)/2)
@@ -105,21 +105,21 @@ getSquareTriangles (V2 x1 y1) (V2 x2 y2) obj =
         -- Yes, there's some symetries that could reduce the amount of code...
         -- But I don't think they're worth exploiting...
         (False, False, False, False,     _) -> []
-        ( True,  True,  True,  True,     _) -> square (V2 x1 y1) (V2 x2 y1) (V2 x2 y2) (V2 x1 y2)
-        ( True,  True, False, False,     _) -> square (V2 x1 y1) (V2 x2 y1)  intx2   intx1
-        (False,  True,  True, False,     _) -> square  inty1  (V2 x2 y1) (V2 x2 y2)  inty2
-        (False, False,  True,  True,     _) -> square  intx1   intx2  (V2 x2 y2) (V2 x1 y2)
-        ( True, False, False,  True,     _) -> square (V2 x1 y1)  inty1   inty2  (V2 x1 y2)
-        (False, False, False,  True,     _) -> [Polytri ( intx1 ,  inty2 , (V2 x1 y2))]
-        (False, False,  True, False,     _) -> [Polytri ( intx2 , (V2 x2 y2),  inty2 )]
-        (False,  True, False, False,     _) -> [Polytri ( inty1 , (V2 x2 y1),  intx1 )]
-        ( True, False, False, False,     _) -> [Polytri ((V2 x1 y1),  inty1 ,  intx1 )]
-        (False,  True,  True,  True,     _) -> [Polytri ( intx1 , (V2 x2 y2), (V2 x1 y2)), Polytri ( inty1 , (V2 x2 y2),  intx1 ), Polytri ( inty1 , (V2 x2 y1), (V2 x2 y2))]
-        ( True, False,  True,  True,     _) -> [Polytri ((V2 x1 y1),  inty1 , (V2 x1 y2)), Polytri ( inty1 ,  intx2 , (V2 x1 y2)), Polytri ( intx2 , (V2 x2 y2), (V2 x1 y2))]
-        ( True,  True, False,  True,     _) -> [Polytri ((V2 x1 y1),  inty2 , (V2 x1 y2)), Polytri ((V2 x1 y1),  intx2 ,  inty2 ), Polytri ((V2 x1 y1), (V2 x2 y1),  intx2 )]
-        ( True,  True,  True, False,     _) -> [Polytri ((V2 x1 y1), (V2 x2 y1),  intx1 ), Polytri ( intx1 , (V2 x2 y1),  inty2 ), Polytri ((V2 x2 y1), (V2 x2 y2),  inty2 )]
-        (False,  True, False,  True, False) -> [Polytri ( inty1 , (V2 x1 y2),  intx1 ), Polytri ((V2 x2 y1),  inty2 ,  intx2 )]
-        (False,  True, False,  True,  True) -> [Polytri ( inty1 , (V2 x1 y2),  intx1 ), Polytri ((V2 x2 y1),  inty2 ,  intx2 ), Polytri ( inty1 , (V2 x2 y1), (V2 x1 y2)), Polytri ((V2 x2 y1), inty2, (V2 x1 y2))]
-        ( True, False,  True, False, False) -> [Polytri ((V2 x1 y1),  inty1 ,  intx2 ), Polytri ( intx1 , (V2 x2 y2),  inty2 )]
-        ( True, False,  True, False,  True) -> [Polytri ((V2 x1 y1),  inty1 ,  intx2 ), Polytri ( intx1 , (V2 x2 y2),  inty2 ), Polytri ((V2 x1 y1),  intx2 , (V2 x2 y2)), Polytri (V2 x1 y1, V2 x2 y2, intx1)]
+        ( True,  True,  True,  True,     _) -> square   (V2 x1 y1)(V2 x2 y1)(V2 x2 y2) (V2 x1 y2)
+        ( True,  True, False, False,     _) -> square   (V2 x1 y1)(V2 x2 y1)  intx2     intx1
+        (False,  True,  True, False,     _) -> square     inty1   (V2 x2 y1)(V2 x2 y2)  inty2
+        (False, False,  True,  True,     _) -> square     intx1     intx2   (V2 x2 y2) (V2 x1 y2)
+        ( True, False, False,  True,     _) -> square   (V2 x1 y1)  inty1     inty2    (V2 x1 y2)
+        (False, False, False,  True,     _) -> [Polytri ( intx1  ,  inty2  , V2 x1 y2)]
+        (False, False,  True, False,     _) -> [Polytri ( intx2  , V2 x2 y2,  inty2  )]
+        (False,  True, False, False,     _) -> [Polytri ( inty1  , V2 x2 y1,  intx1  )]
+        ( True, False, False, False,     _) -> [Polytri (V2 x1 y1,  inty1  ,  intx1  )]
+        (False,  True,  True,  True,     _) -> [Polytri ( intx1  , V2 x2 y2, V2 x1 y2), Polytri ( inty1  , V2 x2 y2,  intx1  ), Polytri ( inty1  , V2 x2 y1, V2 x2 y2)]
+        ( True, False,  True,  True,     _) -> [Polytri (V2 x1 y1,  inty1  , V2 x1 y2), Polytri ( inty1  ,  intx2  , V2 x1 y2), Polytri ( intx2  , V2 x2 y2, V2 x1 y2)]
+        ( True,  True, False,  True,     _) -> [Polytri (V2 x1 y1,  inty2  , V2 x1 y2), Polytri (V2 x1 y1,  intx2  ,  inty2  ), Polytri (V2 x1 y1, V2 x2 y1,  intx2 )]
+        ( True,  True,  True, False,     _) -> [Polytri (V2 x1 y1, V2 x2 y1,  intx1  ), Polytri ( intx1  , V2 x2 y1,  inty2  ), Polytri (V2 x2 y1, V2 x2 y2,  inty2 )]
+        (False,  True, False,  True, False) -> [Polytri ( inty1  , V2 x1 y2,  intx1  ), Polytri (V2 x2 y1,  inty2  ,  intx2  )]
+        (False,  True, False,  True,  True) -> [Polytri ( inty1  , V2 x1 y2,  intx1  ), Polytri (V2 x2 y1,  inty2  ,  intx2  ), Polytri ( inty1  , V2 x2 y1, V2 x1 y2), Polytri (V2 x2 y1,  inty2  , V2 x1 y2)]
+        ( True, False,  True, False, False) -> [Polytri (V2 x1 y1,  inty1  ,  intx2  ), Polytri ( intx1  , V2 x2 y2,  inty2  )]
+        ( True, False,  True, False,  True) -> [Polytri (V2 x1 y1,  inty1  ,  intx2  ), Polytri ( intx1  , V2 x2 y2,  inty2  ), Polytri (V2 x1 y1,  intx2  , V2 x2 y2), Polytri (V2 x1 y1, V2 x2 y2,  intx1  )]
 

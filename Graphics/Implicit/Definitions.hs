@@ -1,17 +1,14 @@
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE PatternSynonyms #-}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, 2017, 2018, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE DeriveGeneric #-}
-
 -- Required. FIXME: why?
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 -- Definitions of the types used when modeling, and a few operators.
 module Graphics.Implicit.Definitions (
@@ -405,9 +402,9 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       sinp = 2 * (w * y - z * x);
       siny_cosp = 2 * (w * z + x * y);
       cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = case abs sinp >= 1 of
-                True -> signum sinp * pi / 2
-                False -> asin sinp
+      pitch = if abs sinp >= 1
+              then signum sinp * pi / 2
+              else asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
    in (roll, pitch, yaw)

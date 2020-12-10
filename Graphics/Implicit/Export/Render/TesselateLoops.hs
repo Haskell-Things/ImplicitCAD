@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude((-), pure, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (<>), head, (*), abs, (>), (&&), (+), foldMap)
+import Prelude(sum, (-), pure, ($), length, (==), zip, init, tail, reverse, (<), (/), null, (<>), head, (*), abs, (>), (&&), (+), foldMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -81,7 +81,7 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
     else let
         mid = centroid path
         midval = obj mid
-        preNormal = foldl1 (+)
+        preNormal = sum
             [ a `cross` b | (a,b) <- zip path (tail path <> [head path]) ]
         preNormalNorm = norm preNormal
         normal = preNormal ^/ preNormalNorm

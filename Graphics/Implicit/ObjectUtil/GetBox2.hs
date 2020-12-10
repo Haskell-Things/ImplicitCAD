@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(pure, flip, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(pure, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions
     ( SymbolicObj2(SquareR, Circle, PolygonR, Rotate2, Shared2),
@@ -51,7 +51,7 @@ getBox2R (PolygonR _ points) deg =
     (V2 (minimum pointValsX)( minimum pointValsY), V2 (maximum pointValsX) (maximum pointValsY))
 getBox2R (Shared2 (Complement symObj)) _ = getBox2 $ Shared2 (Complement symObj)
 getBox2R (Shared2 (UnionR r symObjs)) deg =
-    unionBoxes r $ fmap (flip getBox2R deg) symObjs
+    unionBoxes r $ fmap (`getBox2R` deg) symObjs
 getBox2R (Shared2 (DifferenceR _ symObj _)) deg = getBox2R symObj deg
 getBox2R (Shared2 (IntersectR r symObjs)) deg =
   let

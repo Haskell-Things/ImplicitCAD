@@ -8,13 +8,12 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool(True, False), RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
+import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
 import Data.List (sort, sortBy, (!!))
-import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion))
-import Graphics.Implicit.Definitions (V2(V2), V3(V3))
+import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion), V2(V2), V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -182,9 +181,9 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       sinp = 2 * (w * y - z * x);
       siny_cosp = 2 * (w * z + x * y);
       cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = case abs sinp >= 1 of
-                True -> signum sinp * pi / 2
-                False -> asin sinp
+      pitch = if sinp >= 1
+              then signum sinp * pi / 2
+              else asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
    in (roll, pitch, yaw)

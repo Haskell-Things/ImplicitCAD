@@ -1,12 +1,15 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julia.longtin@gmail.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications      #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Test.Instances (observe, (=~=)) where
 
-import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
 import Graphics.Implicit
     ( squareR,
@@ -48,28 +51,25 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
-import Linear (quadrance, V2(V2), V3(V3), Quaternion, axisAngle)
+import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 insidedness :: Double -> Insidedness
 insidedness 0 = Surface
-insidedness x =
-  case x < 0 of
-    True  -> Inside
-    False -> Outside
+insidedness x = if x < 0 then Inside else Outside
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
   shrink = genericShrink
   arbitrary = sized $ \n ->
-    case n <= 1 of
-      False -> oneof $
+    if n <= 1
+    then oneof small
+    else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
-      True -> oneof small
     where
       small =
         [ circle   <$> arbitrary
@@ -86,14 +86,14 @@ instance Arbitrary SymbolicObj2 where
 instance Arbitrary SymbolicObj3 where
   shrink = genericShrink
   arbitrary = sized $ \n ->
-    case n <= 1 of
-      False -> oneof $
+    if n <= 1
+    then oneof small
+    else oneof $
         [ rotate3  <$> arbitrary    <*> decayArbitrary 2
         , rotate3V <$> arbitrary    <*> arbitrary        <*> decayArbitrary 2
         , extrudeR <$> arbitraryPos <*> decayArbitrary 2 <*> arbitraryPos
         , Shared3 <$> arbitrary
         ] <> small
-      True -> oneof small
     where
       small =
         [ sphere    <$> arbitraryPos
@@ -144,9 +144,9 @@ instance Arbitrary (Quaternion ℝ) where
   arbitrary = do
     q <- arbitrary
     v <- arbitraryV3
-    case quadrance v == 0.0 of
-      True  -> discard
-      False -> pure $ axisAngle v q
+    if v == 0.0
+      then discard
+      else pure $ axisAngle v q
 
 
 ------------------------------------------------------------------------------
