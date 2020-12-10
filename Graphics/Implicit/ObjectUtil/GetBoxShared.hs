@@ -4,10 +4,8 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeSynonymInstances   #-}
 
 module Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(uniformV, elements, corners), intersectBoxes, emptyBox, pointsBox, unionBoxes, outsetBox, getBoxShared) where
 
@@ -17,10 +15,9 @@ import {-# SOURCE #-} Graphics.Implicit.Primitives
 import Graphics.Implicit.Definitions
     ( SharedObj(Empty, Full, Complement, UnionR, DifferenceR, IntersectR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
 import Graphics.Implicit.MathUtil (infty,  reflect )
-import Linear (Metric, V2(V2))
+import Linear (Metric, V2(V2), V3(V3))
 import Data.Foldable (Foldable(toList))
 import Control.Applicative (Applicative(liftA2))
-import Graphics.Implicit.Definitions (V3(V3))
 
 
 ------------------------------------------------------------------------------

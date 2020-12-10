@@ -8,7 +8,7 @@ import Graphics.Implicit (SymbolicObj3, writeSTL)
 import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), readFile, writeFile, (>>=), (<>), ($))
 import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO (hClose, openTempFile)
-import Test.Hspec ( it, shouldBe, SpecWith )
+import Test.Hspec (it, shouldBe, SpecWith)
 
 
 ------------------------------------------------------------------------------
@@ -37,9 +37,9 @@ golden name resolution sym = it (name <> " (golden)") $ do
     !cached <- readFile golden_fp
     pure (res, cached)
   -- Finally, ceck if the two meshes are equal.
-  case res == cached of
-    True -> pure ()
-    False -> False `shouldBe` True
+  if res == cached
+    then pure ()
+    else False `shouldBe` True
 
 
 ------------------------------------------------------------------------------

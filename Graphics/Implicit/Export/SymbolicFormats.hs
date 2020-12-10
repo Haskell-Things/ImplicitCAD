@@ -94,9 +94,9 @@ buildShared (IntersectR r objs) | r == 0 = call "intersection" [] $ build <$> ob
 
 buildShared (DifferenceR r obj objs) | r == 0 = call "difference" [] $ build <$> obj : objs
 
-buildShared (Translate v obj) = call "translate" (fmap bf $ elements v) [build obj]
+buildShared (Translate v obj) = call "translate" (bf <$> elements v) [build obj]
 
-buildShared (Scale v obj) = call "scale" (fmap bf $ elements v) [build obj]
+buildShared (Scale v obj) = call "scale" (bf <$> elements v) [build obj]
 
 buildShared (Mirror v obj) = callNaked "mirror" [ "v=" <> bvect v ] [build obj]
 
@@ -137,7 +137,7 @@ buildS3 (ExtrudeR r obj h) | r == 0 = callNaked "linear_extrude" ["height = " <>
 buildS3 (ExtrudeRotateR r twist obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
 -- FIXME: handle scale, center.
-buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 && isScaleID scale && translate == (V2 0 0) = do
+buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 && isScaleID scale && translate == V2 0 0 = do
   res <- ask
   let
     twist' = case twist of

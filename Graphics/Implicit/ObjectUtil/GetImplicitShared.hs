@@ -9,17 +9,17 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared, normalize) where
 
-import {-# SOURCE #-} Graphics.Implicit.Primitives
-    ( Object(getImplicit) )
+import {-# SOURCE #-} Graphics.Implicit.Primitives (Object(getImplicit))
+
 import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
+
 import Graphics.Implicit.Definitions
     ( SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj), ComponentWiseMultable((⋯/)), ℝ, minℝ )
-import Graphics.Implicit.MathUtil
-    (infty,  rmax, rmaximum, rminimum, reflect )
+
+import Graphics.Implicit.MathUtil (infty, rmax, rmaximum, rminimum, reflect)
 
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
-import Graphics.Implicit.ObjectUtil.GetBoxShared
-    ( VectorStuff(elements, uniformV) )
+import Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(elements, uniformV))
 
 import Linear (Metric(dot))
 
@@ -54,11 +54,11 @@ getImplicitShared (Complement symbObj) =
 getImplicitShared (UnionR _ []) =
   getImplicitShared @obj Empty
 getImplicitShared (UnionR r symbObjs) = \p ->
-  rminimum r $ fmap (flip getImplicit p) symbObjs
+  rminimum r $ fmap (`getImplicit` p) symbObjs
 getImplicitShared (IntersectR _ []) =
   getImplicitShared @obj Full
 getImplicitShared (IntersectR r symbObjs) = \p ->
-  rmaximum r $ fmap (flip getImplicit p) symbObjs
+  rmaximum r $ fmap (`getImplicit` p) symbObjs
 getImplicitShared (DifferenceR _ symbObj []) =
   getImplicit symbObj
 getImplicitShared (DifferenceR r symbObj symbObjs) =

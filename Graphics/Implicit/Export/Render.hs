@@ -189,7 +189,7 @@ getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
         (V2 nx ny) = ceiling `fmap` (d ⋯/ res)
 
         -- | How big are the steps?
-        (V2 rx ry) = d ⋯/ (fromℕtoℝ `fmap` (V2 nx ny))
+        (V2 rx ry) = d ⋯/ (fromℕtoℝ `fmap` V2 nx ny)
 
         -- The points inside of the region.
         pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
@@ -240,15 +240,15 @@ getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
 injX :: ℝ -> Polyline -> [ℝ3]
 injX a (Polyline xs) = fmap (prepend a) xs
 prepend :: ℝ -> ℝ2 -> ℝ3
-prepend a (V2 b c) = (V3 a b c)
+prepend a (V2 b c) = V3 a b c
 injY :: ℝ -> Polyline -> [ℝ3]
 injY a (Polyline xs) = fmap (insert a) xs
 insert :: ℝ -> ℝ2 -> ℝ3
-insert b (V2 a c) = (V3 a b c)
+insert b (V2 a c) = V3 a b c
 injZ :: ℝ -> Polyline -> [ℝ3]
 injZ a (Polyline xs) = fmap (postfix a) xs
 postfix :: ℝ -> ℝ2 -> ℝ3
-postfix c (V2 a b) = (V3 a b c)
+postfix c (V2 a b) = V3 a b c
 
 ($**) :: Obj3 -> ℝ -> ℝ2 -> ℝ
 f $** a = \(V2 b c) -> f (V3 a b c)
@@ -263,7 +263,7 @@ f **$ c = \(V2 a b) -> f (V3 a b c)
 infixr 0 **$
 
 ($*) :: Obj2 -> ℝ -> ℝ -> ℝ
-f $* a = \b -> f (V2 a b)
+f $* a = f . V2 a
 infixr 0 $*
 
 (*$) :: Obj2 -> ℝ -> ℝ -> ℝ

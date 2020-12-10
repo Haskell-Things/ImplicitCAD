@@ -86,8 +86,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
                                      )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
-import Linear (V3(V3), axisAngle, Quaternion)
-import Graphics.Implicit.Definitions (V2(V2))
+import Linear (V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
 
 -- $ 3D Primitives
@@ -404,11 +403,11 @@ pack3
 pack3 (V2 dx dy) sep objs =
     let
         boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
-        boxDropZ ((V3 a b _),(V3 d e _)) = (V2 a b, V2 d e)
+        boxDropZ (V3 a b _,V3 d e _) = (V2 a b, V2 d e)
         withBoxes :: [(Box2, SymbolicObj3)]
         withBoxes = fmap (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
     in case pack (V2 0 0,V2 dx dy) sep withBoxes of
-            (a, []) -> Just $ union $ fmap (\((V2 x y),obj) -> translate (V3 x y 0) obj) a
+            (a, []) -> Just $ union $ fmap (\(V2 x y,obj) -> translate (V3 x y 0) obj) a
             _ -> Nothing
 
 -- 2D operations
@@ -426,7 +425,7 @@ pack2 (V2 dx dy) sep objs =
     let
         withBoxes :: [(Box2, SymbolicObj2)]
         withBoxes = fmap (\obj -> ( getBox2 obj, obj)) objs
-    in case pack ((V2 0 0),(V2 dx dy)) sep withBoxes of
-            (a, []) -> Just $ union $ fmap (\((V2 x y),obj) -> translate (V2 x y) obj) a
+    in case pack (V2 0 0,V2 dx dy) sep withBoxes of
+            (a, []) -> Just $ union $ fmap (\(V2 x y,obj) -> translate (V2 x y) obj) a
             _ -> Nothing
 

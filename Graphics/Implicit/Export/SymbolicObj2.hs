@@ -39,7 +39,7 @@ symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbO
         orient (Polyline [_]) = Polyline []
 
 symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
-symbolicGetContour _ (SquareR 0 (V2 dx dy)) = [Polyline [ (V2 0 0), (V2 dx 0), (V2 dx dy), (V2 0 dy), (V2 0 0) ]]
+symbolicGetContour _ (SquareR 0 (V2 dx dy)) = [Polyline [V2 0 0, V2 dx 0, V2 dx dy, V2 0 dy, V2 0 0]]
 -- FIXME: magic number.
 symbolicGetContour res (Circle r) =
   [ Polyline
@@ -70,11 +70,11 @@ symbolicGetContourMesh _ (SquareR 0 (V2 dx dy)) = [Polytri (V2 0 0, V2 dx 0, V2 
 -- FIXME: magic number.
 symbolicGetContourMesh res (Circle r) =
     [ Polytri
-       ( ( V2 0 0
-         , V2 (r*cos(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n)) (r*sin(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n))
-         , V2 (r*cos(2*pi*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n)) (r*sin(2*pi*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n))
-         )
-       )| m <- [0.. n-1] ]
+       ( V2 0 0
+       , V2 (r*cos(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n)) (r*sin(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n))
+       , V2 (r*cos(2*pi*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n)) (r*sin(2*pi*fromFastℕtoℝ (m+1)/fromFastℕtoℝ n))
+       )
+       | m <- [0.. n-1] ]
     where
       n :: Fastℕ
       n = max 5 $ ceiling $ 2*pi*r/res

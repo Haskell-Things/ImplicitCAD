@@ -30,8 +30,9 @@ import Data.Text.Lazy (Text)
 
 -- for some minimal paralellism.
 import Control.Parallel.Strategies (runEval, rpar, rseq)
-import Linear (V2(V2))
-import Graphics.Implicit.Definitions (V3(V3))
+
+-- To build vectors of ℝs.
+import Linear (V2(V2), V3(V3))
 
 -- Convert OVals (and Lists of OVals) into a given Haskell type
 class OTypeMirror a where

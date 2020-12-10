@@ -20,9 +20,7 @@ import qualified Data.Either as Either (either)
 -- Use getImplicit2 for handling extrusion of 2D shapes to 3D.
 import  Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
-import Linear (V3(V3))
-import Graphics.Implicit.Definitions (V2(V2))
-
+import Linear (V2(V2), V3(V3))
 
 default (ℝ)
 
