@@ -46,6 +46,8 @@ import Data.Traversable (for)
 
 import Data.Text.Lazy (unpack, pack)
 
+import System.Directory (doesFileExist)
+
 import System.FilePath (takeDirectory)
 
 -- Run statements out of the OpenScad file.
@@ -252,18 +254,22 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
     if importsAllowed opts
       then do
       name' <- getRelPath (unpack name)
-      content <- liftIO $ readFile name'
-      case parseProgram name' content of
-        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> pack (show e)
-        Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
-            vals <- getVals
-            putVals []
-            runSuite sts
-            if injectVals
-              then do
-                vals' <- getVals
-                putVals $ vals' <> vals
-              else putVals vals
+      hasFile <- liftIO $ doesFileExist name'
+      if not hasFile
+        then warnC sourcePos $ "Not importing " <> name <> ": File not found."
+        else do
+          content <- liftIO $ readFile name'
+          case parseProgram name' content of
+            Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> pack (show e)
+            Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
+                vals <- getVals
+                putVals []
+                runSuite sts
+                if injectVals
+                  then do
+                    vals' <- getVals
+                    putVals $ vals' <> vals
+                  else putVals vals
       else warnC sourcePos $ "Not importing " <> name <> ": File import disabled."
 
 runStatementI (StatementI _ DoNothing) = pure ()
