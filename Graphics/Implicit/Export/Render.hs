@@ -273,10 +273,8 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 objX1Y0Z0 = sample (xm + 1) ym zm
                 objX0Y0Z1 = sample xm ym (zm + 1)
                 objX1Y0Z1 = sample (xm + 1) ym (zm + 1)
-                -- as are midz
                 midA0 = midsZMap M.! (xm, ym, zm)
                 midA1 = midsZMap M.! (xm + 1, ym, zm)
-                -- bs are midx
                 midB0 = midsXMap M.! (xm, ym, zm)
                 midB1 = midsXMap M.! (xm, ym, zm + 1)
             injY y0 <$>
@@ -291,22 +289,27 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         segsX :: [[[[[ℝ3]]]]]
         segsX = bleck nx $ do
-          (z0, z1', mB', mBT, mA', objZ0, objZ1) <-
-            zip7 pZs (tail pZs) midsY (tail midsY) midsZ objV (tail objV)
-          pure $ do
-            (y0, y1', mB'', mBT', mA'', mA'T, objY0Z0, objY1Z0, objY0Z1, objY1Z1)
-              <- zip10 pYs (tail pYs) mB' mBT mA' (tail mA') objZ0 (tail objZ0) objZ1 (tail objZ1)
-            pure $ do
-              (x0, midB0, midB1, midA0, midA1, objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) <-
-                zip9 pXs mB'' mBT' mA'' mA'T objY0Z0 objY1Z0 objY0Z1 objY1Z1
-              pure $
-                injX x0 <$>
-                  getSegs
-                    (V2 y0 z0)
-                    (V2 y1' z1')
-                    (obj $** x0)
-                    (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
-                    (midA0, midA1, midB0, midB1)
+          forXYZ nx (ny - 1) (nz - 1) $ \xm ym zm -> do
+            let z0 = stepwise z1 rz zm
+                z1' = stepwise z1 rz (zm + 1)
+            let y0 = stepwise y1 ry ym
+                y1' = stepwise y1 ry (ym + 1)
+            let x0 = stepwise x1 rx xm
+                objX0Y0Z0 = sample xm ym zm
+                objX0Y1Z0 = sample xm (ym + 1) zm
+                objX0Y0Z1 = sample xm ym (zm + 1)
+                objX0Y1Z1 = sample xm (ym + 1) (zm + 1)
+                midA0 = midsZMap M.! (xm, ym, zm)
+                midA1 = midsZMap M.! (xm, ym + 1, zm)
+                midB0 = midsYMap M.! (xm, ym, zm)
+                midB1 = midsYMap M.! (xm, ym, zm + 1)
+            injX x0 <$>
+              getSegs
+                (V2 y0 z0)
+                (V2 y1' z1')
+                (obj $** x0)
+                (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
+                (midA0, midA1, midB0, midB1)
 
 
         -- (3) & (4) : get and tesselate loops
