@@ -62,12 +62,47 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip4)
+import Data.List (zip6, zip7, zip4)
 import Data.List (zip3)
 import Data.List (zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
+
+
+zip9 :: [a1] -> [a2] -> [a3] -> [a4] -> [a5] -> [a6] -> [a7] -> [a8] -> [a9] ->  [(a1, a2, a3, a4, a5, a6, a7, a8, a9)]
+zip9
+  (a1 : a1s)
+  (a2 : a2s)
+  (a3 : a3s)
+  (a4 : a4s)
+  (a5 : a5s)
+  (a6 : a6s)
+  (a7 : a7s)
+  (a8 : a8s)
+  (a9 : a9s)
+  = (a1, a2, a3, a4, a5, a6, a7, a8, a9)
+  : zip9 a1s a2s a3s a4s a5s a6s a7s a8s a9s
+zip9 _ _ _ _ _ _ _ _ _ = []
+
+zip10 :: [a1] -> [a2] -> [a3] -> [a4] -> [a5] -> [a6] -> [a7] -> [a8] -> [a9] -> [a10] -> [(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)]
+zip10
+  (a1 : a1s)
+  (a2 : a2s)
+  (a3 : a3s)
+  (a4 : a4s)
+  (a5 : a5s)
+  (a6 : a6s)
+  (a7 : a7s)
+  (a8 : a8s)
+  (a9 : a9s)
+  (a10 : a10s)
+  = (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
+  : zip10 a1s a2s a3s a4s a5s a6s a7s a8s a9s a10s
+zip10 _ _ _ _ _ _ _ _ _ _ = []
+
+
+
 
 getMesh :: ℝ3 -> ℝ3 -> ℝ3 -> Obj3 -> TriangleMesh
 getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
@@ -162,113 +197,62 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         -- (2) Calculate segments for each side
         segsZ :: [[[[[ℝ3]]]]]
-        segsZ = bleck nz $
-          [ [ [ injZ z0 <$>
-                  getSegs
-                    (V2 x0 y0)
-                    (V2 x1' y1')
-                    (obj **$ z0)
-                    (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
-                    (midA0, midA1, midB0, midB1)
-              | x0        <- pXs
-              | x1'       <- tail pXs
-              | midB0     <- mX''
-              | midB1     <- mX'T
-              | midA0     <- mY''
-              | midA1     <- tail mY''
-              | objX0Y0Z0 <- objY0Z0
-              | objX1Y0Z0 <-  tail objY0Z0
-              | objX0Y1Z0 <- objY1Z0
-              | objX1Y1Z0 <- tail objY1Z0
-              ]
-            | y0      <- pYs
-            | y1'     <- tail pYs
-            | mX''    <- mX'
-            | mX'T    <- tail mX'
-            | mY''    <- mY'
-            | objY0Z0 <- objZ0
-            | objY1Z0 <- tail objZ0
-            ]
-          | z0    <- pZs
-          | mX'   <- midsX
-          | mY'   <- midsY
-          | objZ0 <- objV
-          ]
+        segsZ = bleck nz $ do
+          (z0, mX', mY', objZ0) <- zip4 pZs midsX midsY objV
+          pure $ do
+            (y0, y1', mX'', mX'T, mY'', objY0Z0, objY1Z0) <- zip7 pYs (tail pYs) mX' (tail mX') mY' objZ0 (tail objZ0)
+            pure $ do
+              (x0, x1', midB0, midB1, midA0, midA1, objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) <-
+                zip10 pXs (tail pXs) mX'' mX'T mY'' (tail mY'') objY0Z0 (tail objY0Z0) objY1Z0 (tail objY1Z0)
+              pure $
+                injZ z0 <$>
+                    getSegs
+                      (V2 x0 y0)
+                      (V2 x1' y1')
+                      (obj **$ z0)
+                      (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
+                      (midA0, midA1, midB0, midB1)
+
 
         segsY :: [[[[[ℝ3]]]]]
-        segsY = bleck ny $
-          [ [ [ injY y0 <$>
+        segsY = bleck ny $ do
+          (z0, z1', mB', mBT, mA', objZ0, objZ1) <-
+            zip7 pZs (tail pZs) midsX (tail midsX) midsZ objV (tail objV)
+          pure $ do
+            (y0, mB'', mBT', mA'', objY0Z0, objY0Z1) <- zip6 pYs mB' mBT mA' objZ0 objZ1
+            pure $ do
+              (x0, x1', midB0, midB1, midA0, midA1, objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) <-
+                zip10 pXs (tail pXs) mB'' mBT' mA'' (tail mA'') objY0Z0 (tail objY0Z0) objY0Z1 (tail objY0Z1)
+              pure $
+                injY y0 <$>
                   getSegs
                     (V2 x0 z0)
                     (V2 x1' z1')
                     (obj *$* y0)
                     (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
                     (midA0, midA1, midB0, midB1)
-              | x0        <- pXs
-              | x1'       <- tail pXs
-              | midB0     <- mB''
-              | midB1     <- mBT'
-              | midA0     <- mA''
-              | midA1     <- tail mA''
-              | objX0Y0Z0 <- objY0Z0
-              | objX1Y0Z0 <- tail objY0Z0
-              | objX0Y0Z1 <- objY0Z1
-              | objX1Y0Z1 <- tail objY0Z1
-              ]
-            | y0      <- pYs
-            | mB''    <- mB'
-            | mBT'    <- mBT
-            | mA''    <- mA'
-            | objY0Z0 <- objZ0
-            | objY0Z1 <- objZ1
-            ]
-          | z0    <- pZs
-          | z1'   <- tail pZs
-          | mB'   <- midsX
-          | mBT   <- tail midsX
-          | mA'   <- midsZ
-          | objZ0 <- objV
-          | objZ1 <- tail objV
-          ]
+
+
 
         segsX :: [[[[[ℝ3]]]]]
-        segsX = bleck nx $
-          [ [ [ injX x0 <$>
+        segsX = bleck nx $ do
+          (z0, z1', mB', mBT, mA', objZ0, objZ1) <-
+            zip7 pZs (tail pZs) midsY (tail midsY) midsZ objV (tail objV)
+          pure $ do
+            (y0, y1', mB'', mBT', mA'', mA'T, objY0Z0, objY1Z0, objY0Z1, objY1Z1)
+              <- zip10 pYs (tail pYs) mB' mBT mA' (tail mA') objZ0 (tail objZ0) objZ1 (tail objZ1)
+            pure $ do
+              (x0, midB0, midB1, midA0, midA1, objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) <-
+                zip9 pXs mB'' mBT' mA'' mA'T objY0Z0 objY1Z0 objY0Z1 objY1Z1
+              pure $
+                injX x0 <$>
                   getSegs
                     (V2 y0 z0)
                     (V2 y1' z1')
                     (obj $** x0)
                     (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
                     (midA0, midA1, midB0, midB1)
-              | x0<-pXs
-              |                 midB0<-mB''
-              | midB1     <- mBT'
-              | midA0     <- mA''
-              | midA1     <- mA'T
-              | objX0Y0Z0 <- objY0Z0
-              | objX0Y1Z0 <- objY1Z0
-              | objX0Y0Z1 <- objY0Z1
-              | objX0Y1Z1 <- objY1Z1
-              ]
-            | y0      <- pYs
-            | y1'     <- tail pYs
-            | mB''    <- mB'
-            | mBT'    <- mBT
-            | mA''    <- mA'
-            | mA'T    <- tail mA'
-            | objY0Z0 <- objZ0
-            | objY1Z0 <- tail objZ0
-            | objY0Z1 <- objZ1
-            | objY1Z1 <- tail objZ1
-            ]
-          | z0    <- pZs
-          | z1'   <- tail pZs
-          | mB'   <- midsY
-          | mBT   <- tail midsY
-          | mA'   <- midsZ
-          | objZ0 <- objV
-          | objZ1 <- tail objV
-          ]
+
 
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
