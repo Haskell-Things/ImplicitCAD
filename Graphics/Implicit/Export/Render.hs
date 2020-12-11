@@ -64,7 +64,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip)
+import Data.List (zip6, zip5, zip4, zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -261,8 +261,15 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
-        sqTris = bleck (nx + ny + nz) $
-          [ [ [ foldMap (tesselateLoop minres obj) $ getLoops $
+        sqTris = bleck (nx + ny + nz) $ do
+          (segZ', segZT, segY', segX') <- zip4 segsZ (tail segsZ) segsY segsX
+          pure $ do
+            (segZ'', segZT', segY'', segY'T, segX'') <- zip5 segZ' segZT segY' (tail segY') segX'
+            pure $ do
+              (segZ''', segZT'', segY''', segY'T', segX''', segX''T) <-
+                zip6 segZ'' segZT' segY'' segY'T segX'' (tail segX'')
+              pure $
+                foldMap (tesselateLoop minres obj) $ getLoops $
                   mconcat
                     [ segX'''
                     , mapR segX''T
@@ -271,24 +278,6 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                     , segZ'''
                     , mapR segZT''
                     ]
-                | segZ''' <- segZ''
-                | segZT'' <- segZT'
-                | segY''' <- segY''
-                | segY'T' <- segY'T
-                | segX''' <- segX''
-                | segX''T <- tail segX''
-                ]
-              | segZ'' <- segZ'
-              | segZT' <- segZT
-              | segY'' <- segY'
-              | segY'T <- tail segY'
-              | segX'' <- segX'
-              ]
-            | segZ'  <- segsZ
-            | segZT  <- tail segsZ
-            | segY'  <- segsY
-            | segX'  <- segsX
-            ]
 
     in
       -- (5) merge squares, etc
