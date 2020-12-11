@@ -8,8 +8,8 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import qualified Data.Map as M
-import Data.Map (Map)
+import qualified Data.Map.Strict as M
+import Data.Map.Strict (Map)
 import Prelude(pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
@@ -108,23 +108,31 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsZ :: [[[ℝ]]]
-        midsZ = bleck nz $ do
-          forXYZ nx ny (nz - 1) $ \xm ym zm -> do
+        mkMap :: [[[a]]] -> Map (ℕ, ℕ, ℕ) a
+        mkMap l = M.fromList $ do
+          (z, l') <- zip [0..] l
+          (y, l'') <- zip [0..] l'
+          (x, a) <- zip [0..] l''
+          pure ((x,y,z), a)
+
+        midsXMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsXMap = mkMap $ bleck nx $
+          forXYZ (nx - 1) ny nz $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
-                z1' = stepwise z1 rz (zm + 1)
                 y0 = stepwise y1 ry ym
                 x0 = stepwise x1 rx xm
+                x1' = stepwise x1 rx (xm + 1)
                 objX0Y0Z0 = sample xm ym zm
-                objX0Y0Z1 = sample xm ym (zm + 1)
+                objX1Y0Z0 = sample (xm + 1) ym zm
             interpolate
-              (V2 z0 objX0Y0Z0)
-              (V2 z1' objX0Y0Z1)
-              (appABC obj x0 y0)
-              zres
+              (V2 x0 objX0Y0Z0)
+              (V2 x1' objX1Y0Z0)
+              (appBCA obj y0 z0)
+              xres
 
-        midsY :: [[[ℝ]]]
-        midsY = bleck ny $ do
+
+        midsYMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsYMap = mkMap $ bleck ny $
           forXYZ nx (ny - 1) nz $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
                 y0 = stepwise y1 ry ym
@@ -139,36 +147,21 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
               yres
 
 
-        midsX :: [[[ℝ]]]
-        midsX = bleck nx $ do
-          forXYZ (nx - 1) ny nz $ \xm ym zm -> do
+        midsZMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsZMap = mkMap $ bleck nz $
+          forXYZ nx ny (nz - 1) $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
+                z1' = stepwise z1 rz (zm + 1)
                 y0 = stepwise y1 ry ym
                 x0 = stepwise x1 rx xm
-                x1' = stepwise x1 rx (xm + 1)
                 objX0Y0Z0 = sample xm ym zm
-                objX1Y0Z0 = sample (xm + 1) ym zm
+                objX0Y0Z1 = sample xm ym (zm + 1)
             interpolate
-              (V2 x0 objX0Y0Z0)
-              (V2 x1' objX1Y0Z0)
-              (appBCA obj y0 z0)
-              xres
+              (V2 z0 objX0Y0Z0)
+              (V2 z1' objX0Y0Z1)
+              (appABC obj x0 y0)
+              zres
 
-        mkMap :: [[[a]]] -> Map (ℕ, ℕ, ℕ) a
-        mkMap l = M.fromList $ do
-          (z, l') <- zip [0..] l
-          (y, l'') <- zip [0..] l'
-          (x, a) <- zip [0..] l''
-          pure ((x,y,z), a)
-
-        midsXMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsXMap = mkMap midsX
-
-        midsYMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsYMap = mkMap midsY
-
-        midsZMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsZMap = mkMap midsZ
 
 
         forXYZ :: ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> r) -> [[[r]]]
