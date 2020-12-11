@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
-import Prelude(fromIntegral, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -64,9 +64,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip6, zip5, zip4, zip)
-import Data.List ((!!))
-import Data.List (zip3)
+import Data.List (zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
