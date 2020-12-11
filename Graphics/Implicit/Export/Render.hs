@@ -145,23 +145,20 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
 
         midsX :: [[[ℝ]]]
-        midsX = bleck nx $
-          [ [ [ interpolate
+        midsX = bleck nx $ do
+          (z0, objZ0) <- zip pZs objV
+          pure $ do
+            (y0,objY0Z0) <- zip pYs objZ0
+            pure $ do
+              (x0, x1', objX0Y0Z0, objX1Y0Z0) <- zip4 pXs (tail pXs) objY0Z0 (tail objY0Z0)
+              pure $
+                interpolate
                   (V2 x0 objX0Y0Z0)
                   (V2 x1' objX1Y0Z0)
                   (appBCA obj y0 z0)
                   xres
-              | x0        <- pXs
-              | x1'       <- tail pXs
-              | objX0Y0Z0 <- objY0Z0
-              | objX1Y0Z0 <- tail objY0Z0
-              ]
-            | y0      <- pYs
-            | objY0Z0 <- objZ0
-            ]
-          | z0    <- pZs
-          | objZ0 <- objV
-          ]
+              ;
+
 
         -- (2) Calculate segments for each side
         segsZ :: [[[[[ℝ3]]]]]
