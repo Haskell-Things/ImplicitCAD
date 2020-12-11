@@ -335,10 +335,6 @@ injZ a (Polyline xs) = fmap (postfix a) xs
 postfix :: ℝ -> ℝ2 -> ℝ3
 postfix c (V2 a b) = (V3 a b c)
 
-($**) :: Obj3 -> ℝ -> ℝ2 -> ℝ
-f $** a = \(V2 b c) -> f (V3 a b c)
-infixr 0 $**
-
 (*$*) :: Obj3 -> ℝ -> ℝ2 -> ℝ
 f *$* b = \(V2 a c) -> f (V3 a b c)
 infixr 0 *$*
