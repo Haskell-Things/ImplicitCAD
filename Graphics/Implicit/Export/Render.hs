@@ -162,64 +162,58 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ :: [[[ℝ]]]
         midsZ = bleck nz $ do
-          zm <- [0 .. nz - 1]
+          forXYZ nx ny (nz - 1) $ \xm ym zm -> do
           let z0 = stepwise z1 rz zm
               z1' = stepwise z1 rz (zm + 1)
-          pure $ do
-            ym <- [0 .. ny]
-            let y0 = stepwise y1 ry ym
-            pure $ do
-              xm <- [0 .. nx]
-              let x0 = stepwise x1 rx xm
-                  objX0Y0Z0 = sample xm ym zm
-                  objX0Y0Z1 = sample xm ym (zm + 1)
-              pure $
-                interpolate
-                  (V2 z0 objX0Y0Z0)
-                  (V2 z1' objX0Y0Z1)
-                  (appABC obj x0 y0)
-                  zres
+              y0 = stepwise y1 ry ym
+              x0 = stepwise x1 rx xm
+              objX0Y0Z0 = sample xm ym zm
+              objX0Y0Z1 = sample xm ym (zm + 1)
+          interpolate
+            (V2 z0 objX0Y0Z0)
+            (V2 z1' objX0Y0Z1)
+            (appABC obj x0 y0)
+            zres
 
         midsY :: [[[ℝ]]]
         midsY = bleck ny $ do
-          zm <- [0 .. nz]
-          let z0 = stepwise z1 rz zm
-          pure $ do
-            ym <- [0 .. ny - 1]
-            let y0 = stepwise y1 ry ym
+          forXYZ nx (ny - 1) nz $ \xm ym zm -> do
+            let z0 = stepwise z1 rz zm
+                y0 = stepwise y1 ry ym
                 y1' = stepwise y1 ry (ym + 1)
-            pure $ do
-              xm <- [0 .. nx]
-              let x0 = stepwise x1 rx xm
-                  objX0Y0Z0 = sample xm ym zm
-                  objX0Y1Z0 = sample xm (ym + 1) zm
-              pure $
-                interpolate
-                    (V2 y0 objX0Y0Z0)
-                    (V2 y1' objX0Y1Z0)
-                    (appACB obj x0 z0)
-                    yres
+                x0 = stepwise x1 rx xm
+                objX0Y0Z0 = sample xm ym zm
+                objX0Y1Z0 = sample xm (ym + 1) zm
+            interpolate
+              (V2 y0 objX0Y0Z0)
+              (V2 y1' objX0Y1Z0)
+              (appACB obj x0 z0)
+              yres
 
 
         midsX :: [[[ℝ]]]
         midsX = bleck nx $ do
-          zm <- [0 .. nz]
-          let z0 = stepwise z1 rz zm
+          forXYZ (nx - 1) ny nz $ \xm ym zm -> do
+            let z0 = stepwise z1 rz zm
+                y0 = stepwise y1 ry ym
+                x0 = stepwise x1 rx xm
+                x1' = stepwise x1 rx (xm + 1)
+                objX0Y0Z0 = sample xm ym zm
+                objX1Y0Z0 = sample (xm + 1) ym zm
+            interpolate
+              (V2 x0 objX0Y0Z0)
+              (V2 x1' objX1Y0Z0)
+              (appBCA obj y0 z0)
+              xres
+
+        forXYZ :: ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> r) -> [[[r]]]
+        forXYZ x y z f = do
+          zm <- [0 .. z]
           pure $ do
-            ym <- [0 .. ny]
-            let y0 = stepwise y1 ry ym
+            ym <- [0 .. y]
             pure $ do
-              xm <- [0 .. nx - 1]
-              let x0 = stepwise x1 rx xm
-                  x1' = stepwise x1 rx (xm + 1)
-                  objX0Y0Z0 = sample xm ym zm
-                  objX1Y0Z0 = sample (xm + 1) ym zm
-              pure $
-                interpolate
-                  (V2 x0 objX0Y0Z0)
-                  (V2 x1' objX1Y0Z0)
-                  (appBCA obj y0 z0)
-                  xres
+              xm <- [0 .. x]
+              pure $ f xm ym zm
 
 
         -- (2) Calculate segments for each side
