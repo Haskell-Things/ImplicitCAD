@@ -64,6 +64,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Data.List (zip4)
 import Data.List (zip3)
+import Data.List (zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -129,24 +130,19 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                   zres
 
         midsY :: [[[ℝ]]]
-        midsY = bleck ny $
-          [ [ [ interpolate
-                  (V2 y0 objX0Y0Z0)
-                  (V2 y1' objX0Y1Z0)
-                  (appACB obj x0 z0)
-                  yres
-              | x0        <- pXs
-              | objX0Y0Z0 <- objY0Z0
-              | objX0Y1Z0 <- objY1Z0
-              ]
-            | y0      <- pYs
-            | y1'     <- tail pYs
-            | objY0Z0 <- objZ0
-            | objY1Z0 <- tail objZ0
-            ]
-          | z0    <- pZs
-          | objZ0 <- objV
-          ]
+        midsY = bleck ny $ do
+          (z0, objZ0) <- zip pZs objV
+          pure $ do
+            (y0, y1', objY0Z0, objY1Z0) <- zip4 pYs (tail pYs) objZ0 (tail objZ0)
+            pure $ do
+              (x0, objX0Y0Z0, objX0Y1Z0) <- zip3 pXs objY0Z0 objY1Z0
+              pure $
+                interpolate
+                    (V2 y0 objX0Y0Z0)
+                    (V2 y1' objX0Y1Z0)
+                    (appACB obj x0 z0)
+                    yres
+
 
         midsX :: [[[ℝ]]]
         midsX = bleck nx $
