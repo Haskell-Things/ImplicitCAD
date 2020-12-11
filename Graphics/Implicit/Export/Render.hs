@@ -11,7 +11,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Prelude(Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
+import Prelude((<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -121,8 +121,9 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         mkMidsMap l =
           forXYZMV3 (V3 nx ny nz & l -~ 1) $ \xm ym zm -> do
             let v = V3 xm ym zm
-                stepped = V3 (stepwise x1 rx xm) (stepwise y1 ry ym) (stepwise z1 rz zm)
-                stepped_up = V3 (stepwise x1 rx $ xm + 1) (stepwise y1 ry $ ym + 1) (stepwise z1 rz $ zm + 1)
+                stepping   = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
+                stepped    = stepping <*> v
+                stepped_up = stepping <*> fmap (+1) v
             M.singleton (xm, ym, zm) $
               interpolate
                 (V2 (view l stepped) $ sampleV3 v)
