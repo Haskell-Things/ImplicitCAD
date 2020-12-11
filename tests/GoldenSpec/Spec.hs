@@ -7,7 +7,6 @@ import GoldenSpec.Util (golden)
 import Graphics.Implicit
 import Prelude
 import Test.Hspec ( describe, Spec )
-import Linear
 
 default (Int)
 
