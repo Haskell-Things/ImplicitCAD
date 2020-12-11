@@ -27,7 +27,7 @@ module Graphics.Implicit.Definitions (
     ComponentWiseMultable,
     (⋯*),
     (⋯/),
-    Polyline(Polyline),
+    Polyline(..),
     Polytri(Polytri),
     Triangle(Triangle),
     NormedTriangle(NormedTriangle),
@@ -72,7 +72,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Ord, Eq, Semigroup((<>)), Monoid (mempty), Show, Double, Either(Left, Right), Bool(True, False), show, (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -164,20 +164,23 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-newtype Polyline = Polyline [ℝ2]
+newtype Polyline = Polyline { getPolyline :: [ℝ2] }
+  deriving (Eq, Ord, Show, Generic)
 
 -- | A triangle in 2D space (a,b,c).
 newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
 
 -- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
 newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
+  deriving (Eq, Ord, Show, Generic)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
 newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
-newtype TriangleMesh = TriangleMesh [Triangle]
+newtype TriangleMesh = TriangleMesh { getTriangles :: [Triangle] }
+  deriving (Eq, Ord, Show, Generic)
 
 -- | A normed triangle mesh is a mesh of normed triangles.
 newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
