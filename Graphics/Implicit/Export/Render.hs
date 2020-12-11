@@ -130,20 +130,25 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         forcesteps=32
 
         -- | Perform a given function on every point in a 3D grid.
-        par3DList :: ℕ -> ℕ -> ℕ -> (ℝ -> ℝ -> ℝ -> ℝ) -> [[[ℝ]]]
-        par3DList lenx leny lenz f = bleck (lenx + leny + lenz) $ do
+        par3DList :: ℕ -> ℕ -> ℕ -> [[[ℝ]]]
+        par3DList lenx leny lenz = bleck (lenx + leny + lenz) $ do
           mz <- [0..lenz]
           pure $ do
             my <- [0..leny]
             pure $ do
               mx <- [0..lenx]
-              pure $
-                f (x1 + rx*fromℕtoℝ mx)
-                  (y1 + ry*fromℕtoℝ my)
-                  (z1 + rz*fromℕtoℝ mz)
+              pure $ sample mx my mz
+
+        sample :: ℕ -> ℕ -> ℕ -> ℝ
+        sample mx my mz = obj $
+          V3
+            (x1 + rx * fromℕtoℝ mx)
+            (y1 + ry * fromℕtoℝ my)
+            (z1 + rz * fromℕtoℝ mz)
 
         -- | Evaluate obj to avoid waste in mids, segs, later.
-        objV = par3DList (nx+2) (ny+2) (nz+2) $ \x y z -> obj $ V3 x y z
+        objV :: [[[ℝ]]]
+        objV = par3DList (nx+2) (ny+2) (nz+2)
 
         bleck :: NFData a => ℕ -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
@@ -191,7 +196,6 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                   (V2 x1' objX1Y0Z0)
                   (appBCA obj y0 z0)
                   xres
-              ;
 
 
         -- (2) Calculate segments for each side
