@@ -130,21 +130,20 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         forcesteps=32
 
         -- | Perform a given function on every point in a 3D grid.
-        par3DList :: ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> ℝ) -> [[[ℝ]]]
-        par3DList lenx leny lenz f = bleck (lenx + leny + lenz) $
-            [ [ [ f
-                    (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
-                    (\n -> y1 + ry*fromℕtoℝ (my+n)) my
-                    (\n -> z1 + rz*fromℕtoℝ (mz+n)) mz
-                | mx <- [0..lenx]
-                ]
-              | my <- [0..leny]
-              ]
-            | mz <- [0..lenz]
-          ]
+        par3DList :: ℕ -> ℕ -> ℕ -> (ℝ -> ℝ -> ℝ -> ℝ) -> [[[ℝ]]]
+        par3DList lenx leny lenz f = bleck (lenx + leny + lenz) $ do
+          mz <- [0..lenz]
+          pure $ do
+            my <- [0..leny]
+            pure $ do
+              mx <- [0..lenx]
+              pure $
+                f (x1 + rx*fromℕtoℝ (mx+0))
+                  (y1 + ry*fromℕtoℝ (my+0))
+                  (z1 + rz*fromℕtoℝ (mz+0))
 
         -- | Evaluate obj to avoid waste in mids, segs, later.
-        objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj $ V3 (x 0) (y 0) (z 0)
+        objV = par3DList (nx+2) (ny+2) (nz+2) $ \x y z -> obj $ V3 x y z
 
         bleck :: NFData a => ℕ -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
