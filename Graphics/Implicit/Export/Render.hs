@@ -138,9 +138,9 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
             pure $ do
               mx <- [0..lenx]
               pure $
-                f (x1 + rx*fromℕtoℝ (mx+0))
-                  (y1 + ry*fromℕtoℝ (my+0))
-                  (z1 + rz*fromℕtoℝ (mz+0))
+                f (x1 + rx*fromℕtoℝ mx)
+                  (y1 + ry*fromℕtoℝ my)
+                  (z1 + rz*fromℕtoℝ mz)
 
         -- | Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x y z -> obj $ V3 x y z
