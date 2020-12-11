@@ -162,11 +162,17 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ :: [[[ℝ]]]
         midsZ = bleck nz $ do
-          (z0, z1', objZ0, objZ1) <- zip4 pZs (tail pZs) objV (tail objV)
+          zm <- [0 .. nz - 1]
+          let z0 = stepwise z1 rz zm
+              z1' = stepwise z1 rz (zm + 1)
           pure $ do
-            (y0, objY0Z0, objY0Z1) <- zip3 pYs objZ0 objZ1
+            ym <- [0 .. ny]
+            let y0 = stepwise y1 ry ym
             pure $ do
-              (x0, objX0Y0Z0, objX0Y0Z1) <- zip3 pXs objY0Z0 objY0Z1
+              xm <- [0 .. nx]
+              let x0 = stepwise x1 rx xm
+                  objX0Y0Z0 = sample xm ym zm
+                  objX0Y0Z1 = sample xm ym (zm + 1)
               pure $
                 interpolate
                   (V2 z0 objX0Y0Z0)
