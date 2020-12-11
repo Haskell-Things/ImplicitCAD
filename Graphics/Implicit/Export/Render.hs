@@ -182,11 +182,17 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         midsY :: [[[ℝ]]]
         midsY = bleck ny $ do
-          (z0, objZ0) <- zip pZs objV
+          zm <- [0 .. nz]
+          let z0 = stepwise z1 rz zm
           pure $ do
-            (y0, y1', objY0Z0, objY1Z0) <- zip4 pYs (tail pYs) objZ0 (tail objZ0)
+            ym <- [0 .. ny - 1]
+            let y0 = stepwise y1 ry ym
+                y1' = stepwise y1 ry (ym + 1)
             pure $ do
-              (x0, objX0Y0Z0, objX0Y1Z0) <- zip3 pXs objY0Z0 objY1Z0
+              xm <- [0 .. nx]
+              let x0 = stepwise x1 rx xm
+                  objX0Y0Z0 = sample xm ym zm
+                  objX0Y1Z0 = sample xm (ym + 1) zm
               pure $
                 interpolate
                     (V2 y0 objX0Y0Z0)
@@ -197,11 +203,17 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         midsX :: [[[ℝ]]]
         midsX = bleck nx $ do
-          (z0, objZ0) <- zip pZs objV
+          zm <- [0 .. nz]
+          let z0 = stepwise z1 rz zm
           pure $ do
-            (y0,objY0Z0) <- zip pYs objZ0
+            ym <- [0 .. ny]
+            let y0 = stepwise y1 ry ym
             pure $ do
-              (x0, x1', objX0Y0Z0, objX1Y0Z0) <- zip4 pXs (tail pXs) objY0Z0 (tail objY0Z0)
+              xm <- [0 .. nx - 1]
+              let x0 = stepwise x1 rx xm
+                  x1' = stepwise x1 rx (xm + 1)
+                  objX0Y0Z0 = sample xm ym zm
+                  objX1Y0Z0 = sample (xm + 1) ym zm
               pure $
                 interpolate
                   (V2 x0 objX0Y0Z0)
