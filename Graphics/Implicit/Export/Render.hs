@@ -62,7 +62,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip6, zip7, zip4)
+import Data.List (zip5, zip6, zip7, zip4)
 import Data.List (zip3)
 import Data.List (zip)
 
@@ -163,17 +163,17 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         midsZ :: [[[ℝ]]]
         midsZ = bleck nz $ do
           forXYZ nx ny (nz - 1) $ \xm ym zm -> do
-          let z0 = stepwise z1 rz zm
-              z1' = stepwise z1 rz (zm + 1)
-              y0 = stepwise y1 ry ym
-              x0 = stepwise x1 rx xm
-              objX0Y0Z0 = sample xm ym zm
-              objX0Y0Z1 = sample xm ym (zm + 1)
-          interpolate
-            (V2 z0 objX0Y0Z0)
-            (V2 z1' objX0Y0Z1)
-            (appABC obj x0 y0)
-            zres
+            let z0 = stepwise z1 rz zm
+                z1' = stepwise z1 rz (zm + 1)
+                y0 = stepwise y1 ry ym
+                x0 = stepwise x1 rx xm
+                objX0Y0Z0 = sample xm ym zm
+                objX0Y0Z1 = sample xm ym (zm + 1)
+            interpolate
+              (V2 z0 objX0Y0Z0)
+              (V2 z1' objX0Y0Z1)
+              (appABC obj x0 y0)
+              zres
 
         midsY :: [[[ℝ]]]
         midsY = bleck ny $ do
@@ -219,12 +219,21 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (2) Calculate segments for each side
         segsZ :: [[[[[ℝ3]]]]]
         segsZ = bleck nz $ do
-          (z0, mX', mY', objZ0) <- zip4 pZs midsX midsY objV
+          (zm, mX', mY') <- zip3 [0 .. nz] midsX midsY
+          let z0 = stepwise z1 rz zm
           pure $ do
-            (y0, y1', mX'', mX'T, mY'', objY0Z0, objY1Z0) <- zip7 pYs (tail pYs) mX' (tail mX') mY' objZ0 (tail objZ0)
+            (ym, mX'', mX'T, mY'') <- zip4 [0 .. ny - 1] mX' (tail mX') mY'
+            let y0 = stepwise y1 ry ym
+                y1' = stepwise y1 ry (ym + 1)
             pure $ do
-              (x0, x1', midB0, midB1, midA0, midA1, objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) <-
-                zip10 pXs (tail pXs) mX'' mX'T mY'' (tail mY'') objY0Z0 (tail objY0Z0) objY1Z0 (tail objY1Z0)
+              (xm, midB0, midB1, midA0, midA1) <-
+                zip5 [0 .. nx - 1] mX'' mX'T mY'' (tail mY'')
+              let x0 = stepwise x1 rx xm
+                  x1' = stepwise x1 rx (xm + 1)
+                  objX0Y0Z0 = sample xm ym zm
+                  objX1Y0Z0 = sample (xm + 1) ym zm
+                  objX0Y1Z0 = sample xm (ym + 1) zm
+                  objX1Y1Z0 = sample (xm + 1) (ym + 1) zm
               pure $
                 injZ z0 <$>
                     getSegs
