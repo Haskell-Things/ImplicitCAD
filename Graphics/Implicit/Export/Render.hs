@@ -64,44 +64,10 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip5, zip6, zip7, zip4)
-import Data.List (zip3)
 import Data.List (zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
-
-
-zip9 :: [a1] -> [a2] -> [a3] -> [a4] -> [a5] -> [a6] -> [a7] -> [a8] -> [a9] ->  [(a1, a2, a3, a4, a5, a6, a7, a8, a9)]
-zip9
-  (a1 : a1s)
-  (a2 : a2s)
-  (a3 : a3s)
-  (a4 : a4s)
-  (a5 : a5s)
-  (a6 : a6s)
-  (a7 : a7s)
-  (a8 : a8s)
-  (a9 : a9s)
-  = (a1, a2, a3, a4, a5, a6, a7, a8, a9)
-  : zip9 a1s a2s a3s a4s a5s a6s a7s a8s a9s
-zip9 _ _ _ _ _ _ _ _ _ = []
-
-zip10 :: [a1] -> [a2] -> [a3] -> [a4] -> [a5] -> [a6] -> [a7] -> [a8] -> [a9] -> [a10] -> [(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)]
-zip10
-  (a1 : a1s)
-  (a2 : a2s)
-  (a3 : a3s)
-  (a4 : a4s)
-  (a5 : a5s)
-  (a6 : a6s)
-  (a7 : a7s)
-  (a8 : a8s)
-  (a9 : a9s)
-  (a10 : a10s)
-  = (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
-  : zip10 a1s a2s a3s a4s a5s a6s a7s a8s a9s a10s
-zip10 _ _ _ _ _ _ _ _ _ _ = []
 
 
 
@@ -121,12 +87,6 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- How big are the steps?
         (V3 rx ry rz) = d ⋯/ (fromℕtoℝ `fmap` V3 nx ny nz)
 
-        -- The positions we're rendering.
-        pXs, pYs, pZs :: [ℝ]
-        pXs = fmap (stepwise x1 rx) [0.. nx]
-        pYs = fmap (stepwise y1 ry) [0.. ny]
-        pZs = fmap (stepwise z1 rz) [0.. nz]
-
 
         stepwise :: ℝ -> ℝ -> ℕ -> ℝ
         stepwise x0 dx n = x0 + dx * fromℕtoℝ n
@@ -137,26 +97,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         forcesteps :: Int
         forcesteps=32
 
-        -- | Perform a given function on every point in a 3D grid.
-        par3DList :: ℕ -> ℕ -> ℕ -> [[[ℝ]]]
-        par3DList lenx leny lenz = bleck (lenx + leny + lenz) $ do
-          mz <- [0..lenz]
-          pure $ do
-            my <- [0..leny]
-            pure $ do
-              mx <- [0..lenx]
-              pure $ sample mx my mz
-
         sample :: ℕ -> ℕ -> ℕ -> ℝ
         sample mx my mz = obj $
           V3
             (stepwise x1 rx mx)
             (stepwise y1 ry my)
             (stepwise z1 rz mz)
-
-        -- | Evaluate obj to avoid waste in mids, segs, later.
-        objV :: [[[ℝ]]]
-        objV = par3DList (nx+2) (ny+2) (nz+2)
 
         bleck :: NFData a => ℕ -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
