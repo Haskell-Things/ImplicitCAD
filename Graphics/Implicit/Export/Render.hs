@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map as M
 import Data.Map (Map)
-import Prelude(pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(fromIntegral, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -65,6 +65,8 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Data.List (zip6, zip5, zip4, zip)
+import Data.List ((!!))
+import Data.List (zip3)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -257,27 +259,49 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
                 (midA0, midA1, midB0, midB1)
 
+        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsXMap = mkMap segsX
+
+        segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsYMap = mkMap segsY
+
+        segsZMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsZMap = mkMap segsZ
+
+
 
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
         sqTris = bleck (nx + ny + nz) $ do
-          (segZ', segZT, segY', segX') <- zip4 segsZ (tail segsZ) segsY segsX
-          pure $ do
-            (segZ'', segZT', segY'', segY'T, segX'') <- zip5 segZ' segZT segY' (tail segY') segX'
+          -- forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
+            zm <- [0 .. nz - 1]
+            let segZ' = segsZ !! fromIntegral zm
+                segZT = segsZ !! (fromIntegral $ zm + 1)
+                segY' = segsY !! fromIntegral zm
+                segX' = segsX !! fromIntegral zm
             pure $ do
-              (segZ''', segZT'', segY''', segY'T', segX''', segX''T) <-
-                zip6 segZ'' segZT' segY'' segY'T segX'' (tail segX'')
-              pure $
-                foldMap (tesselateLoop minres obj) $ getLoops $
-                  mconcat
-                    [ segX'''
-                    , mapR segX''T
-                    , mapR segY'''
-                    , segY'T'
-                    , segZ'''
-                    , mapR segZT''
-                    ]
+              (segZ'', segZT', ym, segX'') <- zip4 segZ' segZT [0 .. ny - 1] segX'
+              let segY'' = segY' !! fromIntegral ym
+                  segY'T = segY' !! (fromIntegral $ ym + 1)
+              pure $ do
+                xm <- [0 .. nx - 1]
+                let segX''' = segX'' !! fromIntegral xm
+                    segX''T = segX'' !! (fromIntegral $ xm + 1)
+                    segY''' = segY'' !! fromIntegral xm
+                    segY'T' = segY'T !! fromIntegral xm
+                    segZ''' = segZ'' !! fromIntegral xm
+                    segZT'' = segZT' !! fromIntegral xm
+                pure $
+                  foldMap (tesselateLoop minres obj) $ getLoops $
+                    mconcat
+                      [ segX'''
+                      , mapR segX''T
+                      , mapR segY'''
+                      , segY'T'
+                      , segZ'''
+                      , mapR segZT''
+                      ]
 
     in
       -- (5) merge squares, etc
