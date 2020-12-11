@@ -8,7 +8,7 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -62,6 +62,8 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
+import Data.List (zip4)
+import Data.List (zip3)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -113,25 +115,26 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ :: [[[ℝ]]]
-        midsZ = bleck nz $
-          [ [ [ interpolate (V2 z0 objX0Y0Z0) (V2 z1' objX0Y0Z1) (appABC obj x0 y0) zres
-              | x0        <- pXs
-              | objX0Y0Z0 <- objY0Z0
-              | objX0Y0Z1 <- objY0Z1
-              ]
-            | y0 <- pYs
-            | objY0Z0   <- objZ0
-            | objY0Z1   <- objZ1
-            ]
-          | z0    <- pZs
-          | z1'   <- tail pZs
-          | objZ0 <- objV
-          | objZ1 <- tail objV
-          ]
+        midsZ = bleck nz $ do
+          (z0, z1', objZ0, objZ1) <- zip4 pZs (tail pZs) objV (tail objV)
+          pure $ do
+            (y0, objY0Z0, objY0Z1) <- zip3 pYs objZ0 objZ1
+            pure $ do
+              (x0, objX0Y0Z0, objX0Y0Z1) <- zip3 pXs objY0Z0 objY0Z1
+              pure $
+                interpolate
+                  (V2 z0 objX0Y0Z0)
+                  (V2 z1' objX0Y0Z1)
+                  (appABC obj x0 y0)
+                  zres
 
         midsY :: [[[ℝ]]]
         midsY = bleck ny $
-          [ [ [ interpolate (V2 y0 objX0Y0Z0) (V2 y1' objX0Y1Z0) (appACB obj x0 z0) yres
+          [ [ [ interpolate
+                  (V2 y0 objX0Y0Z0)
+                  (V2 y1' objX0Y1Z0)
+                  (appACB obj x0 z0)
+                  yres
               | x0        <- pXs
               | objX0Y0Z0 <- objY0Z0
               | objX0Y1Z0 <- objY1Z0
@@ -147,7 +150,11 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         midsX :: [[[ℝ]]]
         midsX = bleck nx $
-          [ [ [ interpolate (V2 x0 objX0Y0Z0) (V2 x1' objX1Y0Z0) (appBCA obj y0 z0) xres
+          [ [ [ interpolate
+                  (V2 x0 objX0Y0Z0)
+                  (V2 x1' objX1Y0Z0)
+                  (appBCA obj y0 z0)
+                  xres
               | x0        <- pXs
               | x1'       <- tail pXs
               | objX0Y0Z0 <- objY0Z0
