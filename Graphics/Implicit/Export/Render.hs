@@ -281,9 +281,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 segY' = segsY !! fromIntegral zm
                 segX' = segsX !! fromIntegral zm
             pure $ do
-              (segZ'', segZT', ym, segX'') <- zip4 segZ' segZT [0 .. ny - 1] segX'
+              ym <- [0 .. ny - 1]
               let segY'' = segY' !! fromIntegral ym
                   segY'T = segY' !! (fromIntegral $ ym + 1)
+                  segZ'' = segZ' !! fromIntegral ym
+                  segZT' = segZT !! fromIntegral ym
+                  segX'' = segX' !! fromIntegral ym
               pure $ do
                 xm <- [0 .. nx - 1]
                 let segX''' = segX'' !! fromIntegral xm
