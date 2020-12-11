@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Prelude(pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
+import Prelude(Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -108,59 +108,55 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        mkMap :: [[[a]]] -> Map (ℕ, ℕ, ℕ) a
-        mkMap l = M.fromList $ do
-          (z, l') <- zip [0..] l
-          (y, l'') <- zip [0..] l'
-          (x, a) <- zip [0..] l''
-          pure ((x,y,z), a)
-
         midsXMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsXMap = mkMap $ bleck nx $
-          forXYZ (nx - 1) ny nz $ \xm ym zm -> do
+        midsXMap =
+          forXYZM (nx - 1) ny nz $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
                 y0 = stepwise y1 ry ym
                 x0 = stepwise x1 rx xm
                 x1' = stepwise x1 rx (xm + 1)
                 objX0Y0Z0 = sample xm ym zm
                 objX1Y0Z0 = sample (xm + 1) ym zm
-            interpolate
-              (V2 x0 objX0Y0Z0)
-              (V2 x1' objX1Y0Z0)
-              (appBCA obj y0 z0)
-              xres
+             in M.singleton (xm, ym, zm) $
+                  interpolate
+                    (V2 x0 objX0Y0Z0)
+                    (V2 x1' objX1Y0Z0)
+                    (appBCA obj y0 z0)
+                    xres
 
 
         midsYMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsYMap = mkMap $ bleck ny $
-          forXYZ nx (ny - 1) nz $ \xm ym zm -> do
+        midsYMap =
+          forXYZM nx (ny - 1) nz $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
                 y0 = stepwise y1 ry ym
                 y1' = stepwise y1 ry (ym + 1)
                 x0 = stepwise x1 rx xm
                 objX0Y0Z0 = sample xm ym zm
                 objX0Y1Z0 = sample xm (ym + 1) zm
-            interpolate
-              (V2 y0 objX0Y0Z0)
-              (V2 y1' objX0Y1Z0)
-              (appACB obj x0 z0)
-              yres
+             in M.singleton (xm, ym, zm) $
+                  interpolate
+                    (V2 y0 objX0Y0Z0)
+                    (V2 y1' objX0Y1Z0)
+                    (appACB obj x0 z0)
+                    yres
 
 
         midsZMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsZMap = mkMap $ bleck nz $
-          forXYZ nx ny (nz - 1) $ \xm ym zm -> do
+        midsZMap =
+          forXYZM nx ny (nz - 1) $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
                 z1' = stepwise z1 rz (zm + 1)
                 y0 = stepwise y1 ry ym
                 x0 = stepwise x1 rx xm
                 objX0Y0Z0 = sample xm ym zm
                 objX0Y0Z1 = sample xm ym (zm + 1)
-            interpolate
-              (V2 z0 objX0Y0Z0)
-              (V2 z1' objX0Y0Z1)
-              (appABC obj x0 y0)
-              zres
+             in M.singleton (xm, ym, zm) $
+                  interpolate
+                    (V2 z0 objX0Y0Z0)
+                    (V2 z1' objX0Y0Z1)
+                    (appABC obj x0 y0)
+                    zres
 
 
 
@@ -173,16 +169,23 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
               xm <- [0 .. x]
               pure $ f xm ym zm
 
+        forXYZM :: Monoid m => ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
+        forXYZM x y z f = fold $ do
+          zm <- [0 .. z]
+          ym <- [0 .. y]
+          xm <- [0 .. x]
+          pure $ f xm ym zm
+
 
         -- (2) Calculate segments for each side
         segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsXMap = mkMap $ bleck nx $
-          forXYZ nx (ny - 1) (nz - 1) $ \xm ym zm -> do
+        segsXMap =
+          forXYZM nx (ny - 1) (nz - 1) $ \xm ym zm ->
             let z0 = stepwise z1 rz zm
                 z1' = stepwise z1 rz (zm + 1)
-            let y0 = stepwise y1 ry ym
+                y0 = stepwise y1 ry ym
                 y1' = stepwise y1 ry (ym + 1)
-            let x0 = stepwise x1 rx xm
+                x0 = stepwise x1 rx xm
                 objX0Y0Z0 = sample xm ym zm
                 objX0Y1Z0 = sample xm (ym + 1) zm
                 objX0Y0Z1 = sample xm ym (zm + 1)
@@ -191,22 +194,23 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 midA1 = midsZMap M.! (xm, ym + 1, zm)
                 midB0 = midsYMap M.! (xm, ym, zm)
                 midB1 = midsYMap M.! (xm, ym, zm + 1)
-            injX x0 <$>
-              getSegs
-                (V2 y0 z0)
-                (V2 y1' z1')
-                (obj $** x0)
-                (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
-                (midA0, midA1, midB0, midB1)
+             in M.singleton (xm, ym, zm) $
+                  injX x0 <$>
+                    getSegs
+                      (V2 y0 z0)
+                      (V2 y1' z1')
+                      (obj $** x0)
+                      (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
+                      (midA0, midA1, midB0, midB1)
 
 
         segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsYMap = mkMap $ bleck ny $
-          forXYZ (nx - 1) ny (nz - 1) $ \xm ym zm -> do
+        segsYMap =
+          forXYZM (nx - 1) ny (nz - 1) $ \xm ym zm ->
             let z0 = stepwise z1 rz zm
                 z1' = stepwise z1 rz (zm + 1)
-            let y0 = stepwise y1 ry ym
-            let x0 = stepwise x1 rx xm
+                y0 = stepwise y1 ry ym
+                x0 = stepwise x1 rx xm
                 x1' = stepwise x1 rx (xm + 1)
                 objX0Y0Z0 = sample xm ym zm
                 objX1Y0Z0 = sample (xm + 1) ym zm
@@ -216,21 +220,22 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 midA1 = midsZMap M.! (xm + 1, ym, zm)
                 midB0 = midsXMap M.! (xm, ym, zm)
                 midB1 = midsXMap M.! (xm, ym, zm + 1)
-            injY y0 <$>
-                  getSegs
-                    (V2 x0 z0)
-                    (V2 x1' z1')
-                    (obj *$* y0)
-                    (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
-                    (midA0, midA1, midB0, midB1)
+             in M.singleton (xm, ym, zm) $
+                  injY y0 <$>
+                    getSegs
+                      (V2 x0 z0)
+                      (V2 x1' z1')
+                      (obj *$* y0)
+                      (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
+                      (midA0, midA1, midB0, midB1)
 
         segsZMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsZMap = mkMap $ bleck nz $
-          forXYZ (nx - 1) (ny - 1) nz $ \xm ym zm -> do
+        segsZMap =
+          forXYZM (nx - 1) (ny - 1) nz $ \xm ym zm ->
             let z0 = stepwise z1 rz zm
-            let y0 = stepwise y1 ry ym
+                y0 = stepwise y1 ry ym
                 y1' = stepwise y1 ry (ym + 1)
-            let x0 = stepwise x1 rx xm
+                x0 = stepwise x1 rx xm
                 x1' = stepwise x1 rx (xm + 1)
                 objX0Y0Z0 = sample xm ym zm
                 objX1Y0Z0 = sample (xm + 1) ym zm
@@ -240,13 +245,14 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 midA1 = midsYMap M.! (xm + 1, ym, zm)
                 midB0 = midsXMap M.! (xm, ym, zm)
                 midB1 = midsXMap M.! (xm, ym + 1, zm)
-            injZ z0 <$>
-              getSegs
-                (V2 x0 y0)
-                (V2 x1' y1')
-                (obj **$ z0)
-                (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
-                (midA0, midA1, midB0, midB1)
+             in M.singleton (xm, ym, zm) $
+                  injZ z0 <$>
+                    getSegs
+                      (V2 x0 y0)
+                      (V2 x1' y1')
+                      (obj **$ z0)
+                      (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
+                      (midA0, midA1, midB0, midB1)
 
 
 
