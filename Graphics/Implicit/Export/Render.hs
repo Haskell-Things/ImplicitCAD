@@ -274,37 +274,16 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
         sqTris = bleck (nx + ny + nz) $ do
-          -- forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
-            zm <- [0 .. nz - 1]
-            let segZ' = segsZ !! fromIntegral zm
-                segZT = segsZ !! (fromIntegral $ zm + 1)
-                segY' = segsY !! fromIntegral zm
-                segX' = segsX !! fromIntegral zm
-            pure $ do
-              ym <- [0 .. ny - 1]
-              let segY'' = segY' !! fromIntegral ym
-                  segY'T = segY' !! (fromIntegral $ ym + 1)
-                  segZ'' = segZ' !! fromIntegral ym
-                  segZT' = segZT !! fromIntegral ym
-                  segX'' = segX' !! fromIntegral ym
-              pure $ do
-                xm <- [0 .. nx - 1]
-                let segX''' = segX'' !! fromIntegral xm
-                    segX''T = segX'' !! (fromIntegral $ xm + 1)
-                    segY''' = segY'' !! fromIntegral xm
-                    segY'T' = segY'T !! fromIntegral xm
-                    segZ''' = segZ'' !! fromIntegral xm
-                    segZT'' = segZT' !! fromIntegral xm
-                pure $
-                  foldMap (tesselateLoop minres obj) $ getLoops $
-                    mconcat
-                      [ segX'''
-                      , mapR segX''T
-                      , mapR segY'''
-                      , segY'T'
-                      , segZ'''
-                      , mapR segZT''
-                      ]
+          forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
+            foldMap (tesselateLoop minres obj) $ getLoops $
+              mconcat
+                [ segsXMap M.! (xm, ym, zm)
+                , mapR $ segsXMap M.! ((xm + 1), ym, zm)
+                , mapR $ segsYMap M.! (xm, ym, zm)
+                , segsYMap M.! (xm, ym + 1, zm)
+                , segsZMap M.! (xm, ym, zm)
+                , mapR $ segsZMap M.! (xm, ym, zm + 1)
+                ]
 
     in
       -- (5) merge squares, etc
