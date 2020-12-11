@@ -13,7 +13,7 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
 import Prelude((<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
@@ -66,7 +66,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
-import Linear (_x, _y, _z)
+import Linear (_x, _y, _z, _yz)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -161,34 +161,44 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
           pure $ f xm ym zm
 
         forXYZMV3 :: Monoid m => V3 ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
-        forXYZMV3 (V3 x y z) f = fold $ do
-          zm <- [0 .. z]
-          ym <- [0 .. y]
-          xm <- [0 .. x]
-          pure $ f xm ym zm
+        forXYZMV3 (V3 x y z) f = forXYZM x y z f
+
+        unpackV3 :: V3 a -> (a, a, a)
+        unpackV3 (V3 a b c) = (a, b, c)
 
 
         -- (2) Calculate segments for each side
-        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsXMap =
+        mkSegsMap :: (forall a. Lens' (V3 a) a) -> (forall a. Lens' (V3 a) (V2 a)) -> Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        mkSegsMap l l' =
           forXYZM nx (ny - 1) (nz - 1) $ \xm ym zm ->
-            let x0 = (stepwise x1 rx xm)
+            let stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
+                v = V3 xm ym zm
+                stepped = stepping <*> v
+                stepped_up =  stepping <*> fmap (+1) v
+                mids = V3 midsXMap midsYMap midsZMap
+                midA = view (l' . {- DO NOT SWAP -} _y) mids
+                midB = view (l' . {- DO NOT SWAP -} _x) mids
+                x0 = view l stepped
              in M.singleton (xm, ym, zm) $
-                  injX x0 <$>
+                expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) {-(injX) (view l stepped)-} <$>
                     getSegs
-                      (V2 (stepwise y1 ry ym) (stepwise z1 rz zm))
-                      (V2 (stepwise y1 ry (ym + 1)) (stepwise z1 rz (zm + 1)))
-                      (\(V2 b c) -> obj (V3 x0 b c))
-                      ( sample xm ym       zm
-                      , sample xm (ym + 1) zm
-                      , sample xm ym       (zm + 1)
-                      , sample xm (ym + 1) (zm + 1)
+                      (view l' stepped)
+                      (view l' stepped_up)
+                      (\yz -> obj $ pure 0 & l .~ x0 & l' .~ yz)
+                      ( sampleV3 v
+                      , sampleV3 $ v & l' . {- DO NOT SWAP -} _x +~ 1
+                      , sampleV3 $ v & l' . {- DO NOT SWAP -} _y +~ 1
+                      , sampleV3 $ v & l' +~ 1
                       )
-                      ( midsZMap M.! (xm, ym,     zm)
-                      , midsZMap M.! (xm, ym + 1, zm)
-                      , midsYMap M.! (xm, ym,     zm)
-                      , midsYMap M.! (xm, ym,     zm + 1)
+                      ( midA M.! (unpackV3 v)
+                      , midA M.! (unpackV3 $ v & l' . {- DO NOT SWAP -} _x +~ 1)
+                      , midB M.! (unpackV3 v)
+                      , midB M.! (unpackV3 $ v & l' . {- DO NOT SWAP -} _y +~ 1)
                       )
+
+        -- (2) Calculate segments for each side
+        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsXMap = mkSegsMap _x _yz
 
 
         segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
@@ -322,6 +332,10 @@ getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
       cleanLoopsFromSegs . fold $ fold segs
 
 -- utility functions
+
+expandPolyline :: (ℝ2 -> ℝ3) -> Polyline -> [ℝ3]
+expandPolyline f = fmap f . getPolyline
+
 
 injX :: ℝ -> Polyline -> [ℝ3]
 injX a (Polyline xs) = fmap (prepend a) xs
