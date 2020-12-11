@@ -175,59 +175,8 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
 
         -- (2) Calculate segments for each side
-        segsZ :: [[[[[ℝ3]]]]]
-        segsZ = bleck nz $ do
-          forXYZ (nx - 1) (ny - 1) nz $ \xm ym zm -> do
-            let z0 = stepwise z1 rz zm
-            let y0 = stepwise y1 ry ym
-                y1' = stepwise y1 ry (ym + 1)
-            let x0 = stepwise x1 rx xm
-                x1' = stepwise x1 rx (xm + 1)
-                objX0Y0Z0 = sample xm ym zm
-                objX1Y0Z0 = sample (xm + 1) ym zm
-                objX0Y1Z0 = sample xm (ym + 1) zm
-                objX1Y1Z0 = sample (xm + 1) (ym + 1) zm
-                midA0 = midsYMap M.! (xm, ym, zm)
-                midA1 = midsYMap M.! (xm + 1, ym, zm)
-                midB0 = midsXMap M.! (xm, ym, zm)
-                midB1 = midsXMap M.! (xm, ym + 1, zm)
-            injZ z0 <$>
-              getSegs
-                (V2 x0 y0)
-                (V2 x1' y1')
-                (obj **$ z0)
-                (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
-                (midA0, midA1, midB0, midB1)
-
-
-        segsY :: [[[[[ℝ3]]]]]
-        segsY = bleck ny $ do
-          forXYZ (nx - 1) ny (nz - 1) $ \xm ym zm -> do
-            let z0 = stepwise z1 rz zm
-                z1' = stepwise z1 rz (zm + 1)
-            let y0 = stepwise y1 ry ym
-            let x0 = stepwise x1 rx xm
-                x1' = stepwise x1 rx (xm + 1)
-                objX0Y0Z0 = sample xm ym zm
-                objX1Y0Z0 = sample (xm + 1) ym zm
-                objX0Y0Z1 = sample xm ym (zm + 1)
-                objX1Y0Z1 = sample (xm + 1) ym (zm + 1)
-                midA0 = midsZMap M.! (xm, ym, zm)
-                midA1 = midsZMap M.! (xm + 1, ym, zm)
-                midB0 = midsXMap M.! (xm, ym, zm)
-                midB1 = midsXMap M.! (xm, ym, zm + 1)
-            injY y0 <$>
-                  getSegs
-                    (V2 x0 z0)
-                    (V2 x1' z1')
-                    (obj *$* y0)
-                    (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
-                    (midA0, midA1, midB0, midB1)
-
-
-
-        segsX :: [[[[[ℝ3]]]]]
-        segsX = bleck nx $ do
+        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsXMap = mkMap $ bleck nx $
           forXYZ nx (ny - 1) (nz - 1) $ \xm ym zm -> do
             let z0 = stepwise z1 rz zm
                 z1' = stepwise z1 rz (zm + 1)
@@ -250,14 +199,54 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
                 (midA0, midA1, midB0, midB1)
 
-        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsXMap = mkMap segsX
 
         segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsYMap = mkMap segsY
+        segsYMap = mkMap $ bleck ny $
+          forXYZ (nx - 1) ny (nz - 1) $ \xm ym zm -> do
+            let z0 = stepwise z1 rz zm
+                z1' = stepwise z1 rz (zm + 1)
+            let y0 = stepwise y1 ry ym
+            let x0 = stepwise x1 rx xm
+                x1' = stepwise x1 rx (xm + 1)
+                objX0Y0Z0 = sample xm ym zm
+                objX1Y0Z0 = sample (xm + 1) ym zm
+                objX0Y0Z1 = sample xm ym (zm + 1)
+                objX1Y0Z1 = sample (xm + 1) ym (zm + 1)
+                midA0 = midsZMap M.! (xm, ym, zm)
+                midA1 = midsZMap M.! (xm + 1, ym, zm)
+                midB0 = midsXMap M.! (xm, ym, zm)
+                midB1 = midsXMap M.! (xm, ym, zm + 1)
+            injY y0 <$>
+                  getSegs
+                    (V2 x0 z0)
+                    (V2 x1' z1')
+                    (obj *$* y0)
+                    (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
+                    (midA0, midA1, midB0, midB1)
 
         segsZMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsZMap = mkMap segsZ
+        segsZMap = mkMap $ bleck nz $
+          forXYZ (nx - 1) (ny - 1) nz $ \xm ym zm -> do
+            let z0 = stepwise z1 rz zm
+            let y0 = stepwise y1 ry ym
+                y1' = stepwise y1 ry (ym + 1)
+            let x0 = stepwise x1 rx xm
+                x1' = stepwise x1 rx (xm + 1)
+                objX0Y0Z0 = sample xm ym zm
+                objX1Y0Z0 = sample (xm + 1) ym zm
+                objX0Y1Z0 = sample xm (ym + 1) zm
+                objX1Y1Z0 = sample (xm + 1) (ym + 1) zm
+                midA0 = midsYMap M.! (xm, ym, zm)
+                midA1 = midsYMap M.! (xm + 1, ym, zm)
+                midB0 = midsXMap M.! (xm, ym, zm)
+                midB1 = midsXMap M.! (xm, ym + 1, zm)
+            injZ z0 <$>
+              getSegs
+                (V2 x0 y0)
+                (V2 x1' y1')
+                (obj **$ z0)
+                (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
+                (midA0, midA1, midB0, midB1)
 
 
 
