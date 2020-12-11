@@ -171,27 +171,23 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
         segsXMap =
           forXYZM nx (ny - 1) (nz - 1) $ \xm ym zm ->
-            let z0 = stepwise z1 rz zm
-                z1' = stepwise z1 rz (zm + 1)
-                y0 = stepwise y1 ry ym
-                y1' = stepwise y1 ry (ym + 1)
-                x0 = stepwise x1 rx xm
-                objX0Y0Z0 = sample xm ym zm
-                objX0Y1Z0 = sample xm (ym + 1) zm
-                objX0Y0Z1 = sample xm ym (zm + 1)
-                objX0Y1Z1 = sample xm (ym + 1) (zm + 1)
-                midA0 = midsZMap M.! (xm, ym, zm)
-                midA1 = midsZMap M.! (xm, ym + 1, zm)
-                midB0 = midsYMap M.! (xm, ym, zm)
-                midB1 = midsYMap M.! (xm, ym, zm + 1)
+            let x0 = (stepwise x1 rx xm)
              in M.singleton (xm, ym, zm) $
                   injX x0 <$>
                     getSegs
-                      (V2 y0 z0)
-                      (V2 y1' z1')
-                      (obj $** x0)
-                      (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
-                      (midA0, midA1, midB0, midB1)
+                      (V2 (stepwise y1 ry ym) (stepwise z1 rz zm))
+                      (V2 (stepwise y1 ry (ym + 1)) (stepwise z1 rz (zm + 1)))
+                      (\(V2 b c) -> obj (V3 x0 b c))
+                      ( sample xm ym       zm
+                      , sample xm (ym + 1) zm
+                      , sample xm ym       (zm + 1)
+                      , sample xm (ym + 1) (zm + 1)
+                      )
+                      ( midsZMap M.! (xm, ym,     zm)
+                      , midsZMap M.! (xm, ym + 1, zm)
+                      , midsYMap M.! (xm, ym,     zm)
+                      , midsYMap M.! (xm, ym,     zm + 1)
+                      )
 
 
         segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
