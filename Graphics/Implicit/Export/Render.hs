@@ -64,7 +64,6 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Data.List (zip)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -97,12 +96,16 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         forcesteps :: Int
         forcesteps=32
 
+        sampled :: Map (ℕ, ℕ, ℕ) ℝ
+        sampled = forXYZM nx ny nz $ \xm ym zm ->
+          M.singleton (xm, ym, zm) $ obj $
+            V3
+              (stepwise x1 rx xm)
+              (stepwise y1 ry ym)
+              (stepwise z1 rz zm)
+
         sample :: ℕ -> ℕ -> ℕ -> ℝ
-        sample mx my mz = obj $
-          V3
-            (stepwise x1 rx mx)
-            (stepwise y1 ry my)
-            (stepwise z1 rz mz)
+        sample mx my mz = sampled M.! (mx, my, mz)
 
         bleck :: NFData a => ℕ -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
