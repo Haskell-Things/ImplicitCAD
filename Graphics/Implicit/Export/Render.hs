@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -64,6 +65,8 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
+import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
+import Linear (_x, _y, _z)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -107,60 +110,37 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         sample :: ℕ -> ℕ -> ℕ -> ℝ
         sample mx my mz = sampled M.! (mx, my, mz)
 
+        sampleV3 :: V3 ℕ -> ℝ
+        sampleV3 (V3 mx my mz) = sample mx my mz
+
         bleck :: NFData a => ℕ -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
+        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (ℕ, ℕ, ℕ) ℝ
+        mkMidsMap l =
+          forXYZMV3 (V3 nx ny nz & l -~ 1) $ \xm ym zm -> do
+            let v = V3 xm ym zm
+                stepped = V3 (stepwise x1 rx xm) (stepwise y1 ry ym) (stepwise z1 rz zm)
+                stepped_up = V3 (stepwise x1 rx $ xm + 1) (stepwise y1 ry $ ym + 1) (stepwise z1 rz $ zm + 1)
+            M.singleton (xm, ym, zm) $
+              interpolate
+                (V2 (view l stepped) $ sampleV3 v)
+                (V2 (view l stepped_up) $ sampleV3 $ v & l +~ 1)
+                (\x -> obj $ stepped & l .~ x)
+                (view l res)
+
+        -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsXMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsXMap =
-          forXYZM (nx - 1) ny nz $ \xm ym zm -> do
-            let z0 = stepwise z1 rz zm
-                y0 = stepwise y1 ry ym
-                x0 = stepwise x1 rx xm
-                x1' = stepwise x1 rx (xm + 1)
-                objX0Y0Z0 = sample xm ym zm
-                objX1Y0Z0 = sample (xm + 1) ym zm
-             in M.singleton (xm, ym, zm) $
-                  interpolate
-                    (V2 x0 objX0Y0Z0)
-                    (V2 x1' objX1Y0Z0)
-                    (appBCA obj y0 z0)
-                    xres
+        midsXMap = mkMidsMap _x
 
 
         midsYMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsYMap =
-          forXYZM nx (ny - 1) nz $ \xm ym zm -> do
-            let z0 = stepwise z1 rz zm
-                y0 = stepwise y1 ry ym
-                y1' = stepwise y1 ry (ym + 1)
-                x0 = stepwise x1 rx xm
-                objX0Y0Z0 = sample xm ym zm
-                objX0Y1Z0 = sample xm (ym + 1) zm
-             in M.singleton (xm, ym, zm) $
-                  interpolate
-                    (V2 y0 objX0Y0Z0)
-                    (V2 y1' objX0Y1Z0)
-                    (appACB obj x0 z0)
-                    yres
+        midsYMap = mkMidsMap _y
 
 
         midsZMap :: Map (ℕ, ℕ, ℕ) ℝ
-        midsZMap =
-          forXYZM nx ny (nz - 1) $ \xm ym zm -> do
-            let z0 = stepwise z1 rz zm
-                z1' = stepwise z1 rz (zm + 1)
-                y0 = stepwise y1 ry ym
-                x0 = stepwise x1 rx xm
-                objX0Y0Z0 = sample xm ym zm
-                objX0Y0Z1 = sample xm ym (zm + 1)
-             in M.singleton (xm, ym, zm) $
-                  interpolate
-                    (V2 z0 objX0Y0Z0)
-                    (V2 z1' objX0Y0Z1)
-                    (appABC obj x0 y0)
-                    zres
-
+        midsZMap = mkMidsMap _z
 
 
         forXYZ :: ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> r) -> [[[r]]]
@@ -174,6 +154,13 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         forXYZM :: Monoid m => ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
         forXYZM x y z f = fold $ do
+          zm <- [0 .. z]
+          ym <- [0 .. y]
+          xm <- [0 .. x]
+          pure $ f xm ym zm
+
+        forXYZMV3 :: Monoid m => V3 ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
+        forXYZMV3 (V3 x y z) f = fold $ do
           zm <- [0 .. z]
           ym <- [0 .. y]
           xm <- [0 .. x]
@@ -371,13 +358,6 @@ infixr 0 $*
 (*$) :: Obj2 -> ℝ -> ℝ -> ℝ
 f *$ b = \a -> f (V2 a b)
 infixr 0 *$
-
-appABC :: Obj3 -> ℝ -> ℝ -> ℝ -> ℝ
-appABC f a b c = f (V3 a b c)
-appBCA :: Obj3 -> ℝ -> ℝ -> ℝ -> ℝ
-appBCA f b c a = f (V3 a b c)
-appACB :: Obj3 -> ℝ -> ℝ -> ℝ -> ℝ
-appACB f a c b = f (V3 a b c)
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
