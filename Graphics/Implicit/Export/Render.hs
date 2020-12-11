@@ -120,9 +120,15 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         (V3 rx ry rz) = d ⋯/ (fromℕtoℝ `fmap` V3 nx ny nz)
 
         -- The positions we're rendering.
-        pXs = [ x1 + rx*fromℕtoℝ n | n <- [0.. nx] ]
-        pYs = [ y1 + ry*fromℕtoℝ n | n <- [0.. ny] ]
-        pZs = [ z1 + rz*fromℕtoℝ n | n <- [0.. nz] ]
+        pXs, pYs, pZs :: [ℝ]
+        pXs = fmap (stepwise x1 rx) [0.. nx]
+        pYs = fmap (stepwise y1 ry) [0.. ny]
+        pZs = fmap (stepwise z1 rz) [0.. nz]
+
+
+        stepwise :: ℝ -> ℝ -> ℕ -> ℝ
+        stepwise x0 dx n = x0 + dx * fromℕtoℝ n
+
 
         -- | performance tuning.
         -- FIXME: magic number.
@@ -142,9 +148,9 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         sample :: ℕ -> ℕ -> ℕ -> ℝ
         sample mx my mz = obj $
           V3
-            (x1 + rx * fromℕtoℝ mx)
-            (y1 + ry * fromℕtoℝ my)
-            (z1 + rz * fromℕtoℝ mz)
+            (stepwise x1 rx mx)
+            (stepwise y1 ry my)
+            (stepwise z1 rz mz)
 
         -- | Evaluate obj to avoid waste in mids, segs, later.
         objV :: [[[ℝ]]]
