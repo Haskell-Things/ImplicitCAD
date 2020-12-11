@@ -8,7 +8,7 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude((-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -41,7 +41,7 @@ import Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris)
 -- Success: This is our mesh.
 
 -- Each step on the Z axis is done in parallel using Control.Parallel.Strategies
-import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
+import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- The actual code is just a bunch of ugly argument passing.
 -- Utility functions can be found at the end.
@@ -93,84 +93,214 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         -- | Perform a given function on every point in a 3D grid.
         par3DList :: ℕ -> ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> ℝ) -> [[[ℝ]]]
-        par3DList lenx leny lenz f =
-            [[[f
-                (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
-                (\n -> y1 + ry*fromℕtoℝ (my+n)) my
-                (\n -> z1 + rz*fromℕtoℝ (mz+n)) mz
-            | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-                `using` parBuffer (max 1 $ div (fromℕ $ lenx+leny+lenz) forcesteps) rdeepseq
+        par3DList lenx leny lenz f = bleck (lenx + leny + lenz) $
+            [ [ [ f
+                    (\n -> x1 + rx*fromℕtoℝ (mx+n)) mx
+                    (\n -> y1 + ry*fromℕtoℝ (my+n)) my
+                    (\n -> z1 + rz*fromℕtoℝ (mz+n)) mz
+                | mx <- [0..lenx]
+                ]
+              | my <- [0..leny]
+              ]
+            | mz <- [0..lenz]
+          ]
 
         -- | Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList (nx+2) (ny+2) (nz+2) $ \x _ y _ z _ -> obj $ V3 (x 0) (y 0) (z 0)
 
+        bleck :: NFData a => ℕ -> [a] -> [a]
+        bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
+
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsZ = [[[
-                 interpolate (V2 z0 objX0Y0Z0) (V2 z1' objX0Y0Z1) (appABC obj x0 y0) zres
-                 | x0 <- pXs |                   objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
-                ]| y0 <- pYs |                   objY0Z0   <- objZ0   | objY0Z1   <- objZ1
-                ]| z0 <- pZs | z1' <- tail pZs | objZ0     <- objV    | objZ1     <- tail objV
-                ] `using` parBuffer (max 1 $ div (fromℕ nz) forcesteps) rdeepseq
+        midsZ :: [[[ℝ]]]
+        midsZ = bleck nz $
+          [ [ [ interpolate (V2 z0 objX0Y0Z0) (V2 z1' objX0Y0Z1) (appABC obj x0 y0) zres
+              | x0        <- pXs
+              | objX0Y0Z0 <- objY0Z0
+              | objX0Y0Z1 <- objY0Z1
+              ]
+            | y0 <- pYs
+            | objY0Z0   <- objZ0
+            | objY0Z1   <- objZ1
+            ]
+          | z0    <- pZs
+          | z1'   <- tail pZs
+          | objZ0 <- objV
+          | objZ1 <- tail objV
+          ]
 
-        midsY = [[[
-                 interpolate (V2 y0 objX0Y0Z0) (V2 y1' objX0Y1Z0) (appACB obj x0 z0) yres
-                 | x0 <- pXs |                   objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
-                ]| y0 <- pYs | y1' <- tail pYs | objY0Z0   <- objZ0   | objY1Z0   <- tail objZ0
-                ]| z0 <- pZs |                   objZ0     <- objV
-                ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
+        midsY :: [[[ℝ]]]
+        midsY = bleck ny $
+          [ [ [ interpolate (V2 y0 objX0Y0Z0) (V2 y1' objX0Y1Z0) (appACB obj x0 z0) yres
+              | x0        <- pXs
+              | objX0Y0Z0 <- objY0Z0
+              | objX0Y1Z0 <- objY1Z0
+              ]
+            | y0      <- pYs
+            | y1'     <- tail pYs
+            | objY0Z0 <- objZ0
+            | objY1Z0 <- tail objZ0
+            ]
+          | z0    <- pZs
+          | objZ0 <- objV
+          ]
 
-        midsX = [[[
-                 interpolate (V2 x0 objX0Y0Z0) (V2 x1' objX1Y0Z0) (appBCA obj y0 z0) xres
-                 | x0 <- pXs | x1' <- tail pXs | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
-                ]| y0 <- pYs |                   objY0Z0   <- objZ0
-                ]| z0 <- pZs |                   objZ0     <- objV
-                ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
+        midsX :: [[[ℝ]]]
+        midsX = bleck nx $
+          [ [ [ interpolate (V2 x0 objX0Y0Z0) (V2 x1' objX1Y0Z0) (appBCA obj y0 z0) xres
+              | x0        <- pXs
+              | x1'       <- tail pXs
+              | objX0Y0Z0 <- objY0Z0
+              | objX1Y0Z0 <- tail objY0Z0
+              ]
+            | y0      <- pYs
+            | objY0Z0 <- objZ0
+            ]
+          | z0    <- pZs
+          | objZ0 <- objV
+          ]
 
         -- (2) Calculate segments for each side
-        segsZ = [[[
-            injZ z0 <$> getSegs (V2 x0 y0) (V2 x1' y1') (obj **$ z0) (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) (midA0, midA1, midB0, midB1)
-             | x0<-pXs | x1'<-tail pXs |midB0<-mX''  | midB1<-mX'T     | midA0<-mY''  | midA1<-tail mY''  | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<- tail objY0Z0 | objX0Y1Z0<-objY1Z0    | objX1Y1Z0<-tail objY1Z0
-            ]| y0<-pYs | y1'<-tail pYs |mX'' <-mX'   | mX'T <-tail mX' | mY'' <-mY'                       | objY0Z0  <-objZ0                              | objY1Z0  <-tail objZ0
-            ]| z0<-pZs                 |mX'  <-midsX |                   mY'  <-midsY                     | objZ0    <-objV
-            ] `using` parBuffer (max 1 $ div (fromℕ nz) forcesteps) rdeepseq
+        segsZ :: [[[[[ℝ3]]]]]
+        segsZ = bleck nz $
+          [ [ [ injZ z0 <$>
+                  getSegs
+                    (V2 x0 y0)
+                    (V2 x1' y1')
+                    (obj **$ z0)
+                    (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0)
+                    (midA0, midA1, midB0, midB1)
+              | x0        <- pXs
+              | x1'       <- tail pXs
+              | midB0     <- mX''
+              | midB1     <- mX'T
+              | midA0     <- mY''
+              | midA1     <- tail mY''
+              | objX0Y0Z0 <- objY0Z0
+              | objX1Y0Z0 <-  tail objY0Z0
+              | objX0Y1Z0 <- objY1Z0
+              | objX1Y1Z0 <- tail objY1Z0
+              ]
+            | y0      <- pYs
+            | y1'     <- tail pYs
+            | mX''    <- mX'
+            | mX'T    <- tail mX'
+            | mY''    <- mY'
+            | objY0Z0 <- objZ0
+            | objY1Z0 <- tail objZ0
+            ]
+          | z0    <- pZs
+          | mX'   <- midsX
+          | mY'   <- midsY
+          | objZ0 <- objV
+          ]
 
-        segsY = [[[
-            injY y0 <$> getSegs (V2 x0 z0) (V2 x1' z1') (obj *$* y0) (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) (midA0, midA1, midB0, midB1)
-             | x0<-pXs | x1'<-tail pXs | midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-tail mA'' | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<-tail objY0Z0 | objX0Y0Z1<-objY0Z1 | objX1Y0Z1<-tail objY0Z1
-            ]| y0<-pYs |                 mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'                      | objY0Z0  <-objZ0                             | objY0Z1  <-objZ1
-            ]| z0<-pZs | z1'<-tail pZs | mB'  <-midsX | mBT  <-tail midsX | mA'  <-midsZ                    | objZ0    <-objV                              | objZ1    <-tail objV
-            ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
+        segsY :: [[[[[ℝ3]]]]]
+        segsY = bleck ny $
+          [ [ [ injY y0 <$>
+                  getSegs
+                    (V2 x0 z0)
+                    (V2 x1' z1')
+                    (obj *$* y0)
+                    (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1)
+                    (midA0, midA1, midB0, midB1)
+              | x0        <- pXs
+              | x1'       <- tail pXs
+              | midB0     <- mB''
+              | midB1     <- mBT'
+              | midA0     <- mA''
+              | midA1     <- tail mA''
+              | objX0Y0Z0 <- objY0Z0
+              | objX1Y0Z0 <- tail objY0Z0
+              | objX0Y0Z1 <- objY0Z1
+              | objX1Y0Z1 <- tail objY0Z1
+              ]
+            | y0      <- pYs
+            | mB''    <- mB'
+            | mBT'    <- mBT
+            | mA''    <- mA'
+            | objY0Z0 <- objZ0
+            | objY0Z1 <- objZ1
+            ]
+          | z0    <- pZs
+          | z1'   <- tail pZs
+          | mB'   <- midsX
+          | mBT   <- tail midsX
+          | mA'   <- midsZ
+          | objZ0 <- objV
+          | objZ1 <- tail objV
+          ]
 
-        segsX = [[[
-            injX x0 <$> getSegs (V2 y0 z0) (V2 y1' z1') (obj $** x0) (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) (midA0, midA1, midB0, midB1)
-             | x0<-pXs |                 midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-mA'T     | objX0Y0Z0<-objY0Z0 | objX0Y1Z0<-objY1Z0    | objX0Y0Z1<-objY0Z1    | objX0Y1Z1<-     objY1Z1
-            ]| y0<-pYs | y1'<-tail pYs | mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'   | mA'T <-tail mA' | objY0Z0  <-objZ0   | objY1Z0  <-tail objZ0 | objY0Z1  <-objZ1      | objY1Z1  <-tail objZ1
-            ]| z0<-pZs | z1'<-tail pZs | mB'  <-midsY | mBT  <-tail midsY | mA'  <-midsZ                   | objZ0    <- objV                           | objZ1    <- tail objV
-            ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
+        segsX :: [[[[[ℝ3]]]]]
+        segsX = bleck nx $
+          [ [ [ injX x0 <$>
+                  getSegs
+                    (V2 y0 z0)
+                    (V2 y1' z1')
+                    (obj $** x0)
+                    (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1)
+                    (midA0, midA1, midB0, midB1)
+              | x0<-pXs
+              |                 midB0<-mB''
+              | midB1     <- mBT'
+              | midA0     <- mA''
+              | midA1     <- mA'T
+              | objX0Y0Z0 <- objY0Z0
+              | objX0Y1Z0 <- objY1Z0
+              | objX0Y0Z1 <- objY0Z1
+              | objX0Y1Z1 <- objY1Z1
+              ]
+            | y0      <- pYs
+            | y1'     <- tail pYs
+            | mB''    <- mB'
+            | mBT'    <- mBT
+            | mA''    <- mA'
+            | mA'T    <- tail mA'
+            | objY0Z0 <- objZ0
+            | objY1Z0 <- tail objZ0
+            | objY0Z1 <- objZ1
+            | objY1Z1 <- tail objZ1
+            ]
+          | z0    <- pZs
+          | z1'   <- tail pZs
+          | mB'   <- midsY
+          | mBT   <- tail midsY
+          | mA'   <- midsZ
+          | objZ0 <- objV
+          | objZ1 <- tail objV
+          ]
 
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
-        sqTris = [[[
-            foldMap (tesselateLoop minres obj) $ getLoops $
-                        segX''' <>
-                   mapR segX''T <>
-                   mapR segY''' <>
-                        segY'T' <>
-                        segZ''' <>
-                   mapR segZT''
-             | segZ'''<- segZ''| segZT''<- segZT'
-             | segY'''<- segY''| segY'T'<- segY'T
-             | segX'''<- segX''| segX''T<- tail segX''
-
-            ]| segZ'' <- segZ' | segZT' <- segZT
-             | segY'' <- segY' | segY'T <- tail segY'
-             | segX'' <- segX'
-
-            ]| segZ'  <- segsZ | segZT  <- tail segsZ
-             | segY'  <- segsY
-             | segX'  <- segsX
-            ] `using` parBuffer (max 1 $ div (fromℕ $ nx+ny+nz) forcesteps) rdeepseq
+        sqTris = bleck (nx + ny + nz) $
+          [ [ [ foldMap (tesselateLoop minres obj) $ getLoops $
+                  mconcat
+                    [ segX'''
+                    , mapR segX''T
+                    , mapR segY'''
+                    , segY'T'
+                    , segZ'''
+                    , mapR segZT''
+                    ]
+                | segZ''' <- segZ''
+                | segZT'' <- segZT'
+                | segY''' <- segY''
+                | segY'T' <- segY'T
+                | segX''' <- segX''
+                | segX''T <- tail segX''
+                ]
+              | segZ'' <- segZ'
+              | segZT' <- segZT
+              | segY'' <- segY'
+              | segY'T <- tail segY'
+              | segX'' <- segX'
+              ]
+            | segZ'  <- segsZ
+            | segZT  <- tail segsZ
+            | segY'  <- segsY
+            | segX'  <- segsX
+            ]
 
     in
       -- (5) merge squares, etc
