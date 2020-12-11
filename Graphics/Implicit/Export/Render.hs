@@ -249,12 +249,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
           forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
             foldMap (tesselateLoop minres obj) $ getLoops $
               mconcat
-                [ segsXMap M.! (xm, ym, zm)
-                , mapR $ segsXMap M.! ((xm + 1), ym, zm)
-                , mapR $ segsYMap M.! (xm, ym, zm)
-                , segsYMap M.! (xm, ym + 1, zm)
-                , segsZMap M.! (xm, ym, zm)
-                , mapR $ segsZMap M.! (xm, ym, zm + 1)
+                [        segsXMap M.! (xm,     ym,     zm)
+                , mapR $ segsXMap M.! (xm + 1, ym,     zm)
+                , mapR $ segsYMap M.! (xm,     ym,     zm)
+                ,        segsYMap M.! (xm,     ym + 1, zm)
+                ,        segsZMap M.! (xm,     ym,     zm)
+                , mapR $ segsZMap M.! (xm,     ym,     zm + 1)
                 ]
 
     in
