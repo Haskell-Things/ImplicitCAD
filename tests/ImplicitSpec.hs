@@ -1,17 +1,19 @@
-{-# LANGUAGE ExplicitNamespaces #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE ExplicitNamespaces  #-}
 {-# LANGUAGE GADTs               #-}
+{-# LANGUAGE NumDecimals         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
 module ImplicitSpec (spec) where
 
-import Prelude (pure, negate, (+), String, Num, Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (SpecWith, it, describe, Spec)
-import Graphics.Implicit.Test.Instances ((=~=))
+import Prelude
+import Test.Hspec
+import Graphics.Implicit.Test.Instances (arbitraryV3, (=~=))
 import Graphics.Implicit
-    ( difference,
+    (ℝ,  difference,
       rotate,
       rotate3,
       rotate3V,
@@ -25,15 +27,20 @@ import Graphics.Implicit
       differenceR,
       translate,
       Object )
-import Graphics.Implicit.Primitives (rotateQ)
-import Test.QuickCheck
-    (Testable, property, expectFailure,  Arbitrary(arbitrary),
-      suchThat,
-      forAll)
+import Graphics.Implicit.Primitives (getImplicit, getBox, rotateQ)
+import Test.QuickCheck hiding (scale)
 import Data.Foldable ( for_ )
-import Test.Hspec.QuickCheck (prop)
+import Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
 import QuickSpec (Observe)
-import Linear ( V3(V3), (^*) )
+import Linear (quadrance, dot, normalize, cross,  V3(V3), (^*) )
+import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable(discreteAprox))
+import Graphics.Implicit.Definitions (Triangle(..), TriangleMesh(TriangleMesh))
+import Graphics.Implicit
+import Control.Arrow (Arrow((***)))
+import Data.List (sort, group)
+import Data.Traversable
+import Data.Functor
+import Debug.Trace (traceM)
 
 
 ------------------------------------------------------------------------------
@@ -254,9 +261,7 @@ identitySpec = describe "identity" $ do
 -- translate and scale.
 homomorphismSpec
     :: forall obj vec test outcome
-     . ( TestInfrastructure obj vec test outcome
-       , Num vec
-       )
+     . TestInfrastructure obj vec test outcome
     => Spec
 homomorphismSpec = describe "homomorphism" $ do
   prop "translate" $ \xyz1 xyz2 ->
@@ -272,4 +277,66 @@ homomorphismSpec = describe "homomorphism" $ do
 -- | Like 'prop', but for tests that are currently expected to fail.
 failingProp :: Testable prop => String -> prop -> SpecWith ()
 failingProp x = it x . expectFailure . property
+
+
+test :: Spec
+test = describe "yo" $ do
+  prop "k" $ \(Positive r') (Positive (n :: Integer)) obj -> do
+    let r = r' + 0.1
+    within 1e6 $
+      counterexample (show r) $
+      counterexample (show n) $
+      counterexample (show obj) $
+      discreteAprox @_ @TriangleMesh r obj
+        === discreteAprox r (outsetBox (fromIntegral n * r) obj)
+
+test2 :: Spec
+test2 = describe "yo" $ do
+  it "k" $ do
+    let obj = cubeR 0 True (V3 4 4 4)
+        r = 0.25 :: Double
+        n = 2 :: Integer
+    (sum $ normals $ discreteAprox @_ @TriangleMesh r obj) `shouldBe` 0
+      -- === discreteAprox r (outsetBox (fromIntegral n * r) obj)
+
+test3 :: Spec
+test3 = describe "yo" $ do
+  modifyMaxSuccess (const 10000) $ prop "k" $ do
+    v <- normalize <$> arbitraryV3
+    case quadrance v == 0.0 of
+      True  -> discard
+      False -> pure @_ @Property $ counterexample (show v) $ do
+        let ns = fmap (fmap quantize) $ normals $ discreteAprox @_ @TriangleMesh 1 $ plane 5 v
+        take 10 ns `shouldContain` (replicate 10 $ fmap quantize v)
+
+badTriangles :: TriangleMesh
+badTriangles = discreteAprox 1 $ plane 5 $ V3 9.688718338657142e-2 0.41910786199170874 0.9027521662738648
+
+--         conjoin $ ts <&> \t -> do
+--           counterexample (show t) $ do
+--             let n = triangleNormal t
+--                 n' = fmap quantize n
+--                 v' = fmap quantize v
+--             n' `shouldBe` v'
+
+quantize :: ℝ -> ℝ
+quantize n =
+  let e = 1e5 :: Double
+   in (/ e) $ fromInteger $ round $ (n * e)
+
+triangleNormal :: Triangle -> ℝ3
+triangleNormal (Triangle (a, b, c)) = normalize $ (b - a) `cross` (c - a)
+
+normals :: TriangleMesh -> [ℝ3]
+normals = fmap triangleNormal . getTriangles
+
+getTriangles :: TriangleMesh -> [Triangle]
+getTriangles = (\ t -> case t of { (TriangleMesh l_t) -> l_t })
+
+
+plane :: ℝ -> ℝ3 -> SymbolicObj3
+plane bb (normalize -> n) = implicit (dot n) (pure (-bb), pure bb)
+
+outsetBox :: ℝ -> SymbolicObj3 -> SymbolicObj3
+outsetBox r s = implicit (getImplicit s) (((subtract $ pure r) *** (+ pure r)) $ getBox s)
 

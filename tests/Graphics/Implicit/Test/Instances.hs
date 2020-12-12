@@ -4,7 +4,7 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (observe, (=~=), arbitraryV3) where
 
 import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
