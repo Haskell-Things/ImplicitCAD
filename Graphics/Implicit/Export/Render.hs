@@ -145,15 +145,6 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         midsZMap = mkMidsMap _z
 
 
-        forXYZ :: ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> r) -> [[[r]]]
-        forXYZ x y z f = do
-          zm <- [0 .. z]
-          pure $ do
-            ym <- [0 .. y]
-            pure $ do
-              xm <- [0 .. x]
-              pure $ f xm ym zm
-
         forXYZM :: Monoid m => ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
         forXYZM x y z f = fold $ do
           zm <- [0 .. z]
@@ -213,9 +204,9 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
 
-        sqTris :: [[[[TriSquare]]]]
+        sqTris :: [TriSquare]
         sqTris = bleck (nx + ny + nz) $ do
-          forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
+          forXYZM (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
             foldMap (tesselateLoop minres obj) $ getLoops $
               mconcat
                 [        segsXMap M.! V3 xm       ym       zm
@@ -228,7 +219,7 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
     in
       -- (5) merge squares, etc
-      mergedSquareTris . fold . fold $ fold sqTris
+      mergedSquareTris sqTris
 
 -- | getContour gets a polyline describing the edge of a 2D object.
 getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
