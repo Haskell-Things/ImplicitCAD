@@ -21,7 +21,11 @@ tesselateLoop :: ℝ -> Obj3 -> [[ℝ3]] -> [TriSquare]
 
 tesselateLoop _ _ [] = []
 
-tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [Tris $ TriangleMesh [Triangle (a,b,c)]]
+-- Given our invariant that the list has already been loopified via
+-- 'Graphics.Implicit.Export.Render.GetLoops.getLoops', we know that in the
+-- following case, @a = _a@, @b = _b@ and @c = _c@, so we can ignore the
+-- duplicated points and just build a triangle.
+tesselateLoop _ _ [[a, b], [_b, c], [_c, _a]] = [Tris $ TriangleMesh [Triangle (a,b,c)]]
 
 
 {-
@@ -32,7 +36,23 @@ tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [Tris $ TriangleMesh [Triangle (a,b,c)]]
    #____#     #____#
 -}
 
-tesselateLoop res obj [[_,_], as@(_:_:_:_),[_,_], bs@(_:_:_:_)] | length as == length bs =
+-- NOTE(sandy): in this case, the @[_,_]@s act as bridges between @as@ and
+-- @bs@. Thus from our invariant, we know @_a0 = head as@ and @_an = last as@.
+-- But I don't see any justification for why it's ok to zip @as@ and @bs@.
+-- I think the picture above gives a misleading idea; what if the points on the
+-- right side were reversed? Then we'd decompose it like this:
+--
+--   #     #     #     #      #     #
+--   | \ / |     | \   |      |   / |
+--   #  X  #  -> #__o__# and  #__o__#
+--   | / \ |     |   \ |      | /   |
+--   #     #     #     #      #     #
+--
+-- which feels off.
+--
+-- I think this function should also insist that $b_n - b_{n-1} = a_n - a_{n-1}$.
+tesselateLoop res obj [[_bn,_a0], as@(_:_:_:_),[_an,_b0], bs@(_:_:_:_)]
+  | length as == length bs =
     foldMap (tesselateLoop res obj)
         [[[a1,b1],[b1,b2],[b2,a2],[a2,a1]] | ((a1,b1),(a2,b2)) <- zip (init pairs) (tail pairs)]
             where pairs = zip (reverse as) bs
