@@ -66,7 +66,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
-import Linear (_x, _y, _z, _yz)
+import Linear (_x, _y, _z, _yz, _xz, _xy)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -170,7 +170,7 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (2) Calculate segments for each side
         mkSegsMap :: (forall a. Lens' (V3 a) a) -> (forall a. Lens' (V3 a) (V2 a)) -> Map (ℕ, ℕ, ℕ) [[ℝ3]]
         mkSegsMap l l' =
-          forXYZM nx (ny - 1) (nz - 1) $ \xm ym zm ->
+          forXYZMV3 (V3 nx ny nz & l' -~ 1) $ \xm ym zm ->
             let stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
                 v = V3 xm ym zm
                 stepped = stepping <*> v
@@ -198,70 +198,13 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         -- (2) Calculate segments for each side
         segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsXMap = -- mkSegsMap _x _yz
-          forXYZM nx (ny - 1) (nz - 1) $ \xm ym zm ->
-            let x0 = (stepwise x1 rx xm)
-             in M.singleton (xm, ym, zm) $
-                  injX x0 <$>
-                    getSegs
-                      (V2 (stepwise y1 ry ym) (stepwise z1 rz zm))
-                      (V2 (stepwise y1 ry (ym + 1)) (stepwise z1 rz (zm + 1)))
-                      (\(V2 b c) -> obj (V3 x0 b c))
-                      ( sample xm ym       zm
-                      , sample xm (ym + 1) zm
-                      , sample xm ym       (zm + 1)
-                      , sample xm (ym + 1) (zm + 1)
-                      )
-                      ( midsZMap M.! (xm, ym,     zm)
-                      , midsZMap M.! (xm, ym + 1, zm)
-                      , midsYMap M.! (xm, ym,     zm)
-                      , midsYMap M.! (xm, ym,     zm + 1)
-                      )
-
+        segsXMap = mkSegsMap _x _yz
 
         segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsYMap =
-          forXYZM (nx - 1) ny (nz - 1) $ \xm ym zm ->
-            let
-                y0 = (stepwise y1 ry ym)
-             in M.singleton (xm, ym, zm) $
-                  injY y0 <$>
-                    getSegs
-                      (V2 (stepwise x1 rx xm) (stepwise z1 rz zm))
-                      (V2 (stepwise x1 rx (xm + 1)) (stepwise z1 rz (zm + 1)))
-                      (obj *$* y0)
-                      ( sample xm       ym zm
-                      , sample (xm + 1) ym zm
-                      , sample xm       ym (zm + 1)
-                      , sample (xm + 1) ym (zm + 1)
-                      )
-                      ( midsZMap M.! (xm,     ym, zm)
-                      , midsZMap M.! (xm + 1, ym, zm)
-                      , midsXMap M.! (xm,     ym, zm)
-                      , midsXMap M.! (xm,     ym, zm + 1)
-                      )
+        segsYMap = mkSegsMap _y _xz
 
         segsZMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
-        segsZMap =
-          forXYZM (nx - 1) (ny - 1) nz $ \xm ym zm ->
-            let
-                z0 = (stepwise z1 rz zm)
-             in M.singleton (xm, ym, zm) $
-                  injZ z0 <$>
-                    getSegs
-                      (V2 (stepwise x1 rx xm) (stepwise y1 ry ym))
-                      (V2 (stepwise x1 rx (xm + 1)) (stepwise y1 ry (ym + 1)))
-                      (obj **$ z0)
-                      ( sample xm        ym      zm
-                      , sample (xm + 1)  ym      zm
-                      , sample xm       (ym + 1) zm
-                      , sample (xm + 1) (ym + 1) zm
-                      )
-                      ( midsYMap M.! (xm,     ym,     zm)
-                      , midsYMap M.! (xm + 1, ym,     zm)
-                      , midsXMap M.! (xm,     ym,     zm)
-                      , midsXMap M.! (xm,     ym + 1, zm)
-                      )
+        segsZMap = mkSegsMap _z _xy
 
 
 
