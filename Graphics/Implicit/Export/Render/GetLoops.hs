@@ -20,9 +20,10 @@ import Control.Monad
 --   segments, which each piece representing a "side".
 
 -- For example:
--- Given points [[1,2],[5,1],[3,4,5], ... ]
--- notice that there is a loop 1,2,3,4,5... <repeat>
--- But we give the output [ [ [1,2], [3,4,5], [5,1] ], ... ]
+-- Given points [[1,2],[5,1],[3,4,5],[2,3], ... ]
+-- notice that by going from 1->2 in the first segment, we can then go 2->3 via the fourth.
+-- In this sense, there is a loop 1,2,3,4,5... <repeat>
+-- But we give the output [ [ [1,2], [2,3], [3,4,5], [5,1] ], ... ]
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
 
