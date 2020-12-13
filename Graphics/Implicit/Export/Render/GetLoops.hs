@@ -2,6 +2,8 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
@@ -11,11 +13,11 @@ import Data.List (partition)
 
 -- | The goal of getLoops is to extract loops from a list of segments.
 --   The input is a list of segments.
---   The output a list of loops, where each loop is a list of 
+--   The output a list of loops, where each loop is a list of
 --   segments, which each piece representing a "side".
 
 -- For example:
--- Given points [[1,2],[5,1],[3,4,5], ... ] 
+-- Given points [[1,2],[5,1],[3,4,5], ... ]
 -- notice that there is a loop 1,2,3,4,5... <repeat>
 -- But we give the output [ [ [1,2], [3,4,5], [5,1] ], ... ]
 -- so that we have the loop, and also knowledge of how
@@ -32,7 +34,12 @@ getLoops a = getLoops' a []
 -- built.
 
 -- so we begin with the "building loop" being empty.
-getLoops' :: (Show a, Eq a) => [[a]] -> [[a]] -> [[[a]]]
+getLoops'
+    :: forall a
+     . (Show a, Eq a)
+    => [[a]]
+    -> [[a]]  -- ^ accumulator
+    -> [[[a]]]
 
 -- | If there aren't any segments, and the "building loop" is empty, produce no loops.
 getLoops' [] [] = []
@@ -52,11 +59,17 @@ getLoops' segs workingLoop =
     let
         presEnd :: [[a]] -> a
         presEnd = last . last
+
+        connects :: [a] -> Bool
         connects (x:_) = x == presEnd workingLoop
-        -- Handle the empty case.
         connects [] = False
+
         -- divide our set into sequences that connect, and sequences that don't.
+        possibleConts, nonConts :: [[a]]
         (possibleConts, nonConts) = partition connects segs
+
+        next :: [a]
+        unused :: [[a]]
         (next, unused) = if null possibleConts
                          then error "unclosed loop in paths given"
                          else (head possibleConts, tail possibleConts <> nonConts)
