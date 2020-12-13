@@ -77,7 +77,11 @@ module Graphics.Implicit (
   writeOBJ,
   writeTHREEJS,
   writeSCAD3,
-  writePNG3
+  writePNG3,
+
+  -- * Linear re-exports
+  L.V2(V2),
+  L.V3(V3)
 ) where
 
 import Prelude(FilePath, IO)
@@ -94,6 +98,8 @@ import Graphics.Implicit.Definitions as W (ℝ, ℝ2, ℝ3, SymbolicObj2, Symbol
 
 -- Functions for writing files based on the result of operations on primitives.
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
+
+import Linear as L (V2(V2), V3(V3), Quaternion(Quaternion))
 
 -- We want Export to be a bit less polymorphic
 -- (so that types will collapse nicely)
