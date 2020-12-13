@@ -19,6 +19,7 @@ import Data.Traversable ( for )
 import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 import Graphics.Implicit.Test.Utils (randomGroups)
 import Control.Monad ( join )
+import Control.Lens ( Ixed(ix), (&), (.~) )
 
 spec :: Spec
 spec = describe "getLoops" $ do
@@ -53,6 +54,23 @@ spec = describe "getLoops" $ do
       length loops `shouldBe` n
       -- Ensure that we can 'proveLoop' on each loop
       for_ (zip vs $ sort loops) $ uncurry proveLoop
+
+  prop "inserting in the middle is ok" $ do
+    (_, segs) <- genLoop @Int 0
+    let n = length segs
+    -- Pick a random segment
+    seg_idx <- choose (0, n - 1)
+    -- Insert a random element into it
+    seg' <- insertMiddle (segs !! seg_idx) =<< arbitrary
+    let segs' = segs & ix seg_idx .~ seg'
+
+    pure $ do
+      -- We should be able to get the loops of the original and inserted segments.
+      Just [loop] <- pure $ getLoops segs
+      Just [loop'] <- pure $ getLoops segs'
+      -- Really we're just testing to make sure the above pattern match doesn't
+      -- 'fail', but let's make sure they have the same number of segments too.
+      length loop `shouldBe` length loop'
 
 
 ------------------------------------------------------------------------------
@@ -103,9 +121,33 @@ genManyLoops start n = do
 loopify :: [[a]] -> [[a]]
 loopify as = zipWith (\a -> mappend a . take 1) as $ drop 1 $ join $ repeat as
 
+
 ------------------------------------------------------------------------------
 -- | Remove sequential elements in a list. Additionally, this function removes
 -- the 'head' of the list, because conceptully it is also the 'last'.
 unloop :: Eq a => [[a]] -> [a]
 unloop = drop 1 . fmap head . group . join
+
+
+------------------------------------------------------------------------------
+-- | Insert an element into the middle (not 'head' or 'last') of a list.
+insertMiddle :: [a] -> a -> Gen [a]
+insertMiddle [] _ = pure []
+insertMiddle [a] _ = pure [a]
+insertMiddle as a = do
+  let n = length as
+  i <- choose (1, n - 1)
+  pure $ insertAt i a as
+
+
+------------------------------------------------------------------------------
+-- | Helper function to insert an element into a list at a given position.
+insertAt :: Int -> a -> [a] -> [a]
+insertAt i a ls
+  | i < 0 = ls
+  | otherwise = go i ls
+  where
+    go 0 xs     = a : xs
+    go n (x:xs) = x : go (n-1) xs
+    go _ []     = []
 

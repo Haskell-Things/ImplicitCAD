@@ -224,7 +224,8 @@ Test-suite test-implicit
                   hw-hspec-hedgehog,
                   quickspec,
                   QuickCheck,
-                  linear
+                  linear,
+                  lens
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
