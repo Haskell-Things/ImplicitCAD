@@ -55,6 +55,10 @@ getLoops' (x:xs) [] = getLoops' xs [x]
 
 -- | A loop is finished if its start and end are the same.
 -- Return it and start searching for another loop.
+
+-- NOTE(sandy): This @last . last@ is atrocious and runs in @O(n^2)@ due to the
+-- recursion here. It's *especially* bad since this is in the tight @O(n^3)@
+-- loop of 'Graphics.Implicit.Export.Render.getMesh'.
 getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) =
   (workingLoop :) <$> getLoops' segs []
 
