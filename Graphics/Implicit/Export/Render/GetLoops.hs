@@ -7,9 +7,12 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
+import Prelude (not, ($), head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
+import Data.Maybe
+import Control.Applicative
 
 import Data.List (partition)
+import Control.Monad
 
 -- | The goal of getLoops is to extract loops from a list of segments.
 --   The input is a list of segments.
@@ -24,7 +27,8 @@ import Data.List (partition)
 -- the list is built (the "sides" of it).
 
 getLoops :: (Show a, Eq a) => [[a]] -> [[[a]]]
-getLoops a = getLoops' a []
+getLoops a = fromMaybe (error "unclosed loop in paths given") $
+  getLoops' a []
 
 -- We will be actually doing the loop extraction with
 -- getLoops'
@@ -39,10 +43,10 @@ getLoops'
      . (Show a, Eq a)
     => [[a]]
     -> [[a]]  -- ^ accumulator
-    -> [[[a]]]
+    -> Maybe [[[a]]]
 
 -- | If there aren't any segments, and the "building loop" is empty, produce no loops.
-getLoops' [] [] = []
+getLoops' [] [] = Just []
 
 -- | If the building loop is empty, stick the first segment we have onto it to give us something to build on.
 getLoops' (x:xs) [] = getLoops' xs [x]
@@ -50,12 +54,12 @@ getLoops' (x:xs) [] = getLoops' xs [x]
 -- | A loop is finished if its start and end are the same.
 -- Return it and start searching for another loop.
 getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) =
-    workingLoop : getLoops' segs []
+  (workingLoop :) <$> getLoops' segs []
 
 -- Finally, we search for pieces that can continue the working loop,
 -- and stick one on if we find it.
 -- Otherwise... something is really screwed up.
-getLoops' segs workingLoop =
+getLoops' segs workingLoop = do
     let
         presEnd :: [[a]] -> a
         presEnd = last . last
@@ -68,13 +72,11 @@ getLoops' segs workingLoop =
         possibleConts, nonConts :: [[a]]
         (possibleConts, nonConts) = partition connects segs
 
-        next :: [a]
-        unused :: [[a]]
-        (next, unused) = if null possibleConts
-                         then error "unclosed loop in paths given"
-                         else (head possibleConts, tail possibleConts <> nonConts)
-    in
+    case possibleConts of
+      [] -> empty
+      (next : conts) -> do
+        let unused = conts <> nonConts
         if null next
-        then workingLoop : getLoops' segs []
-        else getLoops' unused (workingLoop <> [next])
+          then (workingLoop :) <$> getLoops' segs []
+          else getLoops' unused (workingLoop <> [next])
 
