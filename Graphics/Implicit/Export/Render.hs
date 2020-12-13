@@ -117,14 +117,14 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (ℕ, ℕ, ℕ) ℝ
+        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (V3 ℕ) ℝ
         mkMidsMap l =
           forXYZMV3 (V3 nx ny nz & l -~ 1) $ \xm ym zm -> do
             let v = V3 xm ym zm
                 stepping   = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
                 stepped    = stepping <*> v
                 stepped_up = stepping <*> fmap (+1) v
-            M.singleton (xm, ym, zm) $
+            M.singleton v $
               interpolate
                 (V2 (view l stepped) $ sampleV3 v)
                 (V2 (view l stepped_up) $ sampleV3 $ v & l +~ 1)
@@ -132,15 +132,15 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 (view l res)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsXMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsXMap :: Map (V3 ℕ) ℝ
         midsXMap = mkMidsMap _x
 
 
-        midsYMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsYMap :: Map (V3 ℕ) ℝ
         midsYMap = mkMidsMap _y
 
 
-        midsZMap :: Map (ℕ, ℕ, ℕ) ℝ
+        midsZMap :: Map (V3 ℕ) ℝ
         midsZMap = mkMidsMap _z
 
 
@@ -163,12 +163,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         forXYZMV3 :: Monoid m => V3 ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
         forXYZMV3 (V3 x y z) f = forXYZM x y z f
 
-        unpackV3 :: V3 a -> (a, a, a)
-        unpackV3 (V3 a b c) = (a, b, c)
-
 
         -- (2) Calculate segments for each side
-        mkSegsMap :: (forall a. Lens' (V3 a) a) -> (forall a. Lens' (V3 a) (V2 a)) -> Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        mkSegsMap
+            :: (forall a. Lens' (V3 a) a)
+            -> (forall a. Lens' (V3 a) (V2 a))
+            -> Map (V3 ℕ) [[ℝ3]]
         mkSegsMap l l' =
           forXYZMV3 (V3 nx ny nz & l' -~ 1) $ \xm ym zm ->
             let stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
@@ -176,34 +176,34 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                 stepped = stepping <*> v
                 stepped_up =  stepping <*> fmap (+1) v
                 mids = V3 midsXMap midsYMap midsZMap
-                midA = view (l' . {- DO NOT SWAP -} _y) mids
-                midB = view (l' . {- DO NOT SWAP -} _x) mids
+                midA = view (l' . _y) mids
+                midB = view (l' . _x) mids
                 x0 = view l stepped
-             in M.singleton (xm, ym, zm) $
-                expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) {-(injX) (view l stepped)-} <$>
+             in M.singleton v $
+                expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) <$>
                     getSegs
                       (view l' stepped)
                       (view l' stepped_up)
                       (\yz -> obj $ pure 0 & l .~ x0 & l' .~ yz)
                       ( sampleV3 v
-                      , sampleV3 $ v & l' . {- DO NOT SWAP -} _x +~ 1
-                      , sampleV3 $ v & l' . {- DO NOT SWAP -} _y +~ 1
+                      , sampleV3 $ v & l' . _x +~ 1
+                      , sampleV3 $ v & l' . _y +~ 1
                       , sampleV3 $ v & l' +~ 1
                       )
-                      ( midA M.! (unpackV3 v)
-                      , midA M.! (unpackV3 $ v & l' . {- DO NOT SWAP -} _x +~ 1)
-                      , midB M.! (unpackV3 v)
-                      , midB M.! (unpackV3 $ v & l' . {- DO NOT SWAP -} _y +~ 1)
+                      ( midA M.! v
+                      , midA M.! (v & l' . _x +~ 1)
+                      , midB M.! v
+                      , midB M.! (v & l' . _y +~ 1)
                       )
 
         -- (2) Calculate segments for each side
-        segsXMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsXMap :: Map (V3 ℕ) [[ℝ3]]
         segsXMap = mkSegsMap _x _yz
 
-        segsYMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsYMap :: Map (V3 ℕ) [[ℝ3]]
         segsYMap = mkSegsMap _y _xz
 
-        segsZMap :: Map (ℕ, ℕ, ℕ) [[ℝ3]]
+        segsZMap :: Map (V3 ℕ) [[ℝ3]]
         segsZMap = mkSegsMap _z _xy
 
 
@@ -215,12 +215,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
           forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
             foldMap (tesselateLoop minres obj) $ getLoops $
               mconcat
-                [        segsXMap M.! (xm,     ym,     zm)
-                , mapR $ segsXMap M.! (xm + 1, ym,     zm)
-                , mapR $ segsYMap M.! (xm,     ym,     zm)
-                ,        segsYMap M.! (xm,     ym + 1, zm)
-                ,        segsZMap M.! (xm,     ym,     zm)
-                , mapR $ segsZMap M.! (xm,     ym,     zm + 1)
+                [        segsXMap M.! V3 xm       ym       zm
+                , mapR $ segsXMap M.! V3 (xm + 1) ym       zm
+                , mapR $ segsYMap M.! V3 xm       ym       zm
+                ,        segsYMap M.! V3 xm       (ym + 1) zm
+                ,        segsZMap M.! V3 xm       ym       zm
+                , mapR $ segsZMap M.! V3 xm       ym       (zm + 1)
                 ]
 
     in
