@@ -142,6 +142,8 @@ insertMiddle as a = do
 
 ------------------------------------------------------------------------------
 -- | Helper function to insert an element into a list at a given position.
+--
+-- Stolen from https://hackage.haskell.org/package/ilist-0.4.0.1/docs/Data-List-Index.html#v:insertAt
 insertAt :: Int -> a -> [a] -> [a]
 insertAt i a ls
   | i < 0 = ls
