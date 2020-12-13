@@ -11,7 +11,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Prelude((<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
+import Prelude(error, (<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -68,6 +68,7 @@ import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
 import Linear (_x, _y, _z, _yz, _xz, _xy)
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+import Data.Maybe (fromMaybe)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -207,7 +208,8 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         sqTris :: [TriSquare]
         sqTris = bleck (nx + ny + nz) $ do
           forXYZM (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
-            foldMap (tesselateLoop minres obj) $ getLoops $
+            foldMap (tesselateLoop minres obj) $
+                fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
                 [        segsXMap M.! V3 xm       ym       zm
                 , mapR $ segsXMap M.! V3 (xm + 1) ym       zm

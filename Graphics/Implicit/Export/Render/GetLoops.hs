@@ -7,12 +7,10 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (not, ($), head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
-import Data.Maybe
-import Control.Applicative
-
+import Prelude (head, last, (==), Bool(False), (.), null, (<>), Eq)
+import Data.Maybe ( Maybe(Just) )
+import Control.Applicative ( (<$>), Alternative(empty) )
 import Data.List (partition)
-import Control.Monad
 
 -- | The goal of getLoops is to extract loops from a list of segments.
 --   The input is a list of segments.
@@ -27,9 +25,8 @@ import Control.Monad
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
 
-getLoops :: (Show a, Eq a) => [[a]] -> [[[a]]]
-getLoops a = fromMaybe (error "unclosed loop in paths given") $
-  getLoops' a []
+getLoops :: (Eq a) => [[a]] -> Maybe [[[a]]]
+getLoops a = getLoops' a []
 
 -- We will be actually doing the loop extraction with
 -- getLoops'
@@ -41,7 +38,7 @@ getLoops a = fromMaybe (error "unclosed loop in paths given") $
 -- so we begin with the "building loop" being empty.
 getLoops'
     :: forall a
-     . (Show a, Eq a)
+     . (Eq a)
     => [[a]]
     -> [[a]]  -- ^ accumulator
     -> Maybe [[[a]]]
