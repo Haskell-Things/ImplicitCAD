@@ -292,27 +292,6 @@ expandPolyline :: (ℝ2 -> ℝ3) -> Polyline -> [ℝ3]
 expandPolyline f = fmap f . getPolyline
 
 
-injX :: ℝ -> Polyline -> [ℝ3]
-injX a (Polyline xs) = fmap (prepend a) xs
-prepend :: ℝ -> ℝ2 -> ℝ3
-prepend a (V2 b c) = (V3 a b c)
-injY :: ℝ -> Polyline -> [ℝ3]
-injY a (Polyline xs) = fmap (insert a) xs
-insert :: ℝ -> ℝ2 -> ℝ3
-insert b (V2 a c) = (V3 a b c)
-injZ :: ℝ -> Polyline -> [ℝ3]
-injZ a (Polyline xs) = fmap (postfix a) xs
-postfix :: ℝ -> ℝ2 -> ℝ3
-postfix c (V2 a b) = (V3 a b c)
-
-(*$*) :: Obj3 -> ℝ -> ℝ2 -> ℝ
-f *$* b = \(V2 a c) -> f (V3 a b c)
-infixr 0 *$*
-
-(**$) :: Obj3 -> ℝ -> ℝ2 -> ℝ
-f **$ c = \(V2 a b) -> f (V3 a b c)
-infixr 0 **$
-
 ($*) :: Obj2 -> ℝ -> ℝ -> ℝ
 f $* a = \b -> f (V2 a b)
 infixr 0 $*
