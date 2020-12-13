@@ -23,6 +23,7 @@ import MessageSpec.Message(programExec)
 import PropertySpec (propSpec)
 
 import qualified GoldenSpec.Spec as Golden
+import qualified TesselationSpec as Tesselation
 import qualified ImplicitSpec as Implicit
 
 main :: IO ()
@@ -42,3 +43,5 @@ main = hspec $ do
   describe "property tests" propSpec
 
   Implicit.spec
+
+  describe "tesselation tests" Tesselation.spec
