@@ -20,17 +20,24 @@ import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 import Graphics.Implicit.Test.Utils (randomGroups)
 import Control.Monad ( join )
 
-
 spec :: Spec
 spec = describe "getLoops" $ do
+  prop "stability" $ do
+    n <- choose (2, 20)
+    (_, segs) <- genManyLoops @Int 0 n
+    -- Shuffle the loops amongst themselves (but dont intermingle their segments)
+    shuffled_segs <- shuffle segs
+    pure $ do
+      Just loops <- pure $ getLoops $ join shuffled_segs
+      -- The discovered loops should be in the same order that we generated
+      -- them in
+      for_ (zip loops shuffled_segs) $ \(loop, seg) ->
+        head loop `shouldBe` head seg
+
   prop "loops many loops" $ do
     -- Pick a number of loops to aim for
     n <- choose (2, 20)
-    (vs, segs) <- fmap unzip $ for [0 .. n - 1] $ \idx -> do
-      -- Generate a loop for each
-      (v, segs) <- genLoop @Int 0
-      -- and tag it with the index
-      pure (fmap (idx,) v, fmap (fmap (idx,)) segs)
+    (vs, segs) <- genManyLoops @Int 0 n
 
     -- Shuffle the segments of all the loops together
     shuffled_segs <- shuffle $ join segs
@@ -55,6 +62,15 @@ genLoop start = do
   let segs = mkSegments bits
   shuffled_segs <- shuffle segs
   pure (v, shuffled_segs)
+
+
+genManyLoops :: Enum a => a -> Int -> Gen ([[(Int, a)]], [[[(Int, a)]]])
+genManyLoops start n = do
+  fmap unzip $ for [0 .. n - 1] $ \idx -> do
+    -- Generate a loop for each
+    (v, segs) <- genLoop start
+    -- and tag it with the index
+    pure (fmap (idx,) v, fmap (fmap (idx,)) segs)
 
 
 
