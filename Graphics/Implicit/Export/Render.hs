@@ -67,6 +67,7 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
 import Linear (_x, _y, _z, _yz, _xz, _xy)
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -211,6 +212,8 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
+
+        sqTris :: [[[[TriSquare]]]]
         sqTris = bleck (nx + ny + nz) $ do
           forXYZ (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
             foldMap (tesselateLoop minres obj) $ getLoops $
