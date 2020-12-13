@@ -49,6 +49,7 @@ getLoops'
 getLoops' [] [] = Just []
 
 -- | If the building loop is empty, stick the first segment we have onto it to give us something to build on.
+getLoops' ([]:xs) [] = getLoops' xs []
 getLoops' (x:xs) [] = getLoops' xs [x]
 
 -- | A loop is finished if its start and end are the same.
