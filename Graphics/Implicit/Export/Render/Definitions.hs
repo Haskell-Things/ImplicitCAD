@@ -9,10 +9,12 @@ import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, TriangleMesh)
 
 -- So we can use Parallel on this type.
 import Control.DeepSeq (NFData, rnf)
+import Prelude (Show, Ord, Eq)
 
 data TriSquare =
       Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2
     | Tris TriangleMesh
+    deriving (Eq, Ord, Show)
 
 instance NFData TriSquare where
     rnf (Sq b z xS yS) = rnf (b,z,xS,yS)

@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
 
@@ -5,72 +7,114 @@ module TesselationSpec (spec) where
 
 import Prelude
 import Test.Hspec
-    ( hspec, describe, shouldBe, shouldContain, Spec, Expectation )
+    (shouldSatisfy,  hspec, describe, shouldBe, shouldContain, Spec, Expectation )
 import Test.QuickCheck
-    ( Arbitrary(arbitrary),
-      choose,
-      shuffle,
-      Gen,
-      Positive(getPositive) )
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Data.List (sort, group)
+import Data.List (sortBy, nub, sort, group)
 import Data.Traversable ( for )
 import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 import Graphics.Implicit.Test.Utils (randomGroups)
-import Control.Monad ( join )
+import Graphics.Implicit.Test.Instances ()
+import Control.Monad (when,  join )
 import Control.Lens ( Ixed(ix), (&), (.~) )
+import Linear
+import Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop)
+import Graphics.Implicit.Definitions (Triangle(..), ℝ3, Obj3, TriangleMesh(..))
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
+import Debug.Trace (traceM)
+import Data.Functor.Identity
 
 spec :: Spec
-spec = describe "getLoops" $ do
-  prop "stability" $ do
-    n <- choose (2, 20)
-    (_, segs) <- genManyLoops @Int 0 n
-    -- Shuffle the loops amongst themselves (but dont intermingle their segments)
-    shuffled_segs <- shuffle segs
-    pure $ do
-      Just loops <- pure $ getLoops $ join shuffled_segs
-      -- The discovered loops should be in the same order that we generated
-      -- them in
-      for_ (zip loops shuffled_segs) $ \(loop, seg) ->
-        head loop `shouldBe` head seg
+spec = do
+  describe "getLoops" $ do
+    prop "stability" $ do
+      n <- choose (2, 20)
+      (_, segs) <- genManyLoops @Int 0 n
+      -- Shuffle the loops amongst themselves (but dont intermingle their segments)
+      shuffled_segs <- shuffle segs
+      pure $ do
+        Just loops <- pure $ getLoops $ join shuffled_segs
+        -- The discovered loops should be in the same order that we generated
+        -- them in
+        for_ (zip loops shuffled_segs) $ \(loop, seg) ->
+          head loop `shouldBe` head seg
 
-  prop "loops a loop" $ do
-    (v, segs) <- genLoop @Int 0
-    pure $ do
-      Just [loop] <- pure $ getLoops segs
-      proveLoop v loop
+    prop "loops a loop" $ do
+      (v, segs) <- genLoop @Int 0
+      pure $ do
+        Just [loop] <- pure $ getLoops segs
+        proveLoop v loop
 
-  prop "loops many loops" $ do
-    -- Pick a number of loops to aim for
-    n <- choose (2, 20)
-    (vs, segs) <- genManyLoops @Int 0 n
+    prop "loops many loops" $ do
+      -- Pick a number of loops to aim for
+      n <- choose (2, 20)
+      (vs, segs) <- genManyLoops @Int 0 n
 
-    -- Shuffle the segments of all the loops together
-    shuffled_segs <- shuffle $ join segs
-    pure $ do
-      Just loops <- pure $ getLoops shuffled_segs
-      -- Make sure we have the right length
-      length loops `shouldBe` n
-      -- Ensure that we can 'proveLoop' on each loop
-      for_ (zip vs $ sort loops) $ uncurry proveLoop
+      -- Shuffle the segments of all the loops together
+      shuffled_segs <- shuffle $ join segs
+      pure $ do
+        Just loops <- pure $ getLoops shuffled_segs
+        -- Make sure we have the right length
+        length loops `shouldBe` n
+        -- Ensure that we can 'proveLoop' on each loop
+        for_ (zip vs $ sort loops) $ uncurry proveLoop
 
-  prop "inserting in the middle is ok" $ do
-    (_, segs) <- genLoop @Int 0
-    let n = length segs
-    -- Pick a random segment
-    seg_idx <- choose (0, n - 1)
-    -- Insert a random element into it
-    seg' <- insertMiddle (segs !! seg_idx) =<< arbitrary
-    let segs' = segs & ix seg_idx .~ seg'
+    prop "inserting in the middle is ok" $ do
+      (_, segs) <- genLoop @Int 0
+      let n = length segs
+      -- Pick a random segment
+      seg_idx <- choose (0, n - 1)
+      -- Insert a random element into it
+      seg' <- insertMiddle (segs !! seg_idx) =<< arbitrary
+      let segs' = segs & ix seg_idx .~ seg'
 
-    pure $ do
-      -- We should be able to get the loops of the original and inserted segments.
-      Just [loop] <- pure $ getLoops segs
-      Just [loop'] <- pure $ getLoops segs'
-      -- Really we're just testing to make sure the above pattern match doesn't
-      -- 'fail', but let's make sure they have the same number of segments too.
-      length loop `shouldBe` length loop'
+      pure $ do
+        -- We should be able to get the loops of the original and inserted segments.
+        Just [loop] <- pure $ getLoops segs
+        Just [loop'] <- pure $ getLoops segs'
+        -- Really we're just testing to make sure the above pattern match doesn't
+        -- 'fail', but let's make sure they have the same number of segments too.
+        length loop `shouldBe` length loop'
+
+  describe "tesselateLoop" $ do
+    prop "should preserve normals for points in a plane" $
+          \(Positive res) (NonEmpty (nub -> ps)) -> do
+      let q = Quaternion 1 0 :: Quaternion Double
+      -- Make sure we have enough points
+      !_ <- when (length ps < 3) discard
+
+      -- Take our R2 points, give them a Z component, and then rotate them by
+      -- the quaternion. The result is a point on our plane.
+      let points = fmap (rotate q . mkV3 0) ps
+
+      -- Generate random segments for our points
+      segs <- randomGroups points
+
+      -- The normal for our plane is the Z vector rotated by the same quaternion.
+      let normal = rotate q $ V3 0 0 1
+      pure $ do
+        counterexample (show segs) $ do
+        counterexample (show normal) $ do
+          [Tris (TriangleMesh triangles)] <- pure @Maybe $ tesselateLoop res (plane normal) (loopify segs)
+          pure $ do
+            counterexample (show triangles) $ do
+              -- Compute the normal for each triangle. Check that each one of them
+              -- dotted against the normal is >0.99.
+              let normals = fmap (dot normal . triangleNormal) triangles
+              normals `shouldSatisfy` (all $ (> 0.99))
+
+
+triangleNormal :: Triangle -> ℝ3
+triangleNormal (Triangle (a, b, c)) = normalize $ (b - a) `cross` (c - a)
+
+plane :: ℝ3 -> Obj3
+plane (normalize -> n) = dot n
+
+
+
+mkV3 :: Num a => a -> V2 a -> V3 a
+mkV3 a v2 = pure 0 & _xy .~ v2 & _z .~ a
 
 
 ------------------------------------------------------------------------------
