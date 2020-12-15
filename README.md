@@ -292,6 +292,13 @@ Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making t
 
 In Implicit CAD, we consider objects as functions of `outwardness'. The boundary is 0, negative is the interior and positive the exterior. The magnitude is how far out or in. A description of the mathematical ideas underpinning ImplicitCAD are in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post. You can also look at the [0.0.3 relase notes](http://christopherolah.wordpress.com/2012/02/06/implicitcad-0-0-3-release/).
 
+Related projects
+----------------
+
+* [ExplicitCAD](https://github.com/kliment/explicitcad/)
+* [HSlice](https://github.com/julialongtin/hslice/)
+* [implicitpipe](https://github.com/sorki/implicitpipe/)
+
 Status
 ------
 
