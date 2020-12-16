@@ -1,7 +1,8 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE BangPatterns     #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ViewPatterns     #-}
 
 module TesselationSpec (spec) where
 
@@ -17,13 +18,15 @@ import Graphics.Implicit.Export.Render.GetLoops (getLoops)
 import Graphics.Implicit.Test.Utils (randomGroups)
 import Graphics.Implicit.Test.Instances ()
 import Control.Monad (when,  join )
-import Control.Lens ( Ixed(ix), (&), (.~) )
+import Control.Lens (view,  Ixed(ix), (&), (.~) )
 import Linear
 import Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop)
 import Graphics.Implicit.Definitions (Triangle(..), ℝ3, Obj3, TriangleMesh(..))
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 import Debug.Trace (traceM)
 import Data.Functor.Identity
+import GHC.Generics (Generic)
+import Graphics.Implicit.Export.Render.Interpolate (interpolate)
 
 spec :: Spec
 spec = do
@@ -77,32 +80,50 @@ spec = do
         -- 'fail', but let's make sure they have the same number of segments too.
         length loop `shouldBe` length loop'
 
-  describe "tesselateLoop" $ do
-    prop "should preserve normals for points in a plane" $
-          \(Positive res) (NonEmpty (nub -> ps)) -> do
-      let q = Quaternion 1 0 :: Quaternion Double
-      -- Make sure we have enough points
-      !_ <- when (length ps < 3) discard
+    describe "interpolate" $ do
+      prop "should find roots" $ withMaxSuccess 100000 $
+            \res (functionalize -> f) (Positive dxNeg) (Positive dxPos)  -> do
+        let mkVal x = V2 x (f x)
+            aval = mkVal (-dxNeg)
+            bval = mkVal dxPos
+        -- make sure our randomly chosen bounds have different signs
+        when (view _y aval * view _y bval > 0) discard
 
-      -- Take our R2 points, give them a Z component, and then rotate them by
-      -- the quaternion. The result is a point on our plane.
-      let points = fmap (rotate q . mkV3 0) ps
+        -- make sure our generated function has a root
+        f 0 `shouldBe` 0
 
-      -- Generate random segments for our points
-      segs <- randomGroups points
+        -- see if interpolate can find the root
+        f (interpolate (mkVal (-dxNeg)) (mkVal dxPos) f res) `shouldSatisfy` (< 0.01) . abs
 
-      -- The normal for our plane is the Z vector rotated by the same quaternion.
-      let normal = rotate q $ V3 0 0 1
-      pure $ do
-        counterexample (show segs) $ do
-        counterexample (show normal) $ do
-          [Tris (TriangleMesh triangles)] <- pure @Maybe $ tesselateLoop res (plane normal) (loopify segs)
-          pure $ do
-            counterexample (show triangles) $ do
-              -- Compute the normal for each triangle. Check that each one of them
-              -- dotted against the normal is >0.99.
-              let normals = fmap (dot normal . triangleNormal) triangles
-              normals `shouldSatisfy` (all $ (> 0.99))
+
+
+
+--   describe "tesselateLoop" $ do
+--     prop "should preserve normals for points in a plane" $
+--           \(Positive res) (NonEmpty (nub -> ps)) -> do
+--       let q = Quaternion 1 0 :: Quaternion Double
+--       -- Make sure we have enough points
+--       !_ <- when (length ps < 3) discard
+
+--       -- Take our R2 points, give them a Z component, and then rotate them by
+--       -- the quaternion. The result is a point on our plane.
+--       let points = fmap (rotate q . mkV3 0) ps
+
+--       -- Generate random segments for our points
+--       segs <- randomGroups points
+
+--       -- The normal for our plane is the Z vector rotated by the same quaternion.
+--       let normal = rotate q $ V3 0 0 1
+--       pure $ do
+--         counterexample (show segs) $ do
+--         counterexample (show normal) $ do
+--           [Tris (TriangleMesh triangles)] <- pure @Maybe $ tesselateLoop res (plane normal) (loopify segs)
+--           pure $ do
+--             counterexample (show triangles) $ do
+--               -- Compute the normal for each triangle. Check that each one of them
+--               -- dotted against the normal is >0.99.
+--               let normals = fmap (dot normal . triangleNormal) triangles
+--               normals `shouldSatisfy` (all $ (> 0.99))
 
 
 triangleNormal :: Triangle -> ℝ3
@@ -196,4 +217,30 @@ insertAt i a ls
     go 0 xs     = a : xs
     go n (x:xs) = x : go (n-1) xs
     go _ []     = []
+
+
+
+data Defunc
+  = Linear Double  -- ^ Slope
+  | Sinusoid
+      Double  -- ^ amplitude
+      Double  -- ^ frequency
+  deriving (Eq, Ord, Show, Generic)
+
+functionalize :: Defunc -> Double -> Double
+functionalize (Linear slope) = \r -> r * slope
+functionalize (Sinusoid amp freq) = \r -> amp * sin (freq * r)
+
+
+instance Arbitrary Defunc where
+  shrink = genericShrink
+  arbitrary = sized $ \n ->
+    case n <= 1 of
+      True  -> oneof small
+      False -> oneof $ []  ++ small
+    where
+      small =
+        [ Linear <$> arbitrary
+        , Sinusoid <$> arbitrary <*> arbitrary
+        ]
 

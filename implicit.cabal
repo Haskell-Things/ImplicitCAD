@@ -124,6 +124,7 @@ Library
                     Graphics.Implicit.Export.Render.GetLoops
                     Graphics.Implicit.Export.Render.TesselateLoops
                     Graphics.Implicit.Export.Render.Definitions
+                    Graphics.Implicit.Export.Render.Interpolate
     Other-modules:
                   Graphics.Implicit.FastIntUtil
                   Graphics.Implicit.IntegralUtil
@@ -151,7 +152,6 @@ Library
                   Graphics.Implicit.Export.Render
                   Graphics.Implicit.Export.Render.GetSegs
                   Graphics.Implicit.Export.Render.HandleSquares
-                  Graphics.Implicit.Export.Render.Interpolate
                   Graphics.Implicit.Export.Render.RefineSegs
                   Graphics.Implicit.Export.Render.HandlePolylines
 
