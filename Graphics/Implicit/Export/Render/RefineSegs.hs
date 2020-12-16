@@ -59,7 +59,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
                    (dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
                    mid' = mid + V2 dX dY
                    midval' = obj mid'
-                   posRatio = midval/(midval - midval')
+                   posRatio = midval/(midval + midval')
                    mid'' = mid + V2 (dX*posRatio) (dY*posRatio)
                  in
                    addPolylines (detail (n+1) res obj (Polyline [p1, mid''])) (detail (n+1) res obj ( Polyline [mid'', p2] ))
