@@ -5,9 +5,10 @@
 -- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude((<), (/), (<>), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
+import Prelude
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2)
+import Debug.Trace(trace)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(..), minℝ, Fastℕ, Obj2)
 import Graphics.Implicit.Export.Util (centroid)
 import Linear ( Metric(norm, dot), V2(V2), normalize, (^*) )
 
@@ -59,8 +60,8 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
                    (dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
                    mid' = mid + V2 dX dY
                    midval' = obj mid'
-                   posRatio = midval/(midval - midval')
-                   mid'' = mid + V2 (dX*posRatio) (dY*posRatio)
+                   posRatio = midval/(midval + midval')
+                   mid'' = mid + trace2 ["midval= " <> show midval, "midval'= " <> show midval', "posRatio= " <> show posRatio] (V2 (dX*posRatio) (dY*posRatio))
                  in
                    addPolylines (detail (n+1) res obj (Polyline [p1, mid''])) (detail (n+1) res obj ( Polyline [mid'', p2] ))
                else Polyline [p1, p2]
@@ -96,3 +97,23 @@ simplify3 (a:as) | length as > 5 = simplify3 $ a : half (init as) <> [last as]
 simplify3 a = a
 
 -}
+
+
+
+trace2 :: (Show a, Num a, Ord a) => [String] -> V2 a -> V2 a
+trace2 ls a@(V2 x y) =
+  if (abs x > errorTerm || abs y > errorTerm)
+     then trace ("BIG TERM: f(" <> show a <> ") = " <> show x <> "\n" <> unlines ls) a
+     else a
+
+tracePL :: Polyline -> Polyline
+tracePL = overPolyline $ trace2 []
+
+
+errorTerm :: Num a => a
+errorTerm = 2000
+
+overPolyline :: (ℝ2 -> ℝ2) -> Polyline -> Polyline
+overPolyline f = Polyline . fmap f . getPolyline
+
+

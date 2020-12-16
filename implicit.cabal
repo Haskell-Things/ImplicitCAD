@@ -54,7 +54,7 @@ Common binstuff
 
 Common libstuff
     Default-Language: Haskell2010
-    Default-extensions: NoImplicitPrelude
+    Default-extensions: NoImplicitPrelude, TypeApplications
     Ghc-options:
                 -optc-O3
                 -- see GHC manual 8.2.1 section 6.5.1.

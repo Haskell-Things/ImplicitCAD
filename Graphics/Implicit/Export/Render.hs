@@ -11,9 +11,10 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Prelude(error, (<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
+import Prelude
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
+import Debug.Trace (trace)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
@@ -103,7 +104,7 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
 
         sampled :: Map (ℕ, ℕ, ℕ) ℝ
         sampled = forXYZM nx ny nz $ \xm ym zm ->
-          M.singleton (xm, ym, zm) $ obj $
+          M.singleton (xm, ym, zm) $ obj $ trace3 $
             V3
               (stepwise x1 rx xm)
               (stepwise y1 ry ym)
@@ -178,7 +179,7 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
                       (view l' stepped)
                       (view l' stepped_up)
                       (\yz -> obj $ pure 0 & l .~ x0 & l' .~ yz)
-                      ( sampleV3 v
+                      ( sampleV3 $ v
                       , sampleV3 $ v & l' . _x +~ 1
                       , sampleV3 $ v & l' . _y +~ 1
                       , sampleV3 $ v & l' +~ 1
@@ -211,7 +212,7 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
             foldMap (tesselateLoop minres obj) $
                 fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
-                [        segsXMap M.! V3 xm       ym       zm
+                [         segsXMap M.! V3 xm       ym       zm
                 , mapR $ segsXMap M.! V3 (xm + 1) ym       zm
                 , mapR $ segsYMap M.! V3 xm       ym       zm
                 ,        segsYMap M.! V3 xm       (ym + 1) zm
@@ -298,4 +299,21 @@ infixr 0 *$
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
+
+trace3 :: (Show a, Num a, Ord a) => V3 a -> V3 a
+trace3 a@(V3 x y z) =
+  if (abs x > errorTerm || abs y > errorTerm || abs z > errorTerm)
+     then trace ("BIG TERM: f(" <> show a <> ") = " <> show x) a
+     else a
+
+trace2 :: (Show a, Num a, Ord a) => V2 a -> V2 a
+trace2 a@(V2 x y) =
+  if (abs x > errorTerm || abs y > errorTerm)
+     then trace ("BIG TERM: f(" <> show a <> ") = " <> show x) a
+     else a
+
+
+errorTerm :: Num a => a
+errorTerm = 2000
+
 

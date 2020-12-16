@@ -80,7 +80,8 @@ module Graphics.Implicit (
   writePNG3
 ) where
 
-import Prelude(FilePath, IO)
+import Prelude
+import Linear(V2(..), V3(..))
 
 -- The primitive objects, and functions for manipulating them.
 -- MAYBEFIXME: impliment slice operation, regularPolygon and zsurface primitives.
@@ -200,4 +201,7 @@ writePNG3
     -> SymbolicObj3
     -> IO ()
 writePNG3 = Export.writePNG
+
+
+main = writeSTL 2 "/tmp/yo.stl"  $ translate (V3 0.0 (-27.5) 0.0) (union [translate (V3 62.0 0.0 33.0) (union [translate (V3 (-124.0) 0.0 0.0) (cubeR 0.0 False (V3 124.0 124.0 2.0)),translate (V3 (-56.0) 62.0 (-33.0)) (union [translate (V3 0.0 0.0 35.0) (union [translate (V3 0.0 0.0 (-17.5)) (difference (translate (V3 0.0 0.0 (-17.5)) (cylinder 42.0 35.0)) [translate (V3 0.0 0.0 (-15.5)) (cylinder 40.0 33.0)]),union [translate (V3 0.0 0.0 (-2.0)) (cylinder 48.0 2.0),emptySpace]]),emptySpace])]),translate (V3 (-3.5) (-50.0) 0.0) (union [translate (V3 0.0 (-9.5) 0.0) (union [translate (V3 0.0 0.0 8.5) (rotate3 (V3 3.141592653589793 0.0 0.0) (translate (V3 (-62.0) (-9.5) (-8.5)) (cubeR 0.0 False (V3 124.0 19.0 17.0)))),union [translate (V3 61.0 0.0 0.0) (union [translate (V3 0.0 (-4.0) 0.0) (cubeR 0.0 False (V3 8.0 8.0 2.0)),translate (V3 (-2.0) (-4.0) 0.0) (cubeR 0.0 False (V3 2.0 8.0 8.0))]),emptySpace]]),translate (V3 0.0 52.0 0.0) (union [translate (V3 (-52.0) (-54.0) 0.0) (cubeR 0.0 False (V3 104.0 54.0 17.0)),translate (V3 0.0 (-2.0) 0.0) (difference (extrudeR 0.0 (polygonR 0.0 [V2 (-48.0) 0.0,V2 48.0 0.0,V2 0.0 60.0]) 17.0) [translate (V3 0.0 0.0 2.0) (extrudeR 0.0 (polygonR 0.0 [V2 (-46.0) 0.0,V2 46.0 0.0,V2 0.0 58.0]) 13.0)])])])])
 

@@ -5,12 +5,13 @@
 -- TODO(sandy): i might have swapped (^+^) for - here
 module Graphics.Implicit.Export.Render.GetSegs (getSegs) where
 
-import Prelude((-), Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
+import Prelude
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(..))
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
-import Linear (V2(V2))
+import Linear (V2(V2), V3(..))
+import Debug.Trace(trace)
 
 {- The goal of getSegs is to create polylines to separate
    the interior and exterior vertices of a square intersecting
@@ -114,3 +115,21 @@ getSegs p1@(V2 x y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V
         (False, True, True,  False) -> if c <= 0
             then [Polyline [midy2, midx1], Polyline [midy1, midx2]]
             else [Polyline [midy1, midx1], Polyline [midy2, midx2]]
+
+trace3 :: (Show a, Num a, Ord a) => V3 a -> V3 a
+trace3 a@(V3 x y z) =
+  if (abs x > errorTerm || abs y > errorTerm || abs z > errorTerm)
+     then trace ("BIG TERM: f(" <> show a <> ") = " <> show x) a
+     else a
+
+trace2 :: (Show a, Num a, Ord a) => V2 a -> V2 a
+trace2 a@(V2 x y) =
+  if (abs x > errorTerm || abs y > errorTerm)
+     then trace ("BIG TERM: f(" <> show a <> ") = " <> show x) a
+     else a
+
+
+errorTerm :: Num a => a
+errorTerm = 2000
+
+

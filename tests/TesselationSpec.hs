@@ -26,7 +26,7 @@ import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 import Debug.Trace (traceM)
 import Data.Functor.Identity
 import GHC.Generics (Generic)
-import Graphics.Implicit.Export.Render.Interpolate (interpolate)
+import Graphics.Implicit.Export.Render.Interpolate (interpolate, interpolateBin, test)
 
 spec :: Spec
 spec = do
@@ -82,18 +82,22 @@ spec = do
 
     describe "interpolate" $ do
       prop "should find roots" $ withMaxSuccess 100000 $
-            \res (functionalize -> f) (Positive dxNeg) (Positive dxPos)  -> do
+            \(functionalize -> f) -> do
+        res <- choose (0.001, 5)
         let mkVal x = V2 x (f x)
-            aval = mkVal (-dxNeg)
-            bval = mkVal dxPos
+            aval = mkVal (-res)
+            bval = mkVal res
         -- make sure our randomly chosen bounds have different signs
-        when (view _y aval * view _y bval > 0) discard
+        !_ <- when (view _y aval * view _y bval > 0) discard
 
-        -- make sure our generated function has a root
-        f 0 `shouldBe` 0
+        let x' = interpolate aval bval f res
 
-        -- see if interpolate can find the root
-        f (interpolate (mkVal (-dxNeg)) (mkVal dxPos) f res) `shouldSatisfy` (< 0.01) . abs
+        pure $ counterexample (show res) $ counterexample ("x^-1 = " <> show x') $ do
+          -- make sure our generated function has a root
+          f 0 `shouldBe` 0
+
+          -- see if interpolate can find the root
+          f x' `shouldSatisfy` (< 10) . abs
 
 
 
@@ -225,11 +229,14 @@ data Defunc
   | Sinusoid
       Double  -- ^ amplitude
       Double  -- ^ frequency
+  | Edge
+      Double  -- ^ amplitude
   deriving (Eq, Ord, Show, Generic)
 
 functionalize :: Defunc -> Double -> Double
 functionalize (Linear slope) = \r -> r * slope
 functionalize (Sinusoid amp freq) = \r -> amp * sin (freq * r)
+functionalize (Edge amp) = \r -> amp * signum r
 
 
 instance Arbitrary Defunc where
@@ -242,5 +249,6 @@ instance Arbitrary Defunc where
       small =
         [ Linear <$> arbitrary
         , Sinusoid <$> arbitrary <*> arbitrary
+        , Edge <$> arbitrary
         ]
 
