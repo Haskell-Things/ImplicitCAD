@@ -47,6 +47,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
                mid' = mid - (normal ^* (midval / derivN))
              in
                addPolylines (detail (n+1) res obj (Polyline [p1, mid'])) (detail (n+1) res obj ( Polyline [mid', p2] ))
+           -- NOTE: we used to have a routine for increasing the sharpness of corners here, but it was too buggy. - JEL
            else Polyline [p1, p2]
 
 detail _ _ _ x = x
