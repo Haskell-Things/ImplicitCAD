@@ -239,6 +239,7 @@ Test-suite test-implicit
                   GoldenSpec.Spec
                   GoldenSpec.Util
                   Graphics.Implicit.Test.Instances
+                  Graphics.Implicit.Test.Utils
                   ImplicitSpec
 
 Benchmark parser-bench
