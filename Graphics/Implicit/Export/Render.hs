@@ -8,7 +8,7 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude((-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
 
@@ -68,6 +68,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
+import Data.Maybe (fromMaybe)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -161,7 +162,8 @@ getMesh res@(V3 xres yres zres) symObj =
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
         sqTris = [[[
-            foldMap (tesselateLoop minres obj) $ getLoops $
+            foldMap (tesselateLoop minres obj) $
+              fromMaybe (error "unclosed loop in paths given") $ getLoops $
                         segX''' <>
                    mapR segX''T <>
                    mapR segY''' <>

@@ -122,6 +122,8 @@ Library
                     Graphics.Implicit.Export.DiscreteAproxable
                     -- These are exposed for docgen.
                     Graphics.Implicit.ExtOpenScad.Primitives
+                    -- These are exposed for testing
+                    Graphics.Implicit.Export.Render.GetLoops
     Other-modules:
                   Graphics.Implicit.FastIntUtil
                   Graphics.Implicit.IntegralUtil
@@ -148,7 +150,6 @@ Library
                   Graphics.Implicit.Export.Symbolic.Rebound3
                   Graphics.Implicit.Export.Render
                   Graphics.Implicit.Export.Render.Definitions
-                  Graphics.Implicit.Export.Render.GetLoops
                   Graphics.Implicit.Export.Render.GetSegs
                   Graphics.Implicit.Export.Render.HandleSquares
                   Graphics.Implicit.Export.Render.Interpolate
@@ -225,7 +226,8 @@ Test-suite test-implicit
                   hw-hspec-hedgehog,
                   quickspec,
                   QuickCheck,
-                  linear
+                  linear,
+                  lens
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
@@ -239,7 +241,9 @@ Test-suite test-implicit
                   GoldenSpec.Spec
                   GoldenSpec.Util
                   Graphics.Implicit.Test.Instances
+                  Graphics.Implicit.Test.Utils
                   ImplicitSpec
+                  TesselationSpec
 
 Benchmark parser-bench
     Import: binstuff
