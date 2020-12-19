@@ -11,13 +11,13 @@ import Data.List (partition)
 
 -- | The goal of getLoops is to extract loops from a list of segments.
 --   The input is a list of segments.
---   The output a list of loops, where each loop is a list of 
+--   The output a list of loops, where each loop is a list of
 --   segments, which each piece representing a "side".
 
 -- For example:
--- Given points [[1,2],[5,1],[3,4,5], ... ] 
+-- Given points [[1,2],[5,1],[2,3,4,5], ... ]
 -- notice that there is a loop 1,2,3,4,5... <repeat>
--- But we give the output [ [ [1,2], [3,4,5], [5,1] ], ... ]
+-- But we give the output [ [ [1,2], [2,3,4,5], [5,1] ], ... ]
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
 
