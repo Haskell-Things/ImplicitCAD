@@ -5,7 +5,7 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>), Show, Eq)
+import Prelude (head, last, tail, (==), Bool(False), (.), null, error, (<>), Eq)
 
 import Data.List (partition)
 
@@ -21,8 +21,9 @@ import Data.List (partition)
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
 
-getLoops :: (Show a, Eq a) => [[a]] -> [[[a]]]
-getLoops a = getLoops' a []
+getLoops :: Eq a => [[a]] -> [[[a]]]
+getLoops [] = []
+getLoops (a:as) = getLoops' as [a] (last a)
 
 -- We will be actually doing the loop extraction with
 -- getLoops'
@@ -32,23 +33,28 @@ getLoops a = getLoops' a []
 -- built.
 
 -- so we begin with the "building loop" being empty.
-getLoops' :: (Show a, Eq a) => [[a]] -> [[a]] -> [[[a]]]
+getLoops'
+    :: Eq a
+    => [[a]]   -- ^ input
+    -> [[a]]   -- ^ accumulator
+    -> a       -- ^ last element in the accumulator
+    -> [[[a]]]
 
 -- | If there aren't any segments, and the "building loop" is empty, produce no loops.
-getLoops' [] [] = []
+getLoops' [] [] _ = []
 
 -- | If the building loop is empty, stick the first segment we have onto it to give us something to build on.
-getLoops' (x:xs) [] = getLoops' xs [x]
+getLoops' (x:xs) [] _ = getLoops' xs [x] (last x)
 
 -- | A loop is finished if its start and end are the same.
 -- Return it and start searching for another loop.
-getLoops' segs workingLoop | head (head workingLoop) == last (last workingLoop) =
-    workingLoop : getLoops' segs []
+getLoops' segs workingLoop ultima | head (head workingLoop) == ultima =
+    workingLoop : getLoops' segs [] ultima
 
 -- Finally, we search for pieces that can continue the working loop,
 -- and stick one on if we find it.
 -- Otherwise... something is really screwed up.
-getLoops' segs workingLoop =
+getLoops' segs workingLoop ultima =
     let
         presEnd :: [[a]] -> a
         presEnd = last . last
@@ -62,6 +68,6 @@ getLoops' segs workingLoop =
                          else (head possibleConts, tail possibleConts <> nonConts)
     in
         if null next
-        then workingLoop : getLoops' segs []
-        else getLoops' unused (workingLoop <> [next])
+        then workingLoop : getLoops' segs [] ultima
+        else getLoops' unused (workingLoop <> [next]) (last next)
 
