@@ -8,9 +8,9 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour) where
 
-import Prelude(pure, fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
+import Prelude(pure, fmap, ($), (/), (+), (*), cos, pi, sin, max, ceiling)
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Shared2), SharedObj(Translate, Scale), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(SquareR, Circle, Shared2), SharedObj(Translate, Scale), Polyline(Polyline), (⋯*), fromFastℕtoℝ)
 
 import Linear ( V2(V2) )
 
