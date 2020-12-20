@@ -13,10 +13,10 @@ default (Int)
 spec :: Spec
 spec = describe "golden tests" $ do
   golden "box" 1 $
-    cubeR 0 True (V3 5 5 5)
+    cube True (V3 5 5 5)
 
   golden "example13" 1 $
-    union [ rect3R 0 (V3 0 0 0) (V3 20 20 20)
+    union [ rect3 (V3 0 0 0) (V3 20 20 20)
           , translate (V3 20 20 20) (sphere 15)
           ]
 
@@ -31,7 +31,7 @@ spec = describe "golden tests" $ do
       squarePipe (V3 x y z) diameter precision =
             union
             ((\(a, b, c) -> translate (V3 a b c)
-               $ rect3R 0 (V3 0 0 0) (V3 diameter diameter diameter)
+               $ rect3 (V3 0 0 0) (V3 diameter diameter diameter)
              )
              <$>
               zip3 (fmap (\n->(fromIntegral n/precision)*x) [0..100])
@@ -58,7 +58,7 @@ spec = describe "golden tests" $ do
                                 (translate (V3 (-50.0) 0.0 0.0)
                                   (translate (V3 0.0 0.0 14.0)
                                     (translate (V3 (-50.0) (-50.0) (-14.0))
-                                      (cubeR 0.0 False (V3 100.0 100.0 28.0)))))
+                                      (cube False (V3 100.0 100.0 28.0)))))
                             ])
                       ]))))
           , translate (V3 (-2.0) 0.0 0.0)
@@ -71,9 +71,9 @@ spec = describe "golden tests" $ do
                             (shell 2.0
                               (scale (V3 1.1578947368421053 1.1363636363636365 1.0307692307692307)
                                 (translate (V3 (-9.5) (-11.0) (-32.5))
-                                  (cubeR 0.0 False (V3 19.0 22.0 65.0)))))
+                                  (cube False (V3 19.0 22.0 65.0)))))
                         , translate (V3 (-12.0) (-13.500000000000002) 0.0)
-                            (cubeR 0.0 False (V3 24.0 27.0 2.0))
+                            (cube False (V3 24.0 27.0 2.0))
                         ]
                       ]))))
           ]))
@@ -101,7 +101,7 @@ spec = describe "golden tests" $ do
                     (translate (V3 0.0 0.0 (-0.0))
                       (translate (V3 0.0 0.0 32.5)
                         (translate (V3 (-9.5) (-11.0) (-32.5))
-                          (cubeR 0.0 False (V3 19.0 22.0 65.0)))))))
+                          (cube False (V3 19.0 22.0 65.0)))))))
             ])
       ]
 
@@ -114,7 +114,7 @@ spec = describe "golden tests" $ do
     translate (V3 24.07554 26.31483 24.96913)
      . scale (V3 3.6096 4.9768 2.9848)
      . translate (V3 (-1.2054) (-0.4034) (-0.725975))
-     $ cubeR 0.45186 False (V3 2.41095 0.8068 1.45195)
+     $ withRounding 0.45186 $ cube False (V3 2.41095 0.8068 1.45195)
 
   golden "arbitrary3" 1 $
     differenceR 1.8 (sphere 4.6)
@@ -122,7 +122,9 @@ spec = describe "golden tests" $ do
           $ scale (V3 1  1.3  1.4)
           $ cylinder2 0.6 0.74 1
       , sphere 1.2
-      , rotate3 (V3 0.54  (-0.45)  (-0.58)) $ cubeR 1.4 True (V3 1.5  1.81  1.82)
+      , rotate3 (V3 0.54  (-0.45)  (-0.58))
+          $ withRounding 1.4
+          $ cube True (V3 1.5  1.81  1.82)
       , cylinder2 1.7 1.5 3.5
       , sphere 1.54
       ]
@@ -134,7 +136,9 @@ spec = describe "golden tests" $ do
           $ scale (V3 1  1.3  1.4)
           $ cylinder2 0.6 0.74 1
       , sphere 1.2
-      , rotate3 (V3 0.54  (-0.45)  (-0.58)) $ cubeR 1.4 True (V3 1.5  1.81  1.82)
+      , rotate3 (V3 0.54  (-0.45)  (-0.58))
+          $ withRounding 1.4
+          $ cube True (V3 1.5  1.81  1.82)
       , cylinder2 1.7 1.5 3.5
       , sphere 1.54
       ]
