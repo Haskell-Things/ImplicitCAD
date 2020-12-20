@@ -37,6 +37,7 @@ import QuickSpec (Observe)
 import Linear ( V3(V3), (^*) )
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
+import Graphics.Implicit (extrude)
 
 
 ------------------------------------------------------------------------------
@@ -62,6 +63,7 @@ spec = do
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
     rotation3dSpec
+    misc3dSpec
 
 
 ------------------------------------------------------------------------------
@@ -221,6 +223,15 @@ rotation3dSpec = describe "3d rotation" $ do
   prop "empty idempotent wrt rotate" $ \xyz ->
     rotate3 xyz emptySpace
       =~= emptySpace
+
+
+------------------------------------------------------------------------------
+-- | Misc tests that make sense only in 3d
+misc3dSpec :: Spec
+misc3dSpec = describe "misc 3d tests" $ do
+  prop "object-rounding value doesn't jump from 3d to 2d" $ \r obj ->
+    withRounding r . extrude obj
+      =~= withRounding r . extrude (withRounding 0 obj)
 
 
 ------------------------------------------------------------------------------
