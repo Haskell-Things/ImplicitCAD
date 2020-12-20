@@ -8,9 +8,9 @@
 
 module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbolicGetContour, symbolicGetContourMesh) where
 
-import Prelude(pure, fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
+import Prelude((==), pure, fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Fastℕ, SymbolicObj2(Square, Circle, Shared2), SharedObj(Translate, Scale), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
+import Graphics.Implicit.Definitions (objectRounding, defaultObjectContext, ObjectContext, ℝ, ℝ2, Fastℕ, SymbolicObj2(Square, Circle, Shared2), SharedObj(Translate, Scale, WithRounding), Polyline(Polyline), Polytri(Polytri), (⋯*), fromFastℕtoℝ)
 
 import Linear ( Metric(norm), V2(V2), (^/) )
 
@@ -20,7 +20,7 @@ import Graphics.Implicit.Export.Render (getContour)
 import Graphics.Implicit.Primitives (getImplicit)
 
 symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
-symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbObj
+symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res defaultObjectContext symbObj
     where
         obj = getImplicit symbObj
         -- FIXME: cowardly case handling.
@@ -35,11 +35,11 @@ symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbO
         orient (Polyline []) = Polyline []
         orient (Polyline [_]) = Polyline []
 
-symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
--- TODO(sandy):  only if rounding = 0
-symbolicGetContour _ (Square (V2 dx dy)) = [Polyline [V2 0 0, V2 dx 0, V2 dx dy, V2 0 dy, V2 0 0]]
+symbolicGetContour :: ℝ -> ObjectContext ->  SymbolicObj2 -> [Polyline]
+symbolicGetContour _ ctx (Square (V2 dx dy)) | objectRounding ctx == 0 =
+  [Polyline [V2 0 0, V2 dx 0, V2 dx dy, V2 0 dy, V2 0 0]]
 -- FIXME: magic number.
-symbolicGetContour res (Circle r) =
+symbolicGetContour res _ (Circle r) =
   [ Polyline
     [ V2 (r*cos(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n)) (r*sin(2*pi*fromFastℕtoℝ m/fromFastℕtoℝ n))
     | m <- [0.. n]
@@ -48,10 +48,11 @@ symbolicGetContour res (Circle r) =
   where
     n :: Fastℕ
     n = max 5 $ ceiling $ 2*pi*r/res
-symbolicGetContour res (Shared2 (Translate v obj)) = appOpPolylines (+ v) $ symbolicGetContour res obj
-symbolicGetContour res (Shared2 (Scale s@(V2 a b) obj)) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) obj
+symbolicGetContour res ctx (Shared2 (WithRounding r obj)) = symbolicGetContour res (ctx { objectRounding = r }) obj
+symbolicGetContour res ctx (Shared2 (Translate v obj)) = appOpPolylines (+ v) $ symbolicGetContour res ctx obj
+symbolicGetContour res ctx (Shared2 (Scale s@(V2 a b) obj)) = appOpPolylines (⋯* s) $ symbolicGetContour (res/sc) ctx obj
     where sc = max a b
-symbolicGetContour res obj = getContour (pure res) obj
+symbolicGetContour res _ obj = getContour (pure res) obj
 
 appOpPolylines :: (ℝ2 -> ℝ2) -> [Polyline] -> [Polyline]
 appOpPolylines op = fmap (appOpPolyline op)

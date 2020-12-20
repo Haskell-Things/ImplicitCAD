@@ -14,7 +14,7 @@ module Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable, discreteAp
 import Prelude(pure, (-), (/), ($), (<), round, (+), maximum, abs, (*), fromIntegral, max, realToFrac, Int)
 
 -- Definitions for our number system, objects, and the things we can use to approximately represent objects.
-import Graphics.Implicit.Definitions (ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, Triangle, TriangleMesh(TriangleMesh), NormedTriangleMesh(NormedTriangleMesh))
+import Graphics.Implicit.Definitions (defaultObjectContext, ℝ, ℝ2, SymbolicObj2, SymbolicObj3, Polyline, Triangle, TriangleMesh(TriangleMesh), NormedTriangleMesh(NormedTriangleMesh))
 
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
@@ -98,7 +98,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
                       colorToPixelRGBA8 (Color rr gg bb aa) = PixelRGBA8 rr gg bb aa
 
 instance DiscreteAproxable SymbolicObj2 [Polyline] where
-    discreteAprox = symbolicGetContour
+    discreteAprox res = symbolicGetContour res defaultObjectContext
 
 -- FIXME: way too many magic numbers.
 -- FIXME: adjustable resolution?
