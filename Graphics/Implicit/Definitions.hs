@@ -40,23 +40,25 @@ module Graphics.Implicit.Definitions (
     V2(..),
     V3(..),
     SymbolicObj2(
-        SquareR,
+        Square,
         Circle,
-        PolygonR,
+        Polygon,
         Rotate2,
         Shared2),
     SymbolicObj3(
-        CubeR,
+        Cube,
         Sphere,
         Cylinder,
         Rotate3,
-        ExtrudeR,
+        Extrude,
         ExtrudeRotateR,
-        ExtrudeRM,
+        ExtrudeM,
         ExtrudeOnEdgeOf,
         RotateExtrude,
         Shared3),
     ExtrudeRMScale(C1, C2, Fn),
+    ObjectContext(..),
+    defaultObjectContext,
     fromℕtoℝ,
     fromFastℕtoℝ,
     fromℝtoFloat,
@@ -68,7 +70,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
 
 import Data.Maybe (Maybe)
 
@@ -225,25 +227,27 @@ data SharedObj obj vec
   | Outset ℝ obj
   | Shell ℝ obj
   | EmbedBoxedObj (vec -> ℝ, (vec, vec))
+  | WithRounding ℝ obj
   deriving (Generic)
 
 instance (Show obj, Show vec) => Show (SharedObj obj vec) where
   showsPrec = flip $ \case
      Empty                   -> showCon "emptySpace"
      Full                    -> showCon "fullSpace"
-     Complement obj          -> showCon "complement"  @| obj
-     UnionR 0 l_obj          -> showCon "union"       @| l_obj
-     UnionR r l_obj          -> showCon "unionR"      @| r   @| l_obj
-     DifferenceR 0 obj l_obj -> showCon "difference"  @| obj @| l_obj
-     DifferenceR r obj l_obj -> showCon "differenceR" @| r   @| obj @| l_obj
-     IntersectR 0 l_obj      -> showCon "intersect"   @| l_obj
-     IntersectR r l_obj      -> showCon "intersectR"  @| r   @| l_obj
-     Translate vec obj       -> showCon "translate"   @| vec @| obj
-     Scale vec obj           -> showCon "scale"       @| vec @| obj
-     Mirror vec obj          -> showCon "mirror"      @| vec @| obj
-     Outset r obj            -> showCon "outset"      @| r   @| obj
-     Shell r obj             -> showCon "shell"       @| r   @| obj
-     EmbedBoxedObj _         -> showCon "implicit"    @| Blackhole
+     Complement obj          -> showCon "complement"   @| obj
+     UnionR 0 l_obj          -> showCon "union"        @| l_obj
+     UnionR r l_obj          -> showCon "unionR"       @| r   @| l_obj
+     DifferenceR 0 obj l_obj -> showCon "difference"   @| obj @| l_obj
+     DifferenceR r obj l_obj -> showCon "differenceR"  @| r   @| obj @| l_obj
+     IntersectR 0 l_obj      -> showCon "intersect"    @| l_obj
+     IntersectR r l_obj      -> showCon "intersectR"   @| r   @| l_obj
+     Translate vec obj       -> showCon "translate"    @| vec @| obj
+     Scale vec obj           -> showCon "scale"        @| vec @| obj
+     Mirror vec obj          -> showCon "mirror"       @| vec @| obj
+     Outset r obj            -> showCon "outset"       @| r   @| obj
+     Shell r obj             -> showCon "shell"        @| r   @| obj
+     EmbedBoxedObj _         -> showCon "implicit"     @| Blackhole
+     WithRounding r obj      -> showCon "withRounding" @| r   @| obj
 
 
 ------------------------------------------------------------------------------
@@ -255,6 +259,15 @@ instance Show Blackhole where
   show _ = "_"
 
 
+newtype ObjectContext = ObjectContext
+  { objectRounding :: ℝ
+  } deriving (Eq, Ord, Show)
+
+defaultObjectContext :: ObjectContext
+defaultObjectContext = ObjectContext
+  { objectRounding = 0
+  }
+
 
 -- | A symbolic 2D object format.
 --   We want to have symbolic objects so that we can
@@ -262,9 +275,9 @@ instance Show Blackhole where
 --   cases.
 data SymbolicObj2 =
     -- Primitives
-      SquareR ℝ ℝ2    -- rounding, size.
-    | Circle ℝ        -- radius.
-    | PolygonR ℝ [ℝ2] -- rounding, points.
+      Square ℝ2     -- size.
+    | Circle ℝ      -- radius.
+    | Polygon [ℝ2]  -- points.
     -- Simple transforms
     | Rotate2 ℝ SymbolicObj2
     -- Lifting common objects
@@ -274,12 +287,12 @@ data SymbolicObj2 =
 instance Show SymbolicObj2 where
   showsPrec = flip $ \case
     -- NB: The False here is the centering argument, which has already been
-    -- transformed into a translate. The 'SquareR' constructor itself is never
+    -- transformed into a translate. The 'Square' constructor itself is never
     -- centered.
-    SquareR r sz  -> showCon "squareR"  @| r @| False @| sz
-    Circle r      -> showCon "circle"   @| r
-    PolygonR r ps -> showCon "polygonR" @| r @| ps
-    Rotate2 v obj -> showCon "rotate"   @| v @| obj
+    Square sz  -> showCon "square"    @| False @| sz
+    Circle r      -> showCon "circle" @| r
+    Polygon ps -> showCon "polygon"   @| ps
+    Rotate2 v obj -> showCon "rotate" @| v     @| obj
     Shared2 obj   -> flip showsPrec obj
 
 
@@ -296,16 +309,15 @@ instance Monoid SymbolicObj2 where
 -- | A symbolic 3D format!
 data SymbolicObj3 =
     -- Primitives
-      CubeR ℝ ℝ3 -- rounding, size.
+      Cube ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
     -- Simple transforms
     | Rotate3 (Quaternion ℝ) SymbolicObj3
     -- 2D based
-    | ExtrudeR ℝ SymbolicObj2 ℝ
+    | Extrude SymbolicObj2 ℝ
     | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
-    | ExtrudeRM
-        ℝ                     -- rounding radius
+    | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
         ExtrudeRMScale        -- scale
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
@@ -324,9 +336,9 @@ data SymbolicObj3 =
 instance Show SymbolicObj3 where
   showsPrec = flip $ \case
     -- NB: The False here is the centering argument, which has already been
-    -- transformed into a translate. The 'CubeR' constructor itself is never
+    -- transformed into a translate. The 'Cube' constructor itself is never
     -- centered.
-    CubeR d sz -> showCon "cubeR" @| d @| False @| sz
+    Cube sz -> showCon "cube" @| False @| sz
     Sphere d -> showCon "sphere" @| d
     -- NB: The arguments to 'Cylinder' are backwards compared to 'cylinder' and
     -- 'cylinder2'.
@@ -335,11 +347,11 @@ instance Show SymbolicObj3 where
     Cylinder h r1 r2 ->
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
-    ExtrudeR d s d2 -> showCon "extrudeR" @| d @| s @| d2
+    Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeRotateR d d1 s d3 ->
       showCon "extrudeRotateR" @| d @| d1 @| s @| d3
-    ExtrudeRM d edfdd e ep_ddfdp_dd s edfp_ddd ->
-      showCon "extrudeRM" @| d @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
+    ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
+      showCon "extrudeRM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
     RotateExtrude d md ep_ddfdp_dd edfdd s ->
       showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
     ExtrudeOnEdgeOf s s1 ->

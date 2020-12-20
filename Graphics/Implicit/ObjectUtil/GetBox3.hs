@@ -11,7 +11,7 @@ import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
       ExtrudeRMScale(C2, C1),
-      SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeOnEdgeOf, ExtrudeRM, RotateExtrude, ExtrudeRotateR),
+      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude, ExtrudeRotateR),
       Box3,
       ℝ,
       fromFastℕtoℝ,
@@ -30,7 +30,7 @@ import Linear (V2(V2), V3(V3))
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Shared3 obj) = getBoxShared obj
-getBox3 (CubeR _ size) = (pure 0, size)
+getBox3 (Cube size) = (pure 0, size)
 getBox3 (Sphere r) = (pure (-r), pure r)
 getBox3 (Cylinder h r1 r2) = (V3 (-r) (-r) 0, V3 r r h ) where r = max r1 r2
 -- (Rounded) CSG
@@ -40,7 +40,7 @@ getBox3 (Rotate3 q symbObj) =
      in pointsBox $ Q.rotate q <$> corners box
 -- Misc
 -- 2D Based
-getBox3 (ExtrudeR _ symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)
+getBox3 (Extrude symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)
     where
         (V2 x1 y1, V2 x2 y2) = getBox2 symbObj
 getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
@@ -52,7 +52,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 -- FIXME: magic numbers: 0.2 and 11.
 -- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
-getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
+getBox3 (ExtrudeM twist scale translate symbObj height) =
     let
         (V2 x1 y1, V2 x2 y2) = getBox2 symbObj
         (dx, dy) = (x2 - x1, y2 - y1)

@@ -11,7 +11,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, SquareR, Circle, PolygonR, Rotate2), SymbolicObj3(Shared3, CubeR, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, ExtrudeR, ExtrudeRotateR, ExtrudeRM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -117,7 +117,7 @@ buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
 buildS3 (Shared3 obj) = buildShared obj
 
-buildS3 (CubeR r (V3 w d h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
+buildS3 (Cube r (V3 w d h)) | r == 0 = call "cube" [bf w, bf d, bf h] []
 
 buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
 
@@ -153,7 +153,7 @@ buildS3 (ExtrudeRM r twist scale (Left translate) obj (Left height)) | r == 0 &&
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
-buildS3 CubeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 Cube{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeRotateR {} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeRM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
@@ -168,13 +168,13 @@ buildS2 (Shared2 obj) = buildShared obj
 
 buildS2 (Circle r) = call "circle" [bf r] []
 
-buildS2 (PolygonR r points) | r == 0 = call "polygon" (fmap bvect points) []
+buildS2 (Polygon r points) | r == 0 = call "polygon" (fmap bvect points) []
 
 buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
 
 -- Generate errors for rounding requests. OpenSCAD does not support rounding.
-buildS2 SquareR{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS2 (PolygonR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 Square{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 (Polygon _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
 -- FIXME: missing EmbedBoxedObj2?
 
