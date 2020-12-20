@@ -16,14 +16,13 @@ import Linear ( Metric(norm), V2(V2), (^/) )
 
 import Graphics.Implicit.Export.MarchingSquaresFill (getContourMesh)
 
-import Graphics.Implicit.ObjectUtil (getImplicit2)
-
 import Graphics.Implicit.Export.Render (getContour)
+import Graphics.Implicit.Primitives (getImplicit)
 
 symbolicGetOrientedContour :: ℝ ->  SymbolicObj2 -> [Polyline]
 symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbObj
     where
-        obj = getImplicit2 symbObj
+        obj = getImplicit symbObj
         -- FIXME: cowardly case handling.
         orient :: Polyline -> Polyline
         orient (Polyline points@(p1:p2:_)) =
@@ -37,7 +36,8 @@ symbolicGetOrientedContour res symbObj = orient <$> symbolicGetContour res symbO
         orient (Polyline [_]) = Polyline []
 
 symbolicGetContour :: ℝ -> SymbolicObj2 -> [Polyline]
-symbolicGetContour _ (Square 0 (V2 dx dy)) = [Polyline [V2 0 0, V2 dx 0, V2 dx dy, V2 0 dy, V2 0 0]]
+-- TODO(sandy):  only if rounding = 0
+symbolicGetContour _ (Square (V2 dx dy)) = [Polyline [V2 0 0, V2 dx 0, V2 dx dy, V2 0 dy, V2 0 0]]
 -- FIXME: magic number.
 symbolicGetContour res (Circle r) =
   [ Polyline
@@ -63,7 +63,8 @@ symbolicGetContourMesh res (Shared2 (Translate v obj)) = (\(Polytri (a,b,c)) -> 
                                                 symbolicGetContourMesh res obj
 symbolicGetContourMesh res (Shared2 (Scale s@(V2 a b) obj)) = (\(Polytri (c,d,e)) -> Polytri (c ⋯* s, d ⋯* s, e ⋯* s)) <$>
                                                   symbolicGetContourMesh (res/sc) obj where sc = max a b
-symbolicGetContourMesh _ (Square 0 (V2 dx dy)) = [Polytri (V2 0 0, V2 dx 0, V2 dx dy), Polytri (V2 dx dy, V2 0 dy, V2 0 0) ]
+-- TODO(sandy):  only if rounding = 0
+symbolicGetContourMesh _ (Square (V2 dx dy)) = [Polytri (V2 0 0, V2 dx 0, V2 dx dy), Polytri (V2 dx dy, V2 0 dy, V2 0 0) ]
 -- FIXME: magic number.
 symbolicGetContourMesh res (Circle r) =
     [ Polytri
