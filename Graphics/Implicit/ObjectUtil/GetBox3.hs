@@ -10,7 +10,7 @@ import Prelude(uncurry, pure, Bool(False), Either (Left, Right), (==), max, (/),
 import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
-      ExtrudeRMScale(C2, C1),
+      ExtrudeMScale(C2, C1),
       SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude, ExtrudeRotateR),
       Box3,
       ℝ,

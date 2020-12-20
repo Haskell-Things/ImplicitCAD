@@ -13,7 +13,7 @@ module Graphics.Implicit (
   W.ℝ3,
   SymbolicObj2 (),
   SymbolicObj3 (),
-  W.ExtrudeRMScale(C1, C2, Fn),
+  W.ExtrudeMScale(C1, C2, Fn),
 
   -- * Shared operations
   P.Object (),
@@ -95,7 +95,7 @@ import Graphics.Implicit.Primitives as P (withRounding, rect, rect3, translate, 
 import Graphics.Implicit.ExtOpenScad as E (runOpenscad)
 
 -- typesclasses and types defining the world, or part of the world.
-import Graphics.Implicit.Definitions as W (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1, C2, Fn))
+import Graphics.Implicit.Definitions as W (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1, C2, Fn))
 
 -- Functions for writing files based on the result of operations on primitives.
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)

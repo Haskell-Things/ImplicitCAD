@@ -12,7 +12,7 @@ import Prelude (pure, ($), (*), (/), String, IO, cos, pi, fmap, zip3, Either(Lef
 import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
 
 -- The parts of ImplicitCAD we know how to benchmark.
-import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1), writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeRM, rect3R)
+import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeRM, rect3R)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
 

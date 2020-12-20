@@ -85,7 +85,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    ExtrudeOnEdgeOf,
                                                    Shared3
                                                   ),
-                                      ExtrudeRMScale,
+                                      ExtrudeMScale,
                                       defaultObjectContext
                                      )
 import Graphics.Implicit.MathUtil   (pack)
@@ -374,7 +374,7 @@ extrudeRotateR = ExtrudeRotateR
 -- the caps, but is not used by the 2D object.
 extrudeM
     :: Either ℝ (ℝ -> ℝ)    -- ^ twist
-    -> ExtrudeRMScale       -- ^ scale
+    -> ExtrudeMScale       -- ^ scale
     -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
     -> SymbolicObj2         -- ^ object to extrude
     -> Either ℝ (ℝ2 -> ℝ)   -- ^ height to extrude to

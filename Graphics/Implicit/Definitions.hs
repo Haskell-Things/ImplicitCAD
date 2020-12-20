@@ -56,7 +56,7 @@ module Graphics.Implicit.Definitions (
         ExtrudeOnEdgeOf,
         RotateExtrude,
         Shared3),
-    ExtrudeRMScale(C1, C2, Fn),
+    ExtrudeMScale(C1, C2, Fn),
     ObjectContext(..),
     defaultObjectContext,
     fromℕtoℝ,
@@ -319,7 +319,7 @@ data SymbolicObj3 =
     | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
     | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
-        ExtrudeRMScale        -- scale
+        ExtrudeMScale        -- scale
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
         SymbolicObj2          -- object to extrude
         (Either ℝ (ℝ2 -> ℝ))  -- height to extrude to
@@ -380,26 +380,26 @@ instance Semigroup SymbolicObj3 where
 instance Monoid SymbolicObj3 where
   mempty = Shared3 Empty
 
-data ExtrudeRMScale =
+data ExtrudeMScale =
       C1 ℝ                  -- constant ℝ
     | C2 ℝ2                 -- constant ℝ2
     | Fn (ℝ -> Either ℝ ℝ2) -- function mapping height to either ℝ or ℝ2
     deriving (Generic)
 
-instance Show ExtrudeRMScale where
+instance Show ExtrudeMScale where
   showsPrec = flip $ \case
     C1 r  -> showCon "C1" @| r
     C2 r2 -> showCon "C2" @| r2
     Fn _  -> showCon "Fn" @| Blackhole
 
-toScaleFn :: ExtrudeRMScale -> ℝ -> ℝ2
+toScaleFn :: ExtrudeMScale -> ℝ -> ℝ2
 toScaleFn (C1 s) _ = V2 s s
 toScaleFn (C2 s) _ = s
 toScaleFn (Fn f) z = case f z of
     Left s -> V2 s s
     Right s -> s
 
-isScaleID :: ExtrudeRMScale -> Bool
+isScaleID :: ExtrudeMScale -> Bool
 isScaleID (C1 1) = True
 isScaleID (C2 (V2 1 1)) = True
 isScaleID _ = False

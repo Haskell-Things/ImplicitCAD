@@ -27,7 +27,7 @@ import Graphics.Implicit
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( ExtrudeRMScale(C1,C2,Fn),
+    ( ExtrudeMScale(C1,C2,Fn),
       SymbolicObj2(Shared2),
       SymbolicObj3(Shared3),
       ℝ,
@@ -132,7 +132,7 @@ instance CoArbitrary ℝ3 where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
 
 
-instance Arbitrary ExtrudeRMScale where
+instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
   arbitrary = oneof
     [ C1 <$> arbitrary

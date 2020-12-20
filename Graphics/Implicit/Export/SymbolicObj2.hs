@@ -6,7 +6,7 @@
 -- If it can't, it passes the puck to a marching-squares-like
 -- algorithm...
 
-module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetOrientedContour, symbolicGetContour, symbolicGetContourMesh) where
+module Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour) where
 
 import Prelude((==), pure, fmap, ($), (-), (/), (+), (>), (*), reverse, cos, pi, sin, max, ceiling, (<$>))
 
