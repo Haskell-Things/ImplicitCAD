@@ -7,7 +7,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
@@ -24,6 +24,7 @@ import Graphics.Implicit
       complement,
       differenceR,
       translate,
+      withRounding,
       Object )
 import Graphics.Implicit.Primitives (rotateQ)
 import Test.QuickCheck
@@ -34,6 +35,9 @@ import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
 import QuickSpec (Observe)
 import Linear ( V3(V3), (^*) )
+import Graphics.Implicit (unionR)
+import Graphics.Implicit (intersectR)
+import Graphics.Implicit (extrude)
 
 
 ------------------------------------------------------------------------------
@@ -59,6 +63,7 @@ spec = do
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
     rotation3dSpec
+    misc3dSpec
 
 
 ------------------------------------------------------------------------------
@@ -112,6 +117,10 @@ idempotenceSpec = describe "idempotence" $ do
   prop "empty idempotent wrt scale" $ \xyz ->
     scale xyz emptySpace
       =~= emptySpace @obj
+
+  prop "withRounding always takes the last value idempotent" $ \r r' ->
+    withRounding r . withRounding r'
+      =~= withRounding @obj r'
 
 
 ------------------------------------------------------------------------------
@@ -217,6 +226,15 @@ rotation3dSpec = describe "3d rotation" $ do
 
 
 ------------------------------------------------------------------------------
+-- | Misc tests that make sense only in 3d
+misc3dSpec :: Spec
+misc3dSpec = describe "misc 3d tests" $ do
+  prop "object-rounding value doesn't jump from 3d to 2d" $ \r obj ->
+    withRounding r . extrude obj
+      =~= withRounding r . extrude (withRounding 0 obj)
+
+
+------------------------------------------------------------------------------
 -- | Misc identity proofs that should hold for all symbolic objects.
 identitySpec
     :: forall obj vec test outcome
@@ -262,6 +280,18 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "scale" $ \xyz1 xyz2 ->
     scale @obj xyz2 . scale xyz1
       =~= scale (xyz1 * xyz2)
+
+  prop "withRounding/unionR" $ \r_obj r_combo ->
+    withRounding @obj r_obj . unionR r_combo
+      =~= unionR r_combo . fmap (withRounding r_obj)
+
+  prop "withRounding/differenceR" $ \r_obj r_combo obj ->
+    withRounding @obj r_obj . differenceR r_combo obj
+      =~= differenceR r_combo (withRounding r_obj obj) . fmap (withRounding r_obj)
+
+  prop "withRounding/intersectR" $ \r_obj r_combo ->
+    withRounding @obj r_obj . intersectR r_combo
+      =~= intersectR r_combo . fmap (withRounding r_obj)
 
 
 ------------------------------------------------------------------------------

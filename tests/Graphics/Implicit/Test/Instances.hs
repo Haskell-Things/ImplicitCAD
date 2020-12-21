@@ -12,31 +12,31 @@ module Graphics.Implicit.Test.Instances (observe, (=~=)) where
 import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
 import Graphics.Implicit
-    ( squareR,
+    ( square,
       emptySpace,
       fullSpace,
       sphere,
-      cubeR,
+      cube,
       cylinder2,
       cylinder,
       circle,
-      polygonR,
-      extrudeR,
+      polygon,
+      extrude,
       rotate3,
       rotate3V,
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( ExtrudeRMScale(C1,C2,Fn),
+    ( ExtrudeMScale(C1,C2,Fn),
       SymbolicObj2(Shared2),
       SymbolicObj3(Shared3),
       ℝ,
       ℝ2,
       ℝ3,
       SharedObj(Outset, Translate, Scale, UnionR, IntersectR,
-                DifferenceR, Shell) )
+                DifferenceR, Shell, WithRounding) )
 
-import Graphics.Implicit.Primitives ( Object(getImplicit) )
+import Graphics.Implicit.Primitives ( getImplicit )
 
 import QuickSpec ( Observe(observe), (=~=) )
 
@@ -72,9 +72,9 @@ instance Arbitrary SymbolicObj2 where
         ] <> small
     where
       small =
-        [ circle   <$> arbitrary
-        , squareR  <$> arbitraryPos <*> arbitrary <*> arbitrary
-        , polygonR <$> arbitraryPos <*> do
+        [ circle  <$> arbitrary
+        , square  <$> arbitrary <*> arbitrary
+        , polygon <$> do
             n <- choose (3, 10)
             vectorOf n arbitrary
         , pure fullSpace
@@ -89,17 +89,17 @@ instance Arbitrary SymbolicObj3 where
     if n <= 1
     then oneof small
     else oneof $
-        [ rotate3  <$> arbitrary    <*> decayArbitrary 2
-        , rotate3V <$> arbitrary    <*> arbitrary        <*> decayArbitrary 2
-        , extrudeR <$> arbitraryPos <*> decayArbitrary 2 <*> arbitraryPos
-        , Shared3 <$> arbitrary
+        [ rotate3  <$> arbitrary        <*> decayArbitrary 2
+        , rotate3V <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
+        , extrude  <$> decayArbitrary 2 <*> arbitraryPos
+        , Shared3  <$> arbitrary
         ] <> small
     where
       small =
         [ sphere    <$> arbitraryPos
         , cylinder  <$> arbitraryPos <*> arbitraryPos
         , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
-        , cubeR     <$> arbitraryPos <*> arbitrary    <*> arbitraryV3
+        , cube      <$> arbitrary    <*> arbitraryV3
         , pure fullSpace
         , pure emptySpace
         ]
@@ -107,13 +107,14 @@ instance Arbitrary SymbolicObj3 where
 instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj obj vec) where
   shrink = genericShrink
   arbitrary = oneof
-    [ Translate   <$> arbitrary <*> decayArbitrary 2
-    , Scale       <$> arbitrary <*> decayArbitrary 2
-    , UnionR      <$> arbitraryPos <*> decayedList
-    , IntersectR  <$> arbitraryPos <*> decayedList
-    , DifferenceR <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
-    , Shell       <$> arbitraryPos <*> decayArbitrary 2
-    , Outset      <$> arbitraryPos <*> decayArbitrary 2
+    [ Translate    <$> arbitrary    <*> decayArbitrary 2
+    , Scale        <$> arbitrary    <*> decayArbitrary 2
+    , UnionR       <$> arbitraryPos <*> decayedList
+    , IntersectR   <$> arbitraryPos <*> decayedList
+    , DifferenceR  <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
+    , Shell        <$> arbitraryPos <*> decayArbitrary 2
+    , Outset       <$> arbitraryPos <*> decayArbitrary 2
+    , WithRounding <$> arbitraryPos <*> decayArbitrary 2
     ]
 
 instance Arbitrary ℝ2 where
@@ -131,7 +132,7 @@ instance CoArbitrary ℝ3 where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
 
 
-instance Arbitrary ExtrudeRMScale where
+instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
   arbitrary = oneof
     [ C1 <$> arbitrary

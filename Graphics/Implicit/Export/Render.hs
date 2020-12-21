@@ -16,7 +16,7 @@ import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
 import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
 
-import Graphics.Implicit.ObjectUtil (getBox2, getImplicit2, getBox3, getImplicit3)
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
@@ -69,6 +69,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Data.Maybe (fromMaybe)
+import Graphics.Implicit.Primitives (getImplicit)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -77,7 +78,7 @@ getMesh :: ℝ3 -> SymbolicObj3 -> TriangleMesh
 getMesh res@(V3 xres yres zres) symObj =
     let
         -- Grow bounds a little to avoid sampling at exact bounds
-        (obj, (p1@(V3 x1 y1 z1), p2)) = rebound3 (getImplicit3 symObj, getBox3 symObj)
+        (obj, (p1@(V3 x1 y1 z1), p2)) = rebound3 (getImplicit symObj, getBox3 symObj)
 
         -- How much space are we rendering?
         d = p2 - p1
@@ -192,7 +193,7 @@ getContour :: ℝ2 -> SymbolicObj2 -> [Polyline]
 getContour res@(V2 xres yres) symObj =
     let
         -- Grow bounds a little to avoid sampling at exact bounds
-        (obj, (p1@(V2 x1 y1), p2)) = rebound2 (getImplicit2 symObj, getBox2 symObj)
+        (obj, (p1@(V2 x1 y1), p2)) = rebound2 (getImplicit symObj, getBox2 symObj)
 
         -- | The size of the region we're being asked to search.
         d = p2 - p1
