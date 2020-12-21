@@ -14,7 +14,7 @@ import {-# SOURCE #-} Graphics.Implicit.Primitives (Object(getImplicit'))
 import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
 
 import Graphics.Implicit.Definitions
-    (objectRounding, ObjectContext,  SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj, WithRounding), ComponentWiseMultable((⋯/)), ℝ, minℝ )
+    ( objectRounding, ObjectContext, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj, WithRounding), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 
 import Graphics.Implicit.MathUtil (infty, rmax, rmaximum, rminimum, reflect)
 
@@ -88,4 +88,3 @@ getImplicitShared ctx (Outset d symbObj) = \p ->
 -- Misc
 getImplicitShared _ (EmbedBoxedObj (obj,_)) = obj
 getImplicitShared ctx (WithRounding r obj) = getImplicit' (ctx { objectRounding = r }) obj
-
