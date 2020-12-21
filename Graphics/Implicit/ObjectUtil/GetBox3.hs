@@ -5,13 +5,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(uncurry, pure, Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(uncurry, pure, Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
       ExtrudeMScale(C2, C1),
-      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude, ExtrudeRotateR),
+      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude),
       Box3,
       ℝ,
       fromFastℕtoℝ,
@@ -144,8 +144,6 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
             else (x2 + xmax', y1 + ymin', y2 + ymax')
     in
         (V3 (-r) (-r) $ y1 + ymin', V3 r  r  $ y2 + ymax')
--- FIXME: add case for ExtrudeRotateR!
-getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"
 
 
 unpack :: V2 a -> (a, a)

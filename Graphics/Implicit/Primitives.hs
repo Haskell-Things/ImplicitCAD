@@ -23,7 +23,6 @@ module Graphics.Implicit.Primitives (
                                      getImplicit',
                                      extrude,
                                      extrudeM,
-                                     extrudeRotateR,
                                      extrudeOnEdgeOf,
                                      sphere,
                                      cube, rect3,
@@ -79,7 +78,6 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Cylinder,
                                                    Rotate3,
                                                    Extrude,
-                                                   ExtrudeRotateR,
                                                    ExtrudeM,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf,
@@ -365,10 +363,6 @@ extrude
     -> ℝ   -- ^ Extrusion height
     -> SymbolicObj3
 extrude = Extrude
-
--- | This function is not implemented
-extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
-extrudeRotateR = ExtrudeRotateR
 
 -- | The current object-rounding value set by 'withRounding' is used to round
 -- the caps, but is not used by the 2D object.

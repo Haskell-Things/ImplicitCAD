@@ -5,10 +5,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, error, (==), otherwise)
+import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, ExtrudeRotateR), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
@@ -151,7 +151,3 @@ getImplicit3 _ (RotateExtrude totalRotation round translate rotate symbObj) =
               else obj rz_pos
 getImplicit3 ctx (Shared3 obj) = getImplicitShared ctx obj
 
-
--- FIXME: implement this, or implement a fallthrough function.
---getImplicit3 ctx (ExtrudeRotateR) =
-getImplicit3 _ ExtrudeRotateR{} = error "ExtrudeRotateR unimplimented!"

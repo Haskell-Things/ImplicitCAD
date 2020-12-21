@@ -141,7 +141,6 @@ Library
                   Graphics.Implicit.ExtOpenScad.Util.ArgParser
                   Graphics.Implicit.ExtOpenScad.Util.OVal
                   Graphics.Implicit.ExtOpenScad.Util.StateC
-                  Graphics.Implicit.Export.MarchingSquaresFill
                   Graphics.Implicit.Export.RayTrace
                   Graphics.Implicit.Export.SymbolicFormats
                   Graphics.Implicit.Export.Util

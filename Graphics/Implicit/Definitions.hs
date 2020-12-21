@@ -51,7 +51,6 @@ module Graphics.Implicit.Definitions (
         Cylinder,
         Rotate3,
         Extrude,
-        ExtrudeRotateR,
         ExtrudeM,
         ExtrudeOnEdgeOf,
         RotateExtrude,
@@ -316,7 +315,6 @@ data SymbolicObj3 =
     | Rotate3 (Quaternion ℝ) SymbolicObj3
     -- 2D based
     | Extrude SymbolicObj2 ℝ
-    | ExtrudeRotateR ℝ ℝ SymbolicObj2 ℝ
     | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
         ExtrudeMScale        -- scale
@@ -348,10 +346,8 @@ instance Show SymbolicObj3 where
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
     Extrude s d2 -> showCon "extrude" @| s @| d2
-    ExtrudeRotateR d d1 s d3 ->
-      showCon "extrudeRotateR" @| d @| d1 @| s @| d3
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
-      showCon "extrudeRM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
+      showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
     RotateExtrude d md ep_ddfdp_dd edfdd s ->
       showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
     ExtrudeOnEdgeOf s s1 ->

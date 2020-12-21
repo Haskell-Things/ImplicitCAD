@@ -11,7 +11,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeRotateR, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -143,7 +143,6 @@ buildS3 (Rotate3 q obj) =
 
 buildS3 (Extrude obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
 
-buildS3 (ExtrudeRotateR r twist obj h) | r == 0 = callNaked "linear_extrude" ["height = " <> bf h, "twist = " <> bf twist] [buildS2 obj]
 
 -- FIXME: handle scale, center.
 buildS3 (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID scale && translate == V2 0 0 = do
@@ -162,7 +161,6 @@ buildS3 (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID sca
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
-buildS3 ExtrudeRotateR {} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 ExtrudeM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
