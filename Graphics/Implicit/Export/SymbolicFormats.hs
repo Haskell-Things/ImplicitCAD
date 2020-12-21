@@ -100,10 +100,14 @@ buildShared (Scale v obj) = call "scale" (bf <$> elements v) [build obj]
 
 buildShared (Mirror v obj) = callNaked "mirror" [ "v=" <> bvect v ] [build obj]
 
--- TODO(sandy): 'r' is not a rounding parameter
+-- NOTE(sandy): This @r == 0@ guard says we only emit "outset" if it has r = 0,
+-- erroring otherwise saying "cannot provide roundness." But this is not
+-- a roundness parameter!
 buildShared (Outset r obj) | r == 0 = call "outset" [] [build obj]
 
--- TODO(sandy): 'r' is not a rounding parameter
+-- NOTE(sandy): This @r == 0@ guard says we only emit "shell" if it has r = 0,
+-- erroring otherwise saying "cannot provide roundness." But this is not
+-- a roundness parameter!
 buildShared (Shell r obj) | r == 0 = call "shell" [] [build obj]
 
 buildShared (WithRounding r obj) | r == 0 = build obj
