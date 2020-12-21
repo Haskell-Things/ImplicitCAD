@@ -10,7 +10,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    (objectRounding, ObjectContext,  SymbolicObj2(Square, Circle, Polygon, Rotate2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
+    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
@@ -67,4 +67,3 @@ getImplicit2 ctx (Rotate2 θ symbObj) =
     in
         obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
 getImplicit2 ctx (Shared2 obj) = getImplicitShared ctx obj
-
