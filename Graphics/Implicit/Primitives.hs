@@ -47,7 +47,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude(abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
@@ -124,7 +124,10 @@ cylinder2 ::
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
 
-cylinder2 r1 r2 h = Cylinder h r1 r2
+cylinder2 _ _ 0 = emptySpace  -- necessary to prevent a NaN
+cylinder2 r1 r2 h
+  | h < 0 = mirror (V3 0 0 1) $ cylinder2 r1 r2 (abs h)
+  | otherwise = Cylinder h r1 r2
 
 cylinder ::
     ℝ                   -- ^ Radius of the cylinder
