@@ -476,13 +476,32 @@ rotateExtrude :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     example "rotate_extrude() translate(20) circle(10);"
     totalRot     :: ℝ <- argument "angle" `defaultTo` 360
-                    `doc` "angle to sweep"
+                    `doc` "angle to sweep in degrees"
     r            :: ℝ    <- argument "r"   `defaultTo` 0
     translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (V2 0 0)
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
     pure $ pure $ obj2UpMap ( Prim.withRounding r
-                            . Prim.rotateExtrude totalRot translateArg rotateArg
+                            . rotateExtrudeDegrees totalRot translateArg rotateArg
                             ) children
+
+
+-- | Like 'Prim.rotateExtrude', but operates in degrees instead of radians.
+-- This is a shim for scad, which expects this function to operate in degrees.
+rotateExtrudeDegrees
+    :: ℝ                     -- Angle to sweep to (in degs)
+    -> (Either ℝ2 (ℝ -> ℝ2)) -- translate
+    -> (Either ℝ  (ℝ -> ℝ )) -- rotate
+    -> SymbolicObj2          -- object to extrude
+    -> SymbolicObj3
+rotateExtrudeDegrees totalRot translateArg rotateArg =
+  Prim.rotateExtrude
+    (totalRot * k)
+    (fmap (. (/k)) translateArg)
+    (fmap (. (/k)) rotateArg)
+  where
+    tau :: ℝ
+    tau = 2 * pi
+    k = tau / 360
 
 shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 shell = moduleWithSuite "shell" $ \_ children -> do
