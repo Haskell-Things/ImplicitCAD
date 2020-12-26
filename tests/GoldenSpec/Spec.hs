@@ -143,4 +143,17 @@ spec = describe "golden tests" $ do
       , sphere 1.54
       ]
 
+  golden "hook" 2 $
+    union
+      [ translate (V3 0 60 0) $
+          rotateExtrude 270 (Left 0) (Left 0) $
+            translate (V2 40 0) $
+              circle 10
+      , rotateExtrude 90 (Left 0) (Left 0) $
+          translate (V2 20 0) $
+            circle 10
+      , translate (V3 20 0 0) $
+          rotate3 (V3 (pi / 2) 0 0) $
+            cylinder 10 80
+      ]
 
