@@ -1,7 +1,7 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit)  [![Build Status](https://travis-ci.org/colah/ImplicitCAD.png?branch=master)](https://travis-ci.org/colah/ImplicitCAD)
+[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
 
 Introduction
 ------------
@@ -34,8 +34,8 @@ Generally, normal OpenSCAD code should work. For example, save the following as 
 ```c
 // example1.scad -- The union of a square and a circle.
 union() {
-	square([80,80]);
-	translate ([80,80]) circle(30);
+        square([80,80]);
+        translate ([80,80]) circle(30);
 }
 ```
 
@@ -50,8 +50,8 @@ However, there are additional ImplicitCAD specific features. For example a round
 ```c
 //example2.escad -- A rounded union of a square and a circle.
 union(r=14) {
-	square([80,80]);
-	translate ([80,80]) circle(30);
+        square([80,80]);
+        translate ([80,80]) circle(30);
 }
 ```
 
@@ -152,9 +152,9 @@ ImplicitCAD also provides full programmatic functionality, like variable assignm
 // Example8.escad -- variable assignment in loops.
 a = 5;
 for (c = [1, 2, 3]) {
-	echo(c);
-	a = a*c;
-	echo(a);
+        echo(c);
+        a = a*c;
+        echo(a);
 }
 ```
 
@@ -196,8 +196,9 @@ Everything you saw above can be done with the Haskell API. For example, a simple
 import Graphics.Implicit
 
 out = union [
-	rectR 0 (-40,-40) (40,40),
-	translate (40,40) (circle 30) ]
+    squareR 0 True (80, 80)
+  , translate (40, 40) (circle 30)
+  ]
 
 main = writeSVG 2 "test.svg" out
 ```
@@ -212,8 +213,9 @@ A rounded union:
 import Graphics.Implicit
 
 out = unionR 14 [
-	rectR 0 (-40,-40) (40,40),
-	translate (40,40) (circle 30) ]
+    squareR 0 True (80, 80)
+  , translate (80, 80) (circle 30)
+  ]
 
 main = writeSVG 2 "test.svg" out
 ```
@@ -227,8 +229,9 @@ A simple 3D example:
 import Graphics.Implicit
 
 out = union [
-	rect3R 0 (0,0,0) (20,20,20),
-	translate (20,20,20) (sphere 15) ]
+    cubeR 0 False (20, 20, 20)
+  , translate (20, 20, 20) (sphere 15)
+  ]
 
 main = writeSTL 1 "test.stl" out
 ```
@@ -257,9 +260,9 @@ Try ImplicitCAD!
          * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * install the dependencies: `cabal install --only-dependencies`
-	     * The previous step may fail, but it should tell you what's missing. 
-	     * Track down the relevant package in your package manager. You may need to install the -dev package.
-	 * Finally, to build and install implicitcad: `cabal configure && cabal install`
+         * The previous step may fail, but it should tell you what's missing.
+         * Track down the relevant package in your package manager. You may need to install the -dev package.
+     * Finally, to build and install implicitcad: `cabal configure && cabal install`
  3. Try it!
      * extopenscad test:
           * Make a test file: `echo "circle(30);" > test.escad`
@@ -289,6 +292,13 @@ Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making t
 
 In Implicit CAD, we consider objects as functions of `outwardness'. The boundary is 0, negative is the interior and positive the exterior. The magnitude is how far out or in. A description of the mathematical ideas underpinning ImplicitCAD are in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/). Note that substantial changes have happened since that post. You can also look at the [0.0.3 relase notes](http://christopherolah.wordpress.com/2012/02/06/implicitcad-0-0-3-release/).
 
+Related projects
+----------------
+
+* [ExplicitCAD](https://github.com/kliment/explicitcad/)
+* [HSlice](https://github.com/julialongtin/hslice/)
+* [implicitpipe](https://github.com/sorki/implicitpipe/)
+
 Status
 ------
 
@@ -304,7 +314,9 @@ What works (January 26th, 2020 -- regressions are possible if not probable):
 What still needs to be done:
 
  - ~gcode generation for 3D printers, gcode generator config.~ -- now a seperate program, [HSlice](https://github.com/julialongtin/hslice/)!
- - Multi-material support.
+ - Multi-material / color support.
+ - Hull support.
+ - Minkowski sum support.
 
 And a wishlist of things to be done as we go:
  - More optimisation.

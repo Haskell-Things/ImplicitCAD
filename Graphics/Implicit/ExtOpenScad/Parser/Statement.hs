@@ -108,7 +108,7 @@ include = statementI p <?> "include/use"
     p = flip Include
       <$> (matchInclude $> True <|> matchUse $> False)
       -- FIXME: better definition of valid filename characters.
-      <*> (fmap pack $ between (char '<') (matchTok '>') (many $ noneOf "<> "))
+      <*> (pack <$> between (char '<') (matchTok '>') (many $ noneOf "<> "))
 
 -- | An assignment (parser)
 assignment :: GenParser Char st StatementI
@@ -180,7 +180,7 @@ moduleArgsUnitDecl =
         do
           symb <- matchIdentifier
           expr <- optionMaybe (matchTok '=' *> expr0)
-          pure ((Symbol $ pack symb), expr)
+          pure (Symbol $ pack symb, expr)
       ) matchComma)
       ')'
 

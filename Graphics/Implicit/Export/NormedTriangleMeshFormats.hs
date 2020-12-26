@@ -13,6 +13,7 @@ import Graphics.Implicit.Definitions (NormedTriangle(NormedTriangle), NormedTria
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt)
 
 import Data.Foldable (fold, foldMap)
+import Linear (V3(V3))
 
 -- | Generate a .obj format file from a NormedTriangleMesh
 --   see: https://en.wikipedia.org/wiki/Wavefront_.obj_file
@@ -21,10 +22,10 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
     where
         -- | A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
         v :: ℝ3 -> Builder
-        v (x,y,z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
+        v (V3 x y z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
         -- | A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
         n :: ℝ3 -> Builder
-        n (x,y,z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
+        n (V3 x y z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
         verts = do
             --  Extract the vertices for each triangle.
             --  recall that a normed triangle is of the form ((vert, norm), ...)
@@ -38,6 +39,7 @@ obj (NormedTriangleMesh normedtriangles) = toLazyText $ vertcode <> normcode <> 
             [a,b,c]
         vertcode = foldMap v verts
         normcode = foldMap n norms
+        trianglecode :: Builder
         trianglecode = fold $ do
             n' <- fmap ((+1).(*3)) [0,1 .. length normedtriangles -1]
             let

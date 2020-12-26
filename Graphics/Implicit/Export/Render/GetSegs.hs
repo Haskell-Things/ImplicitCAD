@@ -2,15 +2,15 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+-- TODO(sandy): i might have swapped (^+^) for - here
 module Graphics.Implicit.Export.Render.GetSegs (getSegs) where
 
-import Prelude(Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
+import Prelude((-), Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Obj2, Polyline(Polyline))
 import Graphics.Implicit.Export.Render.RefineSegs (refine)
 import Graphics.Implicit.Export.Util (centroid)
-
-import Data.VectorSpace ((^-^))
+import Linear (V2(V2))
 
 {- The goal of getSegs is to create polylines to separate
    the interior and exterior vertices of a square intersecting
@@ -57,18 +57,18 @@ import Data.VectorSpace ((^-^))
 
 -}
 getSegs :: ℝ2 -> ℝ2 -> Obj2 -> (ℝ,ℝ,ℝ,ℝ) -> (ℝ,ℝ,ℝ,ℝ) -> [Polyline]
-getSegs p1@(x,y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
+getSegs p1@(V2 x y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V) =
     let
         -- Let's evaluate obj at a few points...
         c = obj (centroid [p1,p2])
 
-        (dx,dy) = p2 ^-^ p1
+        (V2 dx dy) = p2 - p1
         res = sqrt (dx*dy)
 
-        midx1 = (x,      midx1V)
-        midx2 = (x + dx, midx2V)
-        midy1 = (midy1V, y     )
-        midy2 = (midy2V, y + dy)
+        midx1 = V2 x        midx1V
+        midx2 = V2 (x + dx) midx2V
+        midy1 = V2 midy1V   y
+        midy2 = V2 midy2V   (y + dy)
 
         notPointLine :: Polyline -> Bool
         notPointLine (Polyline [np1,np2]) = np1 /= np2

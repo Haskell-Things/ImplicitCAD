@@ -2,7 +2,7 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 
-resolver: lts-13.12
+resolver: lts-16.25
 
 # Local packages, usually specified by relative directory name
 packages:
@@ -10,7 +10,9 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-- storable-endian-0.2.6
+- storable-endian-0.2.6@sha256:cae7aac2bfe6037660b2cf294891867e69bcd74e739a3b3ea759e9ad99d6c889,801
+- quickspec-2.1.5@sha256:1d1cc020fa9075cb5fafd4056fe1d930d5763b954fa8200e57ce6aba057544b2,3557
+- twee-lib-2.2@sha256:9fe9327505d8f450a94f2fc9eea74b292901b7992d520aa1dd4f0410fbe0e594,2112
 
 # Override default flag values for local packages and extra-deps
 flags: {}

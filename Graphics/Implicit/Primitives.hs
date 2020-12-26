@@ -5,10 +5,14 @@
 -- FIXME: Required. why?
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
                                      translate,
+                                     mirror,
                                      scale,
                                      outset,
                                      complement, union, intersect, difference,
@@ -16,70 +20,76 @@ module Graphics.Implicit.Primitives (
                                      shell,
                                      getBox,
                                      getImplicit,
-                                     extrudeR,
-                                     extrudeRM,
-                                     extrudeRotateR,
+                                     getImplicit',
+                                     extrude,
+                                     extrudeM,
                                      extrudeOnEdgeOf,
                                      sphere,
-                                     rect3R,
+                                     cube, rect3,
                                      circle,
                                      cylinder,
                                      cylinder2,
-                                     rectR,
-                                     polygonR,
+                                     square, rect,
+                                     polygon,
                                      rotateExtrude,
                                      rotate3,
+                                     rotateQ,
                                      rotate3V,
                                      pack3,
                                      rotate,
                                      pack2,
                                      implicit,
+                                     emptySpace,
+                                     fullSpace,
+                                     withRounding,
+                                     _Shared,
+                                     pattern Shared,
                                      Object
                                     ) where
 
-import Prelude(Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude(abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2,
+import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
+                                      SharedObj(Empty,
+                                                Full,
+                                                Translate,
+                                                Empty,
+                                                Scale,
+                                                Complement,
+                                                Outset,
+                                                Mirror,
+                                                Shell,
+                                                UnionR,
+                                                DifferenceR,
+                                                IntersectR,
+                                                EmbedBoxedObj,
+                                                WithRounding
+                                               ),
                                       SymbolicObj2(
-                                                   RectR,
+                                                   Square,
                                                    Circle,
-                                                   PolygonR,
-                                                   Complement2,
-                                                   UnionR2,
-                                                   DifferenceR2,
-                                                   IntersectR2,
-                                                   Translate2,
-                                                   Scale2,
+                                                   Polygon,
                                                    Rotate2,
-                                                   Outset2,
-                                                   Shell2,
-                                                   EmbedBoxedObj2
+                                                   Shared2
                                                   ),
                                       SymbolicObj3(
-                                                   Rect3R,
+                                                   Cube,
                                                    Sphere,
                                                    Cylinder,
-                                                   Complement3,
-                                                   UnionR3,
-                                                   DifferenceR3,
-                                                   IntersectR3,
-                                                   Translate3,
-                                                   Scale3,
                                                    Rotate3,
-                                                   Rotate3V,
-                                                   Outset3,
-                                                   Shell3,
-                                                   EmbedBoxedObj3,
-                                                   ExtrudeR,
-                                                   ExtrudeRotateR,
-                                                   ExtrudeRM,
+                                                   Extrude,
+                                                   ExtrudeM,
                                                    RotateExtrude,
-                                                   ExtrudeOnEdgeOf
+                                                   ExtrudeOnEdgeOf,
+                                                   Shared3
                                                   ),
-                                      ExtrudeRMScale
+                                      ExtrudeMScale,
+                                      defaultObjectContext
                                      )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
+import Linear (V2(V2),V3(V3), axisAngle, Quaternion)
+import Control.Lens (prism', Prism', preview, (#))
 
 -- $ 3D Primitives
 
@@ -90,13 +100,22 @@ sphere ::
 sphere = Sphere
 
 -- | A rectangular prism, with rounded corners.
-rect3R ::
-    ℝ                 -- ^ Rounding of corners
-    -> ℝ3             -- ^ Bottom.. corner
+rect3
+    :: ℝ3             -- ^ Bottom.. corner
     -> ℝ3             -- ^ Top right... corner
-    -> SymbolicObj3   -- ^ Resuting cube - (0,0,0) is bottom left...
+    -> SymbolicObj3   -- ^ Resuting cube
 
-rect3R = Rect3R
+rect3 xyz1 xyz2 = translate xyz1 $ Cube $ xyz2 - xyz1
+
+-- | A rectangular prism, with rounded corners.
+cube
+    :: Bool           -- ^ Centered?
+    -> ℝ3             -- ^ Size
+    -> SymbolicObj3   -- ^ Resuting cube. (0,0,0) is bottom left if @center = False@,
+                      -- otherwise it's the center.
+cube False size = Cube size
+cube True  size = translate (fmap (negate . (/ 2)) size) $ Cube size
+
 
 -- | A conical frustum --- ie. a cylinder with different radii at either end.
 cylinder2 ::
@@ -105,7 +124,10 @@ cylinder2 ::
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
 
-cylinder2 r1 r2 h = Cylinder h r1 r2
+cylinder2 _ _ 0 = emptySpace  -- necessary to prevent a NaN
+cylinder2 r1 r2 h
+  | h < 0 = mirror (V3 0 0 1) $ cylinder2 r1 r2 (abs h)
+  | otherwise = Cylinder h r1 r2
 
 cylinder ::
     ℝ                   -- ^ Radius of the cylinder
@@ -123,21 +145,27 @@ circle ::
 circle   = Circle
 
 -- | A rectangle, with rounded corners.
-rectR ::
-    ℝ               -- ^ Rounding radius (in mm) of corners
-    -> ℝ2           -- ^ Bottom left corner
+rect
+    :: ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
-    -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
+    -> SymbolicObj2 -- ^ Resulting square
 
-rectR = RectR
+rect xy1 xy2 = translate xy1 $ Square $ xy2 - xy1
+
+-- | A rectangle, with rounded corners.
+square
+    :: Bool         -- ^ Centered?
+    -> ℝ2           -- ^ Size
+    -> SymbolicObj2 -- ^ Resulting square (bottom right = (0,0) )
+square False size = Square size
+square True  size = translate (fmap (negate . (/ 2)) size) $ Square size
 
 -- | A 2D polygon, with rounded corners.
-polygonR ::
-    ℝ                -- ^ Rounding radius (in mm) of the polygon
-    -> [ℝ2]          -- ^ Verticies of the polygon
+polygon
+    :: [ℝ2]          -- ^ Verticies of the polygon
     -> SymbolicObj2  -- ^ Resulting polygon
 
-polygonR = PolygonR
+polygon = Polygon
 
 -- $ Shared Operations
 
@@ -146,54 +174,12 @@ polygonR = PolygonR
 -- instead provided by 'rotate' and 'rotate3'.
 --
 -- Library users shouldn't need to provide new instances of this class.
-class Object obj vec | obj -> vec where
+class Num vec => Object obj vec
+      | obj -> vec where
 
-    -- | Complement an Object
-    complement ::
-        obj     -- ^ Object to complement
-        -> obj  -- ^ Result
-
-    -- | Rounded union
-    unionR ::
-        ℝ        -- ^ The radius (in mm) of rounding
-        -> [obj] -- ^ objects to union
-        -> obj   -- ^ Resulting object
-
-    -- | Rounded difference
-    differenceR ::
-        ℝ        -- ^ The radius (in mm) of rounding
-        -> [obj] -- ^ Objects to difference
-        -> obj   -- ^ Resulting object
-
-    -- | Rounded minimum
-    intersectR ::
-        ℝ        -- ^ The radius (in mm) of rounding
-        -> [obj] -- ^ Objects to intersect
-        -> obj   -- ^ Resulting object
-
-    -- | Translate an object by a vector of appropriate dimension.
-    translate ::
-        vec      -- ^ Vector to translate by
-        -> obj   -- ^ Object to translate
-        -> obj   -- ^ Resulting object
-
-    -- | Scale an object
-    scale ::
-        vec     -- ^ Amount to scale by
-        -> obj  -- ^ Object to scale
-        -> obj  -- ^ Resulting scaled object
-
-    -- | Outset of an object.
-    outset ::
-        ℝ        -- ^ distance to outset
-        -> obj   -- ^ object to outset
-        -> obj   -- ^ resulting object
-
-    -- | Make a shell of an object.
-    shell ::
-        ℝ        -- ^ width of shell
-        -> obj   -- ^ object to take shell of
-        -> obj   -- ^ resulting shell
+    -- | A 'Prism'' for including 'SharedObj's in @obj@. Prefer using 'Shared'
+    -- instead of this.
+    _Shared :: Prism' obj (SharedObj obj vec)
 
     -- | Get the bounding box an object
     getBox ::
@@ -201,46 +187,171 @@ class Object obj vec | obj -> vec where
         -> (vec, vec) -- ^ Bounding box
 
     -- | Get the implicit function for an object
-    getImplicit ::
-        obj           -- ^ Object to get implicit function of
-        -> (vec -> ℝ) -- ^ Implicit function
+    getImplicit'
+        :: ObjectContext
+        -> obj         -- ^ Object to get implicit function of
+        -> (vec -> ℝ)  -- ^ Implicit function
 
-    implicit ::
-        (vec -> ℝ)     -- ^ Implicit function
-        -> (vec, vec)  -- ^ Bounding box
-        -> obj         -- ^ Resulting object
+-- | Get the implicit function for an object
+getImplicit
+    :: Object obj vec
+    => obj         -- ^ Object to get implicit function of
+    -> (vec -> ℝ)  -- ^ Implicit function
+getImplicit = getImplicit' defaultObjectContext
+
+-- | A pattern that abstracts over 'Shared2' and 'Shared3'.
+pattern Shared :: Object obj vec => SharedObj obj vec -> obj
+pattern Shared v <- (preview _Shared -> Just v)
+  where
+    Shared v = _Shared # v
+
+
+-- | Translate an object by a vector of appropriate dimension.
+translate
+    :: Object obj vec
+    => vec  -- ^ Vector to translate by
+    -> obj  -- ^ Object to translate
+    -> obj  -- ^ Resulting object
+translate _ s@(Shared Empty) = s
+translate _ s@(Shared Full) = s
+translate v1 (Shared (Translate v2 s)) = translate (v1 + v2) s
+translate v s = Shared $ Translate v s
+
+-- | Scale an object
+scale
+    :: Object obj vec
+    => vec  -- ^ Amount to scale by
+    -> obj  -- ^ Object to scale
+    -> obj  -- ^ Resulting scaled object
+scale _ s@(Shared Empty) = s
+scale v1 (Shared (Scale v2 s)) = scale (v1 * v2) s
+scale v s = Shared $ Scale v s
+
+-- | Complement an Object
+complement
+    :: Object obj vec
+    => obj  -- ^ Object to complement
+    -> obj  -- ^ Result
+complement (Shared Empty) = Shared Full
+complement (Shared Full) = Shared Empty
+complement (Shared (Complement s)) = s
+complement s = Shared $ Complement s
+
+-- | The object that fills no space
+emptySpace :: Object obj vec => obj
+emptySpace = Shared Empty
+
+-- | The object that fills the entire space
+fullSpace :: Object obj vec => obj
+fullSpace = Shared Full
+
+-- | Set the current object-rounding value for the given object. The rounding
+-- value is measured in units of distance, and describes the radius of rounded
+-- corners.
+--
+-- This can be used to change the shape of more primitive forms, for example,
+-- we can make a cube with rounded corners via @withRounding 5 ('cube' True
+-- 20)@.
+--
+-- @'withRounding' r obj@ applies the rounding @r@ /all/ primitives objects in
+-- @obj@, so long as they have the same dimensionality. That is to say,
+-- the current object-rounding value set in 3D will not apply to extruded 2D
+-- shapes.
+withRounding :: Object obj vec => ℝ -> obj -> obj
+withRounding 0 = id
+withRounding r = Shared . WithRounding r
+
+-- | Mirror an object across the hyperplane whose normal is a given
+-- vector.
+mirror
+    :: Object obj vec
+    => vec  -- ^ Vector defining the hyperplane
+    -> obj  -- ^ Object to mirror
+    -> obj  -- ^ Resulting object
+mirror _ s@(Shared Empty) = s
+mirror _ s@(Shared Full) = s
+mirror v s = Shared $ Mirror v s
+
+-- | Outset of an object.
+outset
+    :: Object obj vec
+    => ℝ     -- ^ distance to outset
+    -> obj   -- ^ object to outset
+    -> obj   -- ^ resulting object
+outset _ s@(Shared Empty) = s
+outset _ s@(Shared Full) = s
+outset v1 (Shared (Outset v2 s)) = outset (v1 + v2) s
+outset v s = Shared $ Outset v s
+
+-- | Make a shell of an object.
+shell
+    :: Object obj vec
+    => ℝ     -- ^ width of shell
+    -> obj   -- ^ object to take shell of
+    -> obj   -- ^ resulting shell
+shell _ s@(Shared Empty) = s
+shell _ s@(Shared Full) = s
+shell v s = Shared $ Shell v s
+
+-- | Rounded union
+unionR
+    :: Object obj vec
+    => ℝ      -- ^ The radius (in mm) of rounding
+    -> [obj]  -- ^ objects to union
+    -> obj    -- ^ Resulting object
+unionR _ [] = Shared Empty
+unionR _ [s] = s
+unionR r ss = Shared $ UnionR r ss
+
+-- | Rounded difference
+differenceR
+    :: Object obj vec
+    => ℝ     -- ^ The radius (in mm) of rounding
+    -> obj   -- ^ Base object
+    -> [obj] -- ^ Objects to subtract from the base
+    -> obj   -- ^ Resulting object
+differenceR _ s [] = s
+differenceR _ s@(Shared Empty) _ = s
+differenceR r s ss = Shared $ DifferenceR r s ss
+{-# INLINABLE differenceR #-}
+
+-- | Rounded minimum
+intersectR
+    :: Object obj vec
+    => ℝ     -- ^ The radius (in mm) of rounding
+    -> [obj] -- ^ Objects to intersect
+    -> obj   -- ^ Resulting object
+intersectR _ [] = Shared Full
+intersectR _ [s] = s
+intersectR r ss = Shared $ IntersectR r ss
+
+implicit
+    :: Object obj vec
+    => (vec -> ℝ)     -- ^ Implicit function
+    -> (vec, vec)  -- ^ Bounding box
+    -> obj         -- ^ Resulting object
+implicit a b = Shared $ EmbedBoxedObj (a, b)
 
 
 instance Object SymbolicObj2 ℝ2 where
-    translate   = Translate2
-    scale       = Scale2
-    complement  = Complement2
-    unionR      = UnionR2
-    intersectR  = IntersectR2
-    differenceR = DifferenceR2
-    outset      = Outset2
-    shell       = Shell2
-    getBox      = getBox2
-    getImplicit = getImplicit2
-    implicit a b= EmbedBoxedObj2 (a,b)
+  _Shared = prism' Shared2 $ \case
+    Shared2 x -> Just x
+    _         -> Nothing
+  getBox       = getBox2
+  getImplicit' = getImplicit2
 
 instance Object SymbolicObj3 ℝ3 where
-    translate   = Translate3
-    scale       = Scale3
-    complement  = Complement3
-    unionR      = UnionR3
-    intersectR  = IntersectR3
-    differenceR = DifferenceR3
-    outset      = Outset3
-    shell       = Shell3
-    getBox      = getBox3
-    getImplicit = getImplicit3
-    implicit a b= EmbedBoxedObj3 (a,b)
+  _Shared = prism' Shared3 $ \case
+    Shared3 x -> Just x
+    _         -> Nothing
+  getBox       = getBox3
+  getImplicit' = getImplicit3
+
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0
 
-difference :: Object obj vec => [obj] -> obj
+difference :: Object obj vec => obj -> [obj] -> obj
 difference = differenceR 0
 
 intersect :: Object obj vec => [obj] -> obj
@@ -248,35 +359,35 @@ intersect = intersectR 0
 
 -- 3D operations
 
--- | Extrude a 2d object upwards, with rounded corners.
-extrudeR
-    :: ℝ   -- ^ Rounding radius (in mm) of corners
-    -> SymbolicObj2
+-- | Extrude a 2d object upwards. The current object-rounding value set by
+-- 'withRounding' is used to round the caps, but is not used by the 2D object.
+extrude
+    :: SymbolicObj2
     -> ℝ   -- ^ Extrusion height
     -> SymbolicObj3
-extrudeR = ExtrudeR
+extrude = Extrude
 
--- | This function is not implemented
-extrudeRotateR :: ℝ -> ℝ -> SymbolicObj2 -> ℝ -> SymbolicObj3
-extrudeRotateR = ExtrudeRotateR
-
-extrudeRM :: ℝ              -- ^ rounding radius (in mm)
-    -> Either ℝ (ℝ -> ℝ)    -- ^ twist
-    -> ExtrudeRMScale       -- ^ scale
+-- | The current object-rounding value set by 'withRounding' is used to round
+-- the caps, but is not used by the 2D object.
+extrudeM
+    :: Either ℝ (ℝ -> ℝ)    -- ^ twist
+    -> ExtrudeMScale       -- ^ scale
     -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
     -> SymbolicObj2         -- ^ object to extrude
     -> Either ℝ (ℝ2 -> ℝ)   -- ^ height to extrude to
     -> SymbolicObj3
-extrudeRM = ExtrudeRM
+extrudeM = ExtrudeM
 
 
-rotateExtrude :: ℝ            -- ^ Angle to sweep to (in rad)
-    -> (Maybe ℝ)              -- ^ Loop or path (rounded corner)
-    -> (Either ℝ2 (ℝ -> ℝ2))  -- ^ translate
-    -> (Either ℝ  (ℝ -> ℝ ))  -- ^ rotate
-    -> SymbolicObj2           -- ^ object to extrude
+rotateExtrude
+    :: ℝ                    -- ^ Angle to sweep to (in rad)
+    -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
+    -> Either ℝ  (ℝ -> ℝ )  -- ^ rotate
+    -> SymbolicObj2         -- ^ object to extrude
     -> SymbolicObj3
-rotateExtrude = RotateExtrude
+rotateExtrude 0 _ _ _ = emptySpace
+rotateExtrude _ _ _ (Shared Empty) = emptySpace
+rotateExtrude theta t r obj = RotateExtrude theta t r obj
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
@@ -284,7 +395,17 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
-rotate3 = Rotate3
+rotate3 (V3 pitch roll yaw)
+  = Rotate3
+  $ axisAngle (V3 0 0 1) yaw
+  * axisAngle (V3 0 1 0) roll
+  * axisAngle (V3 1 0 0) pitch
+
+rotateQ
+    :: Quaternion ℝ
+    -> SymbolicObj3
+    -> SymbolicObj3
+rotateQ = Rotate3
 
 -- | Rotate a 3D object along an arbitrary axis.
 rotate3V
@@ -292,7 +413,7 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
-rotate3V = Rotate3V
+rotate3V w xyz = Rotate3 $ axisAngle xyz w
 
 -- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 -- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate
@@ -303,14 +424,14 @@ pack3
     -> ℝ                   -- ^ Separation between objects
     -> [SymbolicObj3]      -- ^ Objects to pack
     -> Maybe SymbolicObj3  -- ^ 'Just' if the objects could be packed into the given area
-pack3 (dx, dy) sep objs =
+pack3 (V2 dx dy) sep objs =
     let
         boxDropZ :: (ℝ3,ℝ3) -> (ℝ2,ℝ2)
-        boxDropZ ((a,b,_),(d,e,_)) = ((a,b),(d,e))
+        boxDropZ (V3 a b _,V3 d e _) = (V2 a b, V2 d e)
         withBoxes :: [(Box2, SymbolicObj3)]
         withBoxes = fmap (\obj -> ( boxDropZ $ getBox3 obj, obj)) objs
-    in case pack ((0,0),(dx,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ fmap (\((x,y),obj) -> translate (x,y,0) obj) a
+    in case pack (V2 0 0,V2 dx dy) sep withBoxes of
+            (a, []) -> Just $ union $ fmap (\(V2 x y,obj) -> translate (V3 x y 0) obj) a
             _ -> Nothing
 
 -- 2D operations
@@ -324,11 +445,11 @@ pack2
     -> ℝ                   -- ^ Separation between objects
     -> [SymbolicObj2]      -- ^ Objects to pack
     -> Maybe SymbolicObj2  -- ^ 'Just' if the objects could be packed into the given area
-pack2 (dx, dy) sep objs =
+pack2 (V2 dx dy) sep objs =
     let
         withBoxes :: [(Box2, SymbolicObj2)]
         withBoxes = fmap (\obj -> ( getBox2 obj, obj)) objs
-    in case pack ((0,0),(dx,dy)) sep withBoxes of
-            (a, []) -> Just $ union $ fmap (\((x,y),obj) -> translate (x,y) obj) a
+    in case pack (V2 0 0,V2 dx dy) sep withBoxes of
+            (a, []) -> Just $ union $ fmap (\(V2 x y,obj) -> translate (V2 x y) obj) a
             _ -> Nothing
 

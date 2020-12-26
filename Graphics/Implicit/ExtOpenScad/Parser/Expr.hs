@@ -65,7 +65,7 @@ expr0 = foldr ($) nonAssociativeExpr levels
       , \higher -> -- <, <=, >= and > operators
           chainl1 higher $ binaryOperation <$> (matchLE <|> matchLT <|> matchGE <|> matchGT)
       , \higher -> -- + and - operators
-          chainl1 higher $ binaryOperation . singleton <$> (oneOf "+-") <* whiteSpace
+          chainl1 higher $ binaryOperation . singleton <$> oneOf "+-" <* whiteSpace
       , \higher -> -- string/list concatenation operator (++). This is not available in OpenSCAD.
           chainl1 higher $ binaryOperation <$> matchCAT
       , \higher -> -- exponent operator (^). This is not available in OpenSCAD.

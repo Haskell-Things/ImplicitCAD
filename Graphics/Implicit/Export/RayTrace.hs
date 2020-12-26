@@ -7,7 +7,7 @@ module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera),
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, fmap, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise, pure)
 
 -- Our number system, and the definition of a 3D object.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, (⋅), Obj3)
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, Obj3)
 
 import Codec.Picture (Pixel8)
 
@@ -15,9 +15,8 @@ import Control.Monad (guard)
 
 import Control.Arrow ((***))
 
-import Data.VectorSpace (Scalar, magnitude, (^+^), (*^), normalized, (^-^), InnerSpace)
-
-import Data.Cross (cross3)
+import Linear
+    ( V3(V3), cross, Metric(dot, norm), V2(V2), normalize, (*^) )
 
 default (Fastℕ, ℝ)
 
@@ -42,8 +41,8 @@ data Color  = Color Pixel8 Pixel8 Pixel8 Pixel8
 -- Math
 
 -- | The distance traveled by a line segment from the first point to the second point.
-vectorDistance :: ℝ3 -> ℝ3 -> Scalar ℝ3
-vectorDistance a b = magnitude (b-a)
+vectorDistance :: ℝ3 -> ℝ3 -> ℝ
+vectorDistance a b = norm (b-a)
 
 -- | Multiply a colour by an intensity.
 colorMult :: Pixel8 -> Color -> Color
@@ -70,30 +69,30 @@ average l =
 -- Ray Utilities
 
 cameraRay :: Camera -> ℝ2 -> Ray
-cameraRay (Camera p vx vy f) (x,y) =
+cameraRay (Camera p vx vy f) (V2 x y) =
     let
-        v  = vx `cross3` vy
-        p' = p ^+^ f*^v ^+^ x*^vx ^+^ y*^vy
-        n  = normalized (p' ^-^ p)
+        v  = vx `cross` vy
+        p' = p + f*^v + x*^vx + y*^vy
+        n  = normalize (p' - p)
     in
         Ray p' n
 
 -- | Create a ray from two points.
 rayFromTo :: ℝ3 -> ℝ3 -> Ray
-rayFromTo p1 p2 = Ray p1 (normalized $ p2 ^-^ p1)
+rayFromTo p1 p2 = Ray p1 (normalize $ p2 - p1)
 
 rayBounds :: Ray -> (ℝ3, ℝ3) -> ℝ2
 rayBounds ray box =
     let
-        Ray (cPx, cPy, cPz) (cVx, cVy, cVz) = ray
-        ((x1,y1,z1),(x2,y2,z2)) = box
+        Ray (V3 cPx cPy cPz) (V3 cVx cVy cVz) = ray
+        (V3 x1 y1 z1, V3 x2 y2 z2) = box
         xbounds = [(x1 - cPx)/cVx, (x2-cPx)/cVx]
         ybounds = [(y1-cPy)/cVy, (y2-cPy)/cVy]
         zbounds = [(z1-cPz)/cVz, (z2-cPz)/cVz]
         lower   = maximum [minimum xbounds, minimum ybounds, minimum zbounds]
         upper   = minimum [maximum xbounds, maximum ybounds, maximum zbounds]
     in
-        (lower, upper)
+        V2 lower upper
 
 -- Intersection
 -- FIXME: magic numbers.
@@ -104,26 +103,26 @@ intersection r@(Ray p v) ((a, aval),b) res obj =
              | aval/2 > res = res/2
              | otherwise = res/10
         a'  = a + step
-        a'val = obj (p ^+^ a'*^v)
+        a'val = obj (p + a'*^v)
     in if a'val < 0
     then
-        let a'' = refine (a,a') (\s -> obj (p ^+^ s*^v))
-        in Just (p ^+^ a''*^v)
+        let a'' = refine (V2 a a') (\s -> obj (p + s*^v))
+        in Just (p + a''*^v)
     else if a' < b
     then intersection r ((a',a'val), b) res obj
     else Nothing
 
 refine :: ℝ2 -> (ℝ -> ℝ) -> ℝ
-refine (a, b) obj =
+refine (V2 a b) obj =
     let
         (aval, bval) = (obj a, obj b)
     in if bval < aval
-    then refine' 10 (a, b) (aval, bval) obj
-    else refine' 10 (b, a) (aval, bval) obj
+    then refine' 10 (V2 a b) (V2 aval bval) obj
+    else refine' 10 (V2 b a) (V2 aval bval) obj
 
 refine' :: Fastℕ -> ℝ2 -> ℝ2 -> (ℝ -> ℝ) -> ℝ
-refine' 0 (a, _) _ _ = a
-refine' n (a, b) (aval, bval) obj =
+refine' 0 (V2 a _) _ _ = a
+refine' n (V2 a b) (V2 aval bval) obj =
     let
         mid = (a+b)/2
         midval = obj mid
@@ -131,8 +130,8 @@ refine' n (a, b) (aval, bval) obj =
         if midval == 0
         then mid
         else if midval < 0
-        then refine' (pred n) (a, mid) (aval, midval) obj
-        else refine' (pred n) (mid, b) (midval, bval) obj
+        then refine' (pred n) (V2 a mid) (V2 aval midval) obj
+        else refine' (pred n) (V2 mid b) (V2 midval bval) obj
 
 intersects :: Ray -> ((ℝ, ℝ), ℝ) -> ℝ -> Obj3 -> Bool
 intersects a b c d = case intersection a b c d of
@@ -144,32 +143,32 @@ intersects a b c d = case intersection a b c d of
 traceRay :: Ray -> ℝ -> (ℝ3, ℝ3) -> Scene -> Color
 traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultColor) =
     let
-        (a,b) = rayBounds ray box
-    in case intersection ray ((a, obj (cameraP ^+^ a*^cameraV)), b) step obj of
+        (V2 a b) = rayBounds ray box
+    in case intersection ray ((a, obj (cameraP + a*^cameraV)), b) step obj of
         Just p  -> flip colorMult objColor $ floor (sum $ 0.2 : do
             Light lightPos lightIntensity <- lights
             let
                 ray'@(Ray _ v) = rayFromTo p lightPos
-                v' = normalized v
+                v' = normalize v
             guard . not $ intersects ray' ((0, obj p),20) step obj
             let
                 pval = obj p
                 dirDeriv :: ℝ3 -> ℝ
-                dirDeriv v'' = (obj (p ^+^ step*^v'') ^-^ pval)/step
-                deriv = (dirDeriv (1,0,0), dirDeriv (0,1,0), dirDeriv (0,0,1))
-                normal = normalized deriv
-                unitV = normalized v'
-                proj :: InnerSpace v => v -> v -> v
-                proj a' b' = (a'⋅b')*^b'
+                dirDeriv v'' = (obj (p + step*^v'') - pval)/step
+                deriv = V3 (dirDeriv (V3 1 0 0)) (dirDeriv (V3 0 1 0)) (dirDeriv (V3 0 0 1))
+                normal = normalize deriv
+                unitV = normalize v'
+                -- proj :: InnerSpace v => v -> v -> v
+                proj a' b' = (a' `dot` b')*^b'
                 dist  = vectorDistance p lightPos
-                illumination = max 0 (normal ⋅ unitV) * lightIntensity * (25 /dist)
+                illumination = max 0 (normal `dot` unitV) * lightIntensity * (25 /dist)
                 rV =
                     let
                         normalComponent = proj v' normal
                         parComponent    = v' - normalComponent
                     in
                         normalComponent - parComponent
-            pure $ illumination*(3 + 0.3*abs(rV ⋅ cameraV)*abs(rV ⋅ cameraV))
+            pure $ illumination*(3 + 0.3*abs(rV `dot` cameraV)*abs(rV `dot` cameraV))
             )
         Nothing   -> defaultColor
 

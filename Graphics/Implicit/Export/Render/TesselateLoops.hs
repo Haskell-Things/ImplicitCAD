@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(pure, ($), length, (==), zip, init, tail, reverse, (<), (/), null, foldl1, (<>), head, (*), abs, (>), (&&), (+), foldMap)
+import Prelude(sum, (-), pure, ($), length, (==), zip, init, tail, reverse, (<), (/), null, (<>), head, (*), abs, (>), (&&), (+), foldMap)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -12,11 +12,8 @@ import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.VectorSpace ((^-^), (^+^), magnitude, (^/), (^*))
-
 import Data.List (genericLength)
-
-import Data.Cross (cross3)
+import Linear ( cross, Metric(norm), (^*), (^/) )
 
 -- de-compose a loop into a series of triangles or squares.
 -- FIXME: res should be ℝ3.
@@ -56,8 +53,8 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 {-
 tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
     let
-        b1 = normalized $ a ^-^ b
-        b2 = normalized $ c ^-^ b
+        b1 = normalized $ a - b
+        b2 = normalized $ c - b
         b3 = b1 `cross3` b2
     in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
 -}
@@ -82,14 +79,14 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
     in if null path
     then early_tris
     else let
-        mid@(_,_,_) = centroid path
+        mid = centroid path
         midval = obj mid
-        preNormal = foldl1 (^+^)
-            [ a `cross3` b | (a,b) <- zip path (tail path <> [head path]) ]
-        preNormalNorm = magnitude preNormal
+        preNormal = sum
+            [ a `cross` b | (a,b) <- zip path (tail path <> [head path]) ]
+        preNormalNorm = norm preNormal
         normal = preNormal ^/ preNormalNorm
-        deriv = (obj (mid ^+^ (normal ^* (res/100)) ) ^-^ midval)/res*100
-        mid' = mid ^-^ normal ^* (midval/deriv)
+        deriv = (obj (mid + (normal ^* (res/100)) ) - midval)/res*100
+        mid' = mid - normal ^* (midval/deriv)
     in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5
               && abs (midval/deriv) < 2*res && 3*abs (obj mid') < abs midval
         then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (tail path <> [head path]) ]

@@ -22,8 +22,14 @@ import MessageSpec.Message(programExec)
 
 import PropertySpec (propSpec)
 
+import qualified GoldenSpec.Spec as Golden
+import qualified ImplicitSpec as Implicit
+import qualified TesselationSpec as Tesselation
+
 main :: IO ()
 main = hspec $ do
+  -- run the golden tests to ensure we haven't broken mesh generation
+  describe "golden tests" Golden.spec
   -- run tests against the expression parsing engine.
   describe "expression parsing" exprSpec
   -- and now, against the statement parsing engine.
@@ -32,6 +38,10 @@ main = hspec $ do
   describe "expression execution" exprExec
   -- run tests against the evaluation engine, checking for messages.
   describe "program execution" programExec
-  
+
   -- Generate data to be evaluated, and ensure the properties hold.
   describe "property tests" propSpec
+
+  Implicit.spec
+  Tesselation.spec
+

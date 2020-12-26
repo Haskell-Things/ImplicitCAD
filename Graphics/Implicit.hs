@@ -13,34 +13,40 @@ module Graphics.Implicit (
   W.ℝ3,
   SymbolicObj2 (),
   SymbolicObj3 (),
-  W.ExtrudeRMScale(C1, C2, Fn),
+  W.ExtrudeMScale(C1, C2, Fn),
 
   -- * Shared operations
-  P.Object
-    ( P.translate,
-      P.scale,
-      P.complement,
-      P.unionR,
-      P.intersectR,
-      P.differenceR,
-      P.implicit,
-      P.shell
-    ),
+  P.Object (),
+  P.translate,
+  P.scale,
+  P.mirror,
+  P.complement,
   P.union,
+  P.unionR,
   P.intersect,
+  P.intersectR,
   P.difference,
+  P.differenceR,
+  P.implicit,
+  P.shell,
+  P.outset,
+  P.emptySpace,
+  P.fullSpace,
+  P.withRounding,
 
   -- * 2D primitive shapes
-  P.rectR,
+  P.square,
+  P.rect,
   P.circle,
-  P.polygonR,
+  P.polygon,
 
   -- * 2D operations
   P.rotate,
   P.pack2,
 
   -- * 3D primitive shapes
-  P.rect3R,
+  P.cube,
+  P.rect3,
   P.sphere,
   P.cylinder,
   P.cylinder2,
@@ -51,8 +57,8 @@ module Graphics.Implicit (
   P.pack3,
 
   -- * Extrusions into 3D
-  P.extrudeR,
-  P.extrudeRM,
+  P.extrude,
+  P.extrudeM,
   P.extrudeOnEdgeOf,
   P.rotateExtrude,
 
@@ -72,23 +78,29 @@ module Graphics.Implicit (
   writeOBJ,
   writeTHREEJS,
   writeSCAD3,
-  writePNG3
+  writePNG3,
+
+  -- * Linear re-exports
+  L.V2(V2),
+  L.V3(V3)
 ) where
 
 import Prelude(FilePath, IO)
 
 -- The primitive objects, and functions for manipulating them.
 -- MAYBEFIXME: impliment slice operation, regularPolygon and zsurface primitives.
-import Graphics.Implicit.Primitives as P (translate, scale, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrudeR, extrudeRM, extrudeOnEdgeOf, sphere, rect3R, circle, cylinder, cylinder2, rectR, polygonR, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, Object)
+import Graphics.Implicit.Primitives as P (withRounding, rect, rect3, translate, scale, mirror, complement, union, intersect, difference, unionR, intersectR, differenceR, shell, extrude, extrudeM, extrudeOnEdgeOf, sphere, cube, circle, cylinder, cylinder2, square, polygon, rotateExtrude, rotate3, rotate3V, pack3, rotate, pack2, implicit, fullSpace, emptySpace, outset, Object)
 
 -- The Extended OpenScad interpreter.
 import Graphics.Implicit.ExtOpenScad as E (runOpenscad)
 
 -- typesclasses and types defining the world, or part of the world.
-import Graphics.Implicit.Definitions as W (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3, ExtrudeRMScale(C1, C2, Fn))
+import Graphics.Implicit.Definitions as W (ℝ, ℝ2, ℝ3, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1, C2, Fn))
 
 -- Functions for writing files based on the result of operations on primitives.
 import qualified Graphics.Implicit.Export as Export (writeSVG, writeDXF2, writeSTL, writeBinSTL, writeOBJ, writeSCAD2, writeSCAD3, writeTHREEJS, writeGCodeHacklabLaser, writePNG)
+
+import Linear as L (V2(V2), V3(V3), Quaternion(Quaternion))
 
 -- We want Export to be a bit less polymorphic
 -- (so that types will collapse nicely)

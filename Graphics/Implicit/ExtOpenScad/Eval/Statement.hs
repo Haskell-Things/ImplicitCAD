@@ -46,6 +46,8 @@ import Data.Traversable (for)
 
 import Data.Text.Lazy (unpack, pack)
 
+import System.Directory (doesFileExist)
+
 import System.FilePath (takeDirectory)
 
 -- Run statements out of the OpenScad file.
@@ -120,7 +122,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   []                      -> Nothing
                   ((_, suiteInfoFound):_) -> suiteInfoFound
               when (null possibleInstances) (do
-                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> (pack $ show (ONModule (Symbol name) implementation forms))
+                                                errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> pack (show (ONModule (Symbol name) implementation forms))
                                                 traverse_ (`checkOptions` True) $ fmap (Just . fst) forms
                                             )
               -- Ignore this for now, because all instances we define have the same suite requirements.
@@ -228,9 +230,9 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                 (errorC sourcePos $ "missingNotDefaultable: " <> show (length missingNotDefaultable))
                  -}
               when (not (null missingNotDefaultable) && makeWarnings)
-                (errorC sourcePos $ "Insufficient parameters. " <> (pack parameterReport))
+                (errorC sourcePos $ "Insufficient parameters. " <> pack parameterReport)
               when (not (null extraUnnamed) && isJust args && makeWarnings)
-                (errorC sourcePos $ "Too many parameters: " <> (pack $ show $ length extraUnnamed) <> " extra. " <> (pack parameterReport))
+                (errorC sourcePos $ "Too many parameters: " <> pack (show $ length extraUnnamed) <> " extra. " <> pack parameterReport)
               pure $ null missingNotDefaultable && null extraUnnamed
             namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
             namedParameters = mapMaybe fst
@@ -252,18 +254,22 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
     if importsAllowed opts
       then do
       name' <- getRelPath (unpack name)
-      content <- liftIO $ readFile name'
-      case parseProgram name' content of
-        Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> (pack $ show e)
-        Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
-            vals <- getVals
-            putVals []
-            runSuite sts
-            if injectVals
-              then do
-                vals' <- getVals
-                putVals $ vals' <> vals
-              else putVals vals
+      hasFile <- liftIO $ doesFileExist name'
+      if not hasFile
+        then warnC sourcePos $ "Not importing " <> name <> ": File not found."
+        else do
+          content <- liftIO $ readFile name'
+          case parseProgram name' content of
+            Left e -> errorC sourcePos $ "Error parsing " <> name <> ":" <> pack (show e)
+            Right sts -> withPathShiftedBy (takeDirectory $ unpack name) $ do
+                vals <- getVals
+                putVals []
+                runSuite sts
+                if injectVals
+                  then do
+                    vals' <- getVals
+                    putVals $ vals' <> vals
+                  else putVals vals
       else warnC sourcePos $ "Not importing " <> name <> ": File import disabled."
 
 runStatementI (StatementI _ DoNothing) = pure ()

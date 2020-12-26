@@ -1,11 +1,11 @@
+Cabal-version:       2.2
 Name:                implicit
 Version:             0.3.0.1
-Cabal-version:       >= 1.10
-Tested-with:         GHC >= 8.6
+Tested-with:         GHC >= 8.8
 Build-type:          Simple
 Synopsis:            A math-inspired programmatic 2D & 3D CAD system.
 Description:         An OpenSCAD execution engine for generating models in STL and many other formats.
-License:             AGPL-3
+License:             AGPL-3.0-or-later
 License-file:        LICENSE
 Author:              Julia Longtin <julia.longtin@gmail.com>
 Maintainer:          Julia Longtin <julia.longtin@gmail.com>
@@ -30,38 +30,17 @@ flag implicitsnap
   description:
     Builds implicitsnap program
 
-Library
-
-    Default-Extensions: NoImplicitPrelude
+Common binstuff
     Default-Language: Haskell2010
-    Build-depends:
-                  base >= 3 && < 5,
-                  filepath,
-                  directory,
-                  parsec,
-                  parallel,
-                  containers,
-                  deepseq,
-                  vector-space,
-                  hspec,
-                  text,
-                  bytestring,
-                  blaze-builder,
-                  blaze-markup,
-                  blaze-svg,
-                  storable-endian,
-                  JuicyPixels,
-                  transformers,
-                  mtl
-
+    Default-extensions: NoImplicitPrelude
     Ghc-options:
---                -O2
+                -threaded
+                -rtsopts "-with-rtsopts -N -qg -t"
                 -optc-O3
---                -dynamic
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
-                -- for debugging.
                 -Wall
+                -Wextra
                 -Wcompat
                 -Wmonomorphism-restriction
                 -Wmissing-signatures
@@ -72,7 +51,54 @@ Library
                 -Wimplicit-prelude
                 -Wredundant-constraints
                 -Wall-missed-specialisations
---                -Werror
+
+Common libstuff
+    Default-Language: Haskell2010
+    Default-extensions: NoImplicitPrelude
+    Ghc-options:
+                -optc-O3
+                -- see GHC manual 8.2.1 section 6.5.1.
+                -feager-blackholing
+                -Wall
+                -Wextra
+                -Wcompat
+                -Wmonomorphism-restriction
+                -Wmissing-signatures
+                -Wmissing-export-lists
+                -Wmissing-import-lists
+                -Wmissing-home-modules
+                -Widentities
+                -Wimplicit-prelude
+                -Wredundant-constraints
+                -Wall-missed-specialisations
+
+Library
+    Import: libstuff
+    Build-depends:
+                  base >= 3 && < 5,
+                  filepath,
+                  directory,
+                  parsec,
+                  parallel,
+                  containers,
+                  deepseq,
+                  hspec,
+                  text,
+                  bytestring,
+                  blaze-builder,
+                  blaze-markup,
+                  blaze-svg,
+                  storable-endian,
+                  JuicyPixels,
+                  transformers,
+                  mtl,
+                  linear,
+                  QuickCheck,
+                  quickspec,
+                  show-combinators,
+                  lens
+
+
     Exposed-modules:
                     Graphics.Implicit
                     Graphics.Implicit.Definitions
@@ -96,14 +122,17 @@ Library
                     Graphics.Implicit.Export.DiscreteAproxable
                     -- These are exposed for docgen.
                     Graphics.Implicit.ExtOpenScad.Primitives
-
+                    -- These are exposed for testing
+                    Graphics.Implicit.Export.Render.GetLoops
     Other-modules:
                   Graphics.Implicit.FastIntUtil
                   Graphics.Implicit.IntegralUtil
                   Graphics.Implicit.ObjectUtil.GetBox2
                   Graphics.Implicit.ObjectUtil.GetBox3
+                  Graphics.Implicit.ObjectUtil.GetBoxShared
                   Graphics.Implicit.ObjectUtil.GetImplicit2
                   Graphics.Implicit.ObjectUtil.GetImplicit3
+                  Graphics.Implicit.ObjectUtil.GetImplicitShared
                   Graphics.Implicit.ExtOpenScad.Default
                   Graphics.Implicit.ExtOpenScad.Parser.Lexer
                   Graphics.Implicit.ExtOpenScad.Parser.Util
@@ -112,7 +141,6 @@ Library
                   Graphics.Implicit.ExtOpenScad.Util.ArgParser
                   Graphics.Implicit.ExtOpenScad.Util.OVal
                   Graphics.Implicit.ExtOpenScad.Util.StateC
-                  Graphics.Implicit.Export.MarchingSquaresFill
                   Graphics.Implicit.Export.RayTrace
                   Graphics.Implicit.Export.SymbolicFormats
                   Graphics.Implicit.Export.Util
@@ -121,7 +149,6 @@ Library
                   Graphics.Implicit.Export.Symbolic.Rebound3
                   Graphics.Implicit.Export.Render
                   Graphics.Implicit.Export.Render.Definitions
-                  Graphics.Implicit.Export.Render.GetLoops
                   Graphics.Implicit.Export.Render.GetSegs
                   Graphics.Implicit.Export.Render.HandleSquares
                   Graphics.Implicit.Export.Render.Interpolate
@@ -130,74 +157,35 @@ Library
                   Graphics.Implicit.Export.Render.HandlePolylines
 
 Executable extopenscad
+   Import: binstuff
    if !flag(extopenscad)
      buildable: False
    Main-is: extopenscad.hs
-   default-extensions: NoImplicitPrelude
-   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  base,
-                 vector-space,
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit
-   Ghc-options:
---               -O2
-               -optc-O3
-               -threaded
-               -rtsopts "-with-rtsopts -N -qg -t"
---               -dynamic
-               -- see GHC manual 8.2.1 section 6.5.1.
-               -feager-blackholing
-               -- for debugging.
-               -Wall
-               -Wcompat
-               -Wmonomorphism-restriction
-               -Wmissing-signatures
-               -Wmissing-export-lists
-               -Wmissing-import-lists
-               -Wmissing-home-modules
-               -Widentities
-               -Wimplicit-prelude
-               -Wredundant-constraints
-               -Wall-missed-specialisations
---               -Werror
+                 implicit,
+                 linear
 
 Executable docgen
+   Import: binstuff
    if !flag(docgen)
      buildable: False
    main-is: docgen.hs
-   default-extensions: NoImplicitPrelude
-   Default-Language: Haskell2010
    Hs-source-dirs: programs
    build-depends:
                  base,
                  text,
                  implicit
-   ghc-options:
---               -dynamic
-               -- for debugging.
-               -Wall
-               -Wcompat
-               -Wmonomorphism-restriction
-               -Wmissing-signatures
-               -Wmissing-export-lists
-               -Wmissing-import-lists
-               -Wmissing-home-modules
-               -Widentities
-               -Wimplicit-prelude
-               -Wredundant-constraints
-               -Wall-missed-specialisations
---               -Werror
 
 Executable implicitsnap
+   Import: binstuff
    if !flag(implicitsnap)
      buildable: False
    Main-is: implicitsnap.hs
-   default-extensions: NoImplicitPrelude
-   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  aeson,
@@ -208,61 +196,23 @@ Executable implicitsnap
                  snap-server,
                  text,
                  utf8-string,
-                 vector-space
-   Ghc-options:
-               -threaded
-               -rtsopts "-with-rtsopts -N -qg -t"
---               -O2
-               -optc-O3
---               -dynamic
-               -- see GHC manual 8.2.1 section 6.5.1.
-               -feager-blackholing
-               -- for debugging.
-               -Wall
-               -Wcompat
-               -Wmonomorphism-restriction
-               -Wmissing-signatures
-               -Wmissing-export-lists
-               -Wmissing-import-lists
-               -Wmissing-home-modules
-               -Widentities
-               -Wimplicit-prelude
-               -Wredundant-constraints
-               -Wall-missed-specialisations
---               -Werror
 
 Benchmark Benchmark
+   Import: binstuff
    Type: exitcode-stdio-1.0
    Main-is: Benchmark.hs
-   default-extensions: NoImplicitPrelude
-   Default-Language: Haskell2010
    Hs-source-dirs: programs
    Build-depends:
                  base,
                  criterion,
+                 linear,
                  implicit
-   Ghc-options:
---               -O2
-               -optc-O3
---               -dynamic
-               -- for debugging.
-               -Wall
-               -Wcompat
-               -Wmonomorphism-restriction
-               -Wmissing-signatures
-               -Wmissing-export-lists
-               -Wmissing-import-lists
-               -Wmissing-home-modules
-               -Widentities
-               -Wimplicit-prelude
-               -Wredundant-constraints
-               -Wall-missed-specialisations
---               -Werror
 
 Test-suite test-implicit
+    Import: binstuff
     Type: exitcode-stdio-1.0
-    default-extensions: NoImplicitPrelude
-    Default-Language: Haskell2010
+    Main-is: Main.hs
+    Hs-source-dirs: tests
     Build-depends:
                   base,
                   hspec,
@@ -270,29 +220,13 @@ Test-suite test-implicit
                   text,
                   parsec,
                   HUnit,
+                  directory,
                   hedgehog,
-                  hw-hspec-hedgehog
-    Main-is: Main.hs
-    Hs-source-dirs: tests
-    Ghc-options:
-                -threaded
-                -rtsopts "-with-rtsopts -N -qg -t"
---                -O2
-                -optc-O3
---                -dynamic
-                -- for debugging.
-                -Wall
-                -Wcompat
-                -Wmonomorphism-restriction
-                -Wmissing-signatures
-                -Wmissing-export-lists
-                -Wmissing-import-lists
-                -Wmissing-home-modules
-                -Widentities
-                -Wimplicit-prelude
-                -Wredundant-constraints
-                -Wall-missed-specialisations
---                -Werror
+                  hw-hspec-hedgehog,
+                  quickspec,
+                  QuickCheck,
+                  linear,
+                  lens
     Other-Modules:
                   ParserSpec.Expr
                   ParserSpec.Statement
@@ -303,35 +237,23 @@ Test-suite test-implicit
                   MessageSpec.Util
                   PropertySpec
                   PropertySpec.Exec
+                  GoldenSpec.Spec
+                  GoldenSpec.Util
+                  Graphics.Implicit.Test.Instances
+                  Graphics.Implicit.Test.Utils
+                  ImplicitSpec
+                  TesselationSpec
 
 Benchmark parser-bench
+    Import: binstuff
     Type: exitcode-stdio-1.0
-    default-extensions: NoImplicitPrelude
-    Default-Language: Haskell2010
+    Main-is: parser-bench.hs
+    Hs-source-dirs: programs
     Build-depends:
                   base,
                   criterion,
                   parsec,
                   implicit
-    Main-is: parser-bench.hs
-    Hs-source-dirs: programs
-    Ghc-options:
---                -O2
-                -optc-O3
---                -dynamic
-                -- for debugging.
-                -Wall
-                -Wcompat
-                -Wmonomorphism-restriction
-                -Wmissing-signatures
-                -Wmissing-export-lists
-                -Wmissing-import-lists
-                -Wmissing-home-modules
-                -Widentities
-                -Wimplicit-prelude
-                -Wredundant-constraints
-                -Wall-missed-specialisations
---                -Werror
 
 Source-repository head
     Type:            git

@@ -7,10 +7,9 @@ module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
 import Prelude((<), (/), (<>), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2, (⋅))
+import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2)
 import Graphics.Implicit.Export.Util (centroid)
-
-import Data.VectorSpace (normalized, magnitude, (^-^), (^*), (^+^))
+import Linear ( Metric(norm, dot), V2(V2), normalize, (^*) )
 
 default (Fastℕ, ℝ)
 
@@ -24,7 +23,7 @@ refine res obj = simplify res . detail' res obj
 --   an initial value for a depth counter argument.
 -- FIXME: magic number.
 detail' :: ℝ -> (ℝ2 -> ℝ) -> Polyline -> Polyline
-detail' res obj (Polyline [p1@(x1,y1), p2@(x2,y2)])
+detail' res obj (Polyline [p1@(V2 x1 y1), p2@(V2 x2 y2)])
   | (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) > res*res/200 = detail 0 res obj $ Polyline [p1,p2]
 detail' _ _ a = a
 
@@ -39,32 +38,17 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
        then Polyline [p1, p2]
        else
          let
-           normal = (\(a,b) -> (b, -a)) $ normalized (p2 ^-^ p1)
-           derivN = -(obj (mid ^-^ (normal ^* (midval/2))) - midval) * (2/midval)
+           normal = (\(V2 a b) -> V2 b (-a)) $ normalize (p2 - p1)
+           derivN = -(obj (mid - (normal ^* (midval/2))) - midval) * (2/midval)
          in
            if abs derivN > 0.5 && abs derivN < 2 && abs (midval/derivN) < 3*res
            then
              let
-               mid' = mid ^-^ (normal ^* (midval / derivN))
+               mid' = mid - (normal ^* (midval / derivN))
              in
                addPolylines (detail (n+1) res obj (Polyline [p1, mid'])) (detail (n+1) res obj ( Polyline [mid', p2] ))
-           else
-             let
-               derivX = (obj (mid ^+^ (res/100, 0)) - midval)*100/res
-               derivY = (obj (mid ^+^ (0, res/100)) - midval)*100/res
-               derivNormSq = derivX*derivX + derivY*derivY
-             in
-               if abs derivNormSq > 0.09 && abs derivNormSq < 4 && abs (midval/sqrt derivNormSq) < 3*res
-               then
-                 let
-                   (dX, dY) = (- derivX*midval/derivNormSq, - derivY*midval/derivNormSq)
-                   mid' = mid ^+^ (dX, dY)
-                   midval' = obj mid'
-                   posRatio = midval/(midval - midval')
-                   mid'' = mid ^+^ (dX*posRatio, dY*posRatio)
-                 in
-                   addPolylines (detail (n+1) res obj (Polyline [p1, mid''])) (detail (n+1) res obj ( Polyline [mid'', p2] ))
-               else Polyline [p1, p2]
+           -- NOTE: we used to have a routine for increasing the sharpness of corners here, but it was too buggy. - JEL
+           else Polyline [p1, p2]
 
 detail _ _ _ x = x
 
@@ -74,7 +58,7 @@ simplify _ = {-simplify3 . simplify2 res . -} simplify1
 
 simplify1 :: Polyline -> Polyline
 simplify1 (Polyline (a:b:c:xs)) =
-    if abs ( ((b ^-^ a) ⋅ (c ^-^ a)) - magnitude (b ^-^ a) * magnitude (c ^-^ a) ) <= minℝ
+    if abs ( ((b - a) `dot` (c - a)) - norm (b - a) * norm (c - a) ) <= minℝ
     then simplify1 (Polyline (a:c:xs))
     else addPolylines (Polyline [a]) (simplify1 (Polyline (b:c:xs)))
 simplify1 a = a

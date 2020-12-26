@@ -26,14 +26,14 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, Maybe(Just), Bool(False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int)
+import Prelude(Eq, Show, Ord, Maybe(Just), Bool(False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int, (<$>))
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
 
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 
-import Control.Monad (Functor, Monad, fmap, (>>=), mzero, mplus, MonadPlus, ap, (>=>))
+import Control.Monad (Functor, Monad, (>>=), mzero, mplus, MonadPlus, ap, (>=>))
 
 import Data.Map (Map, lookup, union)
 
@@ -43,13 +43,13 @@ import Data.Text.Lazy (Text, unpack, intercalate)
 
 import Control.Monad.State (StateT)
 
--- | This is the state of a computation. It contains a hash of variables/functions, an array of OVals, a path, messages, and options controlling code execution.
+-- | The state of computation.
 data CompState = CompState
-  { scadVars  :: VarLookup
-  , oVals     :: [OVal]
-  , sourceDir :: FilePath
-  , messages  :: [Message]
-  , scadOpts  :: ScadOpts
+  { scadVars  :: VarLookup -- ^ A hash of variables and functions.
+  , oVals     :: [OVal]    -- ^ The result of geometry generating functions.
+  , sourceDir :: FilePath  -- ^ The path we are looking for includes in.
+  , messages  :: [Message] -- ^ Output strings, warnings, and errors generated during execution.
+  , scadOpts  :: ScadOpts  -- ^ Options controlling the execution of scad code.
   }
 
 type StateC = StateT CompState IO
@@ -88,7 +88,7 @@ instance Monad ArgParser where
     (APTest str tests child) >>= g = APTest str tests (child >>= g)
     -- And an ArgParserTerminator happily gives away the value it contains
     (APTerminator a) >>= g = g a
-    (APBranch bs) >>= g = APBranch $ fmap (>>= g) bs
+    (APBranch bs) >>= g = APBranch $ (>>= g) <$> bs
 
 instance MonadPlus ArgParser where
     mzero = APFail ""
@@ -161,7 +161,7 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
-    show (OUModule (Symbol name) arguments _) = "module " <> (unpack name) <> " (" <> (unpack $ intercalate ", " (fmap showArg $ fromMaybe [] arguments)) <> ") {}"
+    show (OUModule (Symbol name) arguments _) = "module " <> unpack name <> " (" <> unpack (intercalate ", " (showArg <$> fromMaybe [] arguments)) <> ") {}"
       where
         showArg :: (Symbol, Bool) -> Text
         showArg (Symbol a, hasDefault) = if hasDefault
@@ -174,17 +174,17 @@ instance Show OVal where
                                          else a <> "=..."
         showInstances :: [([(Symbol, Bool)], Maybe Bool)] -> Text
         showInstances [] = ""
-        showInstances [oneInstance] = "module " <> name <> (showInstance oneInstance)
-        showInstances multipleInstances = "Module " <> name <> "[ " <> (intercalate ", " (fmap showInstance multipleInstances)) <> " ]"
+        showInstances [oneInstance] = "module " <> name <> showInstance oneInstance
+        showInstances multipleInstances = "Module " <> name <> "[ " <> intercalate ", " (showInstance <$> multipleInstances) <> " ]"
         showInstance :: ([(Symbol, Bool)], Maybe Bool) -> Text
-        showInstance (arguments, suiteInfo) = " (" <> intercalate ", " (fmap showArg arguments) <> ") {}" <> showSuiteInfo suiteInfo
+        showInstance (arguments, suiteInfo) = " (" <> intercalate ", " (showArg <$> arguments) <> ") {}" <> showSuiteInfo suiteInfo
         showSuiteInfo :: Maybe Bool -> Text
         showSuiteInfo suiteInfo = case suiteInfo of
                           Just requiresSuite -> if requiresSuite
                                                 then " requiring suite {}"
                                                 else " accepting suite {}"
                           _ -> ""
-    show (OVargsModule (Symbol name) _) = "varargs module " <> (unpack name)
+    show (OVargsModule (Symbol name) _) = "varargs module " <> unpack name
     show (OError msg) = unpack $ "Execution Error:\n" <> msg
     show (OObj2 obj) = "<obj2: " <> show obj <> ">"
     show (OObj3 obj) = "<obj3: " <> show obj <> ">"
@@ -214,7 +214,7 @@ data Message = Message MessageType SourcePosition Text
   deriving (Eq)
 
 instance Show Message where
-  show (Message mtype pos text) = show mtype <> " at " <> show pos <> ": " <> (unpack text)
+  show (Message mtype pos text) = show mtype <> " at " <> show pos <> ": " <> unpack text
 
 -- | Options changing the behavior of the extended OpenScad engine.
 data ScadOpts = ScadOpts
