@@ -107,7 +107,7 @@ getBox3 (ExtrudeM twist scale translate symbObj height) =
         (V3 (twistXmin + tminx) (twistYmin + tminy) 0, V3 (twistXmax + tmaxx) (twistYmax + tmaxy) h)
 -- Note: Assumes x2 is always greater than x1.
 -- FIXME: Insert the above assumption as an assertion in the type system?
-getBox3 (RotateExtrude _ _ (Left (V2 xshift yshift)) _ symbObj) =
+getBox3 (RotateExtrude _ (Left (V2 xshift yshift)) _ symbObj) =
     let
         (V2 _ y1, V2 x2 y2) = getBox2 symbObj
         r = max x2 (x2 + xshift)
@@ -116,7 +116,7 @@ getBox3 (RotateExtrude _ _ (Left (V2 xshift yshift)) _ symbObj) =
 -- FIXME: magic numbers: 0.1, 1.1, and 11.
 -- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
-getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
+getBox3 (RotateExtrude rot (Right f) rotate symbObj) =
     let
         samples :: Fastℕ
         samples = 11
