@@ -5,14 +5,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
+import Prelude ((||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
 
 import Graphics.Implicit.Definitions
     ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
-import Data.Maybe (fromMaybe, isJust)
 import qualified Linear as Q
 
 import qualified Data.Either as Either (either)
@@ -96,7 +95,7 @@ getImplicit3 _ (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         obj2 = getImplicit symbObj2
     in
         \(V3 x y z) -> obj1 $ V2 (obj2 (V2 x y)) z
-getImplicit3 _ (RotateExtrude totalRotation round translate rotate symbObj) =
+getImplicit3 ctx (RotateExtrude totalRotation translate rotate symbObj) =
     let
         tau :: ℝ
         tau = 2 * pi
@@ -104,8 +103,14 @@ getImplicit3 _ (RotateExtrude totalRotation round translate rotate symbObj) =
         k   = tau / 360
         totalRotation' = totalRotation*k
         obj = getImplicit symbObj
-        capped = isJust round
-        round' = fromMaybe 0 round
+
+        is360m :: ℝ -> Bool
+        is360m n = 360 * fromInteger (round $ n / 360) /= n
+        capped
+             = is360m totalRotation
+            || either ( /= pure 0) (\f -> f 0 /= f totalRotation) translate
+            || either is360m (\f -> is360m (f 0 - f totalRotation)) rotate
+        round' = objectRounding ctx
         translate' :: ℝ -> ℝ2
         translate' = Either.either
                 (\(V2 a b) θ -> V2 (a*θ/totalRotation') (b*θ/totalRotation'))

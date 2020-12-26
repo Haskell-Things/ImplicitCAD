@@ -379,13 +379,15 @@ extrudeM
 extrudeM = ExtrudeM
 
 
-rotateExtrude :: ℝ            -- ^ Angle to sweep to (in rad)
-    -> Maybe ℝ                -- ^ Loop or path (rounded corner)
-    -> Either ℝ2 (ℝ -> ℝ2)    -- ^ translate
-    -> Either ℝ  (ℝ -> ℝ )    -- ^ rotate
-    -> SymbolicObj2           -- ^ object to extrude
+rotateExtrude
+    :: ℝ                    -- ^ Angle to sweep to (in rad)
+    -> Either ℝ2 (ℝ -> ℝ2)  -- ^ translate
+    -> Either ℝ  (ℝ -> ℝ )  -- ^ rotate
+    -> SymbolicObj2         -- ^ object to extrude
     -> SymbolicObj3
-rotateExtrude = RotateExtrude
+rotateExtrude 0 _ _ _ = emptySpace
+rotateExtrude _ _ _ (Shared Empty) = emptySpace
+rotateExtrude theta t r obj = RotateExtrude theta t r obj
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf

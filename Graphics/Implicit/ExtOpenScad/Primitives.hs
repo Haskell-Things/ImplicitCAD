@@ -15,7 +15,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, fromInteger, round, (/=), (||), not, null, fmap, (<>), otherwise, error)
+import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -480,14 +480,9 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     r            :: ℝ    <- argument "r"   `defaultTo` 0
     translateArg :: Either ℝ2 (ℝ -> ℝ2) <- argument "translate" `defaultTo` Left (V2 0 0)
     rotateArg    :: Either ℝ  (ℝ -> ℝ ) <- argument "rotate" `defaultTo` Left 0
-    let
-        is360m :: ℝ -> Bool
-        is360m n = 360 * fromInteger (round $ n / 360) /= n
-        cap = is360m totalRot
-            || either ( /= pure 0) (\f -> f 0 /= f totalRot) translateArg
-            || either is360m (\f -> is360m (f 0 - f totalRot)) rotateArg
-        capM = if cap then Just r else Nothing
-    pure $ pure $ obj2UpMap (Prim.rotateExtrude totalRot capM translateArg rotateArg) children
+    pure $ pure $ obj2UpMap ( Prim.withRounding r
+                            . Prim.rotateExtrude totalRot translateArg rotateArg
+                            ) children
 
 shell :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 shell = moduleWithSuite "shell" $ \_ children -> do

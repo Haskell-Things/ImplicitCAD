@@ -71,8 +71,6 @@ import GHC.Generics (Generic)
 
 import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
 
-import Data.Maybe (Maybe)
-
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
 import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
@@ -323,7 +321,6 @@ data SymbolicObj3 =
         (Either ℝ (ℝ2 -> ℝ))  -- height to extrude to
     | RotateExtrude
         ℝ                     -- Angle to sweep to
-        (Maybe ℝ)             -- Loop or path (rounded corner)
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
@@ -348,8 +345,8 @@ instance Show SymbolicObj3 where
     Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
-    RotateExtrude d md ep_ddfdp_dd edfdd s ->
-      showCon "rotateExtrude" @| d @| md @|| ep_ddfdp_dd @|| edfdd @| s
+    RotateExtrude d ep_ddfdp_dd edfdd s ->
+      showCon "rotateExtrude" @| d @|| ep_ddfdp_dd @|| edfdd @| s
     ExtrudeOnEdgeOf s s1 ->
       showCon "extrudeOnEdgeOf" @| s @| s1
     Shared3 s -> flip showsPrec s
