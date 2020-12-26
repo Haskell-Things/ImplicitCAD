@@ -52,7 +52,6 @@ import Test.QuickCheck
       Positive(getPositive) )
 
 import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
-import Graphics.Implicit (rotateExtrude)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -90,11 +89,10 @@ instance Arbitrary SymbolicObj3 where
     if n <= 1
     then oneof small
     else oneof $
-        [ rotate3       <$> arbitrary        <*> decayArbitrary 2
-        , rotate3V      <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
-        , extrude       <$> decayArbitrary 2 <*> arbitraryPos
-        , rotateExtrude <$> arbitraryPos     <*> arbitrary <*> arbitrary <*> arbitrary
-        , Shared3       <$> arbitrary
+        [ rotate3  <$> arbitrary        <*> decayArbitrary 2
+        , rotate3V <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
+        , extrude  <$> decayArbitrary 2 <*> arbitraryPos
+        , Shared3  <$> arbitrary
         ] <> small
     where
       small =
