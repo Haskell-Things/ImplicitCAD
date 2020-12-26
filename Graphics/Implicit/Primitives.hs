@@ -387,7 +387,6 @@ rotateExtrude
     -> SymbolicObj3
 rotateExtrude 0 _ _ _ = emptySpace
 rotateExtrude _ _ _ (Shared Empty) = emptySpace
-rotateExtrude _ _ _ (Shared Full) = fullSpace
 rotateExtrude theta t r obj = RotateExtrude theta t r obj
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
