@@ -96,7 +96,8 @@ Library
                   QuickCheck,
                   quickspec,
                   show-combinators,
-                  lens
+                  lens,
+                  vector
 
 
     Exposed-modules:

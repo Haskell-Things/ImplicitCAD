@@ -1,7 +1,8 @@
-{-# LANGUAGE RankNTypes #-}
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
+{-# LANGUAGE RankNTypes   #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- Allow us to use the tearser parallel list comprehension syntax, to avoid having to call zip in the complicated comprehensions below.
 {-# LANGUAGE ParallelListComp #-}
@@ -11,8 +12,9 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import qualified Data.Map.Strict as M
 import Data.Map.Strict (Map)
-import Prelude((<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
+import Prelude
 
+import Control.DeepSeq (force)
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
 import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
@@ -79,6 +81,7 @@ import Linear (_x, _y, _z, _yz, _xz, _xy)
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Data.Maybe (fromMaybe)
 import Graphics.Implicit.Primitives (getImplicit)
+import qualified Data.Vector.Unboxed as V
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -93,17 +96,15 @@ getMesh res@(V3 xres yres zres) symObj =
         d = p2 - p1
 
         -- How many steps will we take on each axis?
-        nx :: ℕ
-        ny :: ℕ
-        nz :: ℕ
-        (V3 nx ny nz) = ceiling `fmap` ( d ⋯/ res)
+        nx, ny, nz :: Int
+        (V3 nx ny nz) = fmap (ceiling) ( d ⋯/ res)
 
         -- How big are the steps?
-        (V3 rx ry rz) = d ⋯/ (fromℕtoℝ `fmap` V3 nx ny nz)
+        (V3 rx ry rz) = d ⋯/ (fromIntegral `fmap` V3 nx ny nz)
 
 
-        stepwise :: ℝ -> ℝ -> ℕ -> ℝ
-        stepwise x0 dx n = x0 + dx * fromℕtoℝ n
+        stepwise :: ℝ -> ℝ -> Int -> ℝ
+        stepwise x0 dx n = x0 + dx * fromIntegral n
 
 
         -- | performance tuning.
@@ -111,25 +112,35 @@ getMesh res@(V3 xres yres zres) symObj =
         forcesteps :: Int
         forcesteps=32
 
-        sampled :: Map (ℕ, ℕ, ℕ) ℝ
-        sampled = forXYZM nx ny nz $ \xm ym zm ->
-          M.singleton (xm, ym, zm) $ obj $
-            V3
-              (stepwise x1 rx xm)
-              (stepwise y1 ry ym)
-              (stepwise z1 rz zm)
+        sampled :: V.Vector ℝ
+        sampled = mkVector nx ny nz $ \xm ym zm ->
+           obj $
+              V3
+                (stepwise x1 rx xm)
+                (stepwise y1 ry ym)
+                (stepwise z1 rz zm)
 
-        sample :: ℕ -> ℕ -> ℕ -> ℝ
-        sample mx my mz = sampled M.! (mx, my, mz)
+        mkVector :: V.Unbox a => Int -> Int -> Int -> (Int -> Int -> Int -> a) -> V.Vector a
+        mkVector x y z f = V.generate ((x + 1) * (y + 1) * (z + 1)) $ \ix ->
+          let (xm, ym, zm) = unindex x y z ix
+           in f xm ym zm
+        {-# INLINE mkVector #-}
 
-        sampleV3 :: V3 ℕ -> ℝ
+        mkVectorV3 :: V.Unbox a => V3 Int -> (V3 Int -> a) -> V.Vector a
+        mkVectorV3 (V3 x y z) f = mkVector x y z $ \ix iy iz -> f (V3 ix iy iz)
+        {-# INLINE mkVectorV3 #-}
+
+        sample :: Int -> Int -> Int -> ℝ
+        sample = lookupIndex nx ny nz sampled
+
+        sampleV3 :: V3 Int -> ℝ
         sampleV3 (V3 mx my mz) = sample mx my mz
 
-        bleck :: NFData a => ℕ -> [a] -> [a]
-        bleck n x = x `using` parBuffer (max 1 $ div (fromℕ n) forcesteps) rdeepseq
+        bleck :: NFData a => Int -> [a] -> [a]
+        bleck n x = x `using` parBuffer (max 1 $ div n forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (V3 ℕ) ℝ
+        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (V3 Int) ℝ
         mkMidsMap l =
           forXYZMV3 (V3 nx ny nz & l -~ 1) $ \xm ym zm -> do
             let v = V3 xm ym zm
@@ -144,26 +155,26 @@ getMesh res@(V3 xres yres zres) symObj =
                 (view l res)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsXMap :: Map (V3 ℕ) ℝ
+        midsXMap :: Map (V3 Int) ℝ
         midsXMap = mkMidsMap _x
 
 
-        midsYMap :: Map (V3 ℕ) ℝ
+        midsYMap :: Map (V3 Int) ℝ
         midsYMap = mkMidsMap _y
 
 
-        midsZMap :: Map (V3 ℕ) ℝ
+        midsZMap :: Map (V3 Int) ℝ
         midsZMap = mkMidsMap _z
 
 
-        forXYZM :: Monoid m => ℕ -> ℕ -> ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
+        forXYZM :: Monoid m => Int -> Int -> Int -> (Int -> Int -> Int -> m) -> m
         forXYZM x y z f = fold $ do
           zm <- [0 .. z]
           ym <- [0 .. y]
           xm <- [0 .. x]
           pure $ f xm ym zm
 
-        forXYZMV3 :: Monoid m => V3 ℕ -> (ℕ -> ℕ -> ℕ -> m) -> m
+        forXYZMV3 :: Monoid m => V3 Int -> (Int -> Int -> Int -> m) -> m
         forXYZMV3 (V3 x y z) f = forXYZM x y z f
 
 
@@ -171,9 +182,9 @@ getMesh res@(V3 xres yres zres) symObj =
         mkSegsMap
             :: (forall a. Lens' (V3 a) a)
             -> (forall a. Lens' (V3 a) (V2 a))
-            -> Map (V3 ℕ) [[ℝ3]]
-        mkSegsMap l l' =
-          forXYZMV3 (V3 nx ny nz & l' -~ 1) $ \xm ym zm ->
+           -> Int -> Int -> Int
+            -> [[ℝ3]]
+        mkSegsMap l l' xm ym zm =
             let stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
                 v = V3 xm ym zm
                 stepped = stepping <*> v
@@ -182,8 +193,7 @@ getMesh res@(V3 xres yres zres) symObj =
                 midA = view (l' . _y) mids
                 midB = view (l' . _x) mids
                 x0 = view l stepped
-             in M.singleton v $
-                expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) <$>
+             in expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) <$>
                     getSegs
                       (view l' stepped)
                       (view l' stepped_up)
@@ -199,32 +209,25 @@ getMesh res@(V3 xres yres zres) symObj =
                       , midB M.! (v & l' . _y +~ 1)
                       )
 
-        -- (2) Calculate segments for each side
-        segsXMap :: Map (V3 ℕ) [[ℝ3]]
-        segsXMap = mkSegsMap _x _yz
-
-        segsYMap :: Map (V3 ℕ) [[ℝ3]]
-        segsYMap = mkSegsMap _y _xz
-
-        segsZMap :: Map (V3 ℕ) [[ℝ3]]
-        segsZMap = mkSegsMap _z _xy
-
 
 
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
         sqTris :: [TriSquare]
-        sqTris = bleck (nx + ny + nz) $ do
+        sqTris = force $ bleck (nx + ny + nz) $ do
+          let segsXMap = mkSegsMap _x _yz
+              segsYMap = mkSegsMap _y _xz
+              segsZMap = mkSegsMap _z _xy
           forXYZM (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
             foldMap (tesselateLoop minres obj) $ fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
-                [        segsXMap M.! V3 xm       ym       zm
-                , mapR $ segsXMap M.! V3 (xm + 1) ym       zm
-                , mapR $ segsYMap M.! V3 xm       ym       zm
-                ,        segsYMap M.! V3 xm       (ym + 1) zm
-                ,        segsZMap M.! V3 xm       ym       zm
-                , mapR $ segsZMap M.! V3 xm       ym       (zm + 1)
+                [        segsXMap xm       ym       zm
+                , mapR $ segsXMap (xm + 1) ym       zm
+                , mapR $ segsYMap xm       ym       zm
+                ,        segsYMap xm       (ym + 1) zm
+                ,        segsZMap xm       ym       zm
+                , mapR $ segsZMap xm       ym       (zm + 1)
                 ]
 
     in
@@ -308,4 +311,27 @@ infixr 0 *$
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
+
+unindex :: Int -> Int -> Int -> Int -> (Int, Int, Int)
+unindex nx ny _nz ix =
+  let x = ix `mod` nx
+      y = (ix `div` nx) `mod` ny
+      z = ix `div` (nx * ny)
+   in (x, y, z)
+{-# INLINE unindex #-}
+
+bigIndex :: Int -> Int -> Int -> Int -> Int -> Int -> Int
+bigIndex nx ny _nz =
+  let mz = ny * nx
+   in \ix iy iz -> iz * mz + iy * nx + ix
+{-# INLINE bigIndex #-}
+
+lookupIndex :: V.Unbox a => Int -> Int -> Int -> V.Vector a -> Int -> Int -> Int -> a
+lookupIndex nx ny nz v =
+  let ix = bigIndex nx ny nz
+   in \x y z -> v V.! ix x y z
+{-# INLINE lookupIndex #-}
+
+
+
 
