@@ -12,6 +12,9 @@ module ImplicitSpec (spec) where
 import Prelude
 import Test.Hspec
 import Graphics.Implicit.Test.Instances (arbitraryV3, (=~=))
+import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Test.Hspec (xit, SpecWith, describe, Spec)
+import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
     (ℝ,  difference,
       rotate,
@@ -26,6 +29,7 @@ import Graphics.Implicit
       complement,
       differenceR,
       translate,
+      withRounding,
       Object )
 import Graphics.Implicit.Primitives (getImplicit, getBox, rotateQ)
 import Test.QuickCheck hiding (scale)
@@ -41,6 +45,12 @@ import Data.List (sort, group)
 import Data.Traversable
 import Data.Functor
 import Debug.Trace (traceM)
+import Linear ( V3(V3), (^*) )
+import Graphics.Implicit (unionR)
+import Graphics.Implicit (intersectR)
+import Graphics.Implicit (extrude)
+import Graphics.Implicit (cylinder2)
+import Graphics.Implicit (mirror)
 
 
 ------------------------------------------------------------------------------
@@ -66,6 +76,7 @@ spec = do
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
     rotation3dSpec
+    misc3dSpec
 
 
 ------------------------------------------------------------------------------
@@ -120,14 +131,16 @@ idempotenceSpec = describe "idempotence" $ do
     scale xyz emptySpace
       =~= emptySpace @obj
 
+  prop "withRounding always takes the last value idempotent" $ \r r' ->
+    withRounding r . withRounding r'
+      =~= withRounding @obj r'
+
 
 ------------------------------------------------------------------------------
 -- | Proofs of the invertability of operations.
 inverseSpec
     :: forall obj vec test outcome
-     . ( TestInfrastructure obj vec test outcome
-       , Num vec
-       )
+     . TestInfrastructure obj vec test outcome
     => Spec
 inverseSpec = describe "inverses" $ do
   prop "complement inverse" $
@@ -226,6 +239,18 @@ rotation3dSpec = describe "3d rotation" $ do
 
 
 ------------------------------------------------------------------------------
+-- | Misc tests that make sense only in 3d
+misc3dSpec :: Spec
+misc3dSpec = describe "misc 3d tests" $ do
+  prop "object-rounding value doesn't jump from 3d to 2d" $ \r obj ->
+    withRounding r . extrude obj
+      =~= withRounding r . extrude (withRounding 0 obj)
+
+  prop "cylinder with negative height is a flipped cylinder with positive height" $ \r1 r2 h ->
+    cylinder2 r1 r2 h =~= mirror (V3 0 0 1) (cylinder2 r1 r2 (-h))
+
+
+------------------------------------------------------------------------------
 -- | Misc identity proofs that should hold for all symbolic objects.
 identitySpec
     :: forall obj vec test outcome
@@ -272,71 +297,21 @@ homomorphismSpec = describe "homomorphism" $ do
     scale @obj xyz2 . scale xyz1
       =~= scale (xyz1 * xyz2)
 
+  prop "withRounding/unionR" $ \r_obj r_combo ->
+    withRounding @obj r_obj . unionR r_combo
+      =~= unionR r_combo . fmap (withRounding r_obj)
+
+  prop "withRounding/differenceR" $ \r_obj r_combo obj ->
+    withRounding @obj r_obj . differenceR r_combo obj
+      =~= differenceR r_combo (withRounding r_obj obj) . fmap (withRounding r_obj)
+
+  prop "withRounding/intersectR" $ \r_obj r_combo ->
+    withRounding @obj r_obj . intersectR r_combo
+      =~= intersectR r_combo . fmap (withRounding r_obj)
+
 
 ------------------------------------------------------------------------------
 -- | Like 'prop', but for tests that are currently expected to fail.
 failingProp :: Testable prop => String -> prop -> SpecWith ()
 failingProp x = it x . expectFailure . property
-
-
-test :: Spec
-test = describe "yo" $ do
-  prop "k" $ \(Positive r') (Positive (n :: Integer)) obj -> do
-    let r = r' + 0.1
-    within 1e6 $
-      counterexample (show r) $
-      counterexample (show n) $
-      counterexample (show obj) $
-      discreteAprox @_ @TriangleMesh r obj
-        === discreteAprox r (outsetBox (fromIntegral n * r) obj)
-
-test2 :: Spec
-test2 = describe "yo" $ do
-  it "k" $ do
-    let obj = cubeR 0 True (V3 4 4 4)
-        r = 0.25 :: Double
-        n = 2 :: Integer
-    (sum $ normals $ discreteAprox @_ @TriangleMesh r obj) `shouldBe` 0
-      -- === discreteAprox r (outsetBox (fromIntegral n * r) obj)
-
-test3 :: Spec
-test3 = describe "yo" $ do
-  modifyMaxSuccess (const 10000) $ prop "k" $ do
-    v <- normalize <$> arbitraryV3
-    case quadrance v == 0.0 of
-      True  -> discard
-      False -> pure @_ @Property $ counterexample (show v) $ do
-        let ns = fmap (fmap quantize) $ normals $ discreteAprox @_ @TriangleMesh 1 $ plane 5 v
-        take 10 ns `shouldContain` (replicate 10 $ fmap quantize v)
-
-badTriangles :: TriangleMesh
-badTriangles = discreteAprox 1 $ plane 5 $ V3 9.688718338657142e-2 0.41910786199170874 0.9027521662738648
-
---         conjoin $ ts <&> \t -> do
---           counterexample (show t) $ do
---             let n = triangleNormal t
---                 n' = fmap quantize n
---                 v' = fmap quantize v
---             n' `shouldBe` v'
-
-quantize :: ℝ -> ℝ
-quantize n =
-  let e = 1e5 :: Double
-   in (/ e) $ fromInteger $ round $ (n * e)
-
-triangleNormal :: Triangle -> ℝ3
-triangleNormal (Triangle (a, b, c)) = normalize $ (b - a) `cross` (c - a)
-
-normals :: TriangleMesh -> [ℝ3]
-normals = fmap triangleNormal . getTriangles
-
-getTriangles :: TriangleMesh -> [Triangle]
-getTriangles = (\ t -> case t of { (TriangleMesh l_t) -> l_t })
-
-
-plane :: ℝ -> ℝ3 -> SymbolicObj3
-plane bb (normalize -> n) = implicit (dot n) (pure (-bb), pure bb)
-
-outsetBox :: ℝ -> SymbolicObj3 -> SymbolicObj3
-outsetBox r s = implicit (getImplicit s) (((subtract $ pure r) *** (+ pure r)) $ getBox s)
 

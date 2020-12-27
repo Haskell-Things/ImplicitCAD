@@ -5,13 +5,13 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox3 (getBox3) where
 
-import Prelude(uncurry, pure, Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, error, const, otherwise, take, fst, snd)
+import Prelude(uncurry, pure, Bool(False), Either (Left, Right), (==), max, (/), (-), (+), fmap, unzip, ($), (<$>), (.), minimum, maximum, min, (>), (*), (<), abs, either, const, otherwise, take, fst, snd)
 
 import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
-      ExtrudeRMScale(C2, C1),
-      SymbolicObj3(..),
+      ExtrudeMScale(C2, C1),
+      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude),
       Box3,
       ℝ,
       fromFastℕtoℝ,
@@ -21,8 +21,8 @@ import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
 import qualified Linear.Quaternion as Q
 import Graphics.Implicit.ObjectUtil.GetBoxShared (corners, pointsBox, getBoxShared)
-import Linear (V3(V3))
-import Graphics.Implicit.Definitions (V2(V2))
+
+import Linear (V2(V2), V3(V3))
 
 -- FIXME: many variables are being ignored here. no rounding for intersect, or difference.. etc.
 
@@ -30,17 +30,17 @@ import Graphics.Implicit.Definitions (V2(V2))
 getBox3 :: SymbolicObj3 -> Box3
 -- Primitives
 getBox3 (Shared3 obj) = getBoxShared obj
-getBox3 (CubeR _ size) = (pure 0, size)
+getBox3 (Cube size) = (pure 0, size)
 getBox3 (Sphere r) = (pure (-r), pure r)
 getBox3 (Cylinder h r1 r2) = (V3 (-r) (-r) 0, V3 r r h ) where r = max r1 r2
 -- (Rounded) CSG
 -- Simple transforms
 getBox3 (Rotate3 q symbObj) =
     let box = getBox3 symbObj
-     in pointsBox $ fmap (Q.rotate q) $ corners box
+     in pointsBox $ Q.rotate q <$> corners box
 -- Misc
 -- 2D Based
-getBox3 (ExtrudeR _ symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)
+getBox3 (Extrude symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)
     where
         (V2 x1 y1, V2 x2 y2) = getBox2 symbObj
 getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
@@ -52,7 +52,7 @@ getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =
 -- FIXME: magic numbers: 0.2 and 11.
 -- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
-getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
+getBox3 (ExtrudeM twist scale translate symbObj height) =
     let
         (V2 x1 y1, V2 x2 y2) = getBox2 symbObj
         (dx, dy) = (x2 - x1, y2 - y1)
@@ -107,7 +107,7 @@ getBox3 (ExtrudeRM _ twist scale translate symbObj height) =
         (V3 (twistXmin + tminx) (twistYmin + tminy) 0, V3 (twistXmax + tmaxx) (twistYmax + tmaxy) h)
 -- Note: Assumes x2 is always greater than x1.
 -- FIXME: Insert the above assumption as an assertion in the type system?
-getBox3 (RotateExtrude _ _ (Left (V2 xshift yshift)) _ symbObj) =
+getBox3 (RotateExtrude _ (Left (V2 xshift yshift)) _ symbObj) =
     let
         (V2 _ y1, V2 x2 y2) = getBox2 symbObj
         r = max x2 (x2 + xshift)
@@ -116,7 +116,7 @@ getBox3 (RotateExtrude _ _ (Left (V2 xshift yshift)) _ symbObj) =
 -- FIXME: magic numbers: 0.1, 1.1, and 11.
 -- FIXME: this may use an approximation, based on sampling functions. generate a warning if the approximation part of this function is used.
 -- FIXME: re-implement the expression system, so this can recieve a function, and determine class (constant, linear)... and implement better forms of this function.
-getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
+getBox3 (RotateExtrude rot (Right f) rotate symbObj) =
     let
         samples :: Fastℕ
         samples = 11
@@ -144,8 +144,6 @@ getBox3 (RotateExtrude rot _ (Right f) rotate symbObj) =
             else (x2 + xmax', y1 + ymin', y2 + ymax')
     in
         (V3 (-r) (-r) $ y1 + ymin', V3 r  r  $ y2 + ymax')
--- FIXME: add case for ExtrudeRotateR!
-getBox3 ExtrudeRotateR{} = error "ExtrudeRotateR implementation incomplete!"
 
 
 unpack :: V2 a -> (a, a)

@@ -33,3 +33,4 @@ Examples/example[0-9][0-9]
 /.dist-buildwrapper
 /.settings
 /.project
+stack.yaml.lock

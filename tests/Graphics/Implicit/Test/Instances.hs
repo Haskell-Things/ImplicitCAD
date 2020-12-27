@@ -1,39 +1,42 @@
+-- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
+-- Copyright (C) 2014 2015 2016, Julia Longtin (julia.longtin@gmail.com)
+-- Released under the GNU AGPLV3+, see LICENSE
+
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeApplications      #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Test.Instances (observe, (=~=), arbitraryV3) where
 
-import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Bool (True, False), Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
 import Graphics.Implicit
-    ( squareR,
+    ( square,
       emptySpace,
       fullSpace,
       sphere,
-      cubeR,
+      cube,
       cylinder2,
       cylinder,
       circle,
-      polygonR,
-      extrudeR,
+      polygon,
+      extrude,
       rotate3,
       rotate3V,
       rotate )
 
 import Graphics.Implicit.Definitions
-    ( ExtrudeRMScale(..),
+    ( ExtrudeMScale(C1,C2,Fn),
       SymbolicObj2(Shared2),
       SymbolicObj3(Shared3),
       ℝ,
       ℝ2,
       ℝ3,
       SharedObj(Outset, Translate, Scale, UnionR, IntersectR,
-                DifferenceR, Shell) )
+                DifferenceR, Shell, WithRounding) )
 
-import Graphics.Implicit.Primitives ( Object(getImplicit) )
+import Graphics.Implicit.Primitives ( getImplicit )
 
 import QuickSpec ( Observe(observe), (=~=) )
 
@@ -48,35 +51,30 @@ import Test.QuickCheck
       Gen,
       Positive(getPositive) )
 
-import Linear (quadrance, V2(..), V3(..), Quaternion, axisAngle)
-
+import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
 
-
 insidedness :: Double -> Insidedness
 insidedness 0 = Surface
-insidedness x =
-  case x < 0 of
-    True  -> Inside
-    False -> Outside
+insidedness x = if x < 0 then Inside else Outside
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
   shrink = genericShrink
   arbitrary = sized $ \n ->
-    case n <= 1 of
-      False -> oneof $
+    if n <= 1
+    then oneof small
+    else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
-      True -> oneof small
     where
       small =
-        [ circle   <$> arbitrary
-        , squareR  <$> arbitraryPos <*> arbitrary <*> arbitrary
-        , polygonR <$> arbitraryPos <*> do
+        [ circle  <$> arbitrary
+        , square  <$> arbitrary <*> arbitrary
+        , polygon <$> do
             n <- choose (3, 10)
             vectorOf n arbitrary
         , pure fullSpace
@@ -88,20 +86,20 @@ instance Arbitrary SymbolicObj2 where
 instance Arbitrary SymbolicObj3 where
   shrink = genericShrink
   arbitrary = sized $ \n ->
-    case n <= 1 of
-      False -> oneof $
-        [ rotate3  <$> arbitrary    <*> decayArbitrary 2
-        , rotate3V <$> arbitrary    <*> arbitrary        <*> decayArbitrary 2
-        , extrudeR <$> arbitraryPos <*> decayArbitrary 2 <*> arbitraryPos
-        , Shared3 <$> arbitrary
+    if n <= 1
+    then oneof small
+    else oneof $
+        [ rotate3  <$> arbitrary        <*> decayArbitrary 2
+        , rotate3V <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
+        , extrude  <$> decayArbitrary 2 <*> arbitraryPos
+        , Shared3  <$> arbitrary
         ] <> small
-      True -> oneof small
     where
       small =
         [ sphere    <$> arbitraryPos
         , cylinder  <$> arbitraryPos <*> arbitraryPos
         , cylinder2 <$> arbitraryPos <*> arbitraryPos <*> arbitraryPos
-        , cubeR     <$> arbitraryPos <*> arbitrary    <*> arbitraryV3
+        , cube      <$> arbitrary    <*> arbitraryV3
         , pure fullSpace
         , pure emptySpace
         ]
@@ -109,13 +107,14 @@ instance Arbitrary SymbolicObj3 where
 instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj obj vec) where
   shrink = genericShrink
   arbitrary = oneof
-    [ Translate   <$> arbitrary <*> decayArbitrary 2
-    , Scale       <$> arbitrary <*> decayArbitrary 2
-    , UnionR      <$> arbitraryPos <*> decayedList
-    , IntersectR  <$> arbitraryPos <*> decayedList
-    , DifferenceR <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
-    , Shell       <$> arbitraryPos <*> decayArbitrary 2
-    , Outset      <$> arbitraryPos <*> decayArbitrary 2
+    [ Translate    <$> arbitrary    <*> decayArbitrary 2
+    , Scale        <$> arbitrary    <*> decayArbitrary 2
+    , UnionR       <$> arbitraryPos <*> decayedList
+    , IntersectR   <$> arbitraryPos <*> decayedList
+    , DifferenceR  <$> arbitraryPos <*> decayArbitrary 2 <*> decayedList
+    , Shell        <$> arbitraryPos <*> decayArbitrary 2
+    , Outset       <$> arbitraryPos <*> decayArbitrary 2
+    , WithRounding <$> arbitraryPos <*> decayArbitrary 2
     ]
 
 instance Arbitrary ℝ2 where
@@ -133,7 +132,7 @@ instance CoArbitrary ℝ3 where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
 
 
-instance Arbitrary ExtrudeRMScale where
+instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
   arbitrary = oneof
     [ C1 <$> arbitrary
@@ -146,9 +145,9 @@ instance Arbitrary (Quaternion ℝ) where
   arbitrary = do
     q <- arbitrary
     v <- arbitraryV3
-    case quadrance v == 0.0 of
-      True  -> discard
-      False -> pure $ axisAngle v q
+    if v == 0.0
+      then discard
+      else pure $ axisAngle v q
 
 
 ------------------------------------------------------------------------------

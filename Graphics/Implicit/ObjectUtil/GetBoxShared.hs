@@ -4,23 +4,20 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeSynonymInstances   #-}
 
-module Graphics.Implicit.ObjectUtil.GetBoxShared where
+module Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(uniformV, elements, corners), intersectBoxes, emptyBox, pointsBox, unionBoxes, outsetBox, getBoxShared) where
 
 import Prelude (Num, (-), (+), pure, (==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getBox) )
 import Graphics.Implicit.Definitions
-    ( SharedObj(..), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
+    ( SharedObj(Empty, Full, Complement, UnionR, DifferenceR, IntersectR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj, WithRounding), ComponentWiseMultable((⋯*)), ℝ3, ℝ2, ℝ )
 import Graphics.Implicit.MathUtil (infty,  reflect )
-import Linear (Metric, V2(V2))
+import Linear (Metric, V2(V2), V3(V3))
 import Data.Foldable (Foldable(toList))
 import Control.Applicative (Applicative(liftA2))
-import Graphics.Implicit.Definitions (V3(V3))
 
 
 ------------------------------------------------------------------------------
@@ -134,7 +131,7 @@ outsetBox r (a, b) = (a - uniformV r, b + uniformV r)
 -- Get a box around the given object.
 getBoxShared
     :: forall obj f a
-     .  ( Applicative f, Object obj (f a), VectorStuff (f a), Eq (f a), Num (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
+     .  ( Applicative f, Object obj (f a), VectorStuff (f a), Eq (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
     => SharedObj obj (f a)
     -> (f a, f a)
 -- Primitives
@@ -165,5 +162,6 @@ getBoxShared (Shell w symbObj) =
 getBoxShared (Outset d symbObj) =
     outsetBox d $ getBox symbObj
 -- Misc
+getBoxShared (WithRounding _ obj) = getBox obj
 getBoxShared (EmbedBoxedObj (_,box)) = box
 

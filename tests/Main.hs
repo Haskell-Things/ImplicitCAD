@@ -24,6 +24,7 @@ import PropertySpec (propSpec)
 
 import qualified GoldenSpec.Spec as Golden
 import qualified ImplicitSpec as Implicit
+import qualified TesselationSpec as Tesselation
 
 main :: IO ()
 main = hspec $ do
@@ -42,3 +43,5 @@ main = hspec $ do
   describe "property tests" propSpec
 
   Implicit.spec
+  Tesselation.spec
+

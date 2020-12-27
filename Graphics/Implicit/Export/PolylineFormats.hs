@@ -17,11 +17,10 @@ import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue,Svg)
 import Text.Blaze.Internal (stringValue)
 import qualified Text.Blaze.Svg11.Attributes as A (version, width, height, viewbox, points, stroke, strokeWidth, fill)
 
-import Data.List (sortBy)
+import Data.List (sortBy, foldl')
 
 import Data.Foldable (fold, foldMap, traverse_)
 import Linear ( V2(V2) )
-import Data.List (foldl')
 
 default (ℝ)
 
@@ -35,7 +34,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
            where margin = strokeWidth / 2
                  ((xmin', xmax'), (ymin', ymax')) = (maxMinList xs,maxMinList ys)
                  xs, ys :: [ℝ]
-                 (xs,ys) = unzip $ fmap unpack $ foldMap pair plines
+                 (xs,ys) = unzip $ unpack <$> foldMap pair plines
                  pair (Polyline a) = a
                  maxMinList :: [ℝ] -> (ℝ,ℝ)
                  maxMinList (x:others) = foldl (\(l,h) y -> (min l y, max h y)) (x,x) others
@@ -112,7 +111,7 @@ dxf2 plines = toLazyText $ dxf2Header <> dxf2Tables <> dxf2Blocks <> dxf2Entitie
         "  10\n" <> buildTruncFloat x1 <> "\n" <>
         "  20\n" <> buildTruncFloat y1 <> "\n"
       (dxfxmin, dxfxmax, dxfymin, dxfymax) = (minimum xs, maximum xs, minimum ys, maximum ys)
-      (xs, ys) = unzip $ fmap unpack $ foldMap pair plines
+      (xs, ys) = unzip $ unpack <$> foldMap pair plines
       pair :: Polyline -> [ℝ2]
       pair (Polyline x) = x
 
@@ -127,9 +126,9 @@ orderPolylines =
         polylineRadius' :: [Polyline] -> (ℝ2, ℝ2)
         polylineRadius' lines = (maxMinList xs,maxMinList ys)
           where
-            (xs,ys) = unzip $ fmap unpack $ foldMap pair lines
+            (xs,ys) = unzip $ unpack <$> foldMap pair lines
             pair (Polyline a) = a
-            maxMinList :: [ℝ] -> (ℝ2)
+            maxMinList :: [ℝ] -> ℝ2
             maxMinList (x:others) = foldl' (\(V2 l h) y -> V2 (min l y) (max h y)) (V2 x x) others
             maxMinList [] = V2 0 0
 

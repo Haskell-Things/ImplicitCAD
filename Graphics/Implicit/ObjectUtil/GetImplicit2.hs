@@ -10,7 +10,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj2(..), SharedObj (Empty), Obj2, ℝ2, ℝ )
+    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
@@ -36,14 +36,14 @@ scanUniqueCircular
 circularPairs :: [a] -> [(a,a)]
 circularPairs as = zip as $ drop 1 $ cycle as
 
-getImplicit2 :: SymbolicObj2 -> Obj2
+getImplicit2 :: ObjectContext -> SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 (SquareR r (V2 dx dy)) =
-    \(V2 x y) -> rmaximum r [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
-getImplicit2 (Circle r) =
+getImplicit2 ctx (Square (V2 dx dy)) =
+    \(V2 x y) -> rmaximum (objectRounding ctx) [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
+getImplicit2 _ (Circle r) =
     \(V2 x y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
-getImplicit2 (PolygonR _ (scanUniqueCircular -> points@(_:_:_:_))) =
+getImplicit2 _ (Polygon (scanUniqueCircular -> points@(_:_:_:_))) =
     \p -> let
         pairs :: [(ℝ2,ℝ2)]
         pairs =  circularPairs points
@@ -59,12 +59,11 @@ getImplicit2 (PolygonR _ (scanUniqueCircular -> points@(_:_:_:_))) =
         dists = fmap (distFromLineSeg p) pairs
     in
         minimum dists * if isIn then -1 else 1
-getImplicit2 (PolygonR _ _) = getImplicitShared @SymbolicObj2 Empty
+getImplicit2 ctx (Polygon _) = getImplicitShared @SymbolicObj2 ctx Empty
 -- (Rounded) CSG
-getImplicit2 (Rotate2 θ symbObj) =
+getImplicit2 ctx (Rotate2 θ symbObj) =
     \(V2 x y) -> let
-        obj = getImplicit2 symbObj
+        obj = getImplicit2 ctx symbObj
     in
         obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
-getImplicit2 (Shared2 obj) = getImplicitShared obj
-
+getImplicit2 ctx (Shared2 obj) = getImplicitShared ctx obj

@@ -5,17 +5,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, quaternionToEuler, infty) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool(True, False), RealFloat, Ordering, (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
+import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
 import Data.List (sort, sortBy, (!!))
-import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion))
-import Graphics.Implicit.Definitions (V2(V2), V3(V3))
-
+import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion), V2(V2), V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -160,6 +158,18 @@ reflect
     -> f a
 reflect a v = v - (2 * ((v `dot` a) / (a `dot` a))) *^ a
 
+-- | Lift a function over 'V3' into a function over 'ℝ3'.
+alaV3 :: (V3 a -> V3 a) -> (a, a, a) -> (a, a, a)
+alaV3 f = unpackV3 . f . packV3
+{-# INLINABLE alaV3 #-}
+
+packV3 :: (a, a, a) -> V3 a
+packV3 (x, y, z) = V3 x y z
+{-# INLINABLE packV3 #-}
+
+unpackV3 :: V3 a -> (a, a, a)
+unpackV3 (V3 a a2 a3) = (a, a2, a3)
+{-# INLINABLE unpackV3 #-}
 
 -- | Convert a 'Quaternion' to its constituent euler angles.
 --
@@ -171,13 +181,12 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       sinp = 2 * (w * y - z * x);
       siny_cosp = 2 * (w * z + x * y);
       cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = case abs sinp >= 1 of
-                True -> signum sinp * pi / 2
-                False -> asin sinp
+      pitch = if sinp >= 1
+              then signum sinp * pi / 2
+              else asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
    in (roll, pitch, yaw)
-
 
 ------------------------------------------------------------------------------
 -- | Haskell's standard library doesn't make floating-point infinity available
@@ -185,4 +194,3 @@ quaternionToEuler (Quaternion w (V3 x y z))=
 infty :: (Fractional t) => t
 infty = 1/0
 {-# INLINABLE infty #-}
-

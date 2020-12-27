@@ -14,6 +14,15 @@ import Data.Map.Strict (Map)
 import Prelude((<*>), Monoid, pure, mconcat, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
+import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+
+import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
+
+import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
+
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
@@ -68,16 +77,18 @@ import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
 import Linear (_x, _y, _z, _yz, _xz, _xy)
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+import Data.Maybe (fromMaybe)
+import Graphics.Implicit.Primitives (getImplicit)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
 
-
-
-
-getMesh :: ℝ3 -> ℝ3 -> ℝ3 -> Obj3 -> TriangleMesh
-getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
+getMesh :: ℝ3 -> SymbolicObj3 -> TriangleMesh
+getMesh res@(V3 xres yres zres) symObj =
     let
+        -- Grow bounds a little to avoid sampling at exact bounds
+        (obj, (p1@(V3 x1 y1 z1), p2)) = rebound3 (getImplicit symObj, getBox3 symObj)
+
         -- How much space are we rendering?
         d = p2 - p1
 
@@ -203,11 +214,10 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
-
         sqTris :: [TriSquare]
         sqTris = bleck (nx + ny + nz) $ do
           forXYZM (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
-            foldMap (tesselateLoop minres obj) $ getLoops $
+            foldMap (tesselateLoop minres obj) $ fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
                 [        segsXMap M.! V3 xm       ym       zm
                 , mapR $ segsXMap M.! V3 (xm + 1) ym       zm
@@ -222,9 +232,12 @@ getMesh p1@(V3 x1 y1 z1) p2 res@(V3 xres yres zres) obj =
       mergedSquareTris sqTris
 
 -- | getContour gets a polyline describing the edge of a 2D object.
-getContour :: ℝ2 -> ℝ2 -> ℝ2 -> Obj2 -> [Polyline]
-getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
+getContour :: ℝ2 -> SymbolicObj2 -> [Polyline]
+getContour res@(V2 xres yres) symObj =
     let
+        -- Grow bounds a little to avoid sampling at exact bounds
+        (obj, (p1@(V2 x1 y1), p2)) = rebound2 (getImplicit symObj, getBox2 symObj)
+
         -- | The size of the region we're being asked to search.
         d = p2 - p1
 
@@ -234,7 +247,7 @@ getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
         (V2 nx ny) = ceiling `fmap` (d ⋯/ res)
 
         -- | How big are the steps?
-        (V2 rx ry) = d ⋯/ (fromℕtoℝ `fmap` (V2 nx ny))
+        (V2 rx ry) = d ⋯/ (fromℕtoℝ `fmap` V2 nx ny)
 
         -- The points inside of the region.
         pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
@@ -285,9 +298,8 @@ getContour p1@(V2 x1 y1) p2 res@(V2 xres yres) obj =
 expandPolyline :: (ℝ2 -> ℝ3) -> Polyline -> [ℝ3]
 expandPolyline f = fmap f . getPolyline
 
-
 ($*) :: Obj2 -> ℝ -> ℝ -> ℝ
-f $* a = \b -> f (V2 a b)
+f $* a = f . V2 a
 infixr 0 $*
 
 (*$) :: Obj2 -> ℝ -> ℝ -> ℝ
