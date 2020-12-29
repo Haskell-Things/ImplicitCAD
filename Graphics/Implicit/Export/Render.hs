@@ -15,7 +15,6 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 import qualified Data.Vector.Unboxed.V3 as V
 import Prelude
 
-import Control.DeepSeq (force)
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
@@ -97,42 +96,36 @@ getMesh res@(V3 xres yres zres) symObj =
 
         -- How many steps will we take on each axis?
         nx, ny, nz :: Int
-        (V3 nx ny nz) = fmap (ceiling) ( d ⋯/ res)
+        steps@(V3 nx ny nz) = fmap ceiling ( d ⋯/ res)
 
         -- How big are the steps?
-        (V3 rx ry rz) = d ⋯/ (fromIntegral `fmap` V3 nx ny nz)
+        (V3 rx ry rz) = d ⋯/ fmap fromIntegral steps
 
-
+        -- Add @n@ steps of size @dx@ to @x0@
         stepwise :: ℝ -> ℝ -> Int -> ℝ
         stepwise x0 dx n = x0 + dx * fromIntegral n
+        {-# INLINE stepwise #-}
 
+        -- Get a point in space by running @stepwise@ in every dimension
+        stepping :: V3 (Int -> ℝ)
+        stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
 
-        -- | performance tuning.
-        -- FIXME: magic number.
-        forcesteps :: Int
-        forcesteps=32
-
+        -- Memozied samples from @obj@
         sampled :: V.VectorV3 ℝ
-        sampled = V.mkVectorV3 (V3 nx ny nz) $ \(V3 xm ym zm) ->
-           obj $
-              V3
-                (stepwise x1 rx xm)
-                (stepwise y1 ry ym)
-                (stepwise z1 rz zm)
+        sampled = V.mkVectorV3 steps $ \v ->
+           obj $ stepping <*> v
 
+        -- Sample @obj@ by reading the memoized structure
         sample :: V3 Int -> ℝ
         sample v = sampled V.! v
-
-        bleck :: NFData a => Int -> [a] -> [a]
-        bleck n x = x `using` parBuffer (max 1 $ div n forcesteps) rdeepseq
+        {-# INLINE sample #-}
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         mkMidsMap :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
         mkMidsMap l =
-          V.mkVectorV3 (V3 nx ny nz & l -~ 1) $ \v -> do
-            let stepping   = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
-                stepped    = stepping <*> v
-                stepped_up = stepping <*> fmap (+1) v
+          V.mkVectorV3 (steps & l -~ 1) $ \v -> do
+            let stepped    = (stepping <*> v)
+                stepped_up = (stepping <*> (v + 1))
             interpolate
                 (V2 (view l stepped) $ sample v)
                 (V2 (view l stepped_up) $ sample $ v & l +~ 1)
@@ -140,76 +133,60 @@ getMesh res@(V3 xres yres zres) symObj =
                 (view l res)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        -- midsXMap :: Map (V3 Int) ℝ
+        midsXMap, midsYMap, midsZMap :: V.VectorV3 ℝ
         midsXMap = mkMidsMap _x
-
-
-        -- midsYMap :: Map (V3 Int) ℝ
         midsYMap = mkMidsMap _y
-
-
-        -- midsZMap :: Map (V3 Int) ℝ
         midsZMap = mkMidsMap _z
-
-
-        forXYZM :: Monoid m => Int -> Int -> Int -> (Int -> Int -> Int -> m) -> m
-        forXYZM x y z f = fold $ do
-          zm <- [0 .. z]
-          ym <- [0 .. y]
-          xm <- [0 .. x]
-          pure $ f xm ym zm
-
 
         -- (2) Calculate segments for each side
         mkSegsMap
             :: (forall a. Lens' (V3 a) a)
             -> (forall a. Lens' (V3 a) (V2 a))
-           -> Int -> Int -> Int
+           -> V3 Int
             -> [[ℝ3]]
-        mkSegsMap l l' xm ym zm =
-            let stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
-                v = V3 xm ym zm
-                stepped = stepping <*> v
-                stepped_up =  stepping <*> fmap (+1) v
-                mids = V3 midsXMap midsYMap midsZMap
-                (midA) = view (l' . _y) mids
-                (midB) = view (l' . _x) mids
-                x0 = view l stepped
-             in expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) <$>
-                    getSegs
-                      (view l' stepped)
-                      (view l' stepped_up)
-                      (\yz -> obj $ pure 0 & l .~ x0 & l' .~ yz)
-                      ( sample v
-                      , sample $ v & l' . _x +~ 1
-                      , sample $ v & l' . _y +~ 1
-                      , sample $ v & l' +~ 1
-                      )
-                      ( midA V.! v
-                      , midA V.! (v & l' . _x +~ 1)
-                      , midB V.! v
-                      , midB V.! (v & l' . _y +~ 1)
-                      )
+        mkSegsMap l l' =
+          let mids = V3 midsXMap midsYMap midsZMap
+              midA = view (l' . _y) mids
+              midB = view (l' . _x) mids
+           in \v ->
+                 let stepped = stepping <*> v
+                     stepped_up =  stepping <*> (v + 1)
+                     x0 = view l stepped
+                  in expandPolyline (\yz -> 0 & l .~ x0 & l' .~ yz) <$>
+                        getSegs
+                          (view l' stepped)
+                          (view l' stepped_up)
+                          (\yz -> obj $ 0 & l .~ x0 & l' .~ yz)
+                          ( sample v
+                          , sample $ v & l' . _x +~ 1
+                          , sample $ v & l' . _y +~ 1
+                          , sample $ v & l' +~ 1
+                          )
+                          ( midA V.! v
+                          , midA V.! (v & l' . _x +~ 1)
+                          , midB V.! v
+                          , midB V.! (v & l' . _y +~ 1)
+                          )
+        {-# INLINE mkSegsMap #-}
 
-
-
-        -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
+
+        -- (3) & (4) : get and tesselate loops
         sqTris :: [TriSquare]
-        sqTris = force $ bleck (nx + ny + nz) $ do
+        sqTris = parallelize (nx + ny + nz) $ do
           let segsXMap = mkSegsMap _x _yz
               segsYMap = mkSegsMap _y _xz
               segsZMap = mkSegsMap _z _xy
-          forXYZM (nx - 1) (ny - 1) (nz - 1) $ \xm ym zm -> do
+          forXYZM (steps - 1) $ \v -> do
             foldMap (tesselateLoop minres obj) $ fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
-                [        segsXMap xm       ym       zm
-                , mapR $ segsXMap (xm + 1) ym       zm
-                , mapR $ segsYMap xm       ym       zm
-                ,        segsYMap xm       (ym + 1) zm
-                ,        segsZMap xm       ym       zm
-                , mapR $ segsZMap xm       ym       (zm + 1)
+                [        segsXMap v
+                , mapR $ segsXMap (v & _x +~ 1)
+                , mapR $ segsYMap v
+                ,        segsYMap (v & _y +~ 1)
+                ,        segsZMap v
+                , mapR $ segsZMap (v & _z +~ 1)
                 ]
 
     in
@@ -237,11 +214,6 @@ getContour res@(V2 xres yres) symObj =
         -- The points inside of the region.
         pYs = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
         pXs = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
-
-        -- | Performance tuning.
-        -- FIXME: magic number.
-        forcesteps :: Int
-        forcesteps=32
 
         par2DList :: ℕ -> ℕ -> ((ℕ -> ℝ) -> ℕ -> (ℕ -> ℝ) -> ℕ -> ℝ) -> [[ℝ]]
         par2DList lenx leny f =
@@ -280,8 +252,11 @@ getContour res@(V2 xres yres) symObj =
 
 -- utility functions
 
+------------------------------------------------------------------------------
+-- | Run a function lifting every point in a 'Polyline' into R3.
 expandPolyline :: (ℝ2 -> ℝ3) -> Polyline -> [ℝ3]
 expandPolyline f = fmap f . getPolyline
+{-# INLINE expandPolyline #-}
 
 ($*) :: Obj2 -> ℝ -> ℝ -> ℝ
 f $* a = f . V2 a
@@ -293,4 +268,35 @@ infixr 0 *$
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
+{-# INLINE mapR #-}
+
+
+------------------------------------------------------------------------------
+-- | Monoidally combine a value produced at every point in the given space.
+forXYZM
+    :: Monoid m
+    => V3 Int         -- ^ Inclusive bounds
+    -> (V3 Int -> m)  -- ^ Function to produce monoidal values
+    -> m
+forXYZM (V3 x y z) f = fold $ do
+  zm <- [0 .. z]
+  ym <- [0 .. y]
+  xm <- [0 .. x]
+  pure $ f $ V3 xm ym zm
+{-# INLINABLE forXYZM #-}
+{-# SPECIALIZE forXYZM :: V3 Int -> (V3 Int -> [TriSquare]) -> [TriSquare] #-}
+
+
+-- | performance tuning.
+-- FIXME: magic number.
+forcesteps :: Int
+forcesteps = 32
+{-# INLINABLE forcesteps #-}
+
+
+------------------------------------------------------------------------------
+-- | Parallelize a list computation by buffering it with @forcesteps@ sparks.
+parallelize :: NFData a => Int -> [a] -> [a]
+parallelize n x = x `using` parBuffer (max 1 $ div n forcesteps) rdeepseq
+{-# INLINABLE parallelize #-}
 
