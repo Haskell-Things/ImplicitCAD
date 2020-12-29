@@ -15,9 +15,11 @@ spec :: Spec
 spec = describe "VectorV3" $ do
   prop "should give you back what you put in" $
       \(applyFun3 -> f :: Int -> Int -> Int -> Double) -> do
+    -- Pick some bounds
     nx <- choose (0, 20)
     ny <- choose (0, 20)
     nz <- choose (0, 20)
+    -- And then an index within those bounds
     x <- choose (0, nx)
     y <- choose (0, ny)
     z <- choose (0, nz)
@@ -27,5 +29,6 @@ spec = describe "VectorV3" $ do
     pure $
       counterexample (show (V3 nx ny nz)) $
       counterexample (show (V3 x y z)) $
+        -- Make sure the value we get at the index is the same one we stored
         v3 ! ix === f x y z
 
