@@ -1,22 +1,17 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds     #-}
-{-# LANGUAGE ExplicitNamespaces  #-}
 {-# LANGUAGE GADTs               #-}
-{-# LANGUAGE NumDecimals         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
 module ImplicitSpec (spec) where
 
-import Prelude
-import Test.Hspec
-import Graphics.Implicit.Test.Instances (arbitraryV3, (=~=))
 import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
-    (ℝ,  difference,
+    ( difference,
       rotate,
       rotate3,
       rotate3V,
@@ -31,20 +26,14 @@ import Graphics.Implicit
       translate,
       withRounding,
       Object )
-import Graphics.Implicit.Primitives (getImplicit, getBox, rotateQ)
-import Test.QuickCheck hiding (scale)
+import Graphics.Implicit.Primitives (rotateQ)
+import Test.QuickCheck
+    (Testable, property, expectFailure,  Arbitrary(arbitrary),
+      suchThat,
+      forAll)
 import Data.Foldable ( for_ )
-import Test.Hspec.QuickCheck (modifyMaxSuccess, prop)
+import Test.Hspec.QuickCheck (prop)
 import QuickSpec (Observe)
-import Linear (quadrance, dot, normalize, cross,  V3(V3), (^*) )
-import Graphics.Implicit.Export.DiscreteAproxable (DiscreteAproxable(discreteAprox))
-import Graphics.Implicit.Definitions (Triangle(..), TriangleMesh(TriangleMesh))
-import Graphics.Implicit
-import Control.Arrow (Arrow((***)))
-import Data.List (sort, group)
-import Data.Traversable
-import Data.Functor
-import Debug.Trace (traceM)
 import Linear ( V3(V3), (^*) )
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
@@ -313,5 +302,4 @@ homomorphismSpec = describe "homomorphism" $ do
 ------------------------------------------------------------------------------
 -- | Like 'prop', but for tests that are currently expected to fail.
 failingProp :: Testable prop => String -> prop -> SpecWith ()
-failingProp x = it x . expectFailure . property
-
+failingProp x = xit (x <> " (currently failing)") . expectFailure . property
