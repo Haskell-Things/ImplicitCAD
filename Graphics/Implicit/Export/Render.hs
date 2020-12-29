@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -6,19 +7,18 @@
 
 -- Allow us to use the tearser parallel list comprehension syntax, to avoid having to call zip in the complicated comprehensions below.
 {-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE TupleSections #-}
 
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import qualified Data.Map.Strict as M
-import Data.Map.Strict (Map)
+import qualified Data.Vector.Unboxed.V3 as V
 import Prelude
 
 import Control.DeepSeq (force)
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Obj3, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
-import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -78,10 +78,10 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
 import Linear (_x, _y, _z, _yz, _xz, _xy)
-import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
+import Graphics.Implicit.Export.Render.Definitions (TriSquare)
 import Data.Maybe (fromMaybe)
 import Graphics.Implicit.Primitives (getImplicit)
-import qualified Data.Vector.Unboxed as V
+
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -112,58 +112,43 @@ getMesh res@(V3 xres yres zres) symObj =
         forcesteps :: Int
         forcesteps=32
 
-        sampled :: V.Vector ℝ
-        sampled = mkVector nx ny nz $ \xm ym zm ->
+        sampled :: V.VectorV3 ℝ
+        sampled = V.mkVectorV3 (V3 nx ny nz) $ \(V3 xm ym zm) ->
            obj $
               V3
                 (stepwise x1 rx xm)
                 (stepwise y1 ry ym)
                 (stepwise z1 rz zm)
 
-        mkVector :: V.Unbox a => Int -> Int -> Int -> (Int -> Int -> Int -> a) -> V.Vector a
-        mkVector x y z f = V.generate ((x + 1) * (y + 1) * (z + 1)) $ \ix ->
-          let (xm, ym, zm) = unindex x y z ix
-           in f xm ym zm
-        {-# INLINE mkVector #-}
-
-        mkVectorV3 :: V.Unbox a => V3 Int -> (V3 Int -> a) -> V.Vector a
-        mkVectorV3 (V3 x y z) f = mkVector x y z $ \ix iy iz -> f (V3 ix iy iz)
-        {-# INLINE mkVectorV3 #-}
-
-        sample :: Int -> Int -> Int -> ℝ
-        sample = lookupIndex nx ny nz sampled
-
-        sampleV3 :: V3 Int -> ℝ
-        sampleV3 (V3 mx my mz) = sample mx my mz
+        sample :: V3 Int -> ℝ
+        sample v = sampled V.! v
 
         bleck :: NFData a => Int -> [a] -> [a]
         bleck n x = x `using` parBuffer (max 1 $ div n forcesteps) rdeepseq
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        mkMidsMap :: (forall a. Lens' (V3 a) a) -> Map (V3 Int) ℝ
+        mkMidsMap :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
         mkMidsMap l =
-          forXYZMV3 (V3 nx ny nz & l -~ 1) $ \xm ym zm -> do
-            let v = V3 xm ym zm
-                stepping   = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
+          V.mkVectorV3 (V3 nx ny nz & l -~ 1) $ \v -> do
+            let stepping   = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
                 stepped    = stepping <*> v
                 stepped_up = stepping <*> fmap (+1) v
-            M.singleton v $
-              interpolate
-                (V2 (view l stepped) $ sampleV3 v)
-                (V2 (view l stepped_up) $ sampleV3 $ v & l +~ 1)
+            interpolate
+                (V2 (view l stepped) $ sample v)
+                (V2 (view l stepped_up) $ sample $ v & l +~ 1)
                 (\x -> obj $ stepped & l .~ x)
                 (view l res)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsXMap :: Map (V3 Int) ℝ
+        -- midsXMap :: Map (V3 Int) ℝ
         midsXMap = mkMidsMap _x
 
 
-        midsYMap :: Map (V3 Int) ℝ
+        -- midsYMap :: Map (V3 Int) ℝ
         midsYMap = mkMidsMap _y
 
 
-        midsZMap :: Map (V3 Int) ℝ
+        -- midsZMap :: Map (V3 Int) ℝ
         midsZMap = mkMidsMap _z
 
 
@@ -173,9 +158,6 @@ getMesh res@(V3 xres yres zres) symObj =
           ym <- [0 .. y]
           xm <- [0 .. x]
           pure $ f xm ym zm
-
-        forXYZMV3 :: Monoid m => V3 Int -> (Int -> Int -> Int -> m) -> m
-        forXYZMV3 (V3 x y z) f = forXYZM x y z f
 
 
         -- (2) Calculate segments for each side
@@ -190,23 +172,23 @@ getMesh res@(V3 xres yres zres) symObj =
                 stepped = stepping <*> v
                 stepped_up =  stepping <*> fmap (+1) v
                 mids = V3 midsXMap midsYMap midsZMap
-                midA = view (l' . _y) mids
-                midB = view (l' . _x) mids
+                (midA) = view (l' . _y) mids
+                (midB) = view (l' . _x) mids
                 x0 = view l stepped
              in expandPolyline (\yz -> pure 0 & l .~ x0 & l' .~ yz) <$>
                     getSegs
                       (view l' stepped)
                       (view l' stepped_up)
                       (\yz -> obj $ pure 0 & l .~ x0 & l' .~ yz)
-                      ( sampleV3 v
-                      , sampleV3 $ v & l' . _x +~ 1
-                      , sampleV3 $ v & l' . _y +~ 1
-                      , sampleV3 $ v & l' +~ 1
+                      ( sample v
+                      , sample $ v & l' . _x +~ 1
+                      , sample $ v & l' . _y +~ 1
+                      , sample $ v & l' +~ 1
                       )
-                      ( midA M.! v
-                      , midA M.! (v & l' . _x +~ 1)
-                      , midB M.! v
-                      , midB M.! (v & l' . _y +~ 1)
+                      ( midA V.! v
+                      , midA V.! (v & l' . _x +~ 1)
+                      , midB V.! v
+                      , midB V.! (v & l' . _y +~ 1)
                       )
 
 
@@ -311,27 +293,4 @@ infixr 0 *$
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
-
-unindex :: Int -> Int -> Int -> Int -> (Int, Int, Int)
-unindex nx ny _nz ix =
-  let x = ix `mod` nx
-      y = (ix `div` nx) `mod` ny
-      z = ix `div` (nx * ny)
-   in (x, y, z)
-{-# INLINE unindex #-}
-
-bigIndex :: Int -> Int -> Int -> Int -> Int -> Int -> Int
-bigIndex nx ny _nz =
-  let mz = ny * nx
-   in \ix iy iz -> iz * mz + iy * nx + ix
-{-# INLINE bigIndex #-}
-
-lookupIndex :: V.Unbox a => Int -> Int -> Int -> V.Vector a -> Int -> Int -> Int -> a
-lookupIndex nx ny nz v =
-  let ix = bigIndex nx ny nz
-   in \x y z -> v V.! ix x y z
-{-# INLINE lookupIndex #-}
-
-
-
 
