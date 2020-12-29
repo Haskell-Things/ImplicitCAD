@@ -33,7 +33,7 @@ import Data.Tuple (swap)
 -- To construct vectors of ℝs.
 import Linear (V2(V2), V3(V3))
 
--- An operator for vector subtraction.
+-- Operator for vector subtraction, to subtract two points. Used when defining the resolution of a 2d object.
 import Linear.Affine((.-.))
 
 -- Functions and types for dealing with the types used by runOpenscad.
