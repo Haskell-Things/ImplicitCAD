@@ -1,21 +1,25 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
-{-# LANGUAGE RankNTypes   #-}
-{-# LANGUAGE ViewPatterns #-}
+
+{-# LANGUAGE RankNTypes #-}
 
 -- Allow us to use the tearser parallel list comprehension syntax, to avoid having to call zip in the complicated comprehensions below.
 {-# LANGUAGE ParallelListComp #-}
-{-# LANGUAGE TupleSections #-}
 
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import qualified Data.Vector.Unboxed.V3 as V
-import Prelude
+import Prelude (Monoid, pure, mconcat, (<*>), fromIntegral, error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Polyline(..), (⋯/), fromℕtoℝ, fromℕ)
+import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
+import Data.Foldable(fold)
+import Data.Maybe (fromMaybe)
+import qualified Data.Vector.Unboxed.V3 as V
+
+import Graphics.Implicit.Primitives (getImplicit)
+
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, Polyline(getPolyline), (⋯/), fromℕtoℝ, fromℕ)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -25,8 +29,8 @@ import Graphics.Implicit.Export.Symbolic.Rebound3 (rebound3)
 
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
-import Data.Foldable(fold)
-import Linear ( V3(V3), V2(V2) )
+import Graphics.Implicit.Export.Render.Definitions (TriSquare)
+import Linear ( V3(V3), V2(V2), _x, _y, _z, _yz, _xz, _xy)
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -75,11 +79,6 @@ import Control.Parallel.Strategies (NFData, using, rdeepseq, parBuffer)
 
 -- For the 2D case, we need one last thing, cleanLoopsFromSegs:
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
-import Control.Lens (Lens', (-~), view, (.~), (+~), (&))
-import Linear (_x, _y, _z, _yz, _xz, _xy)
-import Graphics.Implicit.Export.Render.Definitions (TriSquare)
-import Data.Maybe (fromMaybe)
-import Graphics.Implicit.Primitives (getImplicit)
 
 
 -- Set the default types for the numbers in this file.
