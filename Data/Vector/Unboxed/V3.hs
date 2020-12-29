@@ -24,6 +24,7 @@ import           Prelude (pure, Int, Double, mod, div, Eq, Ord, Show, Bool(True,
 data VectorV3 a = VectorV3
   { vv3Bounds   :: {-# UNPACK #-} !(V3 Int)
   , vv3Stride   :: {-# UNPACK #-} !Int
+    -- ^ The stride between @V3 x y z@ and @V3 x y (z + 1)@
   , vv3Contents :: !(V.Vector a)
   } deriving (Eq, Ord, Show)
 
@@ -38,6 +39,9 @@ mkVectorV3
     => V3 Int         -- ^ The inclusive bounds of the largest element to be stored in the 'VectorV3''.
     -> (V3 Int -> a)  -- ^ The generation function
     -> VectorV3 a
+-- We add one to the bounds here because vectors are exclusive by default, but
+-- we'd like to be inclusive to support the use case of
+-- 'Graphics.Implicit.Export.Render.getMesh'.
 mkVectorV3 ((+1) -> bounds@(V3 x y z)) f =
   VectorV3 (bounds) (x * y) $
     V.generate (x * y * z) $ \ix ->
@@ -86,8 +90,8 @@ getIndex
       -> Int         -- ^ vector index
 getIndex vv3 =
   let (V3 nx _ _) = vv3Bounds vv3
-      mz = vv3Stride vv3
-   in \(V3 ix iy iz) -> iz * mz + iy * nx + ix
+      stride = vv3Stride vv3
+   in \(V3 ix iy iz) -> iz * stride + iy * nx + ix
 {-# INLINE getIndex #-}
 
 
