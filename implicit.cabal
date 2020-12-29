@@ -108,6 +108,7 @@ Library
                     Graphics.Implicit.MathUtil
                     Graphics.Implicit.ExtOpenScad
                     Graphics.Implicit.ObjectUtil
+                    Data.Vector.Unboxed.V3
                     -- These modules are exposed for the unit tests against the parser interface.
                     Graphics.Implicit.ExtOpenScad.Parser.Statement
                     Graphics.Implicit.ExtOpenScad.Parser.Expr
