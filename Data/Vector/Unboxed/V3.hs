@@ -9,6 +9,7 @@ module Data.Vector.Unboxed.V3
   ( VectorV3 ()
   , mkVectorV3
   , (!)
+  , memoize
   ) where
 
 import qualified Data.Vector.Unboxed as V
@@ -23,7 +24,7 @@ import           Prelude (pure, Int, Double, mod, div, Eq, Ord, Show, Bool(True,
 data VectorV3 a = VectorV3
   { vv3Bounds   :: {-# UNPACK #-} !(V3 Int)
   , vv3Stride   :: {-# UNPACK #-} !Int
-  , vv3Contents :: {-# UNPACK #-} !(V.Vector a)
+  , vv3Contents :: !(V.Vector a)
   } deriving (Eq, Ord, Show)
 
 
@@ -43,6 +44,18 @@ mkVectorV3 ((+1) -> bounds@(V3 x y z)) f =
       f $ unindex (V3 x y z) ix
 {-# INLINE mkVectorV3 #-}
 {-# SPECIALIZE mkVectorV3 :: V3 Int -> (V3 Int -> Double) -> VectorV3 Double #-}
+
+
+------------------------------------------------------------------------------
+-- | Memoize a function by transforming it into a 'VectorV3'-backed lookup.
+--
+-- Provides amortized /O(1)/ lookups to the given function
+memoize :: V.Unbox a => V3 Int -> (V3 Int -> a) -> V3 Int -> a
+memoize bounds f =
+  let vv3 = mkVectorV3 bounds f
+   in \ix -> vv3 ! ix
+{-# INLINE memoize #-}
+{-# SPECIALIZE memoize :: V3 Int -> (V3 Int -> Double) -> V3 Int -> Double #-}
 
 
 ------------------------------------------------------------------------------
