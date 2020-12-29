@@ -1,9 +1,5 @@
-{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns        #-}
-
--- For when DEBUG is enabled
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Data.Vector.Unboxed.V3
   ( VectorV3 ()
@@ -14,7 +10,7 @@ module Data.Vector.Unboxed.V3
 
 import qualified Data.Vector.Unboxed as V
 import           Linear ( V3(V3) )
-import           Prelude (pure, Int, Double, mod, div, Eq, Ord, Show, Bool(True, False), ($), (*), (+), show, error, (>), (<>))
+import           Prelude (Int, Double, mod, div, Eq, Ord, Show, ($), (*), (+))
 
 
 ------------------------------------------------------------------------------
@@ -69,13 +65,7 @@ memoize bounds f =
 (!) :: V.Unbox a => VectorV3 a -> V3 Int -> a
 (!) vv3 =
   let ix = getIndex vv3
-   in \v' ->
-#ifdef DEBUG
-      case ix v' > ix (vv3Bounds vv3) of
-        True -> error $ "out of bounds: " <> show (v', vv3Bounds vv3)
-        False ->
-#endif
-          vv3Contents vv3 V.! ix v'
+   in \v' -> vv3Contents vv3 V.! ix v'
 {-# INLINE (!) #-}
 {-# SPECIALIZE (!) :: VectorV3 Double -> V3 Int -> Double #-}
 
