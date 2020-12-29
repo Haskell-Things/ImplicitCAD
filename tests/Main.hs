@@ -25,6 +25,7 @@ import PropertySpec (propSpec)
 import qualified GoldenSpec.Spec as Golden
 import qualified ImplicitSpec as Implicit
 import qualified TesselationSpec as Tesselation
+import qualified VectorV3Spec as VectorV3
 
 main :: IO ()
 main = hspec $ do
@@ -44,4 +45,5 @@ main = hspec $ do
 
   Implicit.spec
   Tesselation.spec
+  VectorV3.spec
 

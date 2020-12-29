@@ -93,19 +93,3 @@ unindex (V3 nx ny _nz) ix =
    in V3 x y z
 {-# INLINE unindex #-}
 
-
--- test :: Property
--- test = property $ \(Positive (Small nx))
---                    (Positive (Small ny))
---                    (Positive (Small nz))
---                    (applyFun3 -> f :: Int -> Int -> Int -> Int) -> do
---   x <- choose (0, nx)
---   y <- choose (0, ny)
---   z <- choose (0, nz)
-
---   let ix = V3 x y z
---       v3 = mkVectorV3 (V3 nx ny nz) $ \(V3 a b c) -> f a b c
---   pure $
---     counterexample (show (V3 x y z)) $
---       (!) v3 ix === f x y z
-

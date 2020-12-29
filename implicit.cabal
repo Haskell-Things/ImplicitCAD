@@ -245,6 +245,7 @@ Test-suite test-implicit
                   Graphics.Implicit.Test.Utils
                   ImplicitSpec
                   TesselationSpec
+                  VectorV3Spec
 
 Benchmark parser-bench
     Import: binstuff
