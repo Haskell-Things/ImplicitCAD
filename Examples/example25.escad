@@ -1,0 +1,8 @@
+// example25.escad -- mirroring
+
+union() {
+  cube(4);
+  mirror([1, 0, 0]) translate([2, 2, 0]) cube(1);
+  mirror([0, 1, 0]) translate([2, 2, 0]) cube(2);
+  mirror([1, 1, 0]) cube(3);
+}

@@ -30,7 +30,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
-import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeM, rotateExtrude, shell, pack3, pack2)
+import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2)
 
 import Control.Monad (when, mplus)
 
@@ -67,6 +67,7 @@ primitiveModules =
   , onModIze shell [([("w", noDefault)], requiredSuite)]
   , onModIze pack [([("size", noDefault), ("sep", noDefault)], requiredSuite)]
   , onModIze unit [([("unit", noDefault)], requiredSuite)]
+  , onModIze mirror [([("x", noDefault), ("y", noDefault), ("z", noDefault)], requiredSuite), ([("v", noDefault)], requiredSuite)]
   ]
   where
     hasDefault = True
@@ -564,6 +565,29 @@ unit = moduleWithSuite "unit" $ \sourcePosition children -> do
         Just r  ->
             pure $ objMap (Prim.scale (pure r)) (Prim.scale (pure r)) children
 
+mirror :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+mirror = moduleWithSuite "mirror" $ \_ children -> do
+    example "mirror ([1,0,0]) cube(3);"
+    example "mirror (v = [1,1,1]) cube(5);"
+    (V3 x y z) <-
+        do
+            x :: ℝ <- argument "x"
+                `doc` "x component of a mirror plane tangent vector";
+            y :: ℝ <- argument "y"
+                `doc` "y component of a mirror plane tangent vector";
+            z :: ℝ <- argument "z"
+                `doc` "z component of a mirror plane tangent vector"
+                `defaultTo` 0;
+            pure (V3 x y z);
+        <|> do
+            v :: Either ℝ (Either ℝ2 ℝ3) <- argument "v"
+                `doc` "mirror plane tangent vector"
+            pure $ case v of
+                Left          x       -> V3 x 0 0
+                Right (Left  (V2 x y)  ) -> V3 x y 0
+                Right (Right (V3 x y z)) -> V3 x y z
+    pure $ pure $
+        objMap (Prim.mirror (V2 x y)) (Prim.mirror (V3 x y z)) children
 
 ---------------
 
