@@ -115,8 +115,8 @@ getMesh res@(V3 xres yres zres) symObj =
         {-# NOINLINE sample #-}  -- don't inline it, or we lose our memoization
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        mkMidsMap :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
-        mkMidsMap l =
+        mkMids :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
+        mkMids l =
           V.mkVectorV3 (steps & l -~ 1) $ \v -> do
             let stepped    = (stepping <*> v)
                 stepped_up = (stepping <*> (v + 1))
@@ -127,19 +127,19 @@ getMesh res@(V3 xres yres zres) symObj =
                 (view l res)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
-        midsXMap, midsYMap, midsZMap :: V.VectorV3 ℝ
-        midsXMap = mkMidsMap _x
-        midsYMap = mkMidsMap _y
-        midsZMap = mkMidsMap _z
+        midsX, midsY, midsZ :: V.VectorV3 ℝ
+        midsX = mkMids _x
+        midsY = mkMids _y
+        midsZ = mkMids _z
 
         -- (2) Calculate segments for each side
-        mkSegsMap
+        mkSegs
             :: (forall a. Lens' (V3 a) a)
             -> (forall a. Lens' (V3 a) (V2 a))
            -> V3 Int
             -> [[ℝ3]]
-        mkSegsMap l l' =
-          let mids = V3 midsXMap midsYMap midsZMap
+        mkSegs l l' =
+          let mids = V3 midsX midsY midsZ
               midA = view (l' . _y) mids
               midB = view (l' . _x) mids
            in \v ->
@@ -161,7 +161,7 @@ getMesh res@(V3 xres yres zres) symObj =
                           , midB V.! v
                           , midB V.! (v & l' . _y +~ 1)
                           )
-        {-# INLINE mkSegsMap #-}
+        {-# INLINE mkSegs #-}
 
         -- FIXME: hack.
         minres = xres `min` yres `min` zres
@@ -169,18 +169,18 @@ getMesh res@(V3 xres yres zres) symObj =
         -- (3) & (4) : get and tesselate loops
         sqTris :: [TriSquare]
         sqTris = parallelize (nx + ny + nz) $ do
-          let segsXMap = mkSegsMap _x _yz
-              segsYMap = mkSegsMap _y _xz
-              segsZMap = mkSegsMap _z _xy
+          let segsX = mkSegs _x _yz
+              segsY = mkSegs _y _xz
+              segsZ = mkSegs _z _xy
           forXYZM (steps - 1) $ \v -> do
             foldMap (tesselateLoop minres obj) $ fromMaybe (error "unclosed loop in paths given") $ getLoops $
               mconcat
-                [        segsXMap v
-                , mapR $ segsXMap (v & _x +~ 1)
-                , mapR $ segsYMap v
-                ,        segsYMap (v & _y +~ 1)
-                ,        segsZMap v
-                , mapR $ segsZMap (v & _z +~ 1)
+                [        segsX v
+                , mapR $ segsX (v & _x +~ 1)
+                , mapR $ segsY v
+                ,        segsY (v & _y +~ 1)
+                ,        segsZ v
+                , mapR $ segsZ (v & _z +~ 1)
                 ]
 
     in
