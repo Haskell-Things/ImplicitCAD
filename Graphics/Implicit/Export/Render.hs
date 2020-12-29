@@ -118,8 +118,8 @@ getMesh res@(V3 xres yres zres) symObj =
         mkMids :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
         mkMids l =
           V.mkVectorV3 (steps & l -~ 1) $ \v -> do
-            let stepped    = (stepping <*> v)
-                stepped_up = (stepping <*> (v + 1))
+            let stepped    = stepping <*> v
+                stepped_up = stepping <*> (v + 1)
             interpolate
                 (V2 (view l stepped) $ sample v)
                 (V2 (view l stepped_up) $ sample $ v & l +~ 1)
@@ -135,18 +135,33 @@ getMesh res@(V3 xres yres zres) symObj =
         -- (2) Calculate segments for each side
         mkSegs
             :: (forall a. Lens' (V3 a) a)
+               -- ^ A lens towards the dimension we're building segments for
             -> (forall a. Lens' (V3 a) (V2 a))
+               -- ^ A lens selecting the other two dimensions, in lexographical
+               -- order --- that is, use @_xy@ instead of @_yx@.
            -> V3 Int
             -> [[ℝ3]]
         mkSegs l l' =
           let mids = V3 midsX midsY midsZ
-              midA = view (l' . _y) mids
+              midA = view (l' . _y) mids  -- '_y' here refers to the second
+                                          -- component of the 'V2' selected by
+                                          -- @l'@ --- which is to say, it
+                                          -- selects the Z dimension when
+                                          -- @l' = _xz@
               midB = view (l' . _x) mids
            in \v ->
-                 let stepped = stepping <*> v
-                     stepped_up =  stepping <*> (v + 1)
+                 let
+                     -- the position in space for index @v@
+                     stepped    = stepping <*> v
+                     -- the next position in space, stepwise
+                     stepped_up = stepping <*> (v + 1)
                      x0 = view l stepped
-                  in expandPolyline (\yz -> 0 & l .~ x0 & l' .~ yz) <$>
+
+                     -- | Transform a vector in R2 into one in R3 by setting
+                     -- its @l@-focused dimension to @x0@.
+                     injectDimension :: ℝ2 -> ℝ3
+                     injectDimension yz = 0 & l .~ x0 & l' .~ yz
+                  in expandPolyline injectDimension <$>
                         getSegs
                           (view l' stepped)
                           (view l' stepped_up)
