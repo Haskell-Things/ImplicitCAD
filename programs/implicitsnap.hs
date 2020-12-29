@@ -20,17 +20,17 @@ import Snap.Core (Snap, route, writeText, writeBS, method, Method(GET), modifyRe
 import Snap.Http.Server (quickHttpServe)
 import Snap.Util.GZip (withCompression)
 
--- Our Extended OpenScad interpreter, and the extrudeR function for making 2D objects 3D.
-import Graphics.Implicit (runOpenscad, extrudeR)
+-- Our Extended OpenScad interpreter, and the extrude function for making 2D objects 3D.
+import Graphics.Implicit (runOpenscad, extrude, unionR)
 
 -- Variable access functionality, so we can look up a requested resolution, along with message processing, and options into the scad engine.
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, Message(Message), MessageType(TextOut), ScadOpts(ScadOpts))
 
--- Functions for finding a box around an object, so we can define the area we need to raytrace inside of.
-import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
+-- determine the size of boxes, so we can automagically create a resolution.
+import Graphics.Implicit.Primitives (Object(getBox))
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2(UnionR2), SymbolicObj3(UnionR3), ℝ, Polyline, TriangleMesh)
+import Graphics.Implicit.Definitions (ℝ, Polyline, TriangleMesh, SymbolicObj2, SymbolicObj3)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
@@ -40,8 +40,8 @@ import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
 
 import Graphics.Implicit.Export.PolylineFormats (svg, dxf2, hacklabLaserGCode)
 
--- Operator to subtract two points. Used when defining the resolution of a 2d object.
-import Data.AffineSpace ((.-.))
+-- Operator for vector subtraction, to subtract two points. Used when defining the resolution of a 2d object.
+import Linear.Affine((.-.))
 
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
@@ -58,6 +58,9 @@ import Data.Text (Text, pack)
 import Data.Text.Lazy as TL (toStrict)
 import Data.Text.Encoding (encodeUtf8)
 import Data.Aeson (encode)
+
+-- To construct vectors of ℝs.
+import Linear (V2(V2), V3(V3))
 
 -- | The entry point. uses snap to serve a website.
 main :: IO ()
@@ -97,8 +100,8 @@ getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
 --   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
-        ((x1,y1,z1),(x2,y2,z2)) = getBox3 (UnionR3 0 (obj:objs))
-        (x,y,z) = (x2-x1, y2-y1, z2-z1)
+        (V3 x1 y1 z1, V3 x2 y2 z2) = getBox (unionR 0 (obj:objs))
+        (V3 x y z) = V3 (x2-x1) (y2-y1) (z2-z1)
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
@@ -106,8 +109,8 @@ getRes (vars, _, obj:objs, _) =
 --   FIXME: magic numbers.
 getRes (vars, obj:objs, _, _) =
     let
-        (p1,p2) = getBox2 (UnionR2 0 (obj:objs))
-        (x,y) = p2 .-. p1
+        (p1,p2) = getBox (unionR 0 (obj:objs))
+        (V2 x y) = p2 .-. p1
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y) / 30)
@@ -118,9 +121,9 @@ getRes _ = 1
 --   FIXME: shouldn't this get the diagonal across the box?
 getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
 getWidth (_,     _, obj:objs, _) = maximum [x2-x1, y2-y1, z2-z1]
-    where ((x1,y1,z1),(x2,y2,z2)) = getBox3 $ UnionR3 0 (obj:objs)
+    where (V3 x1 y1 z1, V3 x2 y2 z2) = getBox $ unionR 0 (obj:objs)
 getWidth (_, obj:objs,     _, _) = max (x2-x1) (y2-y1)
-    where ((x1,y1),(x2,y2)) = getBox2 $ UnionR2 0 (obj:objs)
+    where (V2 x1 y1, V2 x2 y2) = getBox $ unionR 0 (obj:objs)
 getWidth (_,    [],    [], _) = 0
 
 getOutputHandler2 :: ByteString -> [Polyline] -> Text
@@ -186,7 +189,7 @@ executeAndExport content callback maybeFormat =
         ([], obj:objs, _    ) -> do
           let target           = if null objs
                                  then obj
-                                 else UnionR3 0 (obj:objs)
+                                 else unionR 0 (obj:objs)
               unionWarning :: Text
               unionWarning     = if null objs
                                  then ""
@@ -199,12 +202,12 @@ executeAndExport content callback maybeFormat =
         (obj:objs, []   , _) -> do
           let target          = if null objs
                                 then obj
-                                else UnionR2 0 (obj:objs)
+                                else unionR 0 (obj:objs)
               unionWarning :: Text
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrudeR 0 target res
+              output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
               output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)
