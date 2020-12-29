@@ -109,15 +109,10 @@ getMesh res@(V3 xres yres zres) symObj =
         stepping :: V3 (Int -> ℝ)
         stepping = V3 (stepwise x1 rx) (stepwise y1 ry) (stepwise z1 rz)
 
-        -- Memozied samples from @obj@
-        sampled :: V.VectorV3 ℝ
-        sampled = V.mkVectorV3 steps $ \v ->
-           obj $ stepping <*> v
-
-        -- Sample @obj@ by reading the memoized structure
+        -- Memoized access to @obj@
         sample :: V3 Int -> ℝ
-        sample v = sampled V.! v
-        {-# INLINE sample #-}
+        sample = V.memoize steps $ \v -> obj $ stepping <*> v
+        {-# NOINLINE sample #-}  -- don't inline it, or we lose our memoization
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         mkMidsMap :: (forall a. Lens' (V3 a) a) -> V.VectorV3 ℝ
