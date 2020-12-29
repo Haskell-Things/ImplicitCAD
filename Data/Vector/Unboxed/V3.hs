@@ -85,7 +85,7 @@ memoize bounds f =
 --
 -- /O(1)/
 getIndex
-      :: VectorV3 a  -- ^ bounds
+      :: VectorV3 a
       -> V3 Int      -- ^ v3 index
       -> Int         -- ^ vector index
 getIndex vv3 =
