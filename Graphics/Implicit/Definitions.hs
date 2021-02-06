@@ -27,6 +27,8 @@ module Graphics.Implicit.Definitions (
     Triangle(Triangle),
     NormedTriangle(NormedTriangle),
     TriangleMesh(TriangleMesh),
+    AnnotatedTriangleMesh(AnnotatedTriangleMesh, unAnnotatedTriangleMesh),
+    TriangleProvenance(..),
     NormedTriangleMesh(NormedTriangleMesh),
     Obj2,
     Obj3,
@@ -64,12 +66,13 @@ module Graphics.Implicit.Definitions (
     toScaleFn,
     isScaleID,
     quaternionToEuler,
+    removeTriangleMeshAnnotations,
     )
 where
 
 import GHC.Generics (Generic)
 
-import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, map, fst, Int, seq)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -162,6 +165,18 @@ newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
 newtype TriangleMesh = TriangleMesh [Triangle]
 
+newtype AnnotatedTriangleMesh a = AnnotatedTriangleMesh { unAnnotatedTriangleMesh :: [(Triangle, a)] }
+
+removeTriangleMeshAnnotations :: AnnotatedTriangleMesh a -> TriangleMesh
+removeTriangleMeshAnnotations (AnnotatedTriangleMesh l) = TriangleMesh $ map fst l
+
+data TriangleProvenance
+   = TriangleProvenance_SquareToTri Bool TriangleProvenance
+   | TriangleProvenance_JoinXAligned TriangleProvenance TriangleProvenance
+   | TriangleProvenance_JoinYAligned TriangleProvenance TriangleProvenance
+   | TriangleProvenance_TesselateLoop Int
+   deriving (Show, Eq, Ord)
+
 -- | A normed triangle mesh is a mesh of normed triangles.
 newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
 
@@ -173,6 +188,15 @@ instance NFData Triangle where
 
 instance NFData TriangleMesh where
   rnf (TriangleMesh xs) = rnf xs
+
+instance NFData a => NFData (AnnotatedTriangleMesh a) where
+  rnf (AnnotatedTriangleMesh xs) = rnf xs
+
+instance NFData TriangleProvenance where
+  rnf (TriangleProvenance_SquareToTri b p) = rnf b `seq` rnf p
+  rnf (TriangleProvenance_JoinXAligned a b) = rnf a `seq` rnf b
+  rnf (TriangleProvenance_JoinYAligned a b) = rnf a `seq` rnf b
+  rnf (TriangleProvenance_TesselateLoop n) = rnf n
 
 instance NFData Polytri where
   rnf (Polytri (a,b,c)) = rnf (a,b,c)
