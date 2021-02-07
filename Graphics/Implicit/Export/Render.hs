@@ -6,11 +6,11 @@
 {-# LANGUAGE ParallelListComp #-}
 
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
-module Graphics.Implicit.Export.Render (getMesh, getContour) where
+module Graphics.Implicit.Export.Render (getMesh, getAnnotatedMesh, getContour) where
 
 import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ, AnnotatedTriangleMesh, removeTriangleMeshAnnotations, TriangleProvenance(..))
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -20,6 +20,8 @@ import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 import Data.Foldable(fold)
 import Linear ( V3(V3), V2(V2) )
+
+import GHC.Stack
 
 -- Here's the plan for rendering a cube (the 2D case is trivial):
 
@@ -75,7 +77,10 @@ import Graphics.Implicit.Primitives (getImplicit)
 default (ℕ, Fastℕ, ℝ)
 
 getMesh :: ℝ3 -> SymbolicObj3 -> TriangleMesh
-getMesh res@(V3 xres yres zres) symObj =
+getMesh res symObj = removeTriangleMeshAnnotations $ getAnnotatedMesh res symObj
+
+getAnnotatedMesh :: ℝ3 -> SymbolicObj3 -> AnnotatedTriangleMesh TriangleProvenance
+getAnnotatedMesh res@(V3 xres yres zres) symObj =
     let
         -- Grow bounds a little to avoid sampling at exact bounds
         (obj, (p1@(V3 x1 y1 z1), p2)) = rebound3 (getImplicit symObj, getBox3 symObj)
