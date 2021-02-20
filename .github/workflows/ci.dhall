@@ -1,4 +1,4 @@
-let haskellCi = https://raw.githubusercontent.com/vmchale/github-actions-dhall/master/haskell-ci.dhall
+let haskellCi = https://raw.githubusercontent.com/sorki/github-actions-dhall/pending/haskell-ci.dhall
 
 in    haskellCi.generalCi
         haskellCi.matrixSteps

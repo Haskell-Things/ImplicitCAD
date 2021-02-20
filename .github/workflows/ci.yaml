@@ -4,7 +4,7 @@ jobs:
     steps:
       - uses: "actions/checkout@v1"
       - id: setup-haskell-cabal
-        uses: "actions/setup-haskell@v1.1"
+        uses: "actions/setup-haskell@v1.1.4"
         with:
           cabal-version: "${{ matrix.cabal }}"
           enable-stack: false
@@ -20,7 +20,7 @@ jobs:
       - name: build
         run: cabal build --enable-tests --enable-benchmarks
       - name: test
-        run: cabal test 
+        run: cabal test --enable-tests
       - name: haddock
         run: cabal haddock 
     strategy:
