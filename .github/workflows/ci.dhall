@@ -4,8 +4,9 @@ in    haskellCi.generalCi
         haskellCi.matrixSteps
         ( Some
             { ghc =
-              [ haskellCi.GHC.GHC8101
-              , haskellCi.GHC.GHC883
+              [ haskellCi.GHC.GHC8104
+              , haskellCi.GHC.GHC901
+              , haskellCi.GHC.GHC884
               , haskellCi.GHC.GHC865
               ]
             , cabal = [ haskellCi.Cabal.Cabal32 ]

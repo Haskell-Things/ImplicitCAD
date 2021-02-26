@@ -4,7 +4,7 @@ jobs:
     steps:
       - uses: "actions/checkout@v1"
       - id: setup-haskell-cabal
-        uses: "actions/setup-haskell@v1.1.4"
+        uses: "haskell/actions/setup@v1.2"
         with:
           cabal-version: "${{ matrix.cabal }}"
           enable-stack: false
@@ -28,8 +28,9 @@ jobs:
         cabal:
           - '3.2'
         ghc:
-          - '8.10.1'
-          - '8.8.3'
+          - '8.10.4'
+          - '9.0.1'
+          - '8.8.4'
           - '8.6.5'
 name: Haskell CI
 on:
