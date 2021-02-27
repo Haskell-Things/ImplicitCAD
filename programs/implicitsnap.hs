@@ -126,11 +126,21 @@ getWidth (_, obj:objs,     _, _) = max (x2-x1) (y2-y1)
     where (V2 x1 y1, V2 x2 y2) = getBox $ unionR 0 (obj:objs)
 getWidth (_,    [],    [], _) = 0
 
+formatIs2D :: Maybe ByteString -> Bool
+formatIs2D (Just "SVG") = True
+formatIs2D (Just "gcode/hacklab-laser") = True
+formatIs2D _ = False
+
 getOutputHandler2 :: ByteString -> [Polyline] -> Text
 getOutputHandler2 name
   | name == "SVG"                   = TL.toStrict.svg
   | name == "gcode/hacklab-laser"   = TL.toStrict.hacklabLaserGCode
   | otherwise                       = TL.toStrict.dxf2
+
+formatIs3D :: Maybe ByteString -> Bool
+formatIs3D (Just "STL") = True
+formatIs3D (Just "OBJ") = True
+formatIs3D _ = False
 
 -- FIXME: OBJ support
 getOutputHandler3 :: ByteString -> TriangleMesh -> Text
@@ -175,17 +185,16 @@ executeAndExport content callback maybeFormat =
       let
         res = getRes   s
         w   = getWidth s
-        resError :: Text
-        resError = "Unreasonable resolution requested: "
-                   <> "the server imps revolt! "
-                   <> "(Install ImplicitCAD locally -- github.com/colah/ImplicitCAD/)"
+        emptyObject :: Text
+        emptyObject = "Empty Object?"
+                      <> " (No geometry generated -- whatever you did, the engine can make no sense of it)"
         render = res > 0
         scadMessages = pack $ intercalate "\n"
                        (fmap show (filter (not . isTextOut) messages) <>
                         fmap show (filter isTextOut messages))
 
       return $ case (obj2s, obj3s, render) of
-        (_ ,        _, False) -> callbackF False False 1 resError
+        (_ ,        _, False) -> callbackF False False 1 emptyObject
         ([], obj:objs, _    ) -> do
           let target           = if null objs
                                  then obj
@@ -198,7 +207,9 @@ executeAndExport content callback maybeFormat =
               output3d         = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True False w (scadMessages <> unionWarning)
-            else callbackS output3d (scadMessages <> unionWarning)
+            else if formatIs3D maybeFormat
+                 then callbackS output3d (scadMessages <> unionWarning)
+                 else callbackF False False 1 "Unable to render a 3D object into a 2D file."
         (obj:objs, []   , _) -> do
           let target          = if null objs
                                 then obj
@@ -211,7 +222,9 @@ executeAndExport content callback maybeFormat =
               output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)
-            else callbackS output2d (scadMessages <> unionWarning)
+            else if formatIs2D maybeFormat
+                 then callbackS output2d (scadMessages <> unionWarning)
+                 else callbackS output3d (scadMessages <> unionWarning)
         ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
         _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"
 
