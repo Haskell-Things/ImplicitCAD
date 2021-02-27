@@ -36,7 +36,7 @@ import Graphics.Implicit.Definitions (ℝ, Polyline, TriangleMesh, SymbolicObj2,
 import Data.Maybe (fromMaybe, maybe)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
---import Graphics.Implicit.Export.NormedTriangleMeshFormats (obj)
+import Graphics.Implicit.Export.NormedTriangleMeshFormats as NTM (obj)
 
 import Graphics.Implicit.Export.PolylineFormats (svg, dxf2, hacklabLaserGCode)
 
@@ -135,7 +135,8 @@ getOutputHandler2 :: ByteString -> [Polyline] -> Text
 getOutputHandler2 name
   | name == "SVG"                   = TL.toStrict.svg
   | name == "gcode/hacklab-laser"   = TL.toStrict.hacklabLaserGCode
-  | otherwise                       = TL.toStrict.dxf2
+  | name == "DXF"                   = TL.toStrict.dxf2
+  | otherwise                       = TL.toStrict.svg
 
 formatIs3D :: Maybe ByteString -> Bool
 formatIs3D (Just "STL") = True
@@ -146,6 +147,7 @@ formatIs3D _ = False
 getOutputHandler3 :: ByteString -> TriangleMesh -> Text
 getOutputHandler3 name
   | name == "STL"                   = TL.toStrict.stl
+  | name == "OBJ"                   = TL.toStrict.NTM.obj
   | otherwise                       = TL.toStrict.jsTHREE
 
 isTextOut :: Message -> Bool
