@@ -6,7 +6,7 @@ module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
 import Prelude((+), foldMap, (<>), ($), fmap, concat, (.), (==), compare, error, otherwise, concatMap)
 
-import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh), Triangle(Triangle))
+import Graphics.Implicit.Definitions (TriangleMesh(TriangleMesh, getTriangles), Triangle(Triangle))
 
 import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq))
 import Linear ( V2(V2), (*^), (^*) )
@@ -64,12 +64,10 @@ mergedSquareTris sqTris =
         -- the list of triangles we give back. So, the triangles coming from
         -- triangles...
         triTriangles :: [Triangle]
-        triTriangles = [tri | Tris tris <- sqTris, tri <- unmesh tris ]
+        triTriangles = [tri | Tris tris <- sqTris, tri <- getTriangles tris ]
         -- We actually want to work on the quads, so we find those
         squaresFromTris :: [TriSquare]
         squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]
-
-        unmesh (TriangleMesh m) = m
 
         -- Collect squares that are on the same plane.
         planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squaresFromTris
@@ -136,7 +134,5 @@ squareToTri (Sq (b1,b2,b3) z (V2 x1 x2) (V2 y1 y2)) =
         d = zV + x2V + y2V
     in
         [Triangle (a,b,c), Triangle (c,b,d)]
-squareToTri (Tris t) = unmesh t
-  where
-    unmesh (TriangleMesh a) = a
+squareToTri (Tris t) = getTriangles t
 

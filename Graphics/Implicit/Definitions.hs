@@ -22,12 +22,12 @@ module Graphics.Implicit.Definitions (
     ComponentWiseMultable,
     (⋯*),
     (⋯/),
-    Polyline(Polyline),
+    Polyline(Polyline, getSegments),
     Polytri(Polytri),
     Triangle(Triangle),
     NormedTriangle(NormedTriangle),
-    TriangleMesh(TriangleMesh),
-    NormedTriangleMesh(NormedTriangleMesh),
+    TriangleMesh(TriangleMesh, getTriangles),
+    NormedTriangleMesh(NormedTriangleMesh, getNormedTriangles),
     Obj2,
     Obj3,
     Box2,
@@ -147,7 +147,8 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-newtype Polyline = Polyline [ℝ2]
+-- FIXME: May not be empty.
+newtype Polyline = Polyline { getSegments :: [ℝ2] }
 
 -- | A triangle in 2D space (a,b,c).
 newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
@@ -160,10 +161,10 @@ newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
 newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3))
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
-newtype TriangleMesh = TriangleMesh [Triangle]
+newtype TriangleMesh = TriangleMesh { getTriangles :: [Triangle] }
 
 -- | A normed triangle mesh is a mesh of normed triangles.
-newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
+newtype NormedTriangleMesh = NormedTriangleMesh { getNormedTriangles :: [NormedTriangle] }
 
 instance NFData NormedTriangle where
   rnf (NormedTriangle ((a, na), (b, nb), (c, nc))) = rnf ((a, na), (b, nb), (c, nc))

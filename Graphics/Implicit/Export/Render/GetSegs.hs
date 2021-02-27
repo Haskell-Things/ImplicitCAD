@@ -2,7 +2,6 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- TODO(sandy): i might have swapped (^+^) for - here
 module Graphics.Implicit.Export.Render.GetSegs (getSegs) where
 
 import Prelude((-), Bool(True, False), sqrt, (+), (*), (/=), map, (.), filter, ($), (<=))
@@ -46,11 +45,11 @@ import Linear (V2(V2))
                (midy2V, y2)
                  = midy2
 
-               ......*.....
-               :          :
- (x1, midx1V)  *          *  (x2, midx2V)
-   = midx1     :          :     = midx2
-               :....*.....:
+               ......*......
+               :           :
+ (x1, midx1V)  *           *  (x2, midx2V)
+   = midx1     :           :     = midx2
+               :.....*.....:
 
                (midy1V, y1)
                  = midy1
@@ -62,6 +61,7 @@ getSegs p1@(V2 x y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V
         -- Let's evaluate obj at a few points...
         c = obj (centroid [p1,p2])
 
+        -- TODO(sandy): i might have swapped (^+^) for - here
         (V2 dx dy) = p2 - p1
         res = sqrt (dx*dy)
 
