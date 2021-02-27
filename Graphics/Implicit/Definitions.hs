@@ -27,7 +27,7 @@ module Graphics.Implicit.Definitions (
     Triangle(Triangle),
     NormedTriangle(NormedTriangle),
     TriangleMesh(TriangleMesh, getTriangles),
-    NormedTriangleMesh(NormedTriangleMesh),
+    NormedTriangleMesh(NormedTriangleMesh, getNormedTriangles),
     Obj2,
     Obj3,
     Box2,
@@ -164,7 +164,7 @@ newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3
 newtype TriangleMesh = TriangleMesh { getTriangles :: [Triangle] }
 
 -- | A normed triangle mesh is a mesh of normed triangles.
-newtype NormedTriangleMesh = NormedTriangleMesh [NormedTriangle]
+newtype NormedTriangleMesh = NormedTriangleMesh { getNormedTriangles :: [NormedTriangle] }
 
 instance NFData NormedTriangle where
   rnf (NormedTriangle ((a, na), (b, nb), (c, nc))) = rnf ((a, na), (b, nb), (c, nc))
