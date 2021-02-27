@@ -22,7 +22,7 @@ module Graphics.Implicit.Definitions (
     ComponentWiseMultable,
     (⋯*),
     (⋯/),
-    Polyline(Polyline),
+    Polyline(Polyline, getPolyline),
     Polytri(Polytri),
     Triangle(Triangle),
     NormedTriangle(NormedTriangle),
@@ -147,7 +147,8 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
-newtype Polyline = Polyline [ℝ2]
+-- FIXME: May not be empty.
+newtype Polyline = Polyline { getPolyline :: [ℝ2] }
 
 -- | A triangle in 2D space (a,b,c).
 newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)

@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(Polyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getPolyline), (⋯/), fromℕtoℝ, fromℕ)
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -253,17 +253,22 @@ getContour res@(V2 xres yres) symObj =
 -- utility functions
 
 injX :: ℝ -> Polyline -> [ℝ3]
-injX a (Polyline xs) = fmap (prepend a) xs
-prepend :: ℝ -> ℝ2 -> ℝ3
-prepend a (V2 b c) = V3 a b c
+injX val pline = (prepend val) <$> getPolyline pline
+  where
+    prepend :: ℝ -> ℝ2 -> ℝ3
+    prepend a (V2 b c) = V3 a b c
+
 injY :: ℝ -> Polyline -> [ℝ3]
-injY a (Polyline xs) = fmap (insert a) xs
-insert :: ℝ -> ℝ2 -> ℝ3
-insert b (V2 a c) = V3 a b c
+injY val pline = (insert val)  <$> getPolyline pline
+  where
+    insert :: ℝ -> ℝ2 -> ℝ3
+    insert b (V2 a c) = V3 a b c
+
 injZ :: ℝ -> Polyline -> [ℝ3]
-injZ a (Polyline xs) = fmap (postfix a) xs
-postfix :: ℝ -> ℝ2 -> ℝ3
-postfix c (V2 a b) = V3 a b c
+injZ val pline = (postfix val) <$> getPolyline pline
+  where
+    postfix :: ℝ -> ℝ2 -> ℝ3
+    postfix c (V2 a b) = V3 a b c
 
 ($**) :: Obj3 -> ℝ -> ℝ2 -> ℝ
 f $** a = \(V2 b c) -> f (V3 a b c)
