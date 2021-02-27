@@ -80,7 +80,7 @@ intersectBoxes
 intersectBoxes [] = fullBox
 intersectBoxes (b : boxes)
   = foldr (biapp (pointwise max) (pointwise min)) b boxes
-
+{-# INLINABLE intersectBoxes #-}
 
 ------------------------------------------------------------------------------
 -- | Apply two functions elementwise across pairs. This is the biapplicative

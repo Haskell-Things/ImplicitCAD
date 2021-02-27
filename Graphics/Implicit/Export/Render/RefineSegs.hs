@@ -5,7 +5,7 @@
 -- export one function, which refines polylines.
 module Graphics.Implicit.Export.Render.RefineSegs (refine) where
 
-import Prelude((<), (/), (<>), (*), ($), (&&), (-), (+), (.), (>), abs, sqrt, (<=))
+import Prelude((<), (/), (<>), (*), ($), (&&), (-), (+), (.), (>), abs, (<=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, Polyline(Polyline), minℝ, Fastℕ, Obj2)
 import Graphics.Implicit.Export.Util (centroid)

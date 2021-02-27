@@ -7,6 +7,7 @@
 
 module TesselationSpec (spec) where
 
+import Prelude (Int, Maybe(Just), Show, Eq, Enum, (-), otherwise, (<), ($), pure, length, (.), head, fmap, drop, repeat, take, zip, uncurry, (!!), (=<<), mappend, zipWith, unzip, replicate, (<$>), enumFrom)
 import Test.Hspec
     (describe, shouldBe, shouldContain, Spec, Expectation )
 import Test.QuickCheck (Gen, Positive(), arbitrary, choose, getPositive, shuffle)
