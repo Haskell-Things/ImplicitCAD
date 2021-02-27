@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) wh
 
 import Prelude ((-), Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, (==), (||), (&&), filter, not, (<>))
 
-import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh), ℕ, ℝ3, ℝ, fromℝtoFloat)
+import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh, getTriangles), ℕ, ℝ3, ℝ, fromℝtoFloat)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ)
 
 import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
@@ -23,9 +23,6 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Storable.Endian (LittleEndian(LE))
 
 import Linear (normalize, cross, V3(V3))
-
-unmesh :: TriangleMesh -> [Triangle]
-unmesh (TriangleMesh m) = m
 
 normal :: (ℝ3,ℝ3,ℝ3) -> ℝ3
 normal (a,b,c) =
@@ -54,11 +51,11 @@ cleanupTris tris =
         isDegenerateTri (Triangle (a, b, c)) = isDegenerateTri2Axis floatTri
           where
             floatTri = (floatPoint a, floatPoint b, floatPoint c)
-    in TriangleMesh $ filter (not . isDegenerateTri) (unmesh tris)
+    in TriangleMesh $ filter (not . isDegenerateTri) (getTriangles tris)
 
 -- | Generate an STL file is ASCII format.
 stl :: TriangleMesh -> Text
-stl triangles = toLazyText $ stlHeader <> foldMap triangle (unmesh $ cleanupTris triangles) <> stlFooter
+stl triangles = toLazyText $ stlHeader <> foldMap triangle (getTriangles $ cleanupTris triangles) <> stlFooter
     where
         stlHeader :: Builder
         stlHeader = "solid ImplictCADExport\n"
@@ -87,9 +84,9 @@ float32LE = writeStorable . LE
 
 -- | Generate an STL file in it's binary format.
 binaryStl :: TriangleMesh -> ByteString
-binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triangle (unmesh $ cleanupTris triangles)
+binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triangle (getTriangles $ cleanupTris triangles)
     where header = fromByteString $ replicate 80 0
-          lengthField = fromWord32le $ toEnum $ length $ unmesh $ cleanupTris triangles
+          lengthField = fromWord32le $ toEnum $ length $ getTriangles $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
           point :: ℝ3 -> BI.Builder
           point (V3 x y z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
@@ -122,12 +119,12 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                 verts = do
                         -- extract the vertices for each triangle
                         -- recall that a normed triangle is of the form ((vert, norm), ...)
-                        (Triangle (a,b,c)) <- unmesh $ cleanupTris triangles
+                        (Triangle (a,b,c)) <- getTriangles $ cleanupTris triangles
                         -- The vertices from each triangle take up 3 position in the resulting list
                         [a,b,c]
                 vertcode = foldMap v verts
                 facecode = fold $ do
-                        (n,_) <- zip [0, 3 ..] $ unmesh $ cleanupTris triangles
+                        (n,_) <- zip [0, 3 ..] $ getTriangles $ cleanupTris triangles
                         let
                             (posa, posb, posc) = (n, n+1, n+2) :: (ℕ, ℕ, ℕ)
                         pure $ f posa posb posc

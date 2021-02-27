@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
 import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getPolyline), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromℕtoℝ, fromℕ)
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -253,19 +253,19 @@ getContour res@(V2 xres yres) symObj =
 -- utility functions
 
 injX :: ℝ -> Polyline -> [ℝ3]
-injX val pline = (prepend val) <$> getPolyline pline
+injX val polyline = (prepend val) <$> getSegments polyline
   where
     prepend :: ℝ -> ℝ2 -> ℝ3
     prepend a (V2 b c) = V3 a b c
 
 injY :: ℝ -> Polyline -> [ℝ3]
-injY val pline = (insert val)  <$> getPolyline pline
+injY val polyline = (insert val)  <$> getSegments polyline
   where
     insert :: ℝ -> ℝ2 -> ℝ3
     insert b (V2 a c) = V3 a b c
 
 injZ :: ℝ -> Polyline -> [ℝ3]
-injZ val pline = (postfix val) <$> getPolyline pline
+injZ val polyline = (postfix val) <$> getSegments polyline
   where
     postfix :: ℝ -> ℝ2 -> ℝ3
     postfix c (V2 a b) = V3 a b c

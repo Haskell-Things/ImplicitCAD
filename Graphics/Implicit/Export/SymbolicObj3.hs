@@ -9,7 +9,7 @@ module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
 import Prelude(pure, zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), Triangle, TriangleMesh(TriangleMesh))
+import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), Triangle, TriangleMesh(TriangleMesh, getTriangles))
 import Graphics.Implicit.Export.Render (getMesh)
 import Graphics.Implicit.ObjectUtil (getBox3)
 import Graphics.Implicit.MathUtil(box3sWithin)
@@ -31,14 +31,11 @@ symbolicGetMesh res inputObj@(Shared3 (UnionR r objs)) = TriangleMesh $
 
         (dependants, independents) = sepFree boxedObjs
     in if null independents
-          then unmesh $ getMesh (pure res) inputObj
+          then getTriangles $ getMesh (pure res) inputObj
           else if null dependants
-                  then foldMap (unmesh . symbolicGetMesh res) independents
-                  else foldMap (unmesh . symbolicGetMesh res) independents
-                       <> unmesh (symbolicGetMesh res (Shared3 (UnionR r dependants)))
+                  then foldMap (getTriangles . symbolicGetMesh res) independents
+                  else foldMap (getTriangles . symbolicGetMesh res) independents
+                       <> getTriangles (symbolicGetMesh res (Shared3 (UnionR r dependants)))
 
 -- | If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj = getMesh (pure res) obj
-
-unmesh :: TriangleMesh -> [Triangle]
-unmesh (TriangleMesh m) = m
