@@ -20,25 +20,25 @@ vertex -2.0e0 -2.0e0 -2.5e0
 vertex -2.0e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal 6.217249e-15 6.217249e-15 -1.0e0
 outer loop
 vertex -2.5e0 -2.0e0 -2.5e0
 vertex -2.0e0 -2.5e0 -2.5e0
-vertex -2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex -2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal 6.217249e-15 -1.0e0 6.217249e-15
 outer loop
 vertex -2.0e0 -2.5e0 -2.5e0
 vertex -2.5e0 -2.5e0 -2.0e0
-vertex -2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex -2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal -1.0e0 6.217249e-15 6.217249e-15
 outer loop
 vertex -2.5e0 -2.5e0 -2.0e0
 vertex -2.5e0 -2.0e0 -2.5e0
-vertex -2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex -2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
 facet normal 0.0e0 8.881784e-16 -1.0e0
@@ -174,25 +174,25 @@ vertex 2.0e0 -2.5e0 -2.0e0
 vertex 2.0e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal -3.1086245e-14 -1.0e0 3.1086245e-14
 outer loop
 vertex 2.5e0 -2.5e0 -2.0e0
 vertex 2.0e0 -2.5e0 -2.5e0
-vertex 2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex 2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal -3.1086245e-14 3.1086245e-14 -1.0e0
 outer loop
 vertex 2.0e0 -2.5e0 -2.5e0
 vertex 2.5e0 -2.0e0 -2.5e0
-vertex 2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex 2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 -5.7735026e-1
+facet normal 1.0e0 3.1086245e-14 3.1086245e-14
 outer loop
 vertex 2.5e0 -2.0e0 -2.5e0
 vertex 2.5e0 -2.5e0 -2.0e0
-vertex 2.3333333e0 -2.3333333e0 -2.3333333e0
+vertex 2.5e0 -2.5e0 -2.5e0
 endloop
 endfacet
 facet normal -1.0e0 0.0e0 8.881784e-16
@@ -664,25 +664,25 @@ vertex -2.0e0 2.5e0 -2.0e0
 vertex -2.0e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal 3.1086245e-14 1.0e0 3.1086245e-14
 outer loop
 vertex -2.5e0 2.5e0 -2.0e0
 vertex -2.0e0 2.5e0 -2.5e0
-vertex -2.3333333e0 2.3333333e0 -2.3333333e0
+vertex -2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal 3.1086245e-14 -3.1086245e-14 -1.0e0
 outer loop
 vertex -2.0e0 2.5e0 -2.5e0
 vertex -2.5e0 2.0e0 -2.5e0
-vertex -2.3333333e0 2.3333333e0 -2.3333333e0
+vertex -2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal -1.0e0 -3.1086245e-14 3.1086245e-14
 outer loop
 vertex -2.5e0 2.0e0 -2.5e0
 vertex -2.5e0 2.5e0 -2.0e0
-vertex -2.3333333e0 2.3333333e0 -2.3333333e0
+vertex -2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
 facet normal -0.0e0 1.0e0 8.881784e-16
@@ -818,25 +818,25 @@ vertex 2.0e0 2.0e0 -2.5e0
 vertex 2.0e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal -3.1086245e-14 -3.1086245e-14 -1.0e0
 outer loop
 vertex 2.5e0 2.0e0 -2.5e0
 vertex 2.0e0 2.5e0 -2.5e0
-vertex 2.3333333e0 2.3333333e0 -2.3333333e0
+vertex 2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal -3.1086245e-14 1.0e0 3.1086245e-14
 outer loop
 vertex 2.0e0 2.5e0 -2.5e0
 vertex 2.5e0 2.5e0 -2.0e0
-vertex 2.3333333e0 2.3333333e0 -2.3333333e0
+vertex 2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 -5.7735026e-1
+facet normal 1.0e0 -3.1086245e-14 3.1086245e-14
 outer loop
 vertex 2.5e0 2.5e0 -2.0e0
 vertex 2.5e0 2.0e0 -2.5e0
-vertex 2.3333333e0 2.3333333e0 -2.3333333e0
+vertex 2.5e0 2.5e0 -2.5e0
 endloop
 endfacet
 facet normal -1.0e0 8.881784e-16 0.0e0
@@ -2204,25 +2204,25 @@ vertex -2.0e0 -2.5e0 2.0e0
 vertex -2.0e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal 3.1086245e-14 -1.0e0 -3.1086245e-14
 outer loop
 vertex -2.5e0 -2.5e0 2.0e0
 vertex -2.0e0 -2.5e0 2.5e0
-vertex -2.3333333e0 -2.3333333e0 2.3333333e0
+vertex -2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal 3.1086245e-14 3.1086245e-14 1.0e0
 outer loop
 vertex -2.0e0 -2.5e0 2.5e0
 vertex -2.5e0 -2.0e0 2.5e0
-vertex -2.3333333e0 -2.3333333e0 2.3333333e0
+vertex -2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal -1.0e0 3.1086245e-14 -3.1086245e-14
 outer loop
 vertex -2.5e0 -2.0e0 2.5e0
 vertex -2.5e0 -2.5e0 2.0e0
-vertex -2.3333333e0 -2.3333333e0 2.3333333e0
+vertex -2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
 facet normal 0.0e0 -1.0e0 -8.881784e-16
@@ -2358,25 +2358,25 @@ vertex 2.0e0 -2.0e0 2.5e0
 vertex 2.0e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal -3.1086245e-14 3.1086245e-14 1.0e0
 outer loop
 vertex 2.5e0 -2.0e0 2.5e0
 vertex 2.0e0 -2.5e0 2.5e0
-vertex 2.3333333e0 -2.3333333e0 2.3333333e0
+vertex 2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal -3.1086245e-14 -1.0e0 -3.1086245e-14
 outer loop
 vertex 2.0e0 -2.5e0 2.5e0
 vertex 2.5e0 -2.5e0 2.0e0
-vertex 2.3333333e0 -2.3333333e0 2.3333333e0
+vertex 2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 -5.7735026e-1 5.7735026e-1
+facet normal 1.0e0 3.1086245e-14 -3.1086245e-14
 outer loop
 vertex 2.5e0 -2.5e0 2.0e0
 vertex 2.5e0 -2.0e0 2.5e0
-vertex 2.3333333e0 -2.3333333e0 2.3333333e0
+vertex 2.5e0 -2.5e0 2.5e0
 endloop
 endfacet
 facet normal -1.0e0 -0.0e0 -8.881784e-16
@@ -2848,25 +2848,25 @@ vertex -2.0e0 2.0e0 2.5e0
 vertex -2.0e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal 3.1086245e-14 -3.1086245e-14 1.0e0
 outer loop
 vertex -2.5e0 2.0e0 2.5e0
 vertex -2.0e0 2.5e0 2.5e0
-vertex -2.3333333e0 2.3333333e0 2.3333333e0
+vertex -2.5e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal 3.1086245e-14 1.0e0 -3.1086245e-14
 outer loop
 vertex -2.0e0 2.5e0 2.5e0
 vertex -2.5e0 2.5e0 2.0e0
-vertex -2.3333333e0 2.3333333e0 2.3333333e0
+vertex -2.5e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal -5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal -1.0e0 -3.1086245e-14 -3.1086245e-14
 outer loop
 vertex -2.5e0 2.5e0 2.0e0
 vertex -2.5e0 2.0e0 2.5e0
-vertex -2.3333333e0 2.3333333e0 2.3333333e0
+vertex -2.5e0 2.5e0 2.5e0
 endloop
 endfacet
 facet normal 0.0e0 -8.881784e-16 1.0e0
@@ -3002,25 +3002,25 @@ vertex 2.0e0 2.5e0 2.0e0
 vertex 2.0e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal -3.1086245e-14 1.0e0 -3.1086245e-14
 outer loop
 vertex 2.5e0 2.5e0 2.0e0
 vertex 2.0e0 2.5e0 2.5e0
-vertex 2.3333333e0 2.3333333e0 2.3333333e0
+vertex 2.5e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal -3.1086245e-14 -3.1086245e-14 1.0e0
 outer loop
 vertex 2.0e0 2.5e0 2.5e0
 vertex 2.5e0 2.0e0 2.5e0
-vertex 2.3333333e0 2.3333333e0 2.3333333e0
+vertex 2.5e0 2.5e0 2.5e0
 endloop
 endfacet
-facet normal 5.7735026e-1 5.7735026e-1 5.7735026e-1
+facet normal 1.0e0 -3.1086245e-14 -3.1086245e-14
 outer loop
 vertex 2.5e0 2.0e0 2.5e0
 vertex 2.5e0 2.5e0 2.0e0
-vertex 2.3333333e0 2.3333333e0 2.3333333e0
+vertex 2.5e0 2.5e0 2.5e0
 endloop
 endfacet
 endsolid ImplictCADExport
