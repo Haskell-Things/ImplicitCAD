@@ -87,8 +87,8 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
         normal = preNormal ^/ preNormalNorm
         deriv = (obj (mid + (normal ^* (res/100)) ) - midval)/res*100
         mid' = mid - normal ^* (midval/deriv)
-    in if abs midval > res/50 && preNormalNorm > 0.5 && abs deriv > 0.5
-              && abs (midval/deriv) < 2*res && 3*abs (obj mid') < abs midval
+        midval' = obj mid'
+    in if abs midval' < abs midval
         then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (tail path <> [head path]) ]
         else early_tris <> [Triangle (a,b,mid) | (a,b) <- zip path (tail path <> [head path]) ]
 
