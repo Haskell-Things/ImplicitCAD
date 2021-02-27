@@ -30,13 +30,13 @@ import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupV
 import Graphics.Implicit.Primitives (Object(getBox))
 
 -- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (ℝ, Polyline, TriangleMesh, SymbolicObj2, SymbolicObj3)
+import Graphics.Implicit.Definitions (ℝ, Polyline, TriangleMesh, NormedTriangleMesh, SymbolicObj2, SymbolicObj3)
 
 -- Use default values when a Maybe is Nothing.
-import Data.Maybe (fromMaybe, maybe)
+import Data.Maybe (fromMaybe, maybe, fromJust)
 
 import Graphics.Implicit.Export.TriangleMeshFormats (jsTHREE, stl)
-import Graphics.Implicit.Export.NormedTriangleMeshFormats as NTM (obj)
+import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NTM (obj)
 
 import Graphics.Implicit.Export.PolylineFormats (svg, dxf2, hacklabLaserGCode)
 
@@ -147,8 +147,12 @@ formatIs3D _ = False
 getOutputHandler3 :: ByteString -> TriangleMesh -> Text
 getOutputHandler3 name
   | name == "STL"                   = TL.toStrict.stl
-  | name == "OBJ"                   = TL.toStrict.NTM.obj
   | otherwise                       = TL.toStrict.jsTHREE
+
+getNormedOutputHandler3 :: ByteString -> NormedTriangleMesh -> Text
+getNormedOutputHandler3 name
+  | name == "OBJ"                   = TL.toStrict.NTM.obj
+  | otherwise                       = TL.toStrict.NTM.obj
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -206,7 +210,9 @@ executeAndExport content callback maybeFormat =
                                  then ""
                                  else " \nWARNING: Multiple objects detected. Adding a Union around them."
               output3d :: Text
-              output3d         = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
+              output3d         = if fromMaybe "jsTHREE" maybeFormat == "OBJ"
+                                 then getNormedOutputHandler3 (fromJust maybeFormat) $ discreteAprox res target
+                                 else maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True False w (scadMessages <> unionWarning)
             else if formatIs3D maybeFormat

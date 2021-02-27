@@ -192,6 +192,7 @@ Executable implicitsnap
                  base,
                  bytestring,
                  implicit,
+                 linear,
                  snap-core,
                  snap-server,
                  text,
