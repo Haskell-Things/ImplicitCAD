@@ -147,7 +147,7 @@ instance ComponentWiseMultable ℝ3 where
 
 -- | A chain of line segments, as in SVG or DXF.
 -- eg. [(0,0), (0.5,1), (1,0)] ---> /\
--- FIXME: May not be empty.
+-- FIXME: May not be empty. expose to type system.
 newtype Polyline = Polyline { getSegments :: [ℝ2] }
 
 -- | A triangle in 2D space (a,b,c).
