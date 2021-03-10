@@ -88,7 +88,9 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
         deriv = (obj (mid + (normal ^* (res/100)) ) - midval)/res*100
         mid' = mid - normal ^* (midval/deriv)
         midval' = obj mid'
-    in if abs midval' < abs midval
+        isCloserToSurface = abs midval' < abs midval
+        isNearby = norm (mid - mid') < 2 * abs midval
+    in if isCloserToSurface && isNearby
         then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (tail path <> [head path]) ]
         else early_tris <> [Triangle (a,b,mid) | (a,b) <- zip path (tail path <> [head path]) ]
 
