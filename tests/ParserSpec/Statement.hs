@@ -37,10 +37,10 @@ pattern Name :: Text -> Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- | an expectation that a string is equivalent to a statement.
-infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
     parseProgram "noname" source `shouldBe` Right stmts
+infixr 1 -->
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
