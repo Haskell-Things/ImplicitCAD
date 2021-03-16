@@ -5,7 +5,6 @@ in    haskellCi.generalCi
         ( Some
             { ghc =
               [ haskellCi.GHC.GHC8104
-              , haskellCi.GHC.GHC901
               , haskellCi.GHC.GHC884
               , haskellCi.GHC.GHC865
               ]
