@@ -43,7 +43,7 @@ import Graphics.Implicit (mirror)
 
 
 ------------------------------------------------------------------------------
--- | Tests showing equivalencies between algebraic formulations of symbolic
+-- Tests showing equivalencies between algebraic formulations of symbolic
 -- objects, in both 2d and 3d. Equality is observational, based on random
 -- sampling of the underlying 'getImplicit' function.
 spec :: Spec
@@ -69,7 +69,7 @@ spec = do
 
 
 ------------------------------------------------------------------------------
--- | All the constraints we need in scope to parameterize tests by both 2d and
+-- All the constraints we need in scope to parameterize tests by both 2d and
 -- 3d symbolic objects.
 type TestInfrastructure obj vec test outcome =
   ( Object obj vec
@@ -85,7 +85,7 @@ type TestInfrastructure obj vec test outcome =
 
 
 ------------------------------------------------------------------------------
--- | Tests proving that symbolic objects form a monoid.
+-- Tests proving that symbolic objects form a monoid.
 monoidSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -102,7 +102,7 @@ monoidSpec = describe "monoid laws" $ do
 
 
 ------------------------------------------------------------------------------
--- | Tests showing that 'translate' is a no-op for both 'emptySpace' and
+-- Tests showing that 'translate' is a no-op for both 'emptySpace' and
 -- 'fullSpace'. Additionally, that 'scale' is a no-op on 'emptySpace' (but not
 -- for 'fullSpace', because scaling by 0 is instead 'emptySpace').
 idempotenceSpec
@@ -126,7 +126,7 @@ idempotenceSpec = describe "idempotence" $ do
 
 
 ------------------------------------------------------------------------------
--- | Proofs of the invertability of operations.
+-- Proofs of the invertability of operations.
 inverseSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -150,7 +150,7 @@ inverseSpec = describe "inverses" $ do
 
 
 ------------------------------------------------------------------------------
--- | Proofs that 'fullSpace' is an annhilative element with respect to union.
+-- Proofs that 'fullSpace' is an annhilative element with respect to union.
 annihilationSpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -165,7 +165,7 @@ annihilationSpec = describe "annihilation" $ do
 
 
 ------------------------------------------------------------------------------
--- | Misc proofs regarding 2d rotation.
+-- Misc proofs regarding 2d rotation.
 rotation2dSpec :: Spec
 rotation2dSpec = describe "2d rotation" $ do
   prop "360 degrees is id" $
@@ -190,7 +190,7 @@ rotation2dSpec = describe "2d rotation" $ do
 
 
 ------------------------------------------------------------------------------
--- | Misc proofs regarding 3d rotation.
+-- Misc proofs regarding 3d rotation.
 rotation3dSpec :: Spec
 rotation3dSpec = describe "3d rotation" $ do
   for_ [ ("YZ", V3 1 0 0)
@@ -228,7 +228,7 @@ rotation3dSpec = describe "3d rotation" $ do
 
 
 ------------------------------------------------------------------------------
--- | Misc tests that make sense only in 3d
+-- Misc tests that make sense only in 3d
 misc3dSpec :: Spec
 misc3dSpec = describe "misc 3d tests" $ do
   prop "object-rounding value doesn't jump from 3d to 2d" $ \r obj ->
@@ -240,7 +240,7 @@ misc3dSpec = describe "misc 3d tests" $ do
 
 
 ------------------------------------------------------------------------------
--- | Misc identity proofs that should hold for all symbolic objects.
+-- Misc identity proofs that should hold for all symbolic objects.
 identitySpec
     :: forall obj vec test outcome
      . TestInfrastructure obj vec test outcome
@@ -271,7 +271,7 @@ identitySpec = describe "identity" $ do
 
 
 ------------------------------------------------------------------------------
--- | Functions proving symbolic objects form homomorphisms with respect to
+-- Functions proving symbolic objects form homomorphisms with respect to
 -- translate and scale.
 homomorphismSpec
     :: forall obj vec test outcome

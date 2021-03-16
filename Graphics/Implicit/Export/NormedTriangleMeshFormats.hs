@@ -20,10 +20,10 @@ import Linear (V3(V3))
 obj :: NormedTriangleMesh -> Text
 obj mesh = toLazyText $ vertcode <> normcode <> trianglecode
     where
-        -- | A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
+        -- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
         v :: ℝ3 -> Builder
         v (V3 x y z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
-        -- | A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
+        -- A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
         n :: ℝ3 -> Builder
         n (V3 x y z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
         verts = do

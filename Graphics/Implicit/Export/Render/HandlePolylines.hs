@@ -43,7 +43,7 @@ reducePolyline (Polyline (V2 x1 y1 : V2 x2 y2 : V2 x3 y3:others))
 -- | remove sequential duplicate points.
 reducePolyline (Polyline (V2 x1 y1 : V2 x2 y2 : others)) =
     if (x1,y1) == (x2,y2) then reducePolyline (Polyline (V2 x2 y2 : others)) else Polyline (V2 x1 y1 : V2 x2 y2 : others)
--- | Return the last result.
+-- Return the last result.
 reducePolyline l@(Polyline ((_:_))) = l
 -- Should not happen.
 reducePolyline (Polyline []) = error "empty polyline"

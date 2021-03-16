@@ -58,7 +58,7 @@ instance DiscreteAproxable SymbolicObj3 NormedTriangleMesh where
 instance DiscreteAproxable SymbolicObj3 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where
-            -- | Size of the image to produce.
+            -- Size of the image to produce.
             (V2 w h) = V2 150 150 :: ℝ2
             obj = getImplicit symbObj
             box@(V3 x1 y1 z1, V3 _ y2 z2) = getBox3 symbObj
@@ -70,7 +70,7 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
             camera = Camera (V3 (x1-deviation*2.2) avY avZ) (V3 0 (-1) 0) (V3 0 0 (-1)) 1.0
             lights = [Light (V3 (x1-deviation*1.5) (y1 - 0.4*(y2-y1)) avZ) (0.03*deviation) ]
             scene = Scene obj (Color 200 200 230 255) lights (Color 255 255 255 0)
-            -- | passed to generateImage, it's external, and determines this type.
+            -- passed to generateImage, it's external, and determines this type.
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer a b = renderScreen
                 (fromIntegral a/w - 0.5) (fromIntegral b/h - 0.5)
@@ -103,13 +103,13 @@ instance DiscreteAproxable SymbolicObj2 [Polyline] where
 instance DiscreteAproxable SymbolicObj2 DynamicImage where
     discreteAprox _ symbObj = ImageRGBA8 $ generateImage pixelRenderer (round w) (round h)
         where
-            -- | Size of the image to produce.
+            -- Size of the image to produce.
             V2 w h = pure 150 :: ℝ2
             obj = getImplicit symbObj
             (p1@(V2 x1 _), p2@(V2 _ y2)) = getBox2 symbObj
             V2 dx dy = p2 - p1
             dxy = max dx dy
-            -- | passed to generateImage, it's external, and determines this type.
+            -- passed to generateImage, it's external, and determines this type.
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer mya myb = mycolor
                 where

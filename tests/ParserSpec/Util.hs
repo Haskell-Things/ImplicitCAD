@@ -63,7 +63,7 @@ infixr 1 -->
 (-->) source expr =
   parse (expr0 <* eof) "<expr>" source `shouldBe` Right expr
 
--- | Types
+-- Types
 
 num :: ℝ -> Expr
 num x
@@ -81,7 +81,7 @@ stringLiteral = LitE . OString
 undefined :: Expr
 undefined = LitE OUndefined
 
--- | Operators
+-- Operators
 
 plus,minus,mult,modulo,power,divide,negate,and,or,not,gt,lt,ternary,append,index :: [Expr] -> Expr
 minus = oapp "-"

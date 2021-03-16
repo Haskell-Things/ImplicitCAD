@@ -88,7 +88,7 @@ boolean = "boolean" ?:
   LitE . OBool <$> (matchTrue $> True <|> matchFalse $> False)
 
 -- | Parse a quoted string.
---   FIXME: no \u unicode support?
+--   FIXME: no @\u@ unicode support?
 scadString :: GenParser Char st Expr
 scadString = "string" ?: LitE . OString . pack <$>
     between

@@ -15,7 +15,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ3, Obj3, Triangle(Triangle), Norme
 import Linear ((*^), (^/), normalize, V3(V3))
 import Data.List (foldl')
 
--- | Change the default for bare numbers in this file.
+-- Change the default for bare numbers in this file.
 default (ℝ)
 
 -- FIXME: magic numbers.

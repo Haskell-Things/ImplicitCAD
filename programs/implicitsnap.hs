@@ -94,9 +94,9 @@ renderHandler = method GET $ withCompression $ do
 
 -- | Find the resolution to raytrace at.
 getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
--- | If specified, use a resolution specified by the "$res" a variable in the input file.
+-- If specified, use a resolution specified by the "$res" a variable in the input file.
 getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
--- | If there was no resolution specified, use a resolution chosen for 3D objects.
+-- If there was no resolution specified, use a resolution chosen for 3D objects.
 --   FIXME: magic numbers.
 getRes (vars, _, obj:objs, _) =
     let
@@ -105,7 +105,7 @@ getRes (vars, _, obj:objs, _) =
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
         _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
--- | ... Or use a resolution chosen for 2D objects.
+-- ... Or use a resolution chosen for 2D objects.
 --   FIXME: magic numbers.
 getRes (vars, obj:objs, _, _) =
     let
@@ -114,7 +114,7 @@ getRes (vars, obj:objs, _, _) =
     in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
         ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
         _                    -> min (min x y/2) (sqrt(x*y) / 30)
--- | fallthrough value.
+-- fallthrough value.
 getRes _ = 1
 
 -- | get the maximum dimension of the object being rendered.

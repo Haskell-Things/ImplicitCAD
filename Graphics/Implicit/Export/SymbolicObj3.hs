@@ -37,5 +37,5 @@ symbolicGetMesh res inputObj@(Shared3 (UnionR r objs)) = TriangleMesh $
                   else foldMap (getTriangles . symbolicGetMesh res) independents
                        <> getTriangles (symbolicGetMesh res (Shared3 (UnionR r dependants)))
 
--- | If all that fails, coerce and apply marching cubes :(
+-- If all that fails, coerce and apply marching cubes :(
 symbolicGetMesh res obj = getMesh (pure res) obj

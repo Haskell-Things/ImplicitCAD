@@ -50,11 +50,10 @@ import System.Directory (doesFileExist)
 
 import System.FilePath (takeDirectory)
 
--- Run statements out of the OpenScad file.
+-- | Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
-
--- | Interpret variable assignment
 runStatementI (StatementI sourcePos (pat := expr)) = do
+    -- Interpret variable assignment
     val <- evalExpr sourcePos expr
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
@@ -67,8 +66,8 @@ runStatementI (StatementI sourcePos (pat := expr)) = do
             modifyVarLookup $ varUnion (VarLookup match)
         (_,   Nothing ) -> errorC sourcePos "pattern match failed in assignment"
 
--- | Interpret an if conditional statement.
 runStatementI (StatementI sourcePos (If expr a b)) = do
+    -- Interpret an if conditional statement.
     val <- evalExpr sourcePos expr
     case (getErrors val, val) of
         (Just err,  _  )  -> errorC sourcePos ("In conditional expression of if statement: " <> err)
@@ -76,8 +75,8 @@ runStatementI (StatementI sourcePos (If expr a b)) = do
         (_, OBool False)  -> runSuite b
         _                 -> pure ()
 
--- | Interpret a module declaration.
 runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
+    -- Interpret a module declaration.
     argTemplate' <- for argTemplate $ \(argName, defexpr) -> do
         defval <- traverse (evalExpr sourcePos) defexpr
         pure (argName, defval)
@@ -96,8 +95,8 @@ runStatementI (StatementI sourcePos (NewModule name argTemplate suite)) = do
             varlookup' = union (fromList newNameVals) varlookup
         pure $ runSuiteCapture (VarLookup varlookup') suite
 
--- | Interpret a call to a module.
 runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) = do
+        -- Interpret a call to a module.
         maybeMod <- lookupVar (Symbol name)
         varlookup <- getVarLookup
         newVals  <- case maybeMod of
@@ -248,8 +247,8 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               val <- evalExpr sourcePos expr
               pure (posName, val)
 
--- | Interpret an include or use statement.
 runStatementI (StatementI sourcePos (Include name injectVals)) = do
+    -- Interpret an include or use statement.
     opts <- scadOptions
     if importsAllowed opts
       then do

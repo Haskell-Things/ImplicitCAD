@@ -127,7 +127,6 @@ data DocPart = ExampleDoc String
 --   If so, we *back off*.
 
 -- | Extract Documentation from an ArgParser
-
 getArgParserDocs ::
     ArgParser a      -- ^ ArgParser(s)
     -> IO [DocPart]  -- ^ Docs (sadly IO wrapped)

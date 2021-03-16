@@ -13,26 +13,28 @@ import Data.List (partition)
 --   The input is a list of segments.
 --   The output a list of loops, where each loop is a list of
 --   segments, which each piece representing a "side".
-
+--
 -- For example:
 -- Given points [[1,2],[5,1],[2,3,4,5], ... ]
 -- notice that there is a loop 1,2,3,4,5... <repeat>
 -- But we give the output [ [ [1,2], [2,3,4,5], [5,1] ], ... ]
 -- so that we have the loop, and also knowledge of how
 -- the list is built (the "sides" of it).
-
+--
 getLoops :: Eq a => [[a]] -> Maybe [[[a]]]
 getLoops [] = Just []
 getLoops (a:as) = getLoops' as [a] (last a)
 
--- We will be actually doing the loop extraction with
+-- | We will be actually doing the loop extraction with
 -- getLoops'
-
+--
 -- getLoops' has a first argument of the segments as before,
 -- but a *second argument* which is the loop presently being
 -- built.
-
+--
 -- so we begin with the "building loop" being empty.
+--
+-- see also: 'getLoops'.
 getLoops'
     :: Eq a
     => [[a]]   -- ^ input
@@ -40,13 +42,13 @@ getLoops'
     -> a       -- ^ last element in the accumulator
     -> Maybe [[[a]]]
 
--- | If there aren't any segments, and the "building loop" is empty, produce no loops.
+-- If there aren't any segments, and the "building loop" is empty, produce no loops.
 getLoops' [] [] _ = Just []
 
--- | If the building loop is empty, stick the first segment we have onto it to give us something to build on.
+-- If the building loop is empty, stick the first segment we have onto it to give us something to build on.
 getLoops' (x:xs) [] _ = getLoops' xs [x] (last x)
 
--- | A loop is finished if its start and end are the same.
+-- A loop is finished if its start and end are the same.
 -- Return it and start searching for another loop.
 getLoops' segs workingLoop ultima | head (head workingLoop) == ultima =
     (workingLoop :) <$> getLoops' segs [] ultima

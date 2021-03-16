@@ -95,22 +95,22 @@ getMesh res@(V3 xres yres zres) symObj =
         pXZ = [ y1 + ry*fromℕtoℝ n | n <- [0.. ny] ]
         pXY = [ z1 + rz*fromℕtoℝ n | n <- [0.. nz] ]
 
-        -- | performance tuning.
+        -- performance tuning.
         -- FIXME: magic number.
         forcesteps :: Int
         forcesteps = 32
 
-        -- | Evaluate obj to avoid waste in mids, segs, later.
+        -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par3DList nx ny nz
 
-        -- | Sample our object(s) at every point in the 3D space given.
+        -- Sample our object(s) at every point in the 3D space given.
         par3DList :: ℕ -> ℕ -> ℕ -> [[[ℝ]]]
         par3DList lenx leny lenz =
             [[[ sample mx my mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
               `using` parBuffer (max 1 $ div (fromℕ $ (lenx+leny+lenz)) forcesteps) rdeepseq
 
-        -- | sample our object(s) at the given point.
+        -- sample our object(s) at the given point.
         sample :: ℕ -> ℕ -> ℕ -> ℝ
         sample mx my mz = obj $
               V3
@@ -198,29 +198,29 @@ getContour res@(V2 xres yres) symObj =
         -- Grow bounds a little to avoid sampling at exact bounds
         (obj, (p1@(V2 x1 y1), p2)) = rebound2 (getImplicit symObj, getBox2 symObj)
 
-        -- | The size of the region we're being asked to search.
+        -- The size of the region we're being asked to search.
         d = p2 - p1
 
-        -- | How many steps will we take on each axis?
+        -- How many steps will we take on each axis?
         nx, ny :: ℕ
         steps@(V2 nx ny) = ceiling <$> (d ⋯/ res)
 
-        -- | How big are the steps?
+        -- How big are the steps?
         (V2 rx ry) = d ⋯/ (fromℕtoℝ <$> steps)
 
         -- The lines we are rendering along.
         pX = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
         pY = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
 
-        -- | Performance tuning.
+        -- Performance tuning.
         -- FIXME: magic number.
         forcesteps :: Int
         forcesteps = 32
 
-        -- | Evaluate obj to avoid waste in mids, segs, later.
+        -- Evaluate obj to avoid waste in mids, segs, later.
         objV = par2DList nx ny
 
-        -- | Sample our object(s) at every point in the 2D plane given.
+        -- Sample our object(s) at every point in the 2D plane given.
         par2DList :: ℕ -> ℕ -> [[ℝ]]
         par2DList lenx leny =
             [[ sample mx my
@@ -228,28 +228,28 @@ getContour res@(V2 xres yres) symObj =
                 ] | my <- [0..leny]
                 ] `using` parBuffer (max 1 $ div (fromℕ $ lenx+leny) forcesteps) rdeepseq
 
-        -- | sample our object(s) at the given point.
+        -- sample our object(s) at the given point.
         sample :: ℕ -> ℕ -> ℝ
         sample mx my = obj $
           V2
                 (x1 + rx*fromℕtoℝ mx)
                 (y1 + ry*fromℕtoℝ my)
 
-        -- | Calculate mid points on X axis in 2D space.
+        -- Calculate mid points on X axis in 2D space.
         midsX = [[
                  interpolate (V2 x0 objX0Y0) (V2 x1' objX1Y0) (obj *$ y0) xres
                  | x0 <- pX | x1' <- tail pX | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
                 ]| y0 <- pY |                   objY0   <- objV
                 ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
 
-        -- | Calculate mid points on Y axis in 2D space.
+        -- Calculate mid points on Y axis in 2D space.
         midsY = [[
                  interpolate (V2 y0 objX0Y0) (V2 y1' objX0Y1) (obj $* x0) yres
                  | x0 <- pX |                  objX0Y0 <- objY0   | objX0Y1 <- objY1
                 ]| y0 <- pY | y1' <- tail pY | objY0   <- objV    | objY1   <- tail objV
                 ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
 
-        -- | Calculate segments for each side
+        -- Calculate segments for each side
         segs = [[
             getSegs (V2 x0 y0) (V2 x1' y1') obj (objX0Y0, objX1Y0, objX0Y1, objX1Y1) (midA0, midA1, midB0, midB1)
              | x0<-pX | x1'<-tail pX |midB0<-mX''  | midB1<-mX'T       | midA0<-mY''  | midA1<-tail mY'' | objX0Y0<-objY0 | objX1Y0<-tail objY0 | objX0Y1<-objY1 | objX1Y1<-tail objY1

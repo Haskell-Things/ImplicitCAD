@@ -110,7 +110,7 @@ sphere = moduleWithoutSuite "sphere" $ \_ _ -> do
     addObj3 $ Prim.sphere r
 
 -- | FIXME: square1, square2 like cylinder has?
--- | FIXME: translate for square2?
+--   FIXME: translate for square2?
 cube :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 cube = moduleWithoutSuite "cube" $ \_ _ -> do
     -- examples
@@ -287,9 +287,9 @@ circle = moduleWithoutSuite "circle" $ \_ _ -> do
             [V2 (r*cos θ) (r*sin θ) | θ <- [2*pi*fromℕtoℝ n/fromℕtoℝ sides | n <- [0 .. sides - 1]]]
 
 -- | FIXME: 3D Polygons?
--- | FIXME: handle rectangles that are not grid alligned.
--- | FIXME: allow for rounding of polygon corners, specification of vertex ordering.
--- | FIXME: polygons have to have more than two points, or do not generate geometry, and generate an error.
+--   FIXME: handle rectangles that are not grid alligned.
+--   FIXME: allow for rounding of polygon corners, specification of vertex ordering.
+--   FIXME: polygons have to have more than two points, or do not generate geometry, and generate an error.
 polygon :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 polygon = moduleWithoutSuite "polygon" $ \_ _ -> do
     example "polygon ([(0,0), (0,10), (10,0)]);"
@@ -389,8 +389,8 @@ translate = moduleWithSuite "translate" $ \_ children -> do
         objMap (Prim.translate (V2 x y)) (Prim.translate (V3 x y z)) children
 
 -- | FIXME: rotating a module that is not found pures no geometry, instead of an error.
--- | FIXME: error reporting on fallthrough.
--- + FIXME: rotate(y=90) would be nice.
+--   FIXME: error reporting on fallthrough.
+--   FIXME: rotate(y=90) would be nice.
 rotate :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 rotate = moduleWithSuite "rotate" $ \_ children -> do
     a <- argument "a"
