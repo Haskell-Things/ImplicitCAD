@@ -150,7 +150,6 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
 -- | Reflect a vector across a hyperplane defined by its normal vector.
 --
 -- From https://en.wikipedia.org/wiki/Reflection_(mathematics)#Reflection_through_a_hyperplane_in_n_dimensions
---     -> ℝ2
 reflect
     :: (Num (f a), Fractional a, Metric f)
     => f a  -- ^ Mirror axis
