@@ -3,16 +3,17 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ViewPatterns #-}
 
 -- A module of math utilities.
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), head, flip, maximum, minimum, (==), (>=), signum, atan2)
+import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (==), (>=), signum, atan2, error)
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
-import Data.List (sort, sortBy, (!!))
+import Data.List (sort, sortBy)
 import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion), V2(V2), V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
@@ -78,16 +79,9 @@ rmaximum ::
     -> ℝ   -- ^ resulting number
 rmaximum _ [] = 0
 rmaximum _ [a] = a
-rmaximum r [a,b]
-  | r == 0    = max a b
-  | otherwise = rmax r a b
-rmaximum r l
-  | r == 0    = maximum l
-  | otherwise =
-    let
-        tops = sortBy (flip compare) l
-    in
-        rmax r (head tops) (tops !! 1)
+rmaximum r [a,b] = rmax r a b
+rmaximum r (sortBy (flip compare) -> (a:b:_:_)) = rmax r a b
+rmaximum _ _ = error "impossible."  -- (and with dependent types we could prove it!)
 
 -- | Like rmin but on a list.
 rminimum ::
@@ -96,16 +90,9 @@ rminimum ::
     -> ℝ   -- ^ resulting number
 rminimum _ [] = 0
 rminimum _ [a] = a
-rminimum r [a,b]
-  | r > 0     = rmin r a b
-  | otherwise = min a b
-rminimum r l
-  | r > 0 =
-    let
-        tops = sort l
-    in
-        rmin r (head tops) (tops !! 1)
-  | otherwise = minimum l
+rminimum r [a,b] = rmin r a b
+rminimum r (sort -> (a:b:_:_)) = rmin r a b
+rminimum _ _ = error "impossible."
 
 -- | Pack the given objects in a box the given size.
 pack ::
