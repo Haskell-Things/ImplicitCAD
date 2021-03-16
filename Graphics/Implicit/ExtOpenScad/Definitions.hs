@@ -56,21 +56,18 @@ type StateC = StateT CompState IO
 
 -- | Handles parsing arguments to built-in modules
 data ArgParser a
-                 -- | For actual argument entries:
-                 --   ArgParser (argument name) (default) (doc) (next Argparser...)
                  = AP Symbol (Maybe OVal) Text (OVal -> ArgParser a)
-                 -- | For returns:
-                 --   ArgParserTerminator (return value)
+                 -- ^ For actual argument entries: @ArgParser (argument name) (default) (doc) (next Argparser...)@
                  | APTerminator a
-                 -- | For failure:
-                 --   ArgParserFailIf (error message)
+                 -- ^ For returns: @ArgParserTerminator (return value)@
                  | APFail Text
-                 --  An example, then next
+                 -- ^ For failure: @ArgParserFailIf (error message)@
                  | APExample Text (ArgParser a)
-                 --  A string to run as a test, then invariants for the results, then next
+                 -- ^ An example, then next
                  | APTest Text [TestInvariant] (ArgParser a)
-                 -- A branch where there are a number of possibilities for the parser underneath
+                 -- ^ A string to run as a test, then invariants for the results, then next
                  | APBranch [ArgParser a]
+                 -- ^ A branch where there are a number of possibilities for the parser underneath
   deriving Functor
 
 instance Applicative ArgParser where
