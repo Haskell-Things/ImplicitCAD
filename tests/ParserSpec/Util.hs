@@ -100,9 +100,12 @@ index = oapp "index"
 append = oapp "++"
 plus = oapp "+"
 
--- | We need two different kinds of application functions, one for operators, and one for functions.
-oapp,fapp :: Text -> [Expr] -> Expr
+-- | We need two different kinds of application functions, one for operators, and one for functions.  See also: 'fapp'.
+oapp :: Text -> [Expr] -> Expr
 oapp name args = Var (Symbol name) :$ args
+
+-- | See 'oapp'.
+fapp :: Text -> [Expr] -> Expr
 fapp name args = Var (Symbol name) :$ [ListE args]
 
 lambda :: [Pattern] -> Expr -> [Expr] -> Expr
