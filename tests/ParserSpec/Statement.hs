@@ -42,10 +42,6 @@ infixr 1 -->
 (-->) source stmts =
     parseProgram "noname" source `shouldBe` Right stmts
 
--- | an expectation that a string generates an error.
--- parsesAsError :: String -> Expectation
--- parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
-
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
 single st = [StatementI (SourcePosition 1 1 "noname") st]
