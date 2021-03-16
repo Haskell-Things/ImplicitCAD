@@ -63,7 +63,7 @@ infixr 1 -->
 (-->) source expr =
   parse (expr0 <* eof) "<expr>" source `shouldBe` Right expr
 
--- | Types
+-- Types
 
 num :: ℝ -> Expr
 num x
@@ -81,7 +81,7 @@ stringLiteral = LitE . OString
 undefined :: Expr
 undefined = LitE OUndefined
 
--- | Operators
+-- Operators
 
 plus,minus,mult,modulo,power,divide,negate,and,or,not,gt,lt,ternary,append,index :: [Expr] -> Expr
 minus = oapp "-"
@@ -100,9 +100,12 @@ index = oapp "index"
 append = oapp "++"
 plus = oapp "+"
 
--- | We need two different kinds of application functions, one for operators, and one for functions.
-oapp,fapp :: Text -> [Expr] -> Expr
+-- | We need two different kinds of application functions, one for operators, and one for functions.  See also: 'fapp'.
+oapp :: Text -> [Expr] -> Expr
 oapp name args = Var (Symbol name) :$ args
+
+-- | See 'oapp'.
+fapp :: Text -> [Expr] -> Expr
 fapp name args = Var (Symbol name) :$ [ListE args]
 
 lambda :: [Pattern] -> Expr -> [Expr] -> Expr

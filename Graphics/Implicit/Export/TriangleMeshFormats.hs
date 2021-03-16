@@ -35,7 +35,7 @@ cleanupTris tris =
         floatPoint :: V3 ℝ -> (Float, Float, Float)
         floatPoint (V3 a b c) = (toFloat a, toFloat b, toFloat c)
 
-        -- | Does this triangle fail because it is constrained on two axises?
+        -- Does this triangle fail because it is constrained on two axises?
         isDegenerateTri2Axis :: Eq a => ((a, a, a),(a, a, a),(a, a, a)) -> Bool
         isDegenerateTri2Axis tri = (ysame tri && xsame tri) || (zsame tri && ysame tri) || (zsame tri && xsame tri)
           where

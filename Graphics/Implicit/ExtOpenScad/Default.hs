@@ -135,7 +135,7 @@ varArgModules =
                 modifyVarLookup iter
                 runSuite suite
           where
-            -- | convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
+            -- convert a list of arguments into a list of functions to transform the VarLookup with new bindings for each possible iteration.
             iterator :: [(Maybe Symbol, OVal)] -> [VarLookup -> VarLookup]
             iterator [] = [id]
             iterator ((Nothing, _):iterators) = iterator iterators

@@ -415,10 +415,11 @@ rotate3V
     -> SymbolicObj3
 rotate3V w xyz = Rotate3 $ axisAngle xyz w
 
--- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 -- | Attempt to pack multiple 3D objects into a fixed area. The @z@ coordinate
 -- of each object is dropped, and the resulting packed objects will all be on
 -- the same plane.
+--
+-- FIXME: shouldn't this pack into a 3d area, or have a 3d equivalent?
 pack3
     :: ℝ2                  -- ^ Area to pack
     -> ℝ                   -- ^ Separation between objects

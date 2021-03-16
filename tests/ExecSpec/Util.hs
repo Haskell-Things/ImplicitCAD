@@ -29,7 +29,7 @@ infixr 1 -->
 (-->) source value =
   runExpr source False `shouldBe` (value, [])
 
--- | Types
+-- Types
 
 num :: ℝ -> OVal
 num = ONum

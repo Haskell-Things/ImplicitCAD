@@ -37,14 +37,10 @@ pattern Name :: Text -> Pattern
 pattern Name n = GIED.Name (Symbol n)
 
 -- | an expectation that a string is equivalent to a statement.
-infixr 1 -->
 (-->) :: String -> [StatementI] -> Expectation
 (-->) source stmts =
     parseProgram "noname" source `shouldBe` Right stmts
-
--- | an expectation that a string generates an error.
--- parsesAsError :: String -> Expectation
--- parsesAsError source = parseProgram "noname" source `shouldSatisfy` isLeft
+infixr 1 -->
 
 -- | A single statement.
 single :: Statement StatementI -> [StatementI]
@@ -75,7 +71,7 @@ assignmentSpec = do
     fooFunction = Name "foo" := LamE [Name "x", Name "y"]
                                 (mult [Var "x", Var "y"])
 
--- | Test a simple if block.
+-- Test a simple if block.
 ifSpec :: Spec
 ifSpec = do
   it "parses" $
@@ -85,7 +81,7 @@ ifSpec = do
     "if ( true ) { a ( ) ; } else {b();}" -->
     single ( If (bool True) [call "a" 15 [] []] [call "b" 31 [] []])
 
--- | Our entry point. Test all of the statements.
+-- Our entry point. Test all of the statements.
 statementSpec :: Spec
 statementSpec = do
   describe "empty file" $

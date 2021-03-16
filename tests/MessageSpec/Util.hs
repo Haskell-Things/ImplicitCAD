@@ -35,7 +35,6 @@ infixr 1 -->
   getOpenscadMessages scadOptions [] source `shouldReturn` value
   where
     scadOptions = generateScadOpts
--- | Types
 
 -- | An even smaller wrapper which runs a program, and only returns the generated messages. for the test suite.
 getOpenscadMessages ::  ScadOpts -> [String] -> String -> IO [Message]
