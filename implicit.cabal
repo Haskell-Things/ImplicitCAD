@@ -94,7 +94,6 @@ Library
                   mtl,
                   linear,
                   QuickCheck,
-                  quickspec,
                   show-combinators,
                   lens
 
