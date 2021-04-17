@@ -13,6 +13,15 @@
     * from `Object obj vec => R -> [obj] -> obj`
     * to `Object obj vec => R -> obj -> [obj] -> obj`
   * Both `SymbolicObj2` and `SymbolicObj3` now have `Semigroup` and `Monoid` instances, where `<>` acts as `union` [#301](https://github.com/colah/ImplicitCAD/pull/301)
+  * Added `rotateQ` function for rotating with Quaternions [#314][https://github.com/colah/ImplicitCAD/pull/314]
+  * `ℝ2` and `ℝ3` are now using `V2` and `V3` from `linear` instead of tuples [#342](https://github.com/colah/ImplicitCAD/pull/342)
+  * Rounding is now separate from primitives [#362](https://github.com/colah/ImplicitCAD/pull/362)
+    * Introduces `withRounding` function.
+    * Instead of `primitiveR roundingValue ...` we now use `withRounding roundingValue (primitive ...)`
+    * Replaces `squareR`, `rectR`, `polygonR`, `cubeR`, `rect3R`, `extrudeR`, `extrudeRM` with versions
+      without rounding arugment (`square`, `rect`, ...).
+  * Removed `ExtrudeRotateR` [#365](https://github.com/colah/ImplicitCAD/pull/365)
+  * `rotateExtrude` now longer accepts rounding paramater [#367](https://github.com/colah/ImplicitCAD/pull/367)
 
 * ExtOpenSCAD interface changes
   * `scale` function with single parameter now behaves similar to OpenSCAD one [#258](https://github.com/colah/ImplicitCAD/pull/258)
@@ -31,3 +40,4 @@
   * Added golden test machinery [#311](https://github.com/colah/ImplicitCAD/pull/311)
   * Added quickcheck test machinery for implicit functions [#316](https://github.com/colah/ImplicitCAD/pull/316)
   * Rotate now internally uses quaternions [#314](https://github.com/colah/ImplicitCAD/pull/314)
+  * Fixes to triangle generation [#355](https://github.com/colah/ImplicitCAD/pull/355) and [#375](https://github.com/colah/ImplicitCAD/pull/375)
