@@ -1,7 +1,7 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?style=flat)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/colah/ImplicitCAD/Haskell%20CI)](https://github.com/colah/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
 
 Introduction
 ------------
