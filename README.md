@@ -6,7 +6,7 @@ ImplicitCAD: Math Inspired CAD
 Introduction
 ------------
 
-ImplicitCAD is a programmatic CAD program, implemented in haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
+ImplicitCAD is a programmatic CAD program, implemented in Haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
  - Objects can be abstracted and reused
  - Repetitive tasks can be automated
