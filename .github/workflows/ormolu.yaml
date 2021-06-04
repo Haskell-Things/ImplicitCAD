@@ -1,0 +1,51 @@
+# FUTUREWORK: add this to `ci.dhall`?
+
+name: Ormolu
+on:
+  - pull_request
+
+jobs:
+  ormolu:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: "actions/checkout@v1"
+
+      - uses: "actions/setup-haskell@v1.1.4"
+        id: setup-haskell-cabal
+        with:
+          cabal-version: "${{ matrix.cabal }}"
+          enable-stack: false
+          ghc-version: "${{ matrix.ghc }}"
+
+      - uses: "actions/cache@v2"
+        name: Cache
+        with:
+          key: "${{ runner.os }}"
+          path: |
+            "${{ steps.setup-haskell-cabal.outputs.cabal-store }}"
+            ~/.cabal/packages
+            ~/.cabal/store
+            ~/.cabal/bin
+            dist-newstyle
+            ~/.local/bin
+
+      - name: Install dependencies
+        run: |
+          export PATH=$PATH:$HOME/.cabal/bin:$HOME/.local/bin
+          export ORMOLU_VERSION=$(cat ./layout/ormolu.version)
+          (ormolu -v 2>/dev/null | grep -q $ORMOLU_VERSION) || (cabal update && cabal install ormolu --constraint="ormolu ==$ORMOLU_VERSION")
+          test -e $HOME/.local/bin/yq || pip3 install yq
+        shell: bash
+
+      - name: Ormolu
+        run: |
+          export PATH=$PATH:$HOME/.cabal/bin:$HOME/.local/bin
+          ./layout/ormolu.sh -c
+        shell: bash
+
+    strategy:
+      matrix:
+        cabal:
+          - '3.2'
+        ghc:
+          - '8.10.1'

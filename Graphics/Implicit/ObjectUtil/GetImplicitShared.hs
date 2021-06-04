@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
@@ -23,7 +24,6 @@ import Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(elements, uniformV
 
 import Linear (Metric(dot))
 
-
 ------------------------------------------------------------------------------
 -- | Normalize a dimensionality-polymorphic vector.
 normalize
@@ -34,7 +34,6 @@ normalize
 normalize v =
   let all1s = uniformV @(f ℝ) 1
    in abs (product (elements v)) ** (1 / (all1s `dot` all1s))
-
 
 -- Get a function that describes the surface of the object.
 getImplicitShared

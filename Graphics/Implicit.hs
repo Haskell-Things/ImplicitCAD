@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -194,7 +195,6 @@ writePNG2
     -> SymbolicObj2
     -> IO ()
 writePNG2 = Export.writePNG
-
 
 -- | Export a PNG of the 'SymbolicObj3'. The projection is with a front-facing
 -- camera, so the coordinate system is @(left to right, front to back, down to

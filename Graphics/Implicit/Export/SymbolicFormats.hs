@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2016 Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -54,7 +55,6 @@ call = callToken ("[", "]")
 callNaked :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
 callNaked = callToken ("", "")
 
-
 ------------------------------------------------------------------------------
 -- | Class which allows us to build the contained objects in 'buildShared'.
 class Build obj where
@@ -66,7 +66,6 @@ instance Build SymbolicObj2 where
 instance Build SymbolicObj3 where
   build = buildS3
 
-
 ------------------------------------------------------------------------------
 -- | Unpack a dimensionality-polymorphic vector into multiple arguments.
 vectAsArgs :: VectorStuff vec => vec -> [Builder]
@@ -76,7 +75,6 @@ vectAsArgs = fmap bf . elements
 -- | Unpack a dimensionality-polymorphic vector into a single argument.
 bvect :: VectorStuff vec => vec -> Builder
 bvect v = "[" <> fold (intersperse "," $ vectAsArgs v) <> "]"
-
 
 ------------------------------------------------------------------------------
 -- | Build the common combinators.
@@ -120,7 +118,6 @@ buildShared(Shell _ _) = error "cannot provide roundness when exporting openscad
 buildShared(EmbedBoxedObj _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildShared (WithRounding _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
-
 -- | First, the 3D objects.
 buildS3 :: SymbolicObj3 -> Reader ℝ Builder
 
@@ -142,7 +139,6 @@ buildS3 (Rotate3 q obj) =
 -- FIXME: where is EmbedBoxedObj3?
 
 buildS3 (Extrude obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
-
 
 -- FIXME: handle scale, center.
 buildS3 (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID scale && translate == V2 0 0 = do

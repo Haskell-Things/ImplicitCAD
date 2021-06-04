@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -116,7 +117,6 @@ cube
 cube False size = Cube size
 cube True  size = translate (fmap (negate . (/ 2)) size) $ Cube size
 
-
 -- | A conical frustum --- ie. a cylinder with different radii at either end.
 cylinder2 ::
     ℝ                   -- ^ Radius of the cylinder
@@ -204,7 +204,6 @@ pattern Shared :: Object obj vec => SharedObj obj vec -> obj
 pattern Shared v <- (preview _Shared -> Just v)
   where
     Shared v = _Shared # v
-
 
 -- | Translate an object by a vector of appropriate dimension.
 translate
@@ -332,7 +331,6 @@ implicit
     -> obj         -- ^ Resulting object
 implicit a b = Shared $ EmbedBoxedObj (a, b)
 
-
 instance Object SymbolicObj2 ℝ2 where
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
@@ -346,7 +344,6 @@ instance Object SymbolicObj3 ℝ3 where
     _         -> Nothing
   getBox       = getBox3
   getImplicit' = getImplicit3
-
 
 union :: Object obj vec => [obj] -> obj
 union = unionR 0
@@ -377,7 +374,6 @@ extrudeM
     -> Either ℝ (ℝ2 -> ℝ)   -- ^ height to extrude to
     -> SymbolicObj3
 extrudeM = ExtrudeM
-
 
 rotateExtrude
     :: ℝ                    -- ^ Angle to sweep to (in rad)

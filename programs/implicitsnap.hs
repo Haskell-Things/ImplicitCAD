@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -235,5 +236,4 @@ executeAndExport content callback maybeFormat =
                  else callbackS output3d (scadMessages <> unionWarning)
         ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
         _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"
-
 

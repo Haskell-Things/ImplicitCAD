@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Example 11 - the union of a square and a circle.
 import Graphics.Implicit
 

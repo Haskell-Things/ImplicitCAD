@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase   #-}
 
@@ -9,7 +10,6 @@ import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), re
 import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO (hClose, openTempFile)
 import Test.Hspec (it, shouldBe, SpecWith)
-
 
 ------------------------------------------------------------------------------
 -- | Construct a golden test for rendering the given 'SymbolicObj3' at the
@@ -40,7 +40,6 @@ golden name resolution sym = it (name <> " (golden)") $ do
   if res == cached
     then pure ()
     else False `shouldBe` True
-
 
 ------------------------------------------------------------------------------
 -- | Get a temporary filepath with the desired extension. On unix systems, this

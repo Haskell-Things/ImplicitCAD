@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Example 13 - the rounded union of a cube and a sphere.
 import Control.Applicative (pure)
 import Graphics.Implicit

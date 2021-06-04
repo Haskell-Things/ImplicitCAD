@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -30,14 +31,12 @@ import Linear (V2(V2))
   To allow data sharing, lots of values we
   could calculate are instead arguments.
 
-
        positions               obj values
        ---------               ----------
 
   (x1,y2) .. (x2,y2)    obj   x1y2 .. x2y2
      :          :       =>     :       :
   (x1,y1) .. (x2,y1)          x1y1 .. x2y2
-
 
                mid points
                ----------

@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -226,7 +227,6 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
                         `defaultTo` 2
                         `doc` "top diameter; overrides d"
         pure (diameter/2, diameter1/2, diameter2/2)
-
 
     h      :: Either ℝ ℝ2    <- argument "h"
                 `defaultTo` Left 1
@@ -484,7 +484,6 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     pure $ pure $ obj2UpMap ( Prim.withRounding r
                             . rotateExtrudeDegrees totalRot translateArg rotateArg
                             ) children
-
 
 -- | Like 'Prim.rotateExtrude', but operates in degrees instead of radians.
 -- This is a shim for scad, which expects this function to operate in degrees.

@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -47,7 +48,6 @@ parseProgram :: SourceName -> String -> Either ParseError [StatementI]
 parseProgram = parse program where
     program :: GenParser Char st [StatementI]
     program = removeNoOps <$> (whiteSpace *> many (computation A1) <* eof)
-
 
 -- | A computable block of code in our openscad-like programming language.
 computation :: CompIdx -> GenParser Char st StatementI

@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds     #-}
@@ -41,7 +42,6 @@ import Graphics.Implicit (extrude)
 import Graphics.Implicit (cylinder2)
 import Graphics.Implicit (mirror)
 
-
 ------------------------------------------------------------------------------
 -- Tests showing equivalencies between algebraic formulations of symbolic
 -- objects, in both 2d and 3d. Equality is observational, based on random
@@ -67,7 +67,6 @@ spec = do
     rotation3dSpec
     misc3dSpec
 
-
 ------------------------------------------------------------------------------
 -- All the constraints we need in scope to parameterize tests by both 2d and
 -- 3d symbolic objects.
@@ -82,7 +81,6 @@ type TestInfrastructure obj vec test outcome =
   , Arbitrary obj
   , Arbitrary vec
   )
-
 
 ------------------------------------------------------------------------------
 -- Tests proving that symbolic objects form a monoid.
@@ -99,7 +97,6 @@ monoidSpec = describe "monoid laws" $ do
 
   prop "(a <> b) <> c = a <> (b <> c)" $ \a b (c :: obj) ->
     (a <> b) <> c =~= a <> (b <> c)
-
 
 ------------------------------------------------------------------------------
 -- Tests showing that 'translate' is a no-op for both 'emptySpace' and
@@ -124,7 +121,6 @@ idempotenceSpec = describe "idempotence" $ do
     withRounding r . withRounding r'
       =~= withRounding @obj r'
 
-
 ------------------------------------------------------------------------------
 -- Proofs of the invertability of operations.
 inverseSpec
@@ -148,7 +144,6 @@ inverseSpec = describe "inverses" $ do
   -- --     scale @obj xyz . scale (invert xyz)
   -- --       =~= id
 
-
 ------------------------------------------------------------------------------
 -- Proofs that 'fullSpace' is an annhilative element with respect to union.
 annihilationSpec
@@ -162,7 +157,6 @@ annihilationSpec = describe "annihilation" $ do
   prop "obj <> full = full" $ \obj ->
     obj <> fullSpace
       =~= fullSpace @obj
-
 
 ------------------------------------------------------------------------------
 -- Misc proofs regarding 2d rotation.
@@ -187,7 +181,6 @@ rotation2dSpec = describe "2d rotation" $ do
   prop "empty idempotent wrt rotate" $ \rads ->
     rotate rads emptySpace
       =~= emptySpace
-
 
 ------------------------------------------------------------------------------
 -- Misc proofs regarding 3d rotation.
@@ -226,7 +219,6 @@ rotation3dSpec = describe "3d rotation" $ do
     rotate3 xyz emptySpace
       =~= emptySpace
 
-
 ------------------------------------------------------------------------------
 -- Misc tests that make sense only in 3d
 misc3dSpec :: Spec
@@ -237,7 +229,6 @@ misc3dSpec = describe "misc 3d tests" $ do
 
   prop "cylinder with negative height is a flipped cylinder with positive height" $ \r1 r2 h ->
     cylinder2 r1 r2 h =~= mirror (V3 0 0 1) (cylinder2 r1 r2 (-h))
-
 
 ------------------------------------------------------------------------------
 -- Misc identity proofs that should hold for all symbolic objects.
@@ -269,7 +260,6 @@ identitySpec = describe "identity" $ do
   prop "union [a] = a" $ \obj ->
     union @obj [obj] =~= obj
 
-
 ------------------------------------------------------------------------------
 -- Functions proving symbolic objects form homomorphisms with respect to
 -- translate and scale.
@@ -297,7 +287,6 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "withRounding/intersectR" $ \r_obj r_combo ->
     withRounding @obj r_obj . intersectR r_combo
       =~= intersectR r_combo . fmap (withRounding r_obj)
-
 
 ------------------------------------------------------------------------------
 -- | Like 'prop', but for tests that are currently expected to fail.

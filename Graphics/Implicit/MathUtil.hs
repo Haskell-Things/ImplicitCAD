@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
@@ -132,7 +133,6 @@ pack (dx, dy) sep objs = packSome sortedObjs (dx, dy)
             else
                 tmap2 (presObj:) $ packSome otherBoxedObjs box
         packSome [] _ = ([], [])
-
 
 -- | Reflect a vector across a hyperplane defined by its normal vector.
 --

@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
@@ -19,7 +20,6 @@ import Linear (Metric, V2(V2), V3(V3))
 import Data.Foldable (Foldable(toList))
 import Control.Applicative (Applicative(liftA2))
 
-
 ------------------------------------------------------------------------------
 -- | Ad-hoc methods we need to share code between 2D and 3D. With the exception
 -- of 'corners', these are actually all standard methods of other classes,
@@ -36,7 +36,6 @@ class VectorStuff vec where
   elements :: vec -> [ℝ]
   -- | Given a bounding box, produce the points at each corner.
   corners :: (vec, vec) -> [vec]
-
 
 instance VectorStuff ℝ2 where
   uniformV = pure
@@ -72,7 +71,6 @@ instance VectorStuff ℝ3 where
   {-# INLINABLE elements #-}
   {-# INLINABLE corners #-}
 
-
 ------------------------------------------------------------------------------
 -- | Compute the intersection of dimensionality-polymorphic bounding boxes.
 intersectBoxes
@@ -94,7 +92,6 @@ biapp
 biapp f g (a1, b1) (a2, b2) = (f a1 a2, g b1 b2)
 {-# INLINABLE biapp #-}
 
-
 -- | An empty box.
 emptyBox :: (Applicative f, Num a) => (f a, f a)
 emptyBox = (pure 0, pure 0)
@@ -109,7 +106,6 @@ fullBox = (uniformV (-infty), uniformV infty)
 pointsBox :: (Applicative f, Num a, VectorStuff (f a)) => [f a] -> (f a, f a)
 pointsBox [] = emptyBox
 pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
-
 
 ------------------------------------------------------------------------------
 -- | Compute the intersection of dimensionality-polymorphic bounding boxes.

@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Copyright 2015 2016, Mike MacHenry (mike.machenry@gmail.com)
@@ -144,7 +145,6 @@ getBox3 (RotateExtrude rot (Right f) rotate symbObj) =
             else (x2 + xmax', y1 + ymin', y2 + ymax')
     in
         (V3 (-r) (-r) $ y1 + ymin', V3 r  r  $ y2 + ymax')
-
 
 unpack :: V2 a -> (a, a)
 unpack (V2 a b) = (a, b)
