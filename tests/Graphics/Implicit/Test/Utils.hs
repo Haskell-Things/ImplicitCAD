@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 module Graphics.Implicit.Test.Utils where
 
 import Prelude (drop, (<*>), (<$>), take, length, pure)

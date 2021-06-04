@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 module PropertySpec
   ( propSpec
   ) where

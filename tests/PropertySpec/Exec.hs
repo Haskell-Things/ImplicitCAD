@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 module PropertySpec.Exec
   ( additionSpec
   , subtractionSpec

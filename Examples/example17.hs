@@ -1,3 +1,4 @@
+{- ORMOLU_DISABLE -}
 -- Example 17, pulled from our benchmarking suite.
 import Control.Applicative (pure)
 import Prelude ((<$>), ($), zipWith3, fmap, fromIntegral, (*), (/), Bool(..))
