@@ -22,7 +22,6 @@ import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, 
 -- To construct vectors of ℝs.
 import Linear (V2(V2))
 
-
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
 -- Primitives
@@ -35,7 +34,6 @@ getBox2 (Rotate2 θ symbObj) =
     let rotate (V2 x y) = V2 (x*cos θ - y*sin θ) (x*sin θ + y*cos θ)
      in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
 getBox2 (Shared2 obj) = getBoxShared obj
-
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.
 --   Note: No implementations for Square, Translate2, or Scale2 as they would be identical to the fallthrough.

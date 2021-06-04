@@ -237,4 +237,3 @@ executeAndExport content callback maybeFormat =
         ([], []         , _) -> callbackF False False 1 $ scadMessages <> "\n" <> "Nothing to render."
         _                    -> callbackF False False 1 $ scadMessages <> "\n" <> "ERROR: File contains a mixture of 2D and 3D objects, what do you want to render?"
 
-

@@ -82,7 +82,6 @@ instance Arbitrary SymbolicObj2 where
         , pure emptySpace
         ]
 
-
 -- TODO(sandy): Also generate all of the extrusion variants.
 instance Arbitrary SymbolicObj3 where
   shrink = genericShrink
@@ -132,7 +131,6 @@ instance CoArbitrary ℝ2 where
 instance CoArbitrary ℝ3 where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
 
-
 instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
   arbitrary = oneof
@@ -140,7 +138,6 @@ instance Arbitrary ExtrudeMScale where
     , C2 <$> arbitrary
     , Fn <$> arbitrary
     ]
-
 
 instance Arbitrary (Quaternion ℝ) where
   arbitrary = do
@@ -150,20 +147,17 @@ instance Arbitrary (Quaternion ℝ) where
       then discard
       else pure $ axisAngle v q
 
-
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj2's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
 instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
   observe p = insidedness . observe p . getImplicit
 
-
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj3's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
 instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
   observe p = insidedness . observe p . getImplicit
-
 
 -- | Generate a small list of 'Arbitrary' elements, splitting the current
 -- complexity budget between all of them.

@@ -248,7 +248,6 @@ instance (Show obj, Show vec) => Show (SharedObj obj vec) where
      EmbedBoxedObj _         -> showCon "implicit"     @| Blackhole
      WithRounding r obj      -> showCon "withRounding" @| r   @| obj
 
-
 ------------------------------------------------------------------------------
 -- | A type whose show instance is a hole @_@. Used for giving 'Show' instances
 -- to data types which contain functions or other unshowable things.
@@ -256,7 +255,6 @@ data Blackhole = Blackhole
 
 instance Show Blackhole where
   show _ = "_"
-
 
 newtype ObjectContext = ObjectContext
   { objectRounding :: ℝ
@@ -266,7 +264,6 @@ defaultObjectContext :: ObjectContext
 defaultObjectContext = ObjectContext
   { objectRounding = 0
   }
-
 
 -- | A symbolic 2D object format.
 --   We want to have symbolic objects so that we can
@@ -294,12 +291,9 @@ instance Show SymbolicObj2 where
     Rotate2 v obj -> showCon "rotate" @| v     @| obj
     Shared2 obj   -> flip showsPrec obj
 
-
-
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj2 where
   a <> b = Shared2 (UnionR 0 [a, b])
-
 
 -- | Monoid under 'Graphic.Implicit.Primitives.union'.
 instance Monoid SymbolicObj2 where
@@ -353,7 +347,6 @@ instance Show SymbolicObj3 where
       showCon "extrudeOnEdgeOf" @| s @| s1
     Shared3 s -> flip showsPrec s
 
-
 infixl 2 @||
 ------------------------------------------------------------------------------
 -- | ImplicitCAD uses the pattern @Either a (b -> c)@ for many of its
@@ -365,7 +358,6 @@ infixl 2 @||
 showF @|| x = showApp showF $ case x of
   Left a  -> showCon "Left" @| a
   Right _ -> showCon "Right" @| Blackhole
-
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
 instance Semigroup SymbolicObj3 where

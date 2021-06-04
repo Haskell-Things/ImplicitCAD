@@ -228,7 +228,6 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
                         `doc` "top diameter; overrides d"
         pure (diameter/2, diameter1/2, diameter2/2)
 
-
     h      :: Either ℝ ℝ2    <- argument "h"
                 `defaultTo` Left 1
                 `doc` "height of cylinder"
@@ -485,7 +484,6 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
     pure $ pure $ obj2UpMap ( Prim.withRounding r
                             . rotateExtrudeDegrees totalRot translateArg rotateArg
                             ) children
-
 
 -- | Like 'Prim.rotateExtrude', but operates in degrees instead of radians.
 -- This is a shim for scad, which expects this function to operate in degrees.

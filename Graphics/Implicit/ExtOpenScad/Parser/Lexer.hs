@@ -4,7 +4,6 @@
 -- Copyright 2014 2015 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -139,7 +138,6 @@ matchCAT :: GenParser Char st Text
 matchCAT = P.reservedOp lexer "++" >> pure "++"
 matchEXP :: GenParser Char st Char
 matchEXP = P.reservedOp lexer "^" >> pure '^'
-
 
 -- | match something between two ends.
 surroundedBy :: Char -> GenParser Char st a -> Char -> GenParser Char st a

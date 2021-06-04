@@ -173,4 +173,3 @@ traceRay ray@(Ray cameraP cameraV) step box (Scene obj objColor lights defaultCo
             )
         Nothing   -> defaultColor
 
-

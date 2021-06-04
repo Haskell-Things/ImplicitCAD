@@ -49,7 +49,6 @@ parseProgram = parse program where
     program :: GenParser Char st [StatementI]
     program = removeNoOps <$> (whiteSpace *> many (computation A1) <* eof)
 
-
 -- | A computable block of code in our openscad-like programming language.
 computation :: CompIdx -> GenParser Char st StatementI
 computation A1 =

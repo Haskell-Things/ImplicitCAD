@@ -6,7 +6,7 @@ module PropertySpec
 import Test.Hspec (Spec)
 import PropertySpec.Exec (additionSpec, subtractionSpec, multiplicationSpec, divisionSpec)
 
-propSpec :: Spec 
+propSpec :: Spec
 propSpec = do
   additionSpec
   subtractionSpec

@@ -34,7 +34,7 @@ instance Show Op where
   show Mul = "*"
   show Div = "/"
 
-opName :: Op -> String 
+opName :: Op -> String
 opName Add = "addition"
 opName Sub = "subttraction"
 opName Mul = "multiplication"

@@ -196,7 +196,6 @@ writePNG2
     -> IO ()
 writePNG2 = Export.writePNG
 
-
 -- | Export a PNG of the 'SymbolicObj3'. The projection is with a front-facing
 -- camera, so the coordinate system is @(left to right, front to back, down to
 -- up)@.

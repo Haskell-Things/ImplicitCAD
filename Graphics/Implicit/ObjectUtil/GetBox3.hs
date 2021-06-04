@@ -146,7 +146,6 @@ getBox3 (RotateExtrude rot (Right f) rotate symbObj) =
     in
         (V3 (-r) (-r) $ y1 + ymin', V3 r  r  $ y2 + ymax')
 
-
 unpack :: V2 a -> (a, a)
 unpack (V2 a b) = (a, b)
 

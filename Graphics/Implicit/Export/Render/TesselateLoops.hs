@@ -24,7 +24,6 @@ tesselateLoop _ _ [] = []
 
 tesselateLoop _ _ [[a,b],[_,c],[_,_]] = [Tris $ TriangleMesh [Triangle (a,b,c)]]
 
-
 {-
    #____#     #____#
    |    |     |    |
@@ -92,7 +91,6 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
     in if abs midval' < abs midval
         then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (tail path <> [head path]) ]
         else early_tris <> [Triangle (a,b,mid) | (a,b) <- zip path (tail path <> [head path]) ]
-
 
 shrinkLoop :: ℕ -> [ℝ3] -> ℝ -> Obj3 -> ([Triangle], [ℝ3])
 

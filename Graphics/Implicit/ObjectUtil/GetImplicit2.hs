@@ -20,8 +20,6 @@ import Data.List (nub)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 import Linear (V2(V2))
 
-
-
 ------------------------------------------------------------------------------
 -- | Filter out equal consecutive elements in the list. This function will
 -- additionally trim the last element of the list if it's equal to the first.
@@ -30,7 +28,6 @@ scanUniqueCircular
     = fmap fst
     . filter (uncurry (/=))
     . circularPairs
-
 
 ------------------------------------------------------------------------------
 -- | Given @[a, b, c, ... n]@, return the pairs @[(a, b), (b, c), ... (n, a)]@.

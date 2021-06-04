@@ -19,7 +19,6 @@ import Graphics.Implicit.Definitions (ℝ)
 -- Expressions, symbols, and values in the OpenScad language.
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum))
 
-
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
 
 import Test.Hspec (Expectation, shouldBe)

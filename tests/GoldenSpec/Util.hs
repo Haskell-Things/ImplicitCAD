@@ -11,7 +11,6 @@ import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO (hClose, openTempFile)
 import Test.Hspec (it, shouldBe, SpecWith)
 
-
 ------------------------------------------------------------------------------
 -- | Construct a golden test for rendering the given 'SymbolicObj3' at the
 -- specified resolution. On the first run of this test, it will render the
@@ -41,7 +40,6 @@ golden name resolution sym = it (name <> " (golden)") $ do
   if res == cached
     then pure ()
     else False `shouldBe` True
-
 
 ------------------------------------------------------------------------------
 -- | Get a temporary filepath with the desired extension. On unix systems, this
