@@ -296,8 +296,8 @@ Related projects
 ----------------
 
 * [ExplicitCAD](https://github.com/kliment/explicitcad/)
-* [HSlice](https://github.com/julialongtin/hslice/)
-* [implicitpipe](https://github.com/sorki/implicitpipe/)
+* [HSlice](https://github.com/Haskell-Things/hslice/)
+* [implicitpipe](https://github.com/Haskell-Things/implicitpipe/)
 
 Status
 ------
