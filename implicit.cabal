@@ -39,6 +39,10 @@ Common binstuff
                 -optc-O3
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
+                -- for weeder
+                -fwrite-ide-info
+                -- for stan
+                -hiedir=.hie
                 -Wall
                 -Wextra
                 -Wcompat
@@ -59,6 +63,10 @@ Common libstuff
                 -optc-O3
                 -- see GHC manual 8.2.1 section 6.5.1.
                 -feager-blackholing
+                -- for weeder
+                -fwrite-ide-info
+                -- for stan
+                -hiedir=.hie
                 -Wall
                 -Wextra
                 -Wcompat
