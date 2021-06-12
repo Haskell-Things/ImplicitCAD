@@ -83,7 +83,9 @@ module Graphics.Implicit (
 
   -- * Linear re-exports
   L.V2(V2),
-  L.V3(V3)
+  L.V3(V3),
+  L.Quaternion(Quaternion)
+
 ) where
 
 import Prelude(FilePath, IO)

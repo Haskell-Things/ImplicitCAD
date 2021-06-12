@@ -10,7 +10,7 @@ module Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh) where
 
 import Prelude(pure, zip, length, filter, (>), ($), null, (<>), foldMap, (.), (<$>))
 
-import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), Triangle, TriangleMesh(TriangleMesh, getTriangles))
+import Graphics.Implicit.Definitions (ℝ, ℝ3, SymbolicObj3(Shared3), SharedObj(UnionR), TriangleMesh(TriangleMesh, getTriangles))
 import Graphics.Implicit.Export.Render (getMesh)
 import Graphics.Implicit.ObjectUtil (getBox3)
 import Graphics.Implicit.MathUtil(box3sWithin)
