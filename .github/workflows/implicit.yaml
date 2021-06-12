@@ -28,9 +28,8 @@ jobs:
         cabal:
           - '3.2'
         ghc:
-          - '8.10.1'
+          - '8.10.5'
           - '8.8.3'
-          - '8.6.5'
 name: Haskell CI
 on:
   - push
