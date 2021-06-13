@@ -3,7 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Graphics.Implicit.Primitives where
+module Graphics.Implicit.Primitives (Object(getBox, getImplicit'), getImplicit) where
 
 import Graphics.Implicit.Definitions (ObjectContext, SymbolicObj2, SymbolicObj3, SharedObj, ℝ3, ℝ2, ℝ)
 import Control.Lens (Prism')
