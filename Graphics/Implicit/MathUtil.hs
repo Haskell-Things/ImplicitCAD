@@ -52,9 +52,7 @@ rmax ::
     -> ℝ  -- ^ first number to round maximum
     -> ℝ  -- ^ second number to round maximum
     -> ℝ  -- ^ resulting number
-rmax r x y
-  | r == 0    = max x y
-  | otherwise = if abs (x-y) < r
+rmax r x y = if abs (x-y) < r && r /= 0
                 then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
                 else max x y
 
