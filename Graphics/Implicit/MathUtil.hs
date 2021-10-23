@@ -66,7 +66,7 @@ rmin ::
     -> ℝ  -- ^ first number to round minimum
     -> ℝ  -- ^ second number to round minimum
     -> ℝ  -- ^ resulting number
-rmin r x y = if abs (x-y) < r
+rmin r x y = if abs (x-y) < r && r /= 0
     then y + r*sin(pi/4+asin((x-y)/r/sqrt 2)) - r
     else min x y
 
