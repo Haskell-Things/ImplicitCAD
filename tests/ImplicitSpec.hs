@@ -34,13 +34,13 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import QuickSpec (Observe)
 import Linear ( V3(V3), (^*) )
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
 import Graphics.Implicit (cylinder2)
 import Graphics.Implicit (mirror)
+import Graphics.Implicit.Test.Instances
 
 ------------------------------------------------------------------------------
 -- Tests showing equivalencies between algebraic formulations of symbolic

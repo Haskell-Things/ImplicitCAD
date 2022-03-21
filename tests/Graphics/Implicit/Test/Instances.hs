@@ -3,14 +3,18 @@
 -- Copyright (C) 2014 2015 2016, Julia Longtin (julia.longtin@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE DefaultSignatures      #-}
+{-# LANGUAGE GADTs                  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
 
-import Prelude (abs, fmap, Bounded, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bounded, Double, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 
 import Graphics.Implicit
     ( square,
@@ -39,8 +43,7 @@ import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.Primitives ( getImplicit )
 
-import QuickSpec ( Observe(observe), (=~=) )
-
+import qualified Test.QuickCheck
 import Test.QuickCheck
     (CoArbitrary(coarbitrary), discard,  Arbitrary(arbitrary, shrink),
       genericShrink,
@@ -50,7 +53,8 @@ import Test.QuickCheck
       sized,
       vectorOf,
       Gen,
-      Positive(getPositive) )
+      Positive(getPositive),
+      Property)
 
 import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
 
@@ -146,6 +150,26 @@ instance Arbitrary (Quaternion ℝ) where
     if v == 0.0
       then discard
       else pure $ axisAngle v q
+
+------------------------------------------------------------------------------
+-- Minimum of quickspec(s) Observe class and instances required for implicit testsuite
+-- BSD3 Copyright: 2009-2019 Nick Smallbone
+class (Arbitrary test, Ord outcome) => Observe test outcome a | a -> test outcome where
+  -- | Make an observation on a value. Should satisfy the following law: if
+  -- @x /= y@, then there exists a value of @test@ such that @observe test x /= observe test y@.
+  observe :: test -> a -> outcome
+
+  default observe :: (outcome ~ a) => test -> a -> outcome
+  observe _ x = x
+
+instance (Arbitrary a, Observe test outcome b) => Observe (a, test) outcome (a -> b) where
+  observe (x, obs) f = observe obs (f x)
+
+instance Observe () Double Double
+
+(=~=) :: (Show test, Show outcome, Observe test outcome a) => a -> a -> Property
+a =~= b = Test.QuickCheck.property $ \test -> observe test a Test.QuickCheck.=== observe test b
+infix 4 =~=
 
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj2's are the same if their 'getImplicit' functions agree at
