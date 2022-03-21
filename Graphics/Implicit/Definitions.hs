@@ -17,7 +17,6 @@ module Graphics.Implicit.Definitions (
     module N,
     ℝ,
     ℝ2,
-    both,
     ℝ3,
     minℝ,
     ComponentWiseMultable,
@@ -107,11 +106,6 @@ minℝ :: ℝ
 minℝ = 0.0000000000000002
 -- for Floats.
 --minℝ = 0.00000011920928955078125 * 2
-
--- | apply a function to both items in the provided tuple.
-both :: (t -> b) -> (t, t) -> (b, b)
-both f (x,y) = (f x, f y)
-{-# INLINABLE both #-}
 
 -- Wrap the functions that convert datatypes.
 
