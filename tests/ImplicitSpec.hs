@@ -10,7 +10,6 @@ module ImplicitSpec (spec) where
 
 import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
-import Graphics.Implicit.Test.Instances ((=~=))
 import Graphics.Implicit
     ( difference,
       rotate,
@@ -40,7 +39,7 @@ import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
 import Graphics.Implicit (cylinder2)
 import Graphics.Implicit (mirror)
-import Graphics.Implicit.Test.Instances
+import Graphics.Implicit.Test.Instances (Observe, (=~=))
 
 ------------------------------------------------------------------------------
 -- Tests showing equivalencies between algebraic formulations of symbolic
