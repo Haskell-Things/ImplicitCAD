@@ -51,7 +51,7 @@ data CompState = CompState
   , sourceDir :: FilePath  -- ^ The path we are looking for includes in.
   , messages  :: [Message] -- ^ Output strings, warnings, and errors generated during execution.
   , scadOpts  :: ScadOpts  -- ^ Options controlling the execution of scad code.
-  }
+  } deriving (Show)
 
 type StateC = StateT CompState IO
 
@@ -103,6 +103,7 @@ newtype Symbol = Symbol Text
   deriving (Show, Eq, Ord)
 
 newtype VarLookup = VarLookup (Map Symbol OVal)
+  deriving (Show, Eq)
 
 data Pattern = Name Symbol
              | ListP [Pattern]
@@ -218,7 +219,7 @@ instance Show Message where
 data ScadOpts = ScadOpts
   { openScadCompatibility :: Bool
   , importsAllowed        :: Bool
-  }
+  } deriving (Show, Eq)
 
 -- helper, to use union on VarLookups.
 varUnion :: VarLookup -> VarLookup -> VarLookup
