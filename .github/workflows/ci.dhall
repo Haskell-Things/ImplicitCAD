@@ -9,7 +9,7 @@ in    haskellCi.generalCi
               , haskellCi.GHC.GHC884
               , haskellCi.GHC.GHC865
               ]
-            , cabal = [ haskellCi.Cabal.Cabal32 ]
+            , cabal = [ haskellCi.Cabal.Cabal34 ]
             }
         )
         // { on = [ haskellCi.Event.push
