@@ -10,7 +10,7 @@
 module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (==), (>=), signum, atan2, error)
+import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (>=), signum, atan2, error, (/=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
@@ -52,9 +52,7 @@ rmax ::
     -> ℝ  -- ^ first number to round maximum
     -> ℝ  -- ^ second number to round maximum
     -> ℝ  -- ^ resulting number
-rmax r x y
-  | r == 0    = max x y
-  | otherwise = if abs (x-y) < r
+rmax r x y = if abs (x-y) < r && r /= 0
                 then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
                 else max x y
 
@@ -66,7 +64,7 @@ rmin ::
     -> ℝ  -- ^ first number to round minimum
     -> ℝ  -- ^ second number to round minimum
     -> ℝ  -- ^ resulting number
-rmin r x y = if abs (x-y) < r
+rmin r x y = if abs (x-y) < r && r /= 0
     then y + r*sin(pi/4+asin((x-y)/r/sqrt 2)) - r
     else min x y
 
