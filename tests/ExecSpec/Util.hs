@@ -8,16 +8,17 @@
 module ExecSpec.Util
        ( (-->)
        , num
+       , vect
        ) where
 
 -- be explicit about where we get things from.
-import Prelude (String, Bool(False))
+import Prelude (String, Bool(False), map, (.))
 
 -- The datatype of positions in our world.
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OList))
 
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
 
@@ -33,3 +34,6 @@ infixr 1 -->
 
 num :: ℝ -> OVal
 num = ONum
+
+vect :: [ℝ] -> OVal
+vect =  OList . map num
