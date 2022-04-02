@@ -130,10 +130,13 @@ evalExpr' (fexpr :$ argExprs) = do
     pure $ \s -> app (fValFunc s) (fmap ($s) argValFuncs)
         where
             app f l = case (getErrors f, getErrors $ OList l) of
-                (Nothing, Nothing) -> app' f l where
-                    app' (OFunc f') (x:xs) = app (f' x) xs
-                    app' a [] = a
-                    app' x _ = OError $ "Can't apply arguments to " <> oTypeStr x
+                (Nothing, Nothing) -> app' f l
+                    where
+                        -- apply function to the list of its arguments until we run out
+                        -- of them
+                        app' (OFunc f') (x:xs) = app (f' x) xs
+                        app' a [] = a
+                        app' x _ = OError $ "Can't apply arguments to " <> oTypeStr x
                 (Just err, _     ) -> OError err
                 (_,      Just err) -> OError err
 
