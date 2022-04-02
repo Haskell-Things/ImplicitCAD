@@ -223,7 +223,6 @@ Test-suite test-implicit
                   directory,
                   hedgehog,
                   hw-hspec-hedgehog,
-                  quickspec,
                   QuickCheck,
                   linear,
                   lens

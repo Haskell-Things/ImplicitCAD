@@ -10,6 +10,8 @@ convert=convert
 # The location of GHC, used to compile .hs examples.
 GHC=ghc
 GHCVERSION=$(shell ${GHC} --version | sed "s/.*version //")
+CABAL=cabal
+CABALVERSION=$(shell ${CABAL} --version | sed -n "s/.*install version \([0-9.]*\).*/\1/p")
 IMPLICITVERSION=$(shell cat implicit.cabal | sed -n "s/Version[: ]*\([0-9]*.*\)/\1/p")
 ARCHITECTURE=$(shell uname -m | sed "s/i[3-6]86/i386/" )
 # FIXME: detect this on other OSes.
@@ -71,7 +73,7 @@ LIBBUILDS=$(shell find ${LIBDIR} -name '*.hi' -o -name '*.o')
 LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 
 # don't try to compile implicitsnap unless the flag for compiling it has been set.
-MAYBEIMPLICITSNAPBIN=$(shell bash -c "[ -n \"$$(cat cabal.project.local | sed -n '/flags: .*+implicitsnap.*/p')\" ] && echo ${IMPLICITSNAPBIN}" )
+MAYBEIMPLICITSNAPBIN=$(shell bash -c "[ -n \"$$([ -f cabal.project.local ] && cat cabal.project.local | sed -n '/flags: .*+implicitsnap.*/p')\" ] && echo ${IMPLICITSNAPBIN}" )
 
 EXECTARGETS=$(EXTOPENSCADBIN) $(MAYBEIMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
 EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
@@ -95,7 +97,11 @@ EXAMPLEOPTS=-package linear -package show-combinators -package lens
 MAKEFLAGS += --no-builtin-rules
 
 # Build implicitcad binaries.
-build: $(TARGETS)
+build: ensureBootstrap $(TARGETS)
+
+# Ensure the haskell environment is sane
+ensureBootstrap:
+	@if [ "${CABALVERSION}" = "2.4.0.0" ] && [ ! -d ~/.cabal/store/ghc-${GHCVERSION}/package.db ] ; then { echo "please create ~/.cabal/store/ghc-${GHCVERSION}/package.db , to workaround a known cabal bug." ;  error 1 ; } fi
 
 # Install implicitcad.
 install: build
