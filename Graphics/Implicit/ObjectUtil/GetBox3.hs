@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
       ExtrudeMScale(C2, C1),
-      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude),
+      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude),
       Box3,
       ℝ,
       fromFastℕtoℝ,
@@ -20,7 +20,8 @@ import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R)
 
-import qualified Linear.Quaternion as Q
+-- TODO as L or no as
+import qualified Linear as Q
 import Graphics.Implicit.ObjectUtil.GetBoxShared (corners, pointsBox, getBoxShared)
 
 import Linear (V2(V2), V3(V3))
@@ -39,6 +40,9 @@ getBox3 (Cylinder h r1 r2) = (V3 (-r) (-r) 0, V3 r r h ) where r = max r1 r2
 getBox3 (Rotate3 q symbObj) =
     let box = getBox3 symbObj
      in pointsBox $ Q.rotate q <$> corners box
+getBox3 (Transform3 m symbObj) =
+    let box = getBox3 symbObj
+     in pointsBox $ Q.normalizePoint . (m Q.!*) . Q.point <$> corners box
 -- Misc
 -- 2D Based
 getBox3 (Extrude symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)

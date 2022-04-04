@@ -50,6 +50,7 @@ module Graphics.Implicit.Definitions (
         Sphere,
         Cylinder,
         Rotate3,
+        Transform3,
         Extrude,
         ExtrudeM,
         ExtrudeOnEdgeOf,
@@ -77,7 +78,7 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
-import Linear (V2(V2), V3(V3))
+import Linear (M44, V2(V2), V3(V3))
 
 import Linear.Quaternion (Quaternion(Quaternion))
 
@@ -301,6 +302,7 @@ data SymbolicObj3 =
     | Cylinder ℝ ℝ ℝ --
     -- Simple transforms
     | Rotate3 (Quaternion ℝ) SymbolicObj3
+    | Transform3 (M44 ℝ) SymbolicObj3
     -- 2D based
     | Extrude SymbolicObj2 ℝ
     | ExtrudeM
@@ -332,6 +334,7 @@ instance Show SymbolicObj3 where
     Cylinder h r1 r2 ->
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
+    Transform3 m s -> showCon "transform3" @| show m @| s
     Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd

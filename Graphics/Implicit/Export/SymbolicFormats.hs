@@ -12,7 +12,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -22,7 +22,7 @@ import Linear (V3(V3), V2(V2))
 
 import Data.List (intersperse)
 import Data.Function (fix)
-import Data.Foldable(fold, foldMap)
+import Data.Foldable(fold, foldMap, toList)
 import Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(elements))
 
 default (ℝ)
@@ -135,6 +135,11 @@ buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [
 buildS3 (Rotate3 q obj) =
   let (x,y,z) = quaternionToEuler q
    in call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
+
+buildS3 (Transform3 m obj) =
+    call "multmatrix"
+      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList m)
+      [buildS3 obj]
 
 -- FIXME: where is EmbedBoxedObj3?
 
