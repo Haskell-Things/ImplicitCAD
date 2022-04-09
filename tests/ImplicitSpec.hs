@@ -228,6 +228,9 @@ misc3dSpec = describe "misc 3d tests" $ do
   prop "cylinder with negative height is a flipped cylinder with positive height" $ \r1 r2 h ->
     cylinder2 r1 r2 h =~= mirror (V3 0 0 1) (cylinder2 r1 r2 (-h))
 
+  prop "negative scale in X is mirror about Y plane" $
+    scale @SymbolicObj3 (V3 (-1) 1 1) =~= mirror (V3 1 0 0)
+
 ------------------------------------------------------------------------------
 -- Misc identity proofs that should hold for all symbolic objects.
 identitySpec
