@@ -107,10 +107,10 @@ formatIs2D _ = False
 
 getOutputHandler2 :: ByteString -> [Polyline] -> Text
 getOutputHandler2 name
-  | name == "SVG"                   = TL.toStrict.svg
-  | name == "gcode/hacklab-laser"   = TL.toStrict.hacklabLaserGCode
-  | name == "DXF"                   = TL.toStrict.dxf2
-  | otherwise                       = TL.toStrict.svg
+  | name == "SVG"                   = TL.toStrict . svg
+  | name == "gcode/hacklab-laser"   = TL.toStrict . hacklabLaserGCode
+  | name == "DXF"                   = TL.toStrict . dxf2
+  | otherwise                       = TL.toStrict . svg
 
 formatIs3D :: Maybe ByteString -> Bool
 formatIs3D (Just "STL") = True
@@ -120,13 +120,13 @@ formatIs3D _ = False
 -- FIXME: OBJ support
 getOutputHandler3 :: ByteString -> TriangleMesh -> Text
 getOutputHandler3 name
-  | name == "STL"                   = TL.toStrict.stl
-  | otherwise                       = TL.toStrict.jsTHREE
+  | name == "STL"                   = TL.toStrict . stl
+  | otherwise                       = TL.toStrict . jsTHREE
 
 getNormedOutputHandler3 :: ByteString -> NormedTriangleMesh -> Text
 getNormedOutputHandler3 name
-  | name == "OBJ"                   = TL.toStrict.NTM.obj
-  | otherwise                       = TL.toStrict.NTM.obj
+  | name == "OBJ"                   = TL.toStrict . NTM.obj
+  | otherwise                       = TL.toStrict . NTM.obj
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -186,7 +186,7 @@ executeAndExport content callback maybeFormat =
               output3d :: Text
               output3d         = if fromMaybe "jsTHREE" maybeFormat == "OBJ"
                                  then getNormedOutputHandler3 (fromJust maybeFormat) $ discreteAprox res target
-                                 else maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
+                                 else maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True False w (scadMessages <> unionWarning)
             else if formatIs3D maybeFormat
@@ -200,8 +200,8 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
-              output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
+              output3d        = maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
+              output2d        = maybe (TL.toStrict . svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)
             else if formatIs2D maybeFormat
