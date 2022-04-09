@@ -56,7 +56,7 @@ import Test.QuickCheck
       Positive(getPositive),
       Property)
 
-import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
+import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -129,11 +129,18 @@ instance Arbitrary ℝ3 where
   shrink = genericShrink
   arbitrary = V3 <$> arbitrary <*> arbitrary <*> arbitrary
 
+instance Arbitrary a => Arbitrary (V4 a) where
+  shrink = genericShrink
+  arbitrary = V4 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
 instance CoArbitrary ℝ2 where
   coarbitrary (V2 a b) = coarbitrary (a, b)
 
 instance CoArbitrary ℝ3 where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
+
+instance CoArbitrary (V4 ℝ) where
+  coarbitrary (V4 a b c d) = coarbitrary (a, b, c, d)
 
 instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
