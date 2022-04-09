@@ -8,6 +8,7 @@
 module ExecSpec.Util
        ( (-->)
        , num
+       , list
        , vect
        ) where
 
@@ -35,5 +36,8 @@ infixr 1 -->
 num :: ℝ -> OVal
 num = ONum
 
+list :: [OVal] -> OVal
+list = OList
+
 vect :: [ℝ] -> OVal
-vect =  OList . map num
+vect =  list . map num

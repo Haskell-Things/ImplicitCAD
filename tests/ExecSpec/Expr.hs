@@ -15,14 +15,14 @@ import Test.Hspec (describe, Spec, it)
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ExecSpec.Util ((-->), num, vect)
+import ExecSpec.Util ((-->), num, list, vect)
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
 exprExec :: Spec
 exprExec =
-  describe "arithmatic" $ do
+  describe "arithmetic" $ do
     it "performs simple addition" $
       "1+1" --> num 2
     it "performs multiple additions" $
@@ -33,3 +33,11 @@ exprExec =
       "sum([1,2,3])" --> num 6
     it "performs vector additions" $
       "[1, 2, 3] + [3, 4, 5]" --> vect [4, 6, 8]
+    it "performs nested vector additions" $
+      "[1, [2, 3]] + [3, [4, 5]]" --> list [num 4, vect [6, 8]]
+    it "performs vector substraction" $
+      "[1, 2, 3] - [1, 1, 1]" --> vect [0, 1, 2]
+    it "performs number and list/vector addition" $
+      "2 + [1, 2]" --> vect [3, 4]
+    it "performs number and list/vector multiplication" $
+      "2 * [3, 4, 5]" --> vect [6, 8, 10]
