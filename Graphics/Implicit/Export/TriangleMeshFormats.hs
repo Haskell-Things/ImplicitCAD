@@ -14,14 +14,13 @@ import Prelude ((-), Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, 
 import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh, getTriangles), ℕ, ℝ3, ℝ, fromℝtoFloat)
 import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ)
 
-import Blaze.ByteString.Builder (Write, writeStorable, toLazyByteString, fromByteString, fromWord32le, fromWord16le, fromWrite)
-import qualified Data.ByteString.Builder.Internal as BI (Builder)
+import Blaze.ByteString.Builder (toLazyByteString, fromByteString, fromWord32le, fromWord16le)
+import qualified Data.ByteString.Builder as BI (Builder, floatLE)
 
 import Data.Foldable(fold, foldMap)
 
 import Data.ByteString (replicate)
 import Data.ByteString.Lazy (ByteString)
-import Data.Storable.Endian (LittleEndian(LE))
 
 import Linear (normalize, cross, V3(V3))
 
@@ -79,10 +78,6 @@ stl triangles = toLazyText $ stlHeader <> foldMap triangle (getTriangles $ clean
 toFloat :: ℝ -> Float
 toFloat = fromℝtoFloat
 
--- | Write a 32-bit little-endian float to a buffer.
-float32LE :: Float -> Write
-float32LE = writeStorable . LE
-
 -- | Generate an STL file in it's binary format.
 binaryStl :: TriangleMesh -> ByteString
 binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triangle (getTriangles $ cleanupTris triangles)
@@ -90,7 +85,7 @@ binaryStl triangles = toLazyByteString $ header <> lengthField <> foldMap triang
           lengthField = fromWord32le $ toEnum $ length $ getTriangles $ cleanupTris triangles
           triangle (Triangle (a,b,c)) = normalV (a,b,c) <> point a <> point b <> point c <> fromWord16le 0
           point :: ℝ3 -> BI.Builder
-          point (V3 x y z) = fromWrite $ float32LE (toFloat x) <> float32LE (toFloat y) <> float32LE (toFloat z)
+          point (V3 x y z) = BI.floatLE (toFloat x) <> BI.floatLE (toFloat y) <> BI.floatLE (toFloat z)
           normalV ps = point $ normal ps
 
 jsTHREE :: TriangleMesh -> Text

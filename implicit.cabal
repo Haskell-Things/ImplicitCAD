@@ -87,7 +87,6 @@ Library
                   blaze-builder,
                   blaze-markup,
                   blaze-svg,
-                  storable-endian,
                   JuicyPixels,
                   mtl,
                   linear,
