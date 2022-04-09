@@ -82,7 +82,6 @@ Library
                   parallel,
                   containers,
                   deepseq,
-                  hspec,
                   text,
                   bytestring,
                   blaze-builder,
@@ -90,10 +89,8 @@ Library
                   blaze-svg,
                   storable-endian,
                   JuicyPixels,
-                  transformers,
                   mtl,
                   linear,
-                  QuickCheck,
                   show-combinators,
                   lens
 
@@ -219,7 +216,6 @@ Test-suite test-implicit
                   implicit,
                   text,
                   parsec,
-                  HUnit,
                   directory,
                   hedgehog,
                   hw-hspec-hedgehog,
