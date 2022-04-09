@@ -29,6 +29,7 @@ import Graphics.Implicit
       extrude,
       rotate3,
       rotate3V,
+      transform3,
       rotate )
 
 import Graphics.Implicit.Definitions
@@ -93,10 +94,11 @@ instance Arbitrary SymbolicObj3 where
     if n <= 1
     then oneof small
     else oneof $
-        [ rotate3  <$> arbitrary        <*> decayArbitrary 2
-        , rotate3V <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
-        , extrude  <$> decayArbitrary 2 <*> arbitraryPos
-        , Shared3  <$> arbitrary
+        [ rotate3    <$> arbitrary        <*> decayArbitrary 2
+        , rotate3V   <$> arbitrary        <*> arbitrary        <*> decayArbitrary 2
+        , transform3 <$> arbitrary        <*> decayArbitrary 2
+        , extrude    <$> decayArbitrary 2 <*> arbitraryPos
+        , Shared3    <$> arbitrary
         ] <> small
     where
       small =

@@ -15,6 +15,7 @@ import Graphics.Implicit
       rotate,
       rotate3,
       rotate3V,
+      transform3,
       union,
       SymbolicObj2,
       SymbolicObj3,
@@ -33,7 +34,8 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear ( V3(V3), (^*) , Epsilon(nearZero))
+import Linear ( V3(V3), V4(V4), (^*) , Epsilon(nearZero))
+import qualified Linear
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
@@ -64,6 +66,7 @@ spec = do
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
     rotation3dSpec
+    transform3dSpec
     misc3dSpec
 
 ------------------------------------------------------------------------------
@@ -216,6 +219,38 @@ rotation3dSpec = describe "3d rotation" $ do
   prop "empty idempotent wrt rotate" $ \xyz ->
     rotate3 xyz emptySpace
       =~= emptySpace
+
+------------------------------------------------------------------------------
+-- Misc proofs regarding 3d transformation.
+transform3dSpec :: Spec
+transform3dSpec = describe "3d transform" $ do
+  prop "identity" $
+    transform3 Linear.identity
+    =~= id
+
+  prop "same as rotation and translation" $ \quat tr ->
+    transform3 (Linear.mkTransformation quat tr)
+    =~= translate tr . rotateQ quat
+
+  prop "scale"
+    $ forAll (arbitrary `suchThat` (not . nearZero)) $ \s@(V3 x y z) ->
+    transform3
+      (V4 (V4 x 0 0 0)
+          (V4 0 y 0 0)
+          (V4 0 0 z 0)
+          (V4 0 0 0 1)
+          )
+    =~= scale s
+
+  prop "mirror" $
+    transform3
+    -- mirroring about Y plane
+      (V4 (V4 (-1) 0 0 0)
+          (V4   0  1 0 0)
+          (V4   0  0 1 0)
+          (V4   0  0 0 1)
+          )
+    =~= mirror (V3 1 0 0)
 
 ------------------------------------------------------------------------------
 -- Misc tests that make sense only in 3d
