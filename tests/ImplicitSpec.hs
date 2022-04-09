@@ -8,7 +8,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (Fractional, not, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit
     ( difference,
@@ -33,7 +33,7 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear ( V3(V3), (^*) )
+import Linear ( V3(V3), (^*) , Epsilon(nearZero))
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
@@ -79,6 +79,8 @@ type TestInfrastructure obj vec test outcome =
   , Show vec
   , Arbitrary obj
   , Arbitrary vec
+  , Epsilon vec
+  , Fractional vec
   )
 
 ------------------------------------------------------------------------------
@@ -135,13 +137,10 @@ inverseSpec = describe "inverses" $ do
     translate @obj xyz . translate (negate xyz)
       =~= id
 
-  -- TODO(sandy): there should be a scale inverse here, but it's a hard thing
-  -- to quantify over due to our lack of functors for R2 and R3.
-
-  -- -- prop "scale inverse" $
-  -- --   forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
-  -- --     scale @obj xyz . scale (invert xyz)
-  -- --       =~= id
+  prop "scale inverse" $
+    forAll (arbitrary `suchThat` (not . nearZero)) $ \xyz ->
+      scale @obj xyz . scale (1 / xyz)
+      =~= id
 
 ------------------------------------------------------------------------------
 -- Proofs that 'fullSpace' is an annhilative element with respect to union.
