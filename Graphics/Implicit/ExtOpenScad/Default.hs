@@ -156,7 +156,7 @@ varArgModules =
 defaultPolymorphicFunctions :: [(Symbol, OVal)]
 defaultPolymorphicFunctions =
     [
-        (Symbol "+", sumtotal),
+        (Symbol "+", toOObj add),
         (Symbol "sum", sumtotal),
         (Symbol "*", prod),
         (Symbol "prod", prod),
