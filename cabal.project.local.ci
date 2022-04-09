@@ -1,1 +1,4 @@
 flags: +implicitsnap
+
+package implicit
+  ghc-options: -fspecialise-aggressively -Werror
