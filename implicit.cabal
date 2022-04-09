@@ -211,6 +211,7 @@ Test-suite test-implicit
     Hs-source-dirs: tests
     Build-depends:
                   base,
+                  bytestring,
                   hspec,
                   implicit,
                   text,

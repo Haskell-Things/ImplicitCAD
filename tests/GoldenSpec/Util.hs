@@ -2,16 +2,32 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase   #-}
 
-module GoldenSpec.Util (golden) where
+module GoldenSpec.Util (golden, goldenAllFormats, goldenFormat) where
 
+import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
-import Graphics.Implicit (SymbolicObj3, writeSTL)
-import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), readFile, writeFile, (>>=), (<>), ($))
+import Graphics.Implicit (SymbolicObj3)
+import Graphics.Implicit.Export (export3)
+import Graphics.Implicit.Export.OutputFormat (OutputFormat (ASCIISTL, STL, OBJ), formatExtension)
+import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), (>>=), (<>), ($), show)
 import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO (hClose, openTempFile)
-import Test.Hspec (it, shouldBe, SpecWith)
+import Test.Hspec (describe, it, shouldBe, SpecWith)
+import Data.ByteString (readFile, writeFile)
 
-------------------------------------------------------------------------------
+-- | Construct a golden test for rendering the given 'SymbolicObj3' at the
+-- specified resolution in ASCIISTL format.
+golden :: String -> Double -> SymbolicObj3 -> SpecWith ()
+golden = goldenFormat ASCIISTL
+
+-- | Construct a golden test for rendering the given 'SymbolicObj3' at the
+-- specified resolution in all 3D formats.
+goldenAllFormats :: String -> Double -> SymbolicObj3 -> SpecWith ()
+goldenAllFormats name resolution sym = do
+  describe ("golden " <> name)
+    $ forM_ [ASCIISTL, STL, OBJ]
+    $ \fmt -> goldenFormat fmt name resolution sym
+
 -- | Construct a golden test for rendering the given 'SymbolicObj3' at the
 -- specified resolution. On the first run of this test, it will render the
 -- object and cache the results. Subsequent test runs will compare their result
@@ -19,16 +35,16 @@ import Test.Hspec (it, shouldBe, SpecWith)
 -- break across commits.
 --
 -- The objects are cached under @tests/golden/@, with the given name. Deleting
--- this file is sufficient to update the test if changs in the mesh generation
+-- this file is sufficient to update the test if changes in the mesh generation
 -- are intended.
-golden :: String -> Double -> SymbolicObj3 -> SpecWith ()
-golden name resolution sym = it (name <> " (golden)") $ do
+goldenFormat :: OutputFormat -> String -> Double -> SymbolicObj3 -> SpecWith ()
+goldenFormat fmt name resolution sym = it (name <> " (golden, format: " <> show fmt <> ")") $ do
   (res, cached) <- liftIO $ do
-    temp_fp <- getTemporaryFilePath "stl"
+    temp_fp <- getTemporaryFilePath "golden"
     -- Output the rendered mesh
-    writeSTL resolution temp_fp sym
+    export3 (pure fmt) resolution temp_fp sym
     !res <- readFile temp_fp
-    let golden_fp = "./tests/golden/" <> name <> ".stl"
+    let golden_fp = "./tests/golden/" <> name <> "." <> formatExtension fmt
     -- Check if the cached results already exist.
     doesFileExist golden_fp >>= \case
       True  -> pure ()
