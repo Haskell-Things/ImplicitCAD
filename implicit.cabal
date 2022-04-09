@@ -120,6 +120,7 @@ Library
                     -- These are exposed for testing
                     Graphics.Implicit.Export.Render.GetLoops
                     -- Exposed for executables
+                    Graphics.Implicit.Export.OutputFormat
                     Graphics.Implicit.Export.Resolution
     Other-modules:
                   Graphics.Implicit.FastIntUtil

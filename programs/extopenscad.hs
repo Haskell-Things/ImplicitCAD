@@ -14,19 +14,15 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Read(readsPrec), Maybe(Just, Nothing), IO, Bool(True, False), FilePath, Show, Eq, String, (<>), ($), (==), readFile, drop, error, fst, tail, take, length, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.), print)
+import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.), print)
 
--- Our Extended OpenScad interpreter, and functions to write out files in designated formats.
-import Graphics.Implicit (unionR, runOpenscad, writeSVG, writeDXF2, writeBinSTL, writeSTL, writeOBJ, writeSCAD2, writeSCAD3, writeGCodeHacklabLaser, writePNG2, writePNG3)
+-- Our Extended OpenScad interpreter
+import Graphics.Implicit (unionR, runOpenscad)
 
--- Definitions of the datatypes used for 2D objects, 3D objects, and for defining the resolution to raytrace at.
-import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ)
+import Graphics.Implicit.Definitions (ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
-
--- For making the format guesser case insensitive when looking at file extensions.
-import Data.Char (toLower)
 
 -- To flip around formatExtensions. Used when looking up an extension based on a format.
 import Data.Tuple (swap)
@@ -48,6 +44,8 @@ import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
 
 import Data.Text.Lazy (Text, unpack)
 import Graphics.Implicit.Primitives (Object(getBox))
+import Graphics.Implicit.Export (export2, export3)
+import Graphics.Implicit.Export.OutputFormat (OutputFormat, guessOutputFormat, formatExtensions)
 import Graphics.Implicit.Export.Resolution (estimateResolution)
 
 -- | Our command line options.
@@ -64,42 +62,6 @@ data ExtOpenScadOpts = ExtOpenScadOpts
     , rawDefines :: [String]
     , inputFile :: FilePath
     }
-
--- | A type serving to enumerate our output formats.
-data OutputFormat
-    = SVG
-    | SCAD
-    | PNG
-    | GCode
-    | ASCIISTL
-    | STL
-    | OBJ
---  | 3MF
-    | DXF
-    deriving (Show, Eq)
-
--- | A list mapping file extensions to output formats.
-formatExtensions :: [(String, OutputFormat)]
-formatExtensions =
-    [ ("svg", SVG)
-    , ("scad", SCAD)
-    , ("png", PNG)
-    , ("ngc", GCode)
-    , ("gcode", GCode)
-    , ("stl", STL)
-    , ("asciistl", ASCIISTL)
-    , ("obj", OBJ)
---  , ("3mf", 3MF)
-    , ("dxf", DXF)
-    ]
-
--- | Lookup an output format for a given output file. Throw an error if one cannot be found.
-guessOutputFormat :: FilePath -> OutputFormat
-guessOutputFormat fileName =
-    fromMaybe (error $ "Unrecognized output format: " <> ext)
-    $ readOutputFormat $ tail ext
-    where
-        (_,ext) = splitExtension fileName
 
 -- | The parser for our command line arguments.
 extOpenScadOpts :: Parser ExtOpenScadOpts
@@ -168,48 +130,6 @@ extOpenScadOpts = ExtOpenScadOpts
         (  metavar "FILE"
         <> help "Input extended OpenSCAD file"
         )
-
--- | Try to look up an output format from a supplied extension.
-readOutputFormat :: String -> Maybe OutputFormat
-readOutputFormat ext = lookup (toLower <$> ext) formatExtensions
-
--- | A Read instance for our output format. Used by 'auto' in our command line parser.
---   Reads a string, and evaluates to the appropriate OutputFormat.
-instance Read OutputFormat where
-    readsPrec _ myvalue =
-        tryParse formatExtensions
-        where
-          tryParse :: [(String, OutputFormat)] -> [(OutputFormat, String)]
-          tryParse [] = []    -- If there is nothing left to try, fail
-          tryParse ((attempt, result):xs) =
-              if take (length attempt) myvalue == attempt
-              then [(result, drop (length attempt) myvalue)]
-              else tryParse xs
-
-
--- | Output a file containing a 3D object.
-export3 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj3 -> IO ()
-export3 posFmt res output obj =
-    case posFmt of
-        Just ASCIISTL -> writeSTL res output obj
-        Just STL      -> writeBinSTL res output obj
-        Just SCAD     -> writeSCAD3 res output obj
-        Just OBJ      -> writeOBJ res output obj
-        Just PNG      -> writePNG3 res output obj
-        Nothing       -> writeBinSTL res output obj
-        Just fmt      -> putStrLn $ "Unrecognized 3D format: " <> show fmt
-
--- | Output a file containing a 2D object.
-export2 :: Maybe OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
-export2 posFmt res output obj =
-    case posFmt of
-        Just SVG   -> writeSVG res output obj
-        Just DXF   -> writeDXF2 res output obj
-        Just SCAD  -> writeSCAD2 res output obj
-        Just PNG   -> writePNG2 res output obj
-        Just GCode -> writeGCodeHacklabLaser res output obj
-        Nothing    -> writeSVG res output obj
-        Just fmt   -> putStrLn $ "Unrecognized 2D format: " <> show fmt
 
 -- | Determine where to direct the text output of running the extopenscad program.
 messageOutputHandle :: ExtOpenScadOpts -> IO Handle
