@@ -3,9 +3,8 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: what are these for?
+-- Allow us to use string literals for ByteString
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
 

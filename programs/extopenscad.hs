@@ -6,9 +6,6 @@
 
 -- An interpreter to run extended OpenScad code. outputs STL, OBJ, SVG, SCAD, PNG, DXF, or GCODE.
 
--- For matching the types of our OpenScad variables.
-{-# LANGUAGE ViewPatterns #-}
-
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
