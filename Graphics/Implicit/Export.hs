@@ -7,9 +7,24 @@
 -- Allow us to use real types in the type constraints.
 {-# LANGUAGE FlexibleContexts #-}
 
-module Graphics.Implicit.Export (export2, export3,
-  OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, OBJ, DXF),
-  writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeDXF2, writeSCAD2, writeSCAD3, writePNG) where
+module Graphics.Implicit.Export (
+  export2,
+  export3,
+  OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, THREEJS, OBJ, DXF),
+  writeObject,
+  formatObject,
+  writeSVG,
+  writeSTL,
+  writeBinSTL,
+  writeOBJ,
+  writeTHREEJS,
+  writeGCodeHacklabLaser,
+  writeDXF2,
+  writeSCAD2,
+  writeSCAD3,
+  writePNG,
+  )
+where
 
 import Prelude (FilePath, IO, (.), ($), (<>), show, Maybe(Just, Nothing), putStrLn)
 
@@ -31,8 +46,7 @@ import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTri
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
 import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
 
-import Graphics.Implicit.Export.OutputFormat (
-    OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, OBJ, DXF))
+import Graphics.Implicit.Export.OutputFormat (OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, THREEJS, OBJ, DXF))
 
 -- | Write an object to a file with LazyText IO, using the given format writer function.
 writeObject :: (DiscreteAproxable obj aprox)
@@ -103,6 +117,7 @@ export3 posFmt res output obj =
         Just SCAD     -> writeSCAD3 res output obj
         Just OBJ      -> writeOBJ res output obj
         Just PNG      -> writePNG res output obj
+        Just THREEJS  -> writeTHREEJS res output obj
         Nothing       -> writeBinSTL res output obj
         Just fmt      -> putStrLn $ "Unrecognized 3D format: " <> show fmt
 

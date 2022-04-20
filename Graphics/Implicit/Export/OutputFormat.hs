@@ -4,7 +4,7 @@
 -- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.Export.OutputFormat
-  ( OutputFormat (SVG, SCAD, PNG, GCode, ASCIISTL, STL, OBJ, DXF),
+  ( OutputFormat (SVG, SCAD, PNG, GCode, ASCIISTL, STL, THREEJS, OBJ, DXF),
     guessOutputFormat,
     formatExtensions,
     formatExtension,
@@ -34,6 +34,7 @@ data OutputFormat
   | GCode
   | ASCIISTL
   | STL
+  | THREEJS
   | OBJ
   | DXF
 --  | 3MF
@@ -52,7 +53,7 @@ formatIs2D  = flip elem formats2D
 
 -- | All supported 3D formats
 formats3D :: [OutputFormat]
-formats3D = [ASCIISTL, OBJ, STL, SCAD]
+formats3D = [ASCIISTL, OBJ, STL, SCAD, THREEJS]
 
 -- | True for 3D capable `OutputFormat`s
 formatIs3D :: OutputFormat -> Bool
@@ -66,8 +67,9 @@ formatExtensions =
     ("png", PNG),
     ("ngc", GCode),
     ("gcode", GCode),
-    ("stl", STL),
     ("ascii.stl", ASCIISTL),
+    ("stl", STL),
+    ("three.js", THREEJS),
     ("obj", OBJ),
     ("dxf", DXF)
 --  ("3mf", 3MF)
