@@ -19,6 +19,7 @@ import Prelude (Bool, Eq, FilePath, Maybe, Read (readsPrec), Show(show), String,
 import Control.Applicative ((<$>))
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
+import Data.Default.Class (Default(def))
 import Data.List (lookup, elem)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
@@ -37,6 +38,9 @@ data OutputFormat
   | DXF
 --  | 3MF
   deriving (Show, Eq)
+
+instance Default OutputFormat where
+  def = STL
 
 -- | All supported 2D formats
 formats2D :: [OutputFormat]
