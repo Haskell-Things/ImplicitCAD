@@ -103,6 +103,7 @@ getWidth (_,    [],    [], _) = 0
 formatIs2D :: Maybe ByteString -> Bool
 formatIs2D (Just "SVG") = True
 formatIs2D (Just "gcode/hacklab-laser") = True
+formatIs2D (Just "DXF") = True
 formatIs2D _ = False
 
 getOutputHandler2 :: ByteString -> [Polyline] -> Text
