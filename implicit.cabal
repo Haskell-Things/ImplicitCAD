@@ -81,6 +81,7 @@ Library
                   parsec,
                   parallel,
                   containers,
+                  data-default-class,
                   deepseq,
                   text,
                   bytestring,
