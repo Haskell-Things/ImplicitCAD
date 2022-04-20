@@ -201,7 +201,7 @@ instance Show SourcePosition where
     show (SourcePosition line col filePath) = "line " <> show (fromFastℕ line :: Int) <> ", column " <> show (fromFastℕ col :: Int) <> ", file " <> filePath
 
 -- | The types of messages the execution engine can send back to the application.
-data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
+data MessageType = TextOut -- text intentionally output by the ExtOpenScad program.
                  | Warning
                  | Error
                  | SyntaxError
