@@ -8,7 +8,7 @@ import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
 import Graphics.Implicit (SymbolicObj3)
 import Graphics.Implicit.Export (export3)
-import Graphics.Implicit.Export.OutputFormat (OutputFormat (ASCIISTL, STL, OBJ), formatExtension)
+import Graphics.Implicit.Export.OutputFormat (OutputFormat (ASCIISTL), formats3D, formatExtension)
 import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), (>>=), (<>), ($), show)
 import System.Directory (getTemporaryDirectory, doesFileExist)
 import System.IO (hClose, openTempFile)
@@ -25,7 +25,7 @@ golden = goldenFormat ASCIISTL
 goldenAllFormats :: String -> Double -> SymbolicObj3 -> SpecWith ()
 goldenAllFormats name resolution sym = do
   describe ("golden " <> name)
-    $ forM_ [ASCIISTL, STL, OBJ]
+    $ forM_ formats3D
     $ \fmt -> goldenFormat fmt name resolution sym
 
 -- | Construct a golden test for rendering the given 'SymbolicObj3' at the
