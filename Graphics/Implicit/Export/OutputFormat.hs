@@ -43,7 +43,7 @@ formatExtensions =
     ("ngc", GCode),
     ("gcode", GCode),
     ("stl", STL),
-    ("asciistl", ASCIISTL),
+    ("ascii.stl", ASCIISTL),
     ("obj", OBJ),
     ("dxf", DXF)
 --  ("3mf", 3MF)
