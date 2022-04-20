@@ -7,14 +7,17 @@ module Graphics.Implicit.Export.OutputFormat
   ( OutputFormat (SVG, SCAD, PNG, GCode, ASCIISTL, STL, OBJ, DXF),
     guessOutputFormat,
     formatExtensions,
+    formatExtension,
   )
 where
 
-import Prelude (Eq, FilePath, Maybe, Read (readsPrec), Show, String, drop, error, length, lookup, tail, take, ($), (<>), (==))
+import Prelude (Eq, FilePath, Maybe, Read (readsPrec), Show(show), String, drop, error, length, tail, take, ($), (<>), (==))
 import Control.Applicative ((<$>))
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
+import Data.List (lookup)
 import Data.Maybe (fromMaybe)
+import Data.Tuple (swap)
 -- For handling input/output files.
 import System.FilePath (splitExtension)
 
@@ -70,3 +73,9 @@ instance Read OutputFormat where
         if take (length attempt) myvalue == attempt
           then [(result, drop (length attempt) myvalue)]
           else tryParse xs
+
+-- | Get filename extension for `OutputFormat`
+formatExtension :: OutputFormat -> String
+formatExtension fmt = fromMaybe
+  (error $ "No extension defined for OutputFormat " <> show fmt)
+  $ lookup fmt (swap <$> formatExtensions)

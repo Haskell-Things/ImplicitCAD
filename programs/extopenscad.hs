@@ -11,7 +11,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), lookup, return, unlines, filter, not, null, (||), (&&), (.), print)
+import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), return, unlines, filter, not, null, (||), (&&), (.), print)
 
 -- Our Extended OpenScad interpreter
 import Graphics.Implicit (unionR, runOpenscad)
@@ -20,9 +20,6 @@ import Graphics.Implicit.Definitions (ℝ)
 
 -- Use default values when a Maybe is Nothing.
 import Data.Maybe (fromMaybe, maybe)
-
--- To flip around formatExtensions. Used when looking up an extension based on a format.
-import Data.Tuple (swap)
 
 -- Functions and types for dealing with the types used by runOpenscad.
 
@@ -42,7 +39,7 @@ import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
 import Data.Text.Lazy (Text, unpack)
 import Graphics.Implicit.Primitives (Object(getBox))
 import Graphics.Implicit.Export (export2, export3)
-import Graphics.Implicit.Export.OutputFormat (OutputFormat, guessOutputFormat, formatExtensions)
+import Graphics.Implicit.Export.OutputFormat (OutputFormat, guessOutputFormat, formatExtension)
 import Graphics.Implicit.Export.Resolution (estimateResolution)
 
 -- | Our command line options.
@@ -186,14 +183,13 @@ run rawargs = do
     s@(_, obj2s, obj3s, messages) <- openscadProgram
     let res = fromMaybe (estimateResolution s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
-        posDefExt = case format of
-                      Just f  -> Prelude.lookup f (swap <$> formatExtensions)
-                      Nothing -> Nothing -- We don't know the format -- it will be 2D/3D default
+        -- If we don't know the format -- it will be 2D/3D default (stl)
+        posDefExt = fromMaybe "stl" (formatExtension <$> format)
 
     case (obj2s, obj3s) of
       ([], obj:objs) -> do
         let output = fromMaybe
-                     (basename <> "." <> fromMaybe "stl" posDefExt)
+                     (basename <> "." <> posDefExt)
                      (outputFile args)
             target = if null objs
                      then obj
@@ -217,7 +213,7 @@ run rawargs = do
 
       (obj:objs, []) -> do
         let output = fromMaybe
-                     (basename <> "." <> fromMaybe "svg" posDefExt)
+                     (basename <> "." <> posDefExt)
                      (outputFile args)
             target = if null objs
                      then obj
