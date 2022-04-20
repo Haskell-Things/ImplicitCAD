@@ -8,14 +8,18 @@ module Graphics.Implicit.Export.OutputFormat
     guessOutputFormat,
     formatExtensions,
     formatExtension,
+    formats2D,
+    formatIs2D,
+    formats3D,
+    formatIs3D,
   )
 where
 
-import Prelude (Eq, FilePath, Maybe, Read (readsPrec), Show(show), String, drop, error, length, tail, take, ($), (<>), (==))
+import Prelude (Bool, Eq, FilePath, Maybe, Read (readsPrec), Show(show), String, drop, error, flip, length, tail, take, ($), (<>), (==))
 import Control.Applicative ((<$>))
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
-import Data.List (lookup)
+import Data.List (lookup, elem)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
 -- For handling input/output files.
@@ -33,6 +37,22 @@ data OutputFormat
   | DXF
 --  | 3MF
   deriving (Show, Eq)
+
+-- | All supported 2D formats
+formats2D :: [OutputFormat]
+formats2D = [GCode, DXF, PNG, SCAD, SVG]
+
+-- | True for 2D capable `OutputFormat`s
+formatIs2D :: OutputFormat -> Bool
+formatIs2D  = flip elem formats2D
+
+-- | All supported 3D formats
+formats3D :: [OutputFormat]
+formats3D = [ASCIISTL, OBJ, STL, SCAD]
+
+-- | True for 3D capable `OutputFormat`s
+formatIs3D :: OutputFormat -> Bool
+formatIs3D = flip elem formats3D
 
 -- | A list mapping file extensions to output formats.
 formatExtensions :: [(String, OutputFormat)]
