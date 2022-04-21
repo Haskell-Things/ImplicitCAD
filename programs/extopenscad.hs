@@ -14,7 +14,7 @@
 import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), return, unlines, filter, not, null, (||), (&&), (.), print)
 
 -- Our Extended OpenScad interpreter
-import Graphics.Implicit (unionR, runOpenscad)
+import Graphics.Implicit (union, runOpenscad)
 
 import Graphics.Implicit.Definitions (ℝ)
 
@@ -193,7 +193,7 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else unionR 0 (obj:objs)
+                     else union (obj:objs)
 
         if quiet args
           then return ()
@@ -217,7 +217,7 @@ run rawargs = do
                      (outputFile args)
             target = if null objs
                      then obj
-                     else unionR 0 (obj:objs)
+                     else union (obj:objs)
 
         if quiet args
           then return ()
