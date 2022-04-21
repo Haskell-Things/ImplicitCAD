@@ -10,8 +10,10 @@ module Graphics.Implicit.Export.OutputFormat
     formatExtension,
     formats2D,
     formatIs2D,
+    def2D,
     formats3D,
     formatIs3D,
+    def3D,
   )
 where
 
@@ -42,6 +44,14 @@ data OutputFormat
 
 instance Default OutputFormat where
   def = STL
+
+-- | Default 2D output format
+def2D :: OutputFormat
+def2D = SVG
+
+-- | Default 3D output format
+def3D :: OutputFormat
+def3D = def
 
 -- | All supported 2D formats
 formats2D :: [OutputFormat]

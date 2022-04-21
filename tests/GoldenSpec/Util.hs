@@ -42,7 +42,7 @@ goldenFormat fmt name resolution sym = it (name <> " (golden, format: " <> show 
   (res, cached) <- liftIO $ do
     temp_fp <- getTemporaryFilePath "golden"
     -- Output the rendered mesh
-    export3 (pure fmt) resolution temp_fp sym
+    export3 fmt resolution temp_fp sym
     !res <- readFile temp_fp
     let golden_fp = "./tests/golden/" <> name <> "." <> formatExtension fmt
     -- Check if the cached results already exist.

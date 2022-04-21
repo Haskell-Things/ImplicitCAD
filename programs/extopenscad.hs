@@ -39,7 +39,7 @@ import System.IO (Handle, hPutStr, stdout, stderr, openFile, IOMode(WriteMode))
 import Data.Text.Lazy (Text, unpack)
 import Graphics.Implicit.Primitives (Object(getBox))
 import Graphics.Implicit.Export (export2, export3)
-import Graphics.Implicit.Export.OutputFormat (OutputFormat, guessOutputFormat, formatExtension)
+import Graphics.Implicit.Export.OutputFormat (OutputFormat, guessOutputFormat, formatExtension, def2D, def3D)
 import Graphics.Implicit.Export.Resolution (estimateResolution)
 
 -- | Our command line options.
@@ -209,7 +209,7 @@ run rawargs = do
           then return ()
           else print target
 
-        export3 format res output target
+        export3 (fromMaybe def3D format) res output target
 
       (obj:objs, []) -> do
         let output = fromMaybe
@@ -233,7 +233,7 @@ run rawargs = do
           then return ()
           else print target
 
-        export2 format res output target
+        export2 (fromMaybe def2D format) res output target
 
       ([], []) ->
         if quiet args
