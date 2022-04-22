@@ -26,7 +26,7 @@ import Data.List (lookup, elem)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
 -- For handling input/output files.
-import System.FilePath (splitExtension)
+import System.FilePath (takeExtensions)
 
 -- | A type serving to enumerate our output formats.
 data OutputFormat
@@ -78,8 +78,10 @@ formatExtensions =
     ("ngc", GCode),
     ("gcode", GCode),
     ("ascii.stl", ASCIISTL),
+    ("asciistl", ASCIISTL),
     ("stl", STL),
     ("three.js", THREEJS),
+    ("threejs", THREEJS),
     ("obj", OBJ),
     ("dxf", DXF)
 --  ("3mf", 3MF)
@@ -91,7 +93,7 @@ guessOutputFormat fileName =
   fromMaybe (error $ "Unrecognized output format: " <> ext) $
     readOutputFormat $ tail ext
   where
-    (_, ext) = splitExtension fileName
+    ext = takeExtensions fileName
 
 -- | Try to look up an output format from a supplied extension.
 readOutputFormat :: String -> Maybe OutputFormat
