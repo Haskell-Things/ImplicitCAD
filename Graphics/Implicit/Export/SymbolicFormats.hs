@@ -178,8 +178,7 @@ buildS2 (Polygon points) = call "polygon" (fmap bvect points) []
 
 buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
 
--- Generate errors for rounding requests. OpenSCAD does not support rounding.
-buildS2 Square{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS2 (Square (V2 w h)) = call "square" [bf w, bf h] []
 
 -- FIXME: missing EmbedBoxedObj2?
 
