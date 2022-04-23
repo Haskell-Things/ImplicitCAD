@@ -27,7 +27,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion
                                                   ) where
 
-import Prelude(Eq, Show, Ord, Maybe(Just), Bool(False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int, (<$>))
+import Prelude(Eq, Show, Ord, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int, (<$>))
 
 -- Resolution of the world, Integer type, and symbolic languages for 2D and 3D objects.
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicObj3, fromFastℕ)
@@ -35,6 +35,8 @@ import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, SymbolicObj2, SymbolicO
 import Control.Applicative (Applicative, Alternative((<|>), empty), pure, (<*>))
 
 import Control.Monad (Functor, Monad, (>>=), mzero, mplus, MonadPlus, ap, (>=>))
+
+import Data.Default.Class (Default(def))
 
 import Data.Map (Map, lookup, union)
 
@@ -200,7 +202,7 @@ instance Show SourcePosition where
     show (SourcePosition line col filePath) = "line " <> show (fromFastℕ line :: Int) <> ", column " <> show (fromFastℕ col :: Int) <> ", file " <> filePath
 
 -- | The types of messages the execution engine can send back to the application.
-data MessageType = TextOut -- text intetionally output by the ExtOpenScad program.
+data MessageType = TextOut -- text intentionally output by the ExtOpenScad program.
                  | Warning
                  | Error
                  | SyntaxError
@@ -220,6 +222,12 @@ data ScadOpts = ScadOpts
   { openScadCompatibility :: Bool
   , importsAllowed        :: Bool
   } deriving (Show, Eq)
+
+instance Default ScadOpts where
+  def = ScadOpts
+    { openScadCompatibility = False
+    , importsAllowed        = True
+    }
 
 -- helper, to use union on VarLookups.
 varUnion :: VarLookup -> VarLookup -> VarLookup

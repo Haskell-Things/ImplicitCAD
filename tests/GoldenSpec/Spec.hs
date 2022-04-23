@@ -4,7 +4,7 @@
 
 module GoldenSpec.Spec (spec) where
 
-import GoldenSpec.Util (golden)
+import GoldenSpec.Util (golden, goldenAllFormats)
 import Graphics.Implicit
 import Prelude
 import Test.Hspec ( describe, Spec )
@@ -15,6 +15,12 @@ spec :: Spec
 spec = describe "golden tests" $ do
   golden "box" 1 $
     cube True (V3 5 5 5)
+
+  goldenAllFormats "boxCylinder" 1 $
+    union
+      [ cube False (V3 5 5 5)
+      , translate (V3 2.5 2.5 5) $ cylinder2 2 1 3
+      ]
 
   golden "example13" 1 $
     union [ rect3 (V3 0 0 0) (V3 20 20 20)

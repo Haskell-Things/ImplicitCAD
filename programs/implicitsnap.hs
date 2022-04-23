@@ -3,9 +3,8 @@
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
--- FIXME: what are these for?
+-- Allow us to use string literals for ByteString
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ViewPatterns #-}
 
 -- A Snap(HTTP) server providing an ImplicitCAD REST API.
 
@@ -13,7 +12,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), ($), (<>), (>), (.), (-), (/), (*), (**), (==), null, sqrt, min, max, minimum, maximum, show, return, fmap, otherwise, filter, not)
+import Prelude (IO, Maybe(Just, Nothing), String, Bool(True, False), ($), (<>), (>), (.), (-), (==), null, max, maximum, show, return, fmap, otherwise, filter, not)
 
 import Control.Applicative ((<|>))
 
@@ -25,7 +24,7 @@ import Snap.Util.GZip (withCompression)
 import Graphics.Implicit (runOpenscad, extrude, unionR)
 
 -- Variable access functionality, so we can look up a requested resolution, along with message processing, and options into the scad engine.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum), VarLookup, lookupVarIn, Message, Message(Message), MessageType(TextOut), ScadOpts(ScadOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, Message, Message(Message), MessageType(TextOut), ScadOpts(ScadOpts))
 
 -- determine the size of boxes, so we can automagically create a resolution.
 import Graphics.Implicit.Primitives (Object(getBox))
@@ -41,11 +40,10 @@ import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NTM (obj)
 
 import Graphics.Implicit.Export.PolylineFormats (svg, dxf2, hacklabLaserGCode)
 
--- Operator for vector subtraction, to subtract two points. Used when defining the resolution of a 2d object.
-import Linear.Affine((.-.))
-
 -- class DiscreteApprox
 import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
+
+import Graphics.Implicit.Export.Resolution (estimateResolution)
 
 import Data.List (intercalate)
 
@@ -93,31 +91,6 @@ renderHandler = method GET $ withCompression $ do
                 (Just format)
         (_, _, _)       -> writeText "must provide source and callback as 1 GET variable each"
 
--- | Find the resolution to raytrace at.
-getRes :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
--- If specified, use a resolution specified by the "$res" a variable in the input file.
-getRes (lookupVarIn "$res" -> Just (ONum res), _, _, _) = res
--- If there was no resolution specified, use a resolution chosen for 3D objects.
---   FIXME: magic numbers.
-getRes (vars, _, obj:objs, _) =
-    let
-        (V3 x1 y1 z1, V3 x2 y2 z2) = getBox (unionR 0 (obj:objs))
-        (V3 x y z) = V3 (x2-x1) (y2-y1) (z2-z1)
-    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0  -> min (minimum [x,y,z]/2) ((x*y*z/qual)**(1/3) / 22)
-        _                     -> min (minimum [x,y,z]/2) ((x*y*z)**(1/3) / 22)
--- ... Or use a resolution chosen for 2D objects.
---   FIXME: magic numbers.
-getRes (vars, obj:objs, _, _) =
-    let
-        (p1,p2) = getBox (unionR 0 (obj:objs))
-        (V2 x y) = p2 .-. p1
-    in case fromMaybe (ONum 1) $ lookupVarIn "$quality" vars of
-        ONum qual | qual > 0 -> min (min x y/2) (sqrt(x*y/qual) / 30)
-        _                    -> min (min x y/2) (sqrt(x*y) / 30)
--- fallthrough value.
-getRes _ = 1
-
 -- | get the maximum dimension of the object being rendered.
 --   FIXME: shouldn't this get the diagonal across the box?
 getWidth :: (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message]) -> ℝ
@@ -130,14 +103,15 @@ getWidth (_,    [],    [], _) = 0
 formatIs2D :: Maybe ByteString -> Bool
 formatIs2D (Just "SVG") = True
 formatIs2D (Just "gcode/hacklab-laser") = True
+formatIs2D (Just "DXF") = True
 formatIs2D _ = False
 
 getOutputHandler2 :: ByteString -> [Polyline] -> Text
 getOutputHandler2 name
-  | name == "SVG"                   = TL.toStrict.svg
-  | name == "gcode/hacklab-laser"   = TL.toStrict.hacklabLaserGCode
-  | name == "DXF"                   = TL.toStrict.dxf2
-  | otherwise                       = TL.toStrict.svg
+  | name == "SVG"                   = TL.toStrict . svg
+  | name == "gcode/hacklab-laser"   = TL.toStrict . hacklabLaserGCode
+  | name == "DXF"                   = TL.toStrict . dxf2
+  | otherwise                       = TL.toStrict . svg
 
 formatIs3D :: Maybe ByteString -> Bool
 formatIs3D (Just "STL") = True
@@ -147,13 +121,13 @@ formatIs3D _ = False
 -- FIXME: OBJ support
 getOutputHandler3 :: ByteString -> TriangleMesh -> Text
 getOutputHandler3 name
-  | name == "STL"                   = TL.toStrict.stl
-  | otherwise                       = TL.toStrict.jsTHREE
+  | name == "STL"                   = TL.toStrict . stl
+  | otherwise                       = TL.toStrict . jsTHREE
 
 getNormedOutputHandler3 :: ByteString -> NormedTriangleMesh -> Text
 getNormedOutputHandler3 name
-  | name == "OBJ"                   = TL.toStrict.NTM.obj
-  | otherwise                       = TL.toStrict.NTM.obj
+  | name == "OBJ"                   = TL.toStrict . NTM.obj
+  | otherwise                       = TL.toStrict . NTM.obj
 
 isTextOut :: Message -> Bool
 isTextOut (Message TextOut _ _ ) = True
@@ -190,7 +164,7 @@ executeAndExport content callback maybeFormat =
       unsafePerformIO $ do
       s@(_, obj2s, obj3s, messages) <- openscadProgram
       let
-        res = getRes   s
+        res = estimateResolution s
         w   = getWidth s
         emptyObject :: Text
         emptyObject = "Empty Object?"
@@ -213,7 +187,7 @@ executeAndExport content callback maybeFormat =
               output3d :: Text
               output3d         = if fromMaybe "jsTHREE" maybeFormat == "OBJ"
                                  then getNormedOutputHandler3 (fromJust maybeFormat) $ discreteAprox res target
-                                 else maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
+                                 else maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True False w (scadMessages <> unionWarning)
             else if formatIs3D maybeFormat
@@ -227,8 +201,8 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = maybe (TL.toStrict.jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
-              output2d        = maybe (TL.toStrict.svg) getOutputHandler2 maybeFormat $ discreteAprox res target
+              output3d        = maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
+              output2d        = maybe (TL.toStrict . svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)
             else if formatIs2D maybeFormat

@@ -81,19 +81,16 @@ Library
                   parsec,
                   parallel,
                   containers,
+                  data-default-class,
                   deepseq,
-                  hspec,
                   text,
                   bytestring,
                   blaze-builder,
                   blaze-markup,
                   blaze-svg,
-                  storable-endian,
                   JuicyPixels,
-                  transformers,
                   mtl,
                   linear,
-                  QuickCheck,
                   show-combinators,
                   lens
 
@@ -123,6 +120,9 @@ Library
                     Graphics.Implicit.ExtOpenScad.Primitives
                     -- These are exposed for testing
                     Graphics.Implicit.Export.Render.GetLoops
+                    -- Exposed for executables
+                    Graphics.Implicit.Export.OutputFormat
+                    Graphics.Implicit.Export.Resolution
     Other-modules:
                   Graphics.Implicit.FastIntUtil
                   Graphics.Implicit.IntegralUtil
@@ -166,8 +166,7 @@ Executable extopenscad
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit,
-                 linear
+                 implicit
 
 Executable docgen
    Import: binstuff
@@ -215,11 +214,11 @@ Test-suite test-implicit
     Hs-source-dirs: tests
     Build-depends:
                   base,
+                  bytestring,
                   hspec,
                   implicit,
                   text,
                   parsec,
-                  HUnit,
                   directory,
                   hedgehog,
                   hw-hspec-hedgehog,

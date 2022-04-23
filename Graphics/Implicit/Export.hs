@@ -6,10 +6,29 @@
 
 -- Allow us to use real types in the type constraints.
 {-# LANGUAGE FlexibleContexts #-}
+-- Allows \case in export2|3
+{-# LANGUAGE LambdaCase #-}
 
-module Graphics.Implicit.Export (writeObject, formatObject, writeSVG, writeSTL, writeBinSTL, writeOBJ, writeTHREEJS, writeGCodeHacklabLaser, writeDXF2, writeSCAD2, writeSCAD3, writePNG) where
+module Graphics.Implicit.Export (
+  export2,
+  export3,
+  OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, THREEJS, OBJ, DXF),
+  writeObject,
+  formatObject,
+  writeSVG,
+  writeSTL,
+  writeBinSTL,
+  writeOBJ,
+  writeTHREEJS,
+  writeGCodeHacklabLaser,
+  writeDXF2,
+  writeSCAD2,
+  writeSCAD3,
+  writePNG,
+  )
+where
 
-import Prelude (FilePath, IO, (.), ($))
+import Prelude (FilePath, IO, (.), ($), (<>), show, error)
 
 -- The types of our objects (before rendering), and the type of the resolution to render with.
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3, ℝ, Polyline, TriangleMesh, NormedTriangleMesh)
@@ -28,6 +47,8 @@ import qualified Graphics.Implicit.Export.TriangleMeshFormats as TriangleMeshFor
 import qualified Graphics.Implicit.Export.NormedTriangleMeshFormats as NormedTriangleMeshFormats (obj)
 import qualified Graphics.Implicit.Export.SymbolicFormats as SymbolicFormats (scad2, scad3)
 import qualified Codec.Picture as ImageFormatCodecs (DynamicImage, savePngImage)
+
+import Graphics.Implicit.Export.OutputFormat (OutputFormat(SVG, SCAD, PNG, GCode, ASCIISTL, STL, THREEJS, OBJ, DXF))
 
 -- | Write an object to a file with LazyText IO, using the given format writer function.
 writeObject :: (DiscreteAproxable obj aprox)
@@ -88,3 +109,24 @@ writeSCAD2 res filename obj = LT.writeFile filename $ SymbolicFormats.scad2 res 
 
 writePNG :: DiscreteAproxable obj ImageFormatCodecs.DynamicImage => ℝ -> FilePath -> obj -> IO ()
 writePNG res = writeObject' res ImageFormatCodecs.savePngImage
+
+-- | Output a file containing a 3D object.
+export3 :: OutputFormat -> ℝ -> FilePath -> SymbolicObj3 -> IO ()
+export3 = \case
+    ASCIISTL -> writeSTL
+    STL      -> writeBinSTL
+    SCAD     -> writeSCAD3
+    OBJ      -> writeOBJ
+    PNG      -> writePNG
+    THREEJS  -> writeTHREEJS
+    fmt      -> error $ "Unrecognized 3D format: " <> show fmt
+
+-- | Output a file containing a 2D object.
+export2 :: OutputFormat -> ℝ -> FilePath -> SymbolicObj2 -> IO ()
+export2 = \case
+    SVG   -> writeSVG
+    DXF   -> writeDXF2
+    SCAD  -> writeSCAD2
+    PNG   -> writePNG
+    GCode -> writeGCodeHacklabLaser
+    fmt   -> error $ "Unrecognized 2D format: " <> show fmt
