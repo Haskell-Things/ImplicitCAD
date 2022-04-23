@@ -5,10 +5,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 
-import Prelude(pure, fmap, Eq, (==), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
+import Prelude(pure, fmap, Eq, (==), (.), (<$>), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj2(Square, Circle, Polygon, Rotate2, Shared2),
+    ( SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2),
       SharedObj(IntersectR, Complement, UnionR, DifferenceR),
       Box2,
       ℝ2,
@@ -20,7 +20,8 @@ import Data.Fixed (mod')
 import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
 
 -- To construct vectors of ℝs.
-import Linear (V2(V2))
+import Linear (V2(V2), V3(V3))
+import qualified Linear
 
 -- Get a Box2 around the given object.
 getBox2 :: SymbolicObj2 -> Box2
@@ -33,6 +34,11 @@ getBox2 (Polygon points) = pointsBox points
 getBox2 (Rotate2 θ symbObj) =
     let rotate (V2 x y) = V2 (x*cos θ - y*sin θ) (x*sin θ + y*cos θ)
      in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
+getBox2 (Transform2 m symbObj) =
+    let box = getBox2 symbObj
+        augment (V2 x y) = (V3 x y 1)
+        normalize (V3 x y w) = (V2 (x/w) (y/w))
+     in pointsBox $ normalize . (m Linear.!*) . augment <$> corners box
 getBox2 (Shared2 obj) = getBoxShared obj
 
 -- | Define a Box2 around the given object, and the space it occupies while rotating about the center point.

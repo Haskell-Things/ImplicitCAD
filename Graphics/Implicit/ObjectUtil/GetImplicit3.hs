@@ -9,17 +9,17 @@ module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
-
-import qualified Linear as Q
 
 import qualified Data.Either as Either (either)
 
 -- Use getImplicit for handling extrusion of 2D shapes to 3D.
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 import Linear (V2(V2), V3(V3))
+import qualified Linear
+
 import {-# SOURCE #-} Graphics.Implicit.Primitives (getImplicit)
 
 default (ℝ)
@@ -39,8 +39,9 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
         max (d * cos θ) (abs (z-h/2) - (h/2))
 -- Simple transforms
 getImplicit3 ctx (Rotate3 q symbObj) =
-    getImplicit3 ctx symbObj . Q.rotate (Q.conjugate q)
-
+    getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)
+getImplicit3 ctx (Transform3 m symbObj) =
+    getImplicit3 ctx symbObj . Linear.normalizePoint . ((Linear.inv44 m) Linear.!*) . Linear.point
 -- 2D Based
 getImplicit3 ctx (Extrude symbObj h) =
     let

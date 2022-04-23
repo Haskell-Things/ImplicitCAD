@@ -31,13 +31,14 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
-import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, rotate3V, rotate3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2)
+import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2)
 
 import Control.Monad (when, mplus)
 
 import Data.Text.Lazy (Text)
 
-import Linear ( V3(V3), V2(V2) )
+import Control.Lens ((^.))
+import Linear (_m33, M34, M44, V2(V2), V3(V3), V4(V4))
 import Linear.Affine (qdA)
 
 default (ℝ)
@@ -69,6 +70,7 @@ primitiveModules =
   , onModIze pack [([("size", noDefault), ("sep", noDefault)], requiredSuite)]
   , onModIze unit [([("unit", noDefault)], requiredSuite)]
   , onModIze mirror [([("x", noDefault), ("y", noDefault), ("z", noDefault)], requiredSuite), ([("v", noDefault)], requiredSuite)]
+  , onModIze multmatrix [([("m", noDefault)], requiredSuite)]
   ]
   where
     hasDefault = True
@@ -587,6 +589,21 @@ mirror = moduleWithSuite "mirror" $ \_ children -> do
                 Right (Right (V3 x y z)) -> V3 x y z
     pure $ pure $
         objMap (Prim.mirror (V2 x y)) (Prim.mirror (V3 x y z)) children
+
+multmatrix :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+multmatrix = moduleWithSuite "multmatrix" $ \_ children -> do
+    example "multmatrix (m=[[1,0,0,0],[0,1,0,0],[0,0,1,0]]) cube(3);"
+    example "multmatrix (m=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]) cube(3);"
+    m <-
+        do
+            m :: Either (M34 ℝ) (M44 ℝ) <- argument "m"
+                `doc` "3x4 or 4x4 matrix representing affine transformation";
+            pure $ case m of
+              Left (V3 a b c) -> V4 a b c (V4 0 0 0 1)
+              Right m44 -> m44
+    pure $ pure $
+        -- m44 -> m33
+        objMap (Prim.transform (m ^. Linear._m33)) (Prim.transform3 m) children
 
 ---------------
 

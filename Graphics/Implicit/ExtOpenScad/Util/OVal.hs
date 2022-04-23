@@ -33,7 +33,7 @@ import Data.Text.Lazy (Text)
 import Control.Parallel.Strategies (runEval, rpar, rseq)
 
 -- To build vectors of ℝs.
-import Linear (V2(V2), V3(V3))
+import Linear (V2(V2), V3(V3), V4(V4))
 
 -- Convert OVals (and Lists of OVals) into a given Haskell type
 class OTypeMirror a where
@@ -108,6 +108,13 @@ instance (OTypeMirror a) => OTypeMirror (V3 a) where
     fromOObj _ = Nothing
     {-# INLINABLE fromOObj #-}
     toOObj (V3 a b c) = OList [toOObj a, toOObj b, toOObj c]
+
+instance (OTypeMirror a) => OTypeMirror (V4 a) where
+    fromOObj (OList [fromOObj -> Just a,fromOObj -> Just b,fromOObj -> Just c,fromOObj -> Just d]) =
+        Just (V4 a b c d)
+    fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj (V4 a b c d) = OList [toOObj a, toOObj b, toOObj c, toOObj d]
 
 instance (OTypeMirror a, OTypeMirror b) => OTypeMirror (a -> b) where
     fromOObj (OFunc f) =  Just $ \input ->

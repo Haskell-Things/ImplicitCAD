@@ -8,13 +8,15 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (Fractional, not, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit
     ( difference,
       rotate,
+      transform,
       rotate3,
       rotate3V,
+      transform3,
       union,
       SymbolicObj2,
       SymbolicObj3,
@@ -33,7 +35,8 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear ( V3(V3), (^*) )
+import Linear (V2(V2), V3(V3), V4(V4), (^*) , Epsilon(nearZero))
+import qualified Linear
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
@@ -55,6 +58,7 @@ spec = do
     inverseSpec      @SymbolicObj2
     annihilationSpec @SymbolicObj2
     rotation2dSpec
+    transform2dSpec
 
   describe "symbolic obj 3" $ do
     idempotenceSpec  @SymbolicObj3
@@ -64,6 +68,7 @@ spec = do
     inverseSpec      @SymbolicObj3
     annihilationSpec @SymbolicObj3
     rotation3dSpec
+    transform3dSpec
     misc3dSpec
 
 ------------------------------------------------------------------------------
@@ -79,6 +84,8 @@ type TestInfrastructure obj vec test outcome =
   , Show vec
   , Arbitrary obj
   , Arbitrary vec
+  , Epsilon vec
+  , Fractional vec
   )
 
 ------------------------------------------------------------------------------
@@ -135,13 +142,10 @@ inverseSpec = describe "inverses" $ do
     translate @obj xyz . translate (negate xyz)
       =~= id
 
-  -- TODO(sandy): there should be a scale inverse here, but it's a hard thing
-  -- to quantify over due to our lack of functors for R2 and R3.
-
-  -- -- prop "scale inverse" $
-  -- --   forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
-  -- --     scale @obj xyz . scale (invert xyz)
-  -- --       =~= id
+  prop "scale inverse" $
+    forAll (arbitrary `suchThat` (not . nearZero)) $ \xyz ->
+      scale @obj xyz . scale (1 / xyz)
+      =~= id
 
 ------------------------------------------------------------------------------
 -- Proofs that 'fullSpace' is an annhilative element with respect to union.
@@ -182,6 +186,23 @@ rotation2dSpec = describe "2d rotation" $ do
       =~= emptySpace
 
 ------------------------------------------------------------------------------
+-- Misc proofs regarding 3d transformation.
+transform2dSpec :: Spec
+transform2dSpec = describe "2d transform" $ do
+  prop "identity" $
+    transform Linear.identity
+    =~= id
+
+  prop "same as translation" $ \tr@(V2 x y) ->
+    transform
+      (V3
+        (V3 1 0 x)
+        (V3 0 1 y)
+        (V3 0 0 1)
+      )
+    =~= translate tr
+
+------------------------------------------------------------------------------
 -- Misc proofs regarding 3d rotation.
 rotation3dSpec :: Spec
 rotation3dSpec = describe "3d rotation" $ do
@@ -219,6 +240,38 @@ rotation3dSpec = describe "3d rotation" $ do
       =~= emptySpace
 
 ------------------------------------------------------------------------------
+-- Misc proofs regarding 3d transformation.
+transform3dSpec :: Spec
+transform3dSpec = describe "3d transform" $ do
+  prop "identity" $
+    transform3 Linear.identity
+    =~= id
+
+  prop "same as rotation and translation" $ \quat tr ->
+    transform3 (Linear.mkTransformation quat tr)
+    =~= translate tr . rotateQ quat
+
+  prop "scale"
+    $ forAll (arbitrary `suchThat` (not . nearZero)) $ \s@(V3 x y z) ->
+    transform3
+      (V4 (V4 x 0 0 0)
+          (V4 0 y 0 0)
+          (V4 0 0 z 0)
+          (V4 0 0 0 1)
+          )
+    =~= scale s
+
+  prop "mirror" $
+    transform3
+    -- mirroring about Y plane
+      (V4 (V4 (-1) 0 0 0)
+          (V4   0  1 0 0)
+          (V4   0  0 1 0)
+          (V4   0  0 0 1)
+          )
+    =~= mirror (V3 1 0 0)
+
+------------------------------------------------------------------------------
 -- Misc tests that make sense only in 3d
 misc3dSpec :: Spec
 misc3dSpec = describe "misc 3d tests" $ do
@@ -228,6 +281,9 @@ misc3dSpec = describe "misc 3d tests" $ do
 
   prop "cylinder with negative height is a flipped cylinder with positive height" $ \r1 r2 h ->
     cylinder2 r1 r2 h =~= mirror (V3 0 0 1) (cylinder2 r1 r2 (-h))
+
+  prop "negative scale in X is mirror about Y plane" $
+    scale @SymbolicObj3 (V3 (-1) 1 1) =~= mirror (V3 1 0 0)
 
 ------------------------------------------------------------------------------
 -- Misc identity proofs that should hold for all symbolic objects.

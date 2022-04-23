@@ -44,12 +44,14 @@ module Graphics.Implicit.Definitions (
         Circle,
         Polygon,
         Rotate2,
+        Transform2,
         Shared2),
     SymbolicObj3(
         Cube,
         Sphere,
         Cylinder,
         Rotate3,
+        Transform3,
         Extrude,
         ExtrudeM,
         ExtrudeOnEdgeOf,
@@ -77,7 +79,7 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
-import Linear (V2(V2), V3(V3))
+import Linear (M33, M44, V2(V2), V3(V3))
 
 import Linear.Quaternion (Quaternion(Quaternion))
 
@@ -270,6 +272,7 @@ data SymbolicObj2 =
     | Polygon [ℝ2]  -- points.
     -- Simple transforms
     | Rotate2 ℝ SymbolicObj2
+    | Transform2 (M33 ℝ) SymbolicObj2
     -- Lifting common objects
     | Shared2 (SharedObj SymbolicObj2 ℝ2)
     deriving (Generic)
@@ -283,6 +286,7 @@ instance Show SymbolicObj2 where
     Circle r      -> showCon "circle" @| r
     Polygon ps -> showCon "polygon"   @| ps
     Rotate2 v obj -> showCon "rotate" @| v     @| obj
+    Transform2 m obj -> showCon "transform2" @| m     @| obj
     Shared2 obj   -> flip showsPrec obj
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
@@ -301,6 +305,7 @@ data SymbolicObj3 =
     | Cylinder ℝ ℝ ℝ --
     -- Simple transforms
     | Rotate3 (Quaternion ℝ) SymbolicObj3
+    | Transform3 (M44 ℝ) SymbolicObj3
     -- 2D based
     | Extrude SymbolicObj2 ℝ
     | ExtrudeM
@@ -332,6 +337,7 @@ instance Show SymbolicObj3 where
     Cylinder h r1 r2 ->
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
+    Transform3 m s -> showCon "transform3" @| show m @| s
     Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd

@@ -29,7 +29,9 @@ import Graphics.Implicit
       extrude,
       rotate3,
       rotate3V,
-      rotate )
+      transform3,
+      rotate,
+      transform )
 
 import Graphics.Implicit.Definitions
     ( ExtrudeMScale(C1,C2,Fn),
@@ -56,7 +58,7 @@ import Test.QuickCheck
       Positive(getPositive),
       Property)
 
-import Linear (V2(V2), V3(V3), Quaternion, axisAngle)
+import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -73,6 +75,7 @@ instance Arbitrary SymbolicObj2 where
     then oneof small
     else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
+        , transform <$> arbitrary <*> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
     where
@@ -93,10 +96,11 @@ instance Arbitrary SymbolicObj3 where
     if n <= 1
     then oneof small
     else oneof $
-        [ rotate3  <$> arbitrary        <*> decayArbitrary 2
-        , rotate3V <$> arbitrary        <*> arbitrary <*> decayArbitrary 2
-        , extrude  <$> decayArbitrary 2 <*> arbitraryPos
-        , Shared3  <$> arbitrary
+        [ rotate3    <$> arbitrary        <*> decayArbitrary 2
+        , rotate3V   <$> arbitrary        <*> arbitrary        <*> decayArbitrary 2
+        , transform3 <$> arbitrary        <*> decayArbitrary 2
+        , extrude    <$> decayArbitrary 2 <*> arbitraryPos
+        , Shared3    <$> arbitrary
         ] <> small
     where
       small =
@@ -121,19 +125,26 @@ instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj
     , WithRounding <$> arbitraryPos <*> decayArbitrary 2
     ]
 
-instance Arbitrary ℝ2 where
+instance Arbitrary a => Arbitrary (V2 a) where
   shrink = genericShrink
   arbitrary = V2 <$> arbitrary <*> arbitrary
 
-instance Arbitrary ℝ3 where
+instance Arbitrary a => Arbitrary (V3 a) where
   shrink = genericShrink
   arbitrary = V3 <$> arbitrary <*> arbitrary <*> arbitrary
 
-instance CoArbitrary ℝ2 where
+instance Arbitrary a => Arbitrary (V4 a) where
+  shrink = genericShrink
+  arbitrary = V4 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance CoArbitrary a => CoArbitrary (V2 a) where
   coarbitrary (V2 a b) = coarbitrary (a, b)
 
-instance CoArbitrary ℝ3 where
+instance CoArbitrary a => CoArbitrary (V3 a) where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
+
+instance CoArbitrary a => CoArbitrary (V4 a) where
+  coarbitrary (V4 a b c d) = coarbitrary (a, b, c, d)
 
 instance Arbitrary ExtrudeMScale where
   shrink = genericShrink
