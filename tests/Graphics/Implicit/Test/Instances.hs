@@ -123,11 +123,11 @@ instance (Arbitrary obj, Arbitrary vec, CoArbitrary vec) => Arbitrary (SharedObj
     , WithRounding <$> arbitraryPos <*> decayArbitrary 2
     ]
 
-instance Arbitrary ℝ2 where
+instance Arbitrary a => Arbitrary (V2 a) where
   shrink = genericShrink
   arbitrary = V2 <$> arbitrary <*> arbitrary
 
-instance Arbitrary ℝ3 where
+instance Arbitrary a => Arbitrary (V3 a) where
   shrink = genericShrink
   arbitrary = V3 <$> arbitrary <*> arbitrary <*> arbitrary
 
@@ -135,13 +135,13 @@ instance Arbitrary a => Arbitrary (V4 a) where
   shrink = genericShrink
   arbitrary = V4 <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance CoArbitrary ℝ2 where
+instance CoArbitrary a => CoArbitrary (V2 a) where
   coarbitrary (V2 a b) = coarbitrary (a, b)
 
-instance CoArbitrary ℝ3 where
+instance CoArbitrary a => CoArbitrary (V3 a) where
   coarbitrary (V3 a b c) = coarbitrary (a, b, c)
 
-instance CoArbitrary (V4 ℝ) where
+instance CoArbitrary a => CoArbitrary (V4 a) where
   coarbitrary (V4 a b c d) = coarbitrary (a, b, c, d)
 
 instance Arbitrary ExtrudeMScale where
