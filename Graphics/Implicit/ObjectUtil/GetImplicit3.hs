@@ -13,13 +13,13 @@ import Graphics.Implicit.Definitions
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
-import qualified Linear as Q
-
 import qualified Data.Either as Either (either)
 
 -- Use getImplicit for handling extrusion of 2D shapes to 3D.
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 import Linear (V2(V2), V3(V3))
+import qualified Linear
+
 import {-# SOURCE #-} Graphics.Implicit.Primitives (getImplicit)
 
 default (ℝ)
@@ -39,9 +39,9 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
         max (d * cos θ) (abs (z-h/2) - (h/2))
 -- Simple transforms
 getImplicit3 ctx (Rotate3 q symbObj) =
-    getImplicit3 ctx symbObj . Q.rotate (Q.conjugate q)
+    getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)
 getImplicit3 ctx (Transform3 m symbObj) =
-    getImplicit3 ctx symbObj . Q.normalizePoint . ((Q.inv44 m) Q.!*) . Q.point
+    getImplicit3 ctx symbObj . Linear.normalizePoint . ((Linear.inv44 m) Linear.!*) . Linear.point
 -- 2D Based
 getImplicit3 ctx (Extrude symbObj h) =
     let
