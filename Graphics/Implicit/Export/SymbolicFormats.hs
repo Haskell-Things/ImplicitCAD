@@ -141,8 +141,6 @@ buildS3 (Transform3 m obj) =
       ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList m)
       [buildS3 obj]
 
--- FIXME: where is EmbedBoxedObj3?
-
 buildS3 (Extrude obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
 
 -- FIXME: handle scale, center.
@@ -191,6 +189,4 @@ buildS2 (Transform2 m obj) =
       [buildS2 obj]
 
 buildS2 (Square (V2 w h)) = call "square" [bf w, bf h] []
-
--- FIXME: missing EmbedBoxedObj2?
 
