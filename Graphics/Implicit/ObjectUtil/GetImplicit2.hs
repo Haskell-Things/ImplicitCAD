@@ -11,14 +11,15 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
+    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
 
 import Data.List (nub)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
-import Linear (V2(V2))
+import Linear (V2(V2), V3(V3))
+import qualified Linear
 
 ------------------------------------------------------------------------------
 -- | Filter out equal consecutive elements in the list. This function will
@@ -64,4 +65,12 @@ getImplicit2 ctx (Rotate2 θ symbObj) =
         obj = getImplicit2 ctx symbObj
     in
         obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
+getImplicit2 ctx (Transform2 m symbObj) =
+    \vin ->
+    let
+        obj = getImplicit2 ctx symbObj
+        augment (V2 x y) = (V3 x y 1)
+        normalize (V3 x y w) = (V2 (x/w) (y/w))
+    in
+        obj $ (normalize . ((Linear.inv33 m) Linear.!*) . augment $ vin)
 getImplicit2 ctx (Shared2 obj) = getImplicitShared ctx obj

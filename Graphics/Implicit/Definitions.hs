@@ -44,6 +44,7 @@ module Graphics.Implicit.Definitions (
         Circle,
         Polygon,
         Rotate2,
+        Transform2,
         Shared2),
     SymbolicObj3(
         Cube,
@@ -78,7 +79,7 @@ import Graphics.Implicit.IntegralUtil as N (ℕ, fromℕ, toℕ)
 
 import Control.DeepSeq (NFData, rnf)
 
-import Linear (M44, V2(V2), V3(V3))
+import Linear (M33, M44, V2(V2), V3(V3))
 
 import Linear.Quaternion (Quaternion(Quaternion))
 
@@ -271,6 +272,7 @@ data SymbolicObj2 =
     | Polygon [ℝ2]  -- points.
     -- Simple transforms
     | Rotate2 ℝ SymbolicObj2
+    | Transform2 (M33 ℝ) SymbolicObj2
     -- Lifting common objects
     | Shared2 (SharedObj SymbolicObj2 ℝ2)
     deriving (Generic)
@@ -284,6 +286,7 @@ instance Show SymbolicObj2 where
     Circle r      -> showCon "circle" @| r
     Polygon ps -> showCon "polygon"   @| ps
     Rotate2 v obj -> showCon "rotate" @| v     @| obj
+    Transform2 m obj -> showCon "transform2" @| m     @| obj
     Shared2 obj   -> flip showsPrec obj
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.

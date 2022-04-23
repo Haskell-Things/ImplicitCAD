@@ -39,6 +39,7 @@ module Graphics.Implicit.Primitives (
                                      transform3,
                                      pack3,
                                      rotate,
+                                     transform,
                                      pack2,
                                      implicit,
                                      emptySpace,
@@ -72,6 +73,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Circle,
                                                    Polygon,
                                                    Rotate2,
+                                                   Transform2,
                                                    Shared2
                                                   ),
                                       SymbolicObj3(
@@ -91,7 +93,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                      )
 import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
-import Linear (M44, V2(V2),V3(V3), axisAngle, Quaternion)
+import Linear (M33, M44, V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
 
 -- $ 3D Primitives
@@ -445,6 +447,14 @@ pack3 (V2 dx dy) sep objs =
 
 rotate :: ℝ -> SymbolicObj2 -> SymbolicObj2
 rotate = Rotate2
+
+-- | Transform a 2D object using a 3x3 matrix representing affine transformation
+-- (OpenSCAD multmatrix)
+transform
+    :: M33 ℝ
+    -> SymbolicObj2
+    -> SymbolicObj2
+transform = Transform2
 
 -- | Attempt to pack multiple 2D objects into a fixed area.
 pack2

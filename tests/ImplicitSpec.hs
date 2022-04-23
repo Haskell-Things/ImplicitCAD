@@ -13,6 +13,7 @@ import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit
     ( difference,
       rotate,
+      transform,
       rotate3,
       rotate3V,
       transform3,
@@ -34,7 +35,7 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear ( V3(V3), V4(V4), (^*) , Epsilon(nearZero))
+import Linear (V2(V2), V3(V3), V4(V4), (^*) , Epsilon(nearZero))
 import qualified Linear
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
@@ -57,6 +58,7 @@ spec = do
     inverseSpec      @SymbolicObj2
     annihilationSpec @SymbolicObj2
     rotation2dSpec
+    transform2dSpec
 
   describe "symbolic obj 3" $ do
     idempotenceSpec  @SymbolicObj3
@@ -182,6 +184,23 @@ rotation2dSpec = describe "2d rotation" $ do
   prop "empty idempotent wrt rotate" $ \rads ->
     rotate rads emptySpace
       =~= emptySpace
+
+------------------------------------------------------------------------------
+-- Misc proofs regarding 3d transformation.
+transform2dSpec :: Spec
+transform2dSpec = describe "2d transform" $ do
+  prop "identity" $
+    transform Linear.identity
+    =~= id
+
+  prop "same as translation" $ \tr@(V2 x y) ->
+    transform
+      (V3
+        (V3 1 0 x)
+        (V3 0 1 y)
+        (V3 0 0 1)
+      )
+    =~= translate tr
 
 ------------------------------------------------------------------------------
 -- Misc proofs regarding 3d rotation.

@@ -12,13 +12,13 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
 
 -- For constructing vectors of ℝs.
-import Linear (V3(V3), V2(V2))
+import Linear (V2(V2), V3(V3), V4(V4))
 
 import Data.List (intersperse)
 import Data.Function (fix)
@@ -177,6 +177,18 @@ buildS2 (Circle r) = call "circle" [bf r] []
 buildS2 (Polygon points) = call "polygon" (fmap bvect points) []
 
 buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
+
+buildS2 (Transform2 m obj) =
+    let toM44 (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
+          (V4 (V4 a b c 0)
+              (V4 d e f 0)
+              (V4 g h i 0)
+              (V4 0 0 0 1)
+          )
+    in
+    call "multmatrix"
+      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList (toM44 m))
+      [buildS2 obj]
 
 buildS2 (Square (V2 w h)) = call "square" [bf w, bf h] []
 
