@@ -112,7 +112,7 @@ instance Arbitrary SymbolicObj3 where
         , pure emptySpace
         ]
 
-instance (Arbitrary obj, Arbitrary (f a), CoArbitrary (f a)) => Arbitrary (SharedObj obj f a) where
+instance (Arbitrary obj, Arbitrary a, Arbitrary (f a), CoArbitrary (f a)) => Arbitrary (SharedObj obj f a) where
   shrink = genericShrink
   arbitrary = oneof
     [ Translate    <$> arbitrary    <*> decayArbitrary 2
