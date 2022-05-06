@@ -336,7 +336,7 @@ intersectR r ss = Shared $ IntersectR r ss
 
 implicit
     :: Object obj f a
-    => (f a -> a)     -- ^ Implicit function
+    => (f a -> a)  -- ^ Implicit function
     -> (f a, f a)  -- ^ Bounding box
     -> obj         -- ^ Resulting object
 implicit a b = Shared $ EmbedBoxedObj (a, b)

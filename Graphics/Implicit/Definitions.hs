@@ -310,7 +310,7 @@ data SymbolicObj3 =
     | Extrude SymbolicObj2 ℝ
     | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
-        ExtrudeMScale        -- scale
+        ExtrudeMScale         -- scale
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
         SymbolicObj2          -- object to extrude
         (Either ℝ (ℝ2 -> ℝ))  -- height to extrude to
