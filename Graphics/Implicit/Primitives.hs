@@ -219,6 +219,7 @@ translate
     => f a  -- ^ Vector to translate by
     -> obj  -- ^ Object to translate
     -> obj  -- ^ Resulting object
+translate 0 s = s
 translate _ s@(Shared Empty) = s
 translate _ s@(Shared Full) = s
 translate v1 (Shared (Translate v2 s)) = translate (v1 + v2) s
@@ -230,6 +231,7 @@ scale
     => f a  -- ^ Amount to scale by
     -> obj  -- ^ Object to scale
     -> obj  -- ^ Resulting scaled object
+scale 1 s = s
 scale _ s@(Shared Empty) = s
 scale v1 (Shared (Scale v2 s)) = scale (v1 * v2) s
 scale v s = Shared $ Scale v s
@@ -399,6 +401,7 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
+rotate3 0 = id
 rotate3 (V3 pitch roll yaw)
   = Rotate3
   $ axisAngle (V3 0 0 1) yaw
@@ -417,6 +420,7 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
+rotate3V 0 _ = id
 rotate3V w xyz = Rotate3 $ axisAngle xyz w
 
 -- | Transform a 3D object using a 4x4 matrix representing affine transformation
