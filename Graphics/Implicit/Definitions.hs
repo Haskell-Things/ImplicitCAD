@@ -209,23 +209,23 @@ type BoxedObj3 = Boxed3 Obj3
 -- | Means of constructing symbolic objects that are common between the 2D and
 -- 3D case. This type is parameterized on @obj@ and @vec@ so that
 -- 'SymbolicObj2' and 'SymbolicObj3' can instantiate it for their own purposes.
-data SharedObj obj vec
+data SharedObj obj f a
   = Empty  -- ^ The empty object
   | Full   -- ^ The entirely full object
   | Complement obj
   | UnionR ℝ [obj]
   | DifferenceR ℝ obj [obj]
   | IntersectR ℝ [obj]
-  | Translate vec obj
-  | Scale vec obj
-  | Mirror vec obj -- ^ Mirror across the line whose normal is defined by the vector
+  | Translate (f a) obj
+  | Scale (f a) obj
+  | Mirror (f a) obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
-  | EmbedBoxedObj (vec -> ℝ, (vec, vec))
+  | EmbedBoxedObj ((f a) -> ℝ, ((f a), (f a)))
   | WithRounding ℝ obj
   deriving (Generic)
 
-instance (Show obj, Show vec) => Show (SharedObj obj vec) where
+instance (Show obj, Show (f a)) => Show (SharedObj obj f a) where
   showsPrec = flip $ \case
      Empty                   -> showCon "emptySpace"
      Full                    -> showCon "fullSpace"
@@ -274,7 +274,7 @@ data SymbolicObj2 =
     | Rotate2 ℝ SymbolicObj2
     | Transform2 (M33 ℝ) SymbolicObj2
     -- Lifting common objects
-    | Shared2 (SharedObj SymbolicObj2 ℝ2)
+    | Shared2 (SharedObj SymbolicObj2 V2 ℝ)
     deriving (Generic)
 
 instance Show SymbolicObj2 where
@@ -320,7 +320,7 @@ data SymbolicObj3 =
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
-    | Shared3 (SharedObj SymbolicObj3 ℝ3)
+    | Shared3 (SharedObj SymbolicObj3 V3 ℝ)
     deriving (Generic)
 
 instance Show SymbolicObj3 where

@@ -50,7 +50,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
 
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
@@ -178,41 +178,45 @@ polygon = Polygon
 -- instead provided by 'rotate' and 'rotate3'.
 --
 -- Library users shouldn't need to provide new instances of this class.
-class Num vec => Object obj vec
-      | obj -> vec where
-
+class ( Applicative f
+      , Eq a
+      , Eq (f a)
+      , Num a
+      , Num (f a))
+      => Object obj f a | obj -> f a
+      where
     -- | A 'Prism'' for including 'SharedObj's in @obj@. Prefer using 'Shared'
     -- instead of this.
-    _Shared :: Prism' obj (SharedObj obj vec)
+    _Shared :: Prism' obj (SharedObj obj f a)
 
     -- | Get the bounding box an object
     getBox ::
         obj           -- ^ Object to get box of
-        -> (vec, vec) -- ^ Bounding box
+        -> (f a, f a) -- ^ Bounding box
 
     -- | Get the implicit function for an object
     getImplicit'
         :: ObjectContext
         -> obj         -- ^ Object to get implicit function of
-        -> (vec -> ℝ)  -- ^ Implicit function
+        -> (f a -> ℝ)  -- ^ Implicit function
 
 -- | Get the implicit function for an object
 getImplicit
-    :: Object obj vec
+    :: Object obj f a
     => obj         -- ^ Object to get implicit function of
-    -> (vec -> ℝ)  -- ^ Implicit function
+    -> (f a -> ℝ)  -- ^ Implicit function
 getImplicit = getImplicit' defaultObjectContext
 
 -- | A pattern that abstracts over 'Shared2' and 'Shared3'.
-pattern Shared :: Object obj vec => SharedObj obj vec -> obj
+pattern Shared :: (Object obj f a) => SharedObj obj f a -> obj
 pattern Shared v <- (preview _Shared -> Just v)
   where
     Shared v = _Shared # v
 
 -- | Translate an object by a vector of appropriate dimension.
 translate
-    :: Object obj vec
-    => vec  -- ^ Vector to translate by
+    :: Object obj f a
+    => f a  -- ^ Vector to translate by
     -> obj  -- ^ Object to translate
     -> obj  -- ^ Resulting object
 translate _ s@(Shared Empty) = s
@@ -222,8 +226,8 @@ translate v s = Shared $ Translate v s
 
 -- | Scale an object
 scale
-    :: Object obj vec
-    => vec  -- ^ Amount to scale by
+    :: Object obj f a
+    => f a  -- ^ Amount to scale by
     -> obj  -- ^ Object to scale
     -> obj  -- ^ Resulting scaled object
 scale _ s@(Shared Empty) = s
@@ -232,7 +236,7 @@ scale v s = Shared $ Scale v s
 
 -- | Complement an Object
 complement
-    :: Object obj vec
+    :: Object obj f a
     => obj  -- ^ Object to complement
     -> obj  -- ^ Result
 complement (Shared Empty) = Shared Full
@@ -241,11 +245,11 @@ complement (Shared (Complement s)) = s
 complement s = Shared $ Complement s
 
 -- | The object that fills no space
-emptySpace :: Object obj vec => obj
+emptySpace :: Object obj f a => obj
 emptySpace = Shared Empty
 
 -- | The object that fills the entire space
-fullSpace :: Object obj vec => obj
+fullSpace :: Object obj f a => obj
 fullSpace = Shared Full
 
 -- | Set the current object-rounding value for the given object. The rounding
@@ -260,15 +264,15 @@ fullSpace = Shared Full
 -- @obj@, so long as they have the same dimensionality. That is to say,
 -- the current object-rounding value set in 3D will not apply to extruded 2D
 -- shapes.
-withRounding :: Object obj vec => ℝ -> obj -> obj
+withRounding :: Object obj f a => ℝ -> obj -> obj
 withRounding 0 = id
 withRounding r = Shared . WithRounding r
 
 -- | Mirror an object across the hyperplane whose normal is a given
 -- vector.
 mirror
-    :: Object obj vec
-    => vec  -- ^ Vector defining the hyperplane
+    :: Object obj f a
+    => f a  -- ^ Vector defining the hyperplane
     -> obj  -- ^ Object to mirror
     -> obj  -- ^ Resulting object
 mirror _ s@(Shared Empty) = s
@@ -277,7 +281,7 @@ mirror v s = Shared $ Mirror v s
 
 -- | Outset of an object.
 outset
-    :: Object obj vec
+    :: Object obj f a
     => ℝ     -- ^ distance to outset
     -> obj   -- ^ object to outset
     -> obj   -- ^ resulting object
@@ -288,7 +292,7 @@ outset v s = Shared $ Outset v s
 
 -- | Make a shell of an object.
 shell
-    :: Object obj vec
+    :: Object obj f a
     => ℝ     -- ^ width of shell
     -> obj   -- ^ object to take shell of
     -> obj   -- ^ resulting shell
@@ -298,7 +302,7 @@ shell v s = Shared $ Shell v s
 
 -- | Rounded union
 unionR
-    :: Object obj vec
+    :: Object obj f a
     => ℝ      -- ^ The radius (in mm) of rounding
     -> [obj]  -- ^ objects to union
     -> obj    -- ^ Resulting object
@@ -308,7 +312,7 @@ unionR r ss = Shared $ UnionR r ss
 
 -- | Rounded difference
 differenceR
-    :: Object obj vec
+    :: Object obj f a
     => ℝ     -- ^ The radius (in mm) of rounding
     -> obj   -- ^ Base object
     -> [obj] -- ^ Objects to subtract from the base
@@ -320,7 +324,7 @@ differenceR r s ss = Shared $ DifferenceR r s ss
 
 -- | Rounded minimum
 intersectR
-    :: Object obj vec
+    :: Object obj f a
     => ℝ     -- ^ The radius (in mm) of rounding
     -> [obj] -- ^ Objects to intersect
     -> obj   -- ^ Resulting object
@@ -329,33 +333,33 @@ intersectR _ [s] = s
 intersectR r ss = Shared $ IntersectR r ss
 
 implicit
-    :: Object obj vec
-    => (vec -> ℝ)     -- ^ Implicit function
-    -> (vec, vec)  -- ^ Bounding box
+    :: Object obj f a
+    => (f a -> ℝ)     -- ^ Implicit function
+    -> (f a, f a)  -- ^ Bounding box
     -> obj         -- ^ Resulting object
 implicit a b = Shared $ EmbedBoxedObj (a, b)
 
-instance Object SymbolicObj2 ℝ2 where
+instance Object SymbolicObj2 V2 ℝ where
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
     _         -> Nothing
   getBox       = getBox2
   getImplicit' = getImplicit2
 
-instance Object SymbolicObj3 ℝ3 where
+instance Object SymbolicObj3 V3 ℝ where
   _Shared = prism' Shared3 $ \case
     Shared3 x -> Just x
     _         -> Nothing
   getBox       = getBox3
   getImplicit' = getImplicit3
 
-union :: Object obj vec => [obj] -> obj
+union :: Object obj f a => [obj] -> obj
 union = unionR 0
 
-difference :: Object obj vec => obj -> [obj] -> obj
+difference :: Object obj f a => obj -> [obj] -> obj
 difference = differenceR 0
 
-intersect :: Object obj vec => [obj] -> obj
+intersect :: Object obj f a => [obj] -> obj
 intersect = intersectR 0
 
 -- 3D operations
