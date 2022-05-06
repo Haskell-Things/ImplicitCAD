@@ -198,13 +198,13 @@ class ( Applicative f
     getImplicit'
         :: ObjectContext
         -> obj         -- ^ Object to get implicit function of
-        -> (f a -> ℝ)  -- ^ Implicit function
+        -> (f a -> a)  -- ^ Implicit function
 
 -- | Get the implicit function for an object
 getImplicit
     :: Object obj f a
     => obj         -- ^ Object to get implicit function of
-    -> (f a -> ℝ)  -- ^ Implicit function
+    -> (f a -> a)  -- ^ Implicit function
 getImplicit = getImplicit' defaultObjectContext
 
 -- | A pattern that abstracts over 'Shared2' and 'Shared3'.
@@ -336,7 +336,7 @@ intersectR r ss = Shared $ IntersectR r ss
 
 implicit
     :: Object obj f a
-    => (f a -> ℝ)     -- ^ Implicit function
+    => (f a -> a)     -- ^ Implicit function
     -> (f a, f a)  -- ^ Bounding box
     -> obj         -- ^ Resulting object
 implicit a b = Shared $ EmbedBoxedObj (a, b)

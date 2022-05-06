@@ -21,9 +21,9 @@ class ( Applicative f
   where
     _Shared :: Prism' obj (SharedObj obj f a)
     getBox       :: obj -> (f a, f a)
-    getImplicit' :: ObjectContext -> obj -> (f a -> ℝ)
+    getImplicit' :: ObjectContext -> obj -> (f a -> a)
 
-getImplicit :: Object obj f a => obj -> (f a -> ℝ)
+getImplicit :: Object obj f a => obj -> (f a -> a)
 
 instance Object SymbolicObj2 V2 ℝ
 instance Object SymbolicObj3 V3 ℝ

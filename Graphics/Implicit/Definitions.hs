@@ -221,7 +221,7 @@ data SharedObj obj f a
   | Mirror (f a) obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
-  | EmbedBoxedObj ((f a) -> ℝ, ((f a), (f a)))
+  | EmbedBoxedObj ((f a) -> a, ((f a), (f a)))
   | WithRounding ℝ obj
   deriving (Generic)
 
