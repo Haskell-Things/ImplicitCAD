@@ -104,7 +104,7 @@ sphere ::
 
 sphere = Sphere
 
--- | A rectangular prism, with rounded corners.
+-- | A rectangular prism
 rect3
     :: ℝ3             -- ^ Bottom.. corner
     -> ℝ3             -- ^ Top right... corner
@@ -112,7 +112,7 @@ rect3
 
 rect3 xyz1 xyz2 = translate xyz1 $ Cube $ xyz2 - xyz1
 
--- | A rectangular prism, with rounded corners.
+-- | A cube
 cube
     :: Bool           -- ^ Centered?
     -> ℝ3             -- ^ Size
@@ -148,7 +148,7 @@ circle ::
 
 circle   = Circle
 
--- | A rectangle, with rounded corners.
+-- | A rectangle
 rect
     :: ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
@@ -156,7 +156,7 @@ rect
 
 rect xy1 xy2 = translate xy1 $ Square $ xy2 - xy1
 
--- | A rectangle, with rounded corners.
+-- | A square
 square
     :: Bool         -- ^ Centered?
     -> ℝ2           -- ^ Size
@@ -164,7 +164,7 @@ square
 square False size = Square size
 square True  size = translate (fmap (negate . (/ 2)) size) $ Square size
 
--- | A 2D polygon, with rounded corners.
+-- | A 2D polygon
 polygon
     :: [ℝ2]          -- ^ Verticies of the polygon
     -> SymbolicObj2  -- ^ Resulting polygon
