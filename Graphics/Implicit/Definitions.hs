@@ -282,10 +282,10 @@ instance Show SymbolicObj2 where
     -- NB: The False here is the centering argument, which has already been
     -- transformed into a translate. The 'Square' constructor itself is never
     -- centered.
-    Square sz  -> showCon "square"    @| False @| sz
-    Circle r      -> showCon "circle" @| r
-    Polygon ps -> showCon "polygon"   @| ps
-    Rotate2 v obj -> showCon "rotate" @| v     @| obj
+    Square sz        -> showCon "square"     @| False @| sz
+    Circle r         -> showCon "circle"     @| r
+    Polygon ps       -> showCon "polygon"    @| ps
+    Rotate2 v obj    -> showCon "rotate"     @| v     @| obj
     Transform2 m obj -> showCon "transform2" @| m     @| obj
     Shared2 obj   -> flip showsPrec obj
 
