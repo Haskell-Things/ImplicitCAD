@@ -8,7 +8,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Fractional, not, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (Fractional, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit
     ( difference,
@@ -35,7 +35,7 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear (V2(V2), V3(V3), V4(V4), (^*) , Epsilon(nearZero))
+import Linear (V2(V2), V3(V3), V4(V4), (^*))
 import qualified Linear
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
@@ -84,7 +84,6 @@ type TestInfrastructure obj f a test outcome =
   , Show (f a)
   , Arbitrary obj
   , Arbitrary (f a)
-  , Epsilon (f a)
   , Fractional (f a)
   )
 
@@ -143,7 +142,7 @@ inverseSpec = describe "inverses" $ do
       =~= id
 
   prop "scale inverse" $
-    forAll (arbitrary `suchThat` (not . nearZero)) $ \xyz ->
+    forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
       scale @obj xyz . scale (1 / xyz)
       =~= id
 
@@ -252,7 +251,7 @@ transform3dSpec = describe "3d transform" $ do
     =~= translate tr . rotateQ quat
 
   prop "scale"
-    $ forAll (arbitrary `suchThat` (not . nearZero)) $ \s@(V3 x y z) ->
+    $ forAll (arbitrary `suchThat` (/= 0)) $ \s@(V3 x y z) ->
     transform3
       (V4 (V4 x 0 0 0)
           (V4 0 y 0 0)
