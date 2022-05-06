@@ -127,7 +127,7 @@ outsetBox r (a, b) = (a - uniformV r, b + uniformV r)
 -- Get a box around the given object.
 getBoxShared
     :: forall obj f a
-     .  ( Applicative f, Object obj f a, VectorStuff (f a), Eq (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
+     .  ( Object obj f a, VectorStuff (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
     => SharedObj obj f a
     -> (f a, f a)
 -- Primitives
