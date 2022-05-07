@@ -112,6 +112,7 @@ Library
                     Graphics.Implicit.Export.SymbolicObj2
                     Graphics.Implicit.Export.SymbolicObj3
                     -- These are exposed for implicitsnap.
+                    Graphics.Implicit.Export.SymbolicFormats
                     Graphics.Implicit.Export.TriangleMeshFormats
                     Graphics.Implicit.Export.NormedTriangleMeshFormats
                     Graphics.Implicit.Export.PolylineFormats
@@ -141,7 +142,6 @@ Library
                   Graphics.Implicit.ExtOpenScad.Util.OVal
                   Graphics.Implicit.ExtOpenScad.Util.StateC
                   Graphics.Implicit.Export.RayTrace
-                  Graphics.Implicit.Export.SymbolicFormats
                   Graphics.Implicit.Export.Util
                   Graphics.Implicit.Export.TextBuilderUtils
                   Graphics.Implicit.Export.Symbolic.Rebound2
