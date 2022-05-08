@@ -8,7 +8,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Fractional, not, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (Fractional, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (xit, SpecWith, describe, Spec)
 import Graphics.Implicit
     ( difference,
@@ -35,7 +35,7 @@ import Test.QuickCheck
       forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
-import Linear (V2(V2), V3(V3), V4(V4), (^*) , Epsilon(nearZero))
+import Linear (V2(V2), V3(V3), V4(V4), (^*))
 import qualified Linear
 import Graphics.Implicit (unionR)
 import Graphics.Implicit (intersectR)
@@ -74,25 +74,24 @@ spec = do
 ------------------------------------------------------------------------------
 -- All the constraints we need in scope to parameterize tests by both 2d and
 -- 3d symbolic objects.
-type TestInfrastructure obj vec test outcome =
-  ( Object obj vec
+type TestInfrastructure obj f a test outcome =
+  ( Object obj f a
   , Observe test outcome obj
   , Monoid obj
   , Show outcome
   , Show test
   , Show obj
-  , Show vec
+  , Show (f a)
   , Arbitrary obj
-  , Arbitrary vec
-  , Epsilon vec
-  , Fractional vec
+  , Arbitrary (f a)
+  , Fractional (f a)
   )
 
 ------------------------------------------------------------------------------
 -- Tests proving that symbolic objects form a monoid.
 monoidSpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 monoidSpec = describe "monoid laws" $ do
   prop "a <> mempty = a" $ \obj ->
@@ -109,8 +108,8 @@ monoidSpec = describe "monoid laws" $ do
 -- 'fullSpace'. Additionally, that 'scale' is a no-op on 'emptySpace' (but not
 -- for 'fullSpace', because scaling by 0 is instead 'emptySpace').
 idempotenceSpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 idempotenceSpec = describe "idempotence" $ do
   for_ [("empty", emptySpace @obj), ("full", fullSpace)] $ \(name, obj) ->
@@ -130,8 +129,8 @@ idempotenceSpec = describe "idempotence" $ do
 ------------------------------------------------------------------------------
 -- Proofs of the invertability of operations.
 inverseSpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 inverseSpec = describe "inverses" $ do
   prop "complement inverse" $
@@ -143,15 +142,15 @@ inverseSpec = describe "inverses" $ do
       =~= id
 
   prop "scale inverse" $
-    forAll (arbitrary `suchThat` (not . nearZero)) $ \xyz ->
+    forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
       scale @obj xyz . scale (1 / xyz)
       =~= id
 
 ------------------------------------------------------------------------------
 -- Proofs that 'fullSpace' is an annhilative element with respect to union.
 annihilationSpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 annihilationSpec = describe "annihilation" $ do
   prop "full <> obj = full" $ \obj ->
@@ -252,7 +251,7 @@ transform3dSpec = describe "3d transform" $ do
     =~= translate tr . rotateQ quat
 
   prop "scale"
-    $ forAll (arbitrary `suchThat` (not . nearZero)) $ \s@(V3 x y z) ->
+    $ forAll (arbitrary `suchThat` (/= 0)) $ \s@(V3 x y z) ->
     transform3
       (V4 (V4 x 0 0 0)
           (V4 0 y 0 0)
@@ -288,8 +287,8 @@ misc3dSpec = describe "misc 3d tests" $ do
 ------------------------------------------------------------------------------
 -- Misc identity proofs that should hold for all symbolic objects.
 identitySpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 identitySpec = describe "identity" $ do
   prop "complement empty" $
@@ -319,8 +318,8 @@ identitySpec = describe "identity" $ do
 -- Functions proving symbolic objects form homomorphisms with respect to
 -- translate and scale.
 homomorphismSpec
-    :: forall obj vec test outcome
-     . TestInfrastructure obj vec test outcome
+    :: forall obj f a test outcome
+     . TestInfrastructure obj f a test outcome
     => Spec
 homomorphismSpec = describe "homomorphism" $ do
   prop "translate" $ \xyz1 xyz2 ->

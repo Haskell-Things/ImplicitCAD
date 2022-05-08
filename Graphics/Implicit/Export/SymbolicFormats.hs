@@ -78,7 +78,7 @@ bvect v = "[" <> fold (intersperse "," $ vectAsArgs v) <> "]"
 
 ------------------------------------------------------------------------------
 -- | Build the common combinators.
-buildShared :: forall obj vec. (Build obj, VectorStuff vec) => SharedObj obj vec -> Reader ℝ Builder
+buildShared :: forall obj f a. (Build obj, VectorStuff (f a)) => SharedObj obj f a -> Reader ℝ Builder
 
 buildShared Empty = call "union" [] []
 

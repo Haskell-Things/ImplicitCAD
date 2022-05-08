@@ -38,13 +38,13 @@ normalize v =
 -- Get a function that describes the surface of the object.
 getImplicitShared
     :: forall obj f
-     . ( Object obj (f ℝ)
+     . ( Object obj f ℝ
        , VectorStuff (f ℝ)
        , ComponentWiseMultable (f ℝ)
        , Metric f
        )
     => ObjectContext
-    -> SharedObj obj (f ℝ)
+    -> SharedObj obj f ℝ
     -> f ℝ
     -> ℝ
 getImplicitShared _ Empty = const infty

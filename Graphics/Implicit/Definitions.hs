@@ -209,23 +209,23 @@ type BoxedObj3 = Boxed3 Obj3
 -- | Means of constructing symbolic objects that are common between the 2D and
 -- 3D case. This type is parameterized on @obj@ and @vec@ so that
 -- 'SymbolicObj2' and 'SymbolicObj3' can instantiate it for their own purposes.
-data SharedObj obj vec
+data SharedObj obj f a
   = Empty  -- ^ The empty object
   | Full   -- ^ The entirely full object
   | Complement obj
   | UnionR ℝ [obj]
   | DifferenceR ℝ obj [obj]
   | IntersectR ℝ [obj]
-  | Translate vec obj
-  | Scale vec obj
-  | Mirror vec obj -- ^ Mirror across the line whose normal is defined by the vector
+  | Translate (f a) obj
+  | Scale (f a) obj
+  | Mirror (f a) obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
-  | EmbedBoxedObj (vec -> ℝ, (vec, vec))
+  | EmbedBoxedObj ((f a) -> a, ((f a), (f a)))
   | WithRounding ℝ obj
   deriving (Generic)
 
-instance (Show obj, Show vec) => Show (SharedObj obj vec) where
+instance (Show obj, Show (f a)) => Show (SharedObj obj f a) where
   showsPrec = flip $ \case
      Empty                   -> showCon "emptySpace"
      Full                    -> showCon "fullSpace"
@@ -274,7 +274,7 @@ data SymbolicObj2 =
     | Rotate2 ℝ SymbolicObj2
     | Transform2 (M33 ℝ) SymbolicObj2
     -- Lifting common objects
-    | Shared2 (SharedObj SymbolicObj2 ℝ2)
+    | Shared2 (SharedObj SymbolicObj2 V2 ℝ)
     deriving (Generic)
 
 instance Show SymbolicObj2 where
@@ -282,10 +282,10 @@ instance Show SymbolicObj2 where
     -- NB: The False here is the centering argument, which has already been
     -- transformed into a translate. The 'Square' constructor itself is never
     -- centered.
-    Square sz  -> showCon "square"    @| False @| sz
-    Circle r      -> showCon "circle" @| r
-    Polygon ps -> showCon "polygon"   @| ps
-    Rotate2 v obj -> showCon "rotate" @| v     @| obj
+    Square sz        -> showCon "square"     @| False @| sz
+    Circle r         -> showCon "circle"     @| r
+    Polygon ps       -> showCon "polygon"    @| ps
+    Rotate2 v obj    -> showCon "rotate"     @| v     @| obj
     Transform2 m obj -> showCon "transform2" @| m     @| obj
     Shared2 obj   -> flip showsPrec obj
 
@@ -310,7 +310,7 @@ data SymbolicObj3 =
     | Extrude SymbolicObj2 ℝ
     | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
-        ExtrudeMScale        -- scale
+        ExtrudeMScale         -- scale
         (Either ℝ2 (ℝ -> ℝ2)) -- translate
         SymbolicObj2          -- object to extrude
         (Either ℝ (ℝ2 -> ℝ))  -- height to extrude to
@@ -320,7 +320,7 @@ data SymbolicObj3 =
         (Either ℝ  (ℝ -> ℝ )) -- rotate
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
-    | Shared3 (SharedObj SymbolicObj3 ℝ3)
+    | Shared3 (SharedObj SymbolicObj3 V3 ℝ)
     deriving (Generic)
 
 instance Show SymbolicObj3 where
