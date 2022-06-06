@@ -1,5 +1,4 @@
-
-# Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...master) (202Y-MM-DD)
+# Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 
 * Changelog started. Previous release was `0.3.0.1`.
 
