@@ -1,7 +1,7 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/colah/ImplicitCAD/Haskell%20CI)](https://github.com/colah/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Haskell-Things/ImplicitCAD/Haskell%20CI)](https://github.com/Haskell-Things/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
 
 Introduction
 ------------
@@ -257,7 +257,7 @@ Try ImplicitCAD!
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
      * Development version:
          * Initialize your haskell environment: `cabal update`
-         * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+         * Git clone this repo: `git clone https://github.com/Haskell-Things/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * install the dependencies: `cabal install --only-dependencies`
          * The previous step may fail, but it should tell you what's missing.
