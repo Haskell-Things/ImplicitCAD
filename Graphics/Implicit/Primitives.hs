@@ -287,6 +287,7 @@ outset
     => ℝ     -- ^ distance to outset
     -> obj   -- ^ object to outset
     -> obj   -- ^ resulting object
+outset 0 s = s
 outset _ s@(Shared Empty) = s
 outset _ s@(Shared Full) = s
 outset v1 (Shared (Outset v2 s)) = outset (v1 + v2) s
