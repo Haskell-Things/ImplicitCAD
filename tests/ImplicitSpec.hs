@@ -8,8 +8,8 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Fractional, fmap, pure, negate, (+), String,  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (xit, SpecWith, describe, Spec)
+import Prelude (Fractional, fmap, pure, negate, (+),  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
+import Test.Hspec (describe, Spec)
 import Graphics.Implicit
     ( difference,
       rotate,
@@ -29,10 +29,7 @@ import Graphics.Implicit
       withRounding,
       Object )
 import Graphics.Implicit.Primitives (rotateQ)
-import Test.QuickCheck
-    (Testable, property, expectFailure,  Arbitrary(arbitrary),
-      suchThat,
-      forAll)
+import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
 import Linear (V2(V2), V3(V3), V4(V4), (^*))
@@ -172,8 +169,8 @@ rotation2dSpec = describe "2d rotation" $ do
       rotate (2 * pi - rads) . rotate rads
         =~= id
 
-  failingProp "rotate" $ \rads1 rads2 ->
-    rotate rads2 . rotate rads2
+  prop "rotate" $ \rads1 rads2 ->
+    rotate rads1 . rotate rads2
       =~= rotate (rads1 + rads2)
 
   prop "full idempotent wrt rotate" $ \rads ->
@@ -341,8 +338,3 @@ homomorphismSpec = describe "homomorphism" $ do
   prop "withRounding/intersectR" $ \r_obj r_combo ->
     withRounding @obj r_obj . intersectR r_combo
       =~= intersectR r_combo . fmap (withRounding r_obj)
-
-------------------------------------------------------------------------------
--- | Like 'prop', but for tests that are currently expected to fail.
-failingProp :: Testable prop => String -> prop -> SpecWith ()
-failingProp x = xit (x <> " (currently failing)") . expectFailure . property
