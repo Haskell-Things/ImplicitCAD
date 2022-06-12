@@ -36,8 +36,23 @@ These releases change the quality of the output significantly enough that poking
 These bring new features, and other improvements that are considered to be 'major'.
 
 ### Process:
+merge the release PR in github.
 
-merge the release PR.
+on your git machine:
+ * make sure 'cabal haddock' works.
+
+
+
+#### Tagging a release
+on your git machine:
+```
+git checkout master
+git tag -a v0.4.0.0 -m 'release 0.4.0.0'
+git push origin v0.4.0.0
+```
+
+#### Publishing the release to hackage
+
 use github's 'download zip' to download a zip of the package.
 extract it to a temporary directory
 move the container directory to implicit-<VERSIONNUMBER>
@@ -45,11 +60,7 @@ make a tar file from it. make sure to add the --format=ustar option.
 ```
 tar --format=ustar -cvzf implicit-0.4.0.0.tar.gz implicit-0.4.0.0/
 ```
-
-make sure 'cabal haddock' works.
-
 upload package candidate to https://hackage.haskell.org/packages/candidates/upload
-
 look over the resulting page.
 
 scroll down to 'edit package information'
@@ -57,3 +68,14 @@ scroll down to 'edit package information'
 click on 'publish candidate'
 
 hit the 'publish package' button.
+
+#### Publishing the release to GitHub
+
+open github.
+hit the 'Releases' link from the code page for the repo.
+hit 'draft a new release
+select the tag.
+paste the CHANGELOG entries in the description.
+title the release 'Release <versionnumber>'
+hit 'Publish release'
+
