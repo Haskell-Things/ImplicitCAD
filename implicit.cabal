@@ -1,6 +1,6 @@
 Cabal-version:       2.2
 Name:                implicit
-Version:             0.3.0.1
+Version:             0.4.0.0
 Tested-with:         GHC >= 8.8
 Build-type:          Simple
 Synopsis:            A math-inspired programmatic 2D & 3D CAD system.
@@ -255,4 +255,4 @@ Benchmark parser-bench
 
 Source-repository head
     Type:            git
-    Location:        https://github.com/colah/ImplicitCAD.git
+    Location:        https://github.com/Haskell-Things/ImplicitCAD.git

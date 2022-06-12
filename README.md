@@ -1,7 +1,7 @@
 ImplicitCAD: Math Inspired CAD
 ==============================
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/colah/ImplicitCAD/Haskell%20CI)](https://github.com/colah/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Haskell-Things/ImplicitCAD/Haskell%20CI)](https://github.com/Haskell-Things/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
 
 Introduction
 ------------
@@ -257,7 +257,7 @@ Try ImplicitCAD!
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
      * Development version:
          * Initialize your haskell environment: `cabal update`
-         * Git clone this repo: `git clone https://github.com/colah/ImplicitCAD.git`
+         * Git clone this repo: `git clone https://github.com/Haskell-Things/ImplicitCAD.git`
          * cd in: `cd ImplicitCAD/`
          * install the dependencies: `cabal install --only-dependencies`
          * The previous step may fail, but it should tell you what's missing.
@@ -288,7 +288,7 @@ Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
-Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.3.0.1, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.3.0.1/doc/html/Graphics-Implicit.html). 
+Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making them avaialable through `cabal install`, puts the generated documentation on the Internet. So you can read the documentation for the most recent release of ImplicitCAD, 0.4.0.0, [on HackageDB](http://hackage.haskell.org/packages/archive/implicit/0.4.0.0/doc/html/Graphics-Implicit.html).
 
 In Implicit CAD, we consider objects as functions of `outwardness'. The boundary is 0, negative is the interior and positive the exterior. The magnitude is how far out or in. A description of the mathematical ideas underpinning ImplicitCAD are in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/).
 
