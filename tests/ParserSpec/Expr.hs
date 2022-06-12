@@ -15,7 +15,7 @@ module ParserSpec.Expr (exprSpec) where
 import Prelude (Bool(True, False), ($))
 
 -- Hspec, for writing specs.
-import Test.Hspec (describe, Expectation, Spec, it, pendingWith, specify)
+import Test.Hspec (describe, Spec, it, specify)
 
 import Data.Text.Lazy (Text)
 
@@ -38,9 +38,6 @@ pattern Var :: Text -> Expr
 pattern Var  s = GIED.Var  (Symbol s)
 pattern Name :: Text -> GIED.Pattern
 pattern Name n = GIED.Name (Symbol n)
-
-undefinedIssue :: Expectation -> Expectation
-undefinedIssue _ = pendingWith "this errors, but the expecting is equal to the recieved. huh?"
 
 logicalSpec :: Spec
 logicalSpec = do
@@ -90,7 +87,7 @@ literalSpec = do
     it "accepts true" $ "true" --> bool True
     it "accepts false" $ "false" --> bool False
   describe "undefined" $
-    it "accepts undef" $ undefinedIssue $ "undef" --> undefined
+    it "accepts undef" $ "undef" --> undefined
 
 letBindingSpec :: Spec
 letBindingSpec = do

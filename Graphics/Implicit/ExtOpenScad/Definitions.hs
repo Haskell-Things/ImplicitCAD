@@ -153,6 +153,7 @@ instance Eq OVal where
     (ONum  a) == (ONum  b) = a == b
     (OList a) == (OList b) = and $ zipWith (==) a b
     (OString a) == (OString b) = a == b
+    OUndefined == OUndefined = True
     _ == _ = False
 
 instance Show OVal where
