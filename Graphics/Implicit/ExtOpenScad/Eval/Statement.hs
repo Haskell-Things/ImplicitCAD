@@ -21,8 +21,8 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Message(Message),
                                                   ScadOpts(importsAllowed),
                                                   StateC,
-                                                  CompState(CompState, messages, sourceDir, scadOpts),
-                                                  varUnion
+                                                  CompState(CompState, sourceDir),
+                                                  varUnion, runImplicitCadM
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
@@ -37,9 +37,9 @@ import Data.Map (union, fromList, toList)
 
 import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
 
-import Control.Monad (when, unless, (>>=))
+import Control.Monad (when, unless)
 
-import Control.Monad.State (gets, liftIO, runStateT)
+import Control.Monad.State (gets, liftIO)
 
 import Data.Foldable (traverse_, for_)
 
@@ -50,6 +50,7 @@ import Data.Text.Lazy (unpack, pack)
 import System.Directory (doesFileExist)
 
 import System.FilePath (takeDirectory)
+import Control.Monad.Reader.Class (MonadReader(ask))
 
 -- | Run statements out of the OpenScad file.
 runStatementI :: StatementI -> StateC ()
@@ -279,8 +280,11 @@ runSuite = traverse_ runStatementI
 
 runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
 runSuiteCapture varlookup suite = do
-  (res, s) <- gets mkSubState >>= liftIO . runStateT (runSuite suite *> getVals)
-  reverse res <$ traverse moveMessage (messages s)
+  opts <- ask
+  (res, messages, _) <- do
+    s <- gets mkSubState
+    liftIO . runImplicitCadM opts s $ runSuite suite *> getVals
+  reverse res <$ traverse moveMessage messages
     where
-      mkSubState s = CompState varlookup [] (sourceDir s) [] (scadOpts s)
+      mkSubState s = CompState varlookup [] (sourceDir s)
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text

@@ -5,8 +5,15 @@
 
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
-
+-- Tell GHC to use underlying instances for newtypes
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
+-- Derive functor automatically
 {-# LANGUAGE DeriveFunctor #-}
+-- Allow constraints to be written like types
+{-# LANGUAGE ConstraintKinds #-}
+-- Allow us to set some context variables to actual types
+-- Useful for working with transformers and MTL
+{-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample),
                                                   Symbol(Symbol),
@@ -18,13 +25,17 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
-                                                  CompState(CompState, scadVars, oVals, sourceDir, messages, scadOpts),
+                                                  CompState(CompState, scadVars, oVals, sourceDir),
+                                                  ImplicitCadM(ImplicitCadM, unImplicitCadM),
                                                   VarLookup(VarLookup),
                                                   Message(Message),
                                                   MessageType(TextOut, Warning, Error, SyntaxError, Compatibility, Unimplemented),
-                                                  ScadOpts(ScadOpts, openScadCompatibility, importsAllowed),
+                                                       ScadOpts(ScadOpts, openScadCompatibility, importsAllowed),
                                                   lookupVarIn,
-                                                  varUnion
+                                                  varUnion,
+                                                  runImplicitCadM,
+                                                  CanCompState,
+                                                  CanCompState'
                                                   ) where
 
 import Prelude(Eq, Show, Ord, Maybe(Just), Bool(True, False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int, (<$>))
@@ -44,18 +55,58 @@ import Data.Maybe (fromMaybe)
 
 import Data.Text.Lazy (Text, unpack, intercalate)
 
-import Control.Monad.State (StateT)
+import Control.Monad.State (StateT (runStateT), MonadState)
+import Control.Monad.Writer (WriterT (runWriterT), MonadWriter)
+import Control.Monad.Reader (ReaderT (runReaderT), MonadReader)
+import Control.Monad.IO.Class ( MonadIO )
 
 -- | The state of computation.
 data CompState = CompState
   { scadVars  :: VarLookup -- ^ A hash of variables and functions.
   , oVals     :: [OVal]    -- ^ The result of geometry generating functions.
   , sourceDir :: FilePath  -- ^ The path we are looking for includes in.
-  , messages  :: [Message] -- ^ Output strings, warnings, and errors generated during execution.
-  , scadOpts  :: ScadOpts  -- ^ Options controlling the execution of scad code.
   } deriving (Show)
 
-type StateC = StateT CompState IO
+-- Similar to StateC, except we are pulling out the bits of state that do not need to be mutable
+-- in the ways they are. scadOpts is only ever read, and messages are only ever written.
+-- This helps enforce that scadOpts is never changed, and messages are only ever appended to.
+--
+-- Transformer stacks are often seen as being "inside out" when first encountered.
+-- For example, `Reader r (Writer w IO) a` runs to a type of `IO (a, w)`
+-- This happens because as you run each layer of the transformer you are exposing the
+-- monad inside of it, usually either IO or Identity at the very bottom.
+-- Running reader gives a Writer Monad, which when run will give an IO monad.
+newtype ImplicitCadM a = ImplicitCadM {
+  unImplicitCadM :: ReaderT ScadOpts (WriterT [Message] (StateT CompState IO)) a
+} deriving
+  -- We can have mtl/transformers give us all the instances we care
+  -- about for the newtype, so long as we fill in some of the types.
+  ( MonadReader ScadOpts
+  , MonadWriter [Message]
+  , MonadState CompState
+  , MonadIO
+  , Monad
+  , Applicative
+  , Functor
+  )
+
+-- These are constraint types, and can be used in the same way as `foo :: Monad m => m a -> m ()`
+-- They are useful for when writing code that doesn't care about the exact structure of CompStateM,
+-- but rather what you can do with it. This constraint allows you to `ask`, `get/put`, and `tell`
+-- without having to worry about wrapping, lifting, etc.
+type CanCompState' r w s m = (MonadReader r m, MonadWriter w m, MonadState s m, MonadIO m)
+type CanCompState m = CanCompState' ScadOpts [Message] CompState m
+
+-- Keep the name, so ghc can help us along.
+type StateC a = ImplicitCadM a
+
+-- This is the function you probably want when trying to actually run an ImplicitCadM
+-- It handles running each of the transformers in order and putting the results into a
+-- useful tuple form.
+runImplicitCadM :: ScadOpts -> CompState -> ImplicitCadM a -> IO (a, [Message], CompState)
+runImplicitCadM r s m = do
+  ((a, w), s') <- runStateT (runWriterT $ runReaderT (unImplicitCadM m) r) s
+  pure (a, w, s')
 
 -- | Handles parsing arguments to built-in modules
 data ArgParser a

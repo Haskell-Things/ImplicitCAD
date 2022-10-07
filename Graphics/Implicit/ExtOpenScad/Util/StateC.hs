@@ -7,7 +7,7 @@ module Graphics.Implicit.ExtOpenScad.Util.StateC (addMessage, getVarLookup, modi
 
 import Prelude(FilePath, Maybe, ($), (<>), pure)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(scadVars, oVals, sourceDir, messages, scadOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions(VarLookup(VarLookup), OVal, Symbol, SourcePosition, Message(Message), MessageType(Error, Warning), ScadOpts, StateC, CompState(scadVars, oVals, sourceDir), ImplicitCadM)
 
 import Data.Map (lookup)
 
@@ -16,6 +16,8 @@ import Data.Text.Lazy (Text)
 import Control.Monad.State (modify, gets)
 
 import System.FilePath((</>))
+import Control.Monad.Writer (tell)
+import Control.Monad.Reader.Class (ask)
 
 getVarLookup :: StateC VarLookup
 getVarLookup = gets scadVars
@@ -56,8 +58,9 @@ getRelPath relPath = do
     path <- getPath
     pure $ path </> relPath
 
-addMesg :: Message -> StateC ()
-addMesg m = modify $ \c -> c { messages = messages c <> pure m }
+-- Add a single message to the list of messages being returned
+addMesg :: Message -> ImplicitCadM ()
+addMesg m = tell [m]
 
 addMessage :: MessageType -> SourcePosition -> Text -> StateC ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
@@ -70,6 +73,6 @@ warnC :: SourcePosition -> Text -> StateC ()
 warnC = addMessage Warning
 {-# INLINABLE warnC #-}
 
-scadOptions :: StateC ScadOpts
-scadOptions = gets scadOpts
-
+-- Get the ScadOpts from the Reader in ImplicitCadM
+scadOptions :: ImplicitCadM ScadOpts
+scadOptions = ask

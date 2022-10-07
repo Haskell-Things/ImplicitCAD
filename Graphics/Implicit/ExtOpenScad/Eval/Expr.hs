@@ -12,7 +12,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), messages, addMessage) where
 
-import Prelude (String, Maybe(Just, Nothing), ($), fmap, pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
+import Prelude (String, Maybe(Just, Nothing), ($), pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -121,13 +121,13 @@ evalExpr' (LitE  val) = pure $ const val
 -- Evaluate a list of expressions.
 evalExpr' (ListE exprs) = do
     valFuncs <- traverse evalExpr' exprs
-    pure $ \s -> OList $ ($s) <$> valFuncs
+    pure $ \s -> OList $ ($ s) <$> valFuncs
 
 -- Evaluate application of a function.
 evalExpr' (fexpr :$ argExprs) = do
     fValFunc <- evalExpr' fexpr
     argValFuncs <- traverse evalExpr' argExprs
-    pure $ \s -> app (fValFunc s) (fmap ($s) argValFuncs)
+    pure $ \s -> app (fValFunc s) (($ s) <$> argValFuncs)
         where
             app f l = case (getErrors f, getErrors $ OList l) of
                 (Nothing, Nothing) -> app' f l
