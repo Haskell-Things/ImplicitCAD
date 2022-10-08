@@ -19,10 +19,10 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   MessageType(SyntaxError),
                                                   StateC,
                                                   ScadOpts(ScadOpts),
-                                                  CompState(CompState, scadVars, messages),
+                                                  CompState(CompState, scadVars),
                                                   SourcePosition(SourcePosition),
                                                   OVal(OUndefined),
-                                                  varUnion
+                                                  varUnion, runImplicitCadM
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.StateC (modifyVarLookup, addMessage)
@@ -33,7 +33,7 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat, rawRunExpr)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 
-import Control.Monad.State (liftIO, runStateT, (>>=))
+import Control.Monad.State (liftIO, (>>=))
 
 import System.Directory (getCurrentDirectory)
 
@@ -51,8 +51,10 @@ import Graphics.Implicit.ExtOpenScad.Parser.Lexer (matchTok)
 addConstants :: [String] -> Bool -> IO (VarLookup, [Message])
 addConstants constants withCSG = do
   path <- getCurrentDirectory
-  (_, s) <- liftIO . runStateT (execAssignments constants) $ CompState (defaultObjects withCSG) [] path [] opts
-  pure (scadVars s, messages s)
+  let initState = CompState (defaultObjects withCSG) [] path
+  (_, messages, s) <- liftIO .
+    runImplicitCadM opts initState $ execAssignments constants
+  pure (scadVars s, messages)
   where
     opts = ScadOpts False False
     show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
@@ -73,7 +75,7 @@ runExpr :: String -> Bool -> (OVal, [Message])
 runExpr expression withCSG = do
   either oUndefined run $ parse expr0 "raw_expression" expression
     where
-      run expr = rawRunExpr initPos (defaultObjects withCSG) expr
+      run = rawRunExpr initPos (defaultObjects withCSG)
       initPos = SourcePosition 1 1 "raw_expression"
       show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
       oUndefined e = (OUndefined, [Message SyntaxError initPos $ pack $ show' e])
