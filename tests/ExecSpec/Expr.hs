@@ -49,32 +49,32 @@ exprExec = do
       case runExpr "rands(1,2,1)" False of
         (OIO m, _) -> do
           OList l <- m
-          shouldSatisfy l $ \l -> length l == 1
+          shouldSatisfy l $ \l' -> length l' == 1
         _ -> expectationFailure "Not an OIO"
       case runExpr "rands(1,2,10)" False of
         (OIO m, _) -> do
           OList l <- m
-          shouldSatisfy l $ \l -> length l == 10
+          shouldSatisfy l $ \l' -> length l' == 10
         _ -> expectationFailure "Not an OIO"
       case runExpr "rands(1,2,0)" False of
         (OIO m, _) -> do
           OList l <- m
-          shouldSatisfy l $ \l -> length l == 0
+          shouldSatisfy l $ \l' -> length l' == 0
         _ -> expectationFailure "Not an OIO"
       case runExpr "rands(1,1,1)" False of
         (OIO m, _) -> do
           OList l <- m
-          shouldSatisfy l $ \l ->
-            length l == 1 &&
-            l == [num 1]
+          shouldSatisfy l $ \l' ->
+            length l' == 1 &&
+            l' == [num 1]
         _ -> expectationFailure "Not an OIO"
       case runExpr "rands(1,2,1)[0]" False of
-        (OIO m, _) -> do 
+        (OIO m, _) -> do
           ONum n <- m
-          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2            
+          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2
         o -> expectationFailure $ "Not an OIO: " <> show o
       case runExpr "rands(1,2,2)[0+1]" False of
-        (OIO m, _) -> do 
+        (OIO m, _) -> do
           ONum n <- m
-          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2            
+          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2
         o -> expectationFailure $ "Not an OIO: " <> show o
