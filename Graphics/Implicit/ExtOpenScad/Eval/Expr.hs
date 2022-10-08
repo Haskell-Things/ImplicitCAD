@@ -119,7 +119,7 @@ rawRunExpr pos vars expr = do
   let
     input = Input vars pos
     initState = ExprState []
-    (valf, messages, _) = runStateE input initState (evalExpr' expr) 
+    (valf, messages, _) = runStateE input initState (evalExpr' expr)
   (valf [], messages)
 
 -- The expression evaluators.
