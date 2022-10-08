@@ -10,16 +10,17 @@ module ExecSpec.Util
        , num
        , list
        , vect
+       , io
        ) where
 
 -- be explicit about where we get things from.
-import Prelude (String, Bool(False), map, (.))
+import Prelude (String, Bool(False), map, (.), IO)
 
 -- The datatype of positions in our world.
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Expressions, symbols, and values in the OpenScad language.
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OList))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OList, OIO))
 
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
 
@@ -41,3 +42,6 @@ list = OList
 
 vect :: [ℝ] -> OVal
 vect =  list . map num
+
+io :: IO OVal -> OVal
+io = OIO

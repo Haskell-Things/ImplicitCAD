@@ -92,7 +92,8 @@ Library
                   mtl,
                   linear,
                   show-combinators,
-                  lens
+                  lens,
+                  random
 
 
     Exposed-modules:

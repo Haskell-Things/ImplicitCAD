@@ -12,14 +12,16 @@
 
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Graphics.Implicit.ExtOpenScad.Util.OVal(OTypeMirror, (<||>), fromOObj, toOObj, divideObjs, caseOType, oTypeStr, getErrors) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, flip, filter, not, return)
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left,Right), (==), fromInteger, floor, ($), (.), fmap, error, (<>), show, flip, filter, not, return, IO)
 
 import Graphics.Implicit.Definitions(V2, ℝ, ℝ2, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1, C2, Fn), fromℕtoℝ)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3, OIO))
 
 import Control.Monad (msum)
 
@@ -43,6 +45,12 @@ class OTypeMirror a where
     fromOObjList _ = Nothing
     {-# INLINABLE fromOObjList #-}
     toOObj :: a -> OVal
+
+instance OTypeMirror (IO OVal) where
+    fromOObj (OIO m) = Just m
+    fromOObj _       = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj = OIO
 
 instance OTypeMirror OVal where
     fromOObj = Just
@@ -75,6 +83,7 @@ instance (OTypeMirror a) => OTypeMirror [a] where
 instance OTypeMirror Text where
     fromOObj (OString str) = Just str
     fromOObj _ = Nothing
+    toOObj :: Text -> OVal
     toOObj a = OString a
 
 instance (OTypeMirror a) => OTypeMirror (Maybe a) where
@@ -160,6 +169,7 @@ oTypeStr (ONum           _ ) = "Number"
 oTypeStr (OList          _ ) = "List"
 oTypeStr (OString        _ ) = "String"
 oTypeStr (OFunc          _ ) = "Function"
+oTypeStr (OIO            _ ) = "IO"
 oTypeStr (OUModule   _ _ _ ) = "User Defined Module"
 oTypeStr (ONModule   _ _ _ ) = "Built-in Module"
 oTypeStr (OVargsModule _ _ ) = "VargsModule"

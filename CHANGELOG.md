@@ -1,5 +1,11 @@
 # Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...master) (202Y-MM-DD)
 
+* ExtOpenScad interface changes
+  * Added `rands` and `lookup` support [#433](https://github.com/Haskell-Things/ImplicitCAD/pull/433)
+
+* Other changes
+  * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
+
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 
 * Changelog started. Previous release was `0.3.0.1`.
@@ -46,4 +52,3 @@
   * Rotate now internally uses quaternions [#314](https://github.com/Haskell-Things/ImplicitCAD/pull/314)
   * Fixes to triangle generation [#355](https://github.com/Haskell-Things/ImplicitCAD/pull/355) and [#375](https://github.com/Haskell-Things/ImplicitCAD/pull/375)
   * ExtOpenSCAD vector addition [#408](https://github.com/Haskell-Things/ImplicitCAD/pull/408)
-  * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
