@@ -14,7 +14,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   Expr(LitE, Var, ListE, LamE, (:$)),
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)),
-                                                  OVal(ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3),
+                                                  OVal(OIO, ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, OVargsModule, OError, OObj2, OObj3),
                                                   TestInvariant(EulerCharacteristic),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
@@ -140,6 +140,7 @@ data OVal = OUndefined
          | OList [OVal]
          | OString Text
          | OFunc (OVal -> OVal)
+         | OIO (IO OVal)
          -- Name, arguments, argument parsers.
          | OUModule Symbol (Maybe [(Symbol, Bool)]) (VarLookup -> ArgParser (StateC [OVal]))
          -- Name, implementation, arguments, whether the module accepts/requires a suite.
@@ -163,6 +164,7 @@ instance Show OVal where
     show (OList l) = show l
     show (OString s) = show s
     show (OFunc _) = "<function>"
+    show (OIO _) = "<IO>"
     show (OUModule (Symbol name) arguments _) = "module " <> unpack name <> " (" <> unpack (intercalate ", " (showArg <$> fromMaybe [] arguments)) <> ") {}"
       where
         showArg :: (Symbol, Bool) -> Text

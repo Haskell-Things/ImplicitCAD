@@ -6,22 +6,25 @@
 module ExecSpec.Expr (exprExec) where
 
 -- Be explicit about what we import.
-import Prelude (($))
+import Prelude (($), pure, (==), length, Bool (False), (<=), (&&), (<>), show)
 
 -- Hspec, for writing specs.
-import Test.Hspec (describe, Spec, it)
+import Test.Hspec (describe, Spec, it, shouldSatisfy, expectationFailure)
 
 -- The type used for variables, in ImplicitCAD.
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ExecSpec.Util ((-->), num, list, vect)
+import ExecSpec.Util ((-->), num, list, vect, io)
+
+import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(OIO, OList, ONum))
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
 
 exprExec :: Spec
-exprExec =
+exprExec = do
   describe "arithmetic" $ do
     it "performs simple addition" $
       "1+1" --> num 2
@@ -41,3 +44,37 @@ exprExec =
       "2 + [1, 2]" --> vect [3, 4]
     it "performs number and list/vector multiplication" $
       "2 * [3, 4, 5]" --> vect [6, 8, 10]
+  describe "rands" $ do
+    it "generates random numbers" $ do
+      case runExpr "rands(1,2,1)" False of
+        (OIO m, _) -> do
+          OList l <- m
+          shouldSatisfy l $ \l -> length l == 1
+        _ -> expectationFailure "Not an OIO"
+      case runExpr "rands(1,2,10)" False of
+        (OIO m, _) -> do
+          OList l <- m
+          shouldSatisfy l $ \l -> length l == 10
+        _ -> expectationFailure "Not an OIO"
+      case runExpr "rands(1,2,0)" False of
+        (OIO m, _) -> do
+          OList l <- m
+          shouldSatisfy l $ \l -> length l == 0
+        _ -> expectationFailure "Not an OIO"
+      case runExpr "rands(1,1,1)" False of
+        (OIO m, _) -> do
+          OList l <- m
+          shouldSatisfy l $ \l ->
+            length l == 1 &&
+            l == [num 1]
+        _ -> expectationFailure "Not an OIO"
+      case runExpr "rands(1,2,1)[0]" False of
+        (OIO m, _) -> do 
+          ONum n <- m
+          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2            
+        o -> expectationFailure $ "Not an OIO: " <> show o
+      case runExpr "rands(1,2,2)[0+1]" False of
+        (OIO m, _) -> do 
+          ONum n <- m
+          shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2            
+        o -> expectationFailure $ "Not an OIO: " <> show o

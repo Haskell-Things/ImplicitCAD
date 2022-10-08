@@ -8,15 +8,16 @@
 
 -- Allow the use of \case
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule, OIO), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 
@@ -35,6 +36,8 @@ import Data.Foldable (for_)
 import qualified Data.Text.Lazy as TL (index)
 
 import Data.Text.Lazy (Text, intercalate, unpack, pack, length, singleton)
+import Control.Monad (replicateM)
+import System.Random (randomRIO)
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
@@ -180,10 +183,16 @@ defaultPolymorphicFunctions =
         (Symbol "list_gen", toOObj list_gen),
         (Symbol "<>", concatenate),
         (Symbol "len", toOObj olength),
-        (Symbol "str", toOObj (pack.show :: OVal -> Text))
+        (Symbol "str", toOObj (pack.show :: OVal -> Text)),
+        (Symbol "rands", toOObj rands)
     ] where
 
         -- Some key functions are written as OVals in optimizations attempts
+
+        rands :: ℝ -> ℝ -> ℝ -> IO OVal
+        rands minR maxR count = do
+            l <- replicateM (round count) $ randomRIO (minR, maxR)
+            pure . OList $ ONum <$> l
 
         prod = OFunc $ \case
             (OList (y:ys)) -> foldl mult y ys
@@ -259,6 +268,9 @@ defaultPolymorphicFunctions =
                 n :: Int64
                 n = floor ind
             in if n < length s then OString (singleton (TL.index s n)) else OError "List accessed out of bounds"
+        -- For IO actions, get the OVal inside the IO and try to index that, rewrapping the results.
+        index (OIO o) ind = OIO $ flip index ind <$> o
+
         index a b = errorAsAppropriate "index" a b
 
         osplice (OList  list) (ONum a) (    ONum b    ) =
