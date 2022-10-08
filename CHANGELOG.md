@@ -30,6 +30,7 @@
   * `rotateExtrude` angle `a` parameter renamed to `angle` to match OpenSCAD [#259](https://github.com/Haskell-Things/ImplicitCAD/pull/259)
   * Added `mirror` support [#300](https://github.com/Haskell-Things/ImplicitCAD/pull/300)
   * Added `multmatrix` support [#410](https://github.com/Haskell-Things/ImplicitCAD/pull/410)
+  * Added `rands` and `lookup` support [#433](https://github.com/Haskell-Things/ImplicitCAD/pull/433)
 
 * Other changes
   * Fixed the ExtOpenSCAD lexer bug where newlines were part of identifiers [#256](https://github.com/Haskell-Things/ImplicitCAD/pull/256)
@@ -44,3 +45,4 @@
   * Rotate now internally uses quaternions [#314](https://github.com/Haskell-Things/ImplicitCAD/pull/314)
   * Fixes to triangle generation [#355](https://github.com/Haskell-Things/ImplicitCAD/pull/355) and [#375](https://github.com/Haskell-Things/ImplicitCAD/pull/375)
   * ExtOpenSCAD vector addition [#408](https://github.com/Haskell-Things/ImplicitCAD/pull/408)
+  * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
