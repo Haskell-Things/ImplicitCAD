@@ -1,3 +1,5 @@
+# Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...master) (202Y-MM-DD)
+
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 
 * Changelog started. Previous release was `0.3.0.1`.
@@ -12,7 +14,7 @@
     * from `Object obj vec => R -> [obj] -> obj`
     * to `Object obj vec => R -> obj -> [obj] -> obj`
   * Both `SymbolicObj2` and `SymbolicObj3` now have `Semigroup` and `Monoid` instances, where `<>` acts as `union` [#301](https://github.com/Haskell-Things/ImplicitCAD/pull/301)
-  * Added `rotateQ` function for rotating with Quaternions [#314][https://github.com/Haskell-Things/ImplicitCAD/pull/314]
+  * Added `rotateQ` function for rotating with Quaternions [#314](https://github.com/Haskell-Things/ImplicitCAD/pull/314)
   * `ℝ2` and `ℝ3` are now using `V2` and `V3` from `linear` instead of tuples [#342](https://github.com/Haskell-Things/ImplicitCAD/pull/342)
   * Rounding is now separate from primitives [#362](https://github.com/Haskell-Things/ImplicitCAD/pull/362)
     * Introduces `withRounding` function.
