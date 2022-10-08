@@ -30,7 +30,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   VarLookup(VarLookup),
                                                   Message(Message),
                                                   MessageType(TextOut, Warning, Error, SyntaxError, Compatibility, Unimplemented),
-                                                       ScadOpts(ScadOpts, openScadCompatibility, importsAllowed),
+                                                  ScadOpts(ScadOpts, openScadCompatibility, importsAllowed),
                                                   lookupVarIn,
                                                   varUnion,
                                                   runImplicitCadM,
