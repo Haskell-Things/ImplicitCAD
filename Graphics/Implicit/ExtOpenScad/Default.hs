@@ -29,15 +29,17 @@ import Data.Int (Int64)
 
 import Data.Map (Map, fromList, insert)
 
-import Data.List (genericIndex, genericLength)
+import Data.List (genericIndex, genericLength, find)
 
-import Data.Foldable (for_)
+import Data.Foldable (for_, foldr)
 
 import qualified Data.Text.Lazy as TL (index)
 
 import Data.Text.Lazy (Text, intercalate, unpack, pack, length, singleton)
 import Control.Monad (replicateM)
 import System.Random (randomRIO)
+import Data.Maybe (maybe)
+import Data.Tuple (snd)
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
@@ -48,9 +50,6 @@ defaultObjects withCSG = VarLookup $ fromList $
     <> defaultPolymorphicFunctions
     <> (if withCSG then primitiveModules else [])
     <> varArgModules
-
--- FIXME: Missing standard ones(which standard?):
--- rand, lookup,
 
 defaultConstants :: [(Symbol, OVal)]
 defaultConstants = (\(a,b) -> (a, toOObj (b :: ℝ))) <$>
@@ -184,10 +183,54 @@ defaultPolymorphicFunctions =
         (Symbol "<>", concatenate),
         (Symbol "len", toOObj olength),
         (Symbol "str", toOObj (pack.show :: OVal -> Text)),
-        (Symbol "rands", toOObj rands)
+        (Symbol "rands", toOObj rands),
+        (Symbol "lookup", toOObj lookup)
     ] where
 
         -- Some key functions are written as OVals in optimizations attempts
+
+        -- Lookup a value from the given table, or linearly interpolate a value from
+        -- the nearest entries. Lookups for keys that fall outside the bounds of the
+        -- table will be given the value of the nearest table entry.
+        -- TODO, a binary tree would be faster for large tables, but I'm not bothering
+        -- until we have a good reason to do so, i.e. we see a need for it.
+        lookup :: ℝ -> [(ℝ, ℝ)] -> OVal
+        lookup key table =
+            let
+                -- Find the next lower value, and the next upper value from key
+                search op op' = foldr
+                    (\t@(k, _) -> maybe
+                        ( if k `op` key
+                          then pure t
+                          else Nothing
+                        )
+                        $ \t'@(k', _) -> pure $
+                            if k `op'` k' && k `op` key
+                            then t
+                            else t'
+                    )
+                    Nothing
+                    table
+                lower = search (<) (>)
+                upper = search (>) (<)
+                -- Interpolate linearly
+                -- Take the extremes if the key is out of bounds.
+                -- Undefined for empty tables, as the docs don't say what it should be.
+                -- https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Mathematical_Functions#lookup
+                interpolated = case (lower, upper) of
+                    (Just (lk, lv), Just (uk, uv)) ->
+                        -- calculate the linear slope of the graph
+                        let scale = (uv - lv) / (uk - lk)
+                        -- Use the lower value as the base, and add on the
+                        -- required amount of scaling
+                        in ONum $ lv + ((key - lk) * scale)
+                    (Nothing, Just (_, uv)) -> ONum uv
+                    (Just (_, lv), Nothing) -> ONum lv
+                    (Nothing, Nothing)      -> OUndefined
+            in maybe
+                interpolated
+                (ONum . snd)
+                $ find (\(k, _) -> k == key) table
 
         rands :: ℝ -> ℝ -> ℝ -> IO OVal
         rands minR maxR count = do

@@ -18,7 +18,7 @@ import Graphics.Implicit.Definitions (ℝ)
 import ExecSpec.Util ((-->), num, list, vect)
 
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal(OIO, OList, ONum))
+import Graphics.Implicit.ExtOpenScad.Definitions (OVal(OIO, OList, ONum, OUndefined))
 
 -- Default all numbers in this file to being of the type ImplicitCAD uses for values.
 default (ℝ)
@@ -78,3 +78,18 @@ exprExec = do
           ONum n <- m
           shouldSatisfy n $ \n' -> 1 <= n' && n' <= 2
         o -> expectationFailure $ "Not an OIO: " <> show o
+  describe "lookup" $ do
+    it "Gets a value from a table" $ do
+      "lookup(1, [[0, 0], [1, 1], [2, 2]])" --> num 1
+    it "Interpolates values from a table" $ do
+      "lookup(1, [[0, 0], [2, 2]])" --> num 1
+      "lookup(7, [[0, 0], [5, 50], [10, 100], [11, 0]])" --> num 70
+      "lookup(10.5, [[0, 0], [5, 50], [10, 100], [11, 0]])" --> num 50
+    it "Gets an upper extreme from a table" $ do
+      "lookup(10, [[0, 0], [1, 1], [2, 2]])" --> num 2
+    it "Gets an lower extreme from a table" $ do
+      "lookup(0, [[1, 1], [2, 2]])" --> num 1
+    it "Gets an nothing from a table" $ do
+      "lookup(0, [])" --> OUndefined
+    it "Handles embedded statements" $ do
+      "lookup(0+1, [[0*2, 0], [1+1, 4/2]])" --> num 1
