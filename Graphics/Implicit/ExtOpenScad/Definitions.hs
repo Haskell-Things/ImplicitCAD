@@ -76,15 +76,19 @@ data CompState = CompState
 -- This happens because as you run each layer of the transformer you are exposing the
 -- monad inside of it, usually either IO or Identity at the very bottom.
 -- Running reader gives a Writer Monad, which when run will give an IO monad.
-newtype ImplicitCadM a = ImplicitCadM {
-  unImplicitCadM :: ReaderT ScadOpts (WriterT [Message] (StateT CompState IO)) a
+--
+-- This has been parameterised over all of the transformer types so that we can
+-- also use this to implement StateE using the same stack.
+newtype ImplicitCadM r w s m a = ImplicitCadM {
+  unImplicitCadM :: ReaderT r (WriterT w (StateT s m)) a
 } deriving
   -- We can have mtl/transformers give us all the instances we care
-  -- about for the newtype, so long as we fill in some of the types.
-  ( MonadReader ScadOpts
-  , MonadWriter [Message]
-  , MonadState CompState
-  , MonadIO
+  -- about for the newtype, dropping any that won't work when this is
+  -- parameterised at the call site.
+  ( MonadReader r
+  , MonadWriter w
+  , MonadState s
+  , MonadIO -- This only exists if `m` is also MonadIO.
   , Monad
   , Applicative
   , Functor
@@ -98,12 +102,12 @@ type CanCompState' r w s m = (MonadReader r m, MonadWriter w m, MonadState s m, 
 type CanCompState m = CanCompState' ScadOpts [Message] CompState m
 
 -- Keep the name, so ghc can help us along.
-type StateC a = ImplicitCadM a
+type StateC a = ImplicitCadM ScadOpts [Message] CompState IO a
 
 -- This is the function you probably want when trying to actually run an ImplicitCadM
 -- It handles running each of the transformers in order and putting the results into a
 -- useful tuple form.
-runImplicitCadM :: ScadOpts -> CompState -> ImplicitCadM a -> IO (a, [Message], CompState)
+runImplicitCadM :: Monad m => r -> s -> ImplicitCadM r w s m a -> m (a, w, s)
 runImplicitCadM r s m = do
   ((a, w), s') <- runStateT (runWriterT $ runReaderT (unImplicitCadM m) r) s
   pure (a, w, s')

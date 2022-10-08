@@ -10,7 +10,7 @@
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), messages, addMessage) where
+module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), addMessage) where
 
 import Prelude (String, Maybe(Just, Nothing), ($), pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
 
@@ -23,7 +23,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   SourcePosition,
                                                   Message(Message),
                                                   MessageType(Error),
-                                                  StateC
+                                                  StateC, ImplicitCadM, runImplicitCadM
                                                  )
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
@@ -38,31 +38,47 @@ import Data.Map (fromList, lookup)
 
 import Data.Foldable (fold, traverse_)
 
-import Data.Functor.Identity (Identity)
-
 import Data.Traversable (for)
 
 import Control.Monad (zipWithM)
 
 import Data.Text.Lazy (Text, unpack)
 
-import Control.Monad.State (StateT, get, modify, runState)
+import Data.Eq (Eq)
+import Text.Show (Show)
+import Control.Monad.Writer.Class (tell)
+import Control.Monad.State.Lazy (get)
+import Control.Monad.State.Class (modify)
+import Control.Monad.Identity (Identity (runIdentity))
+import Control.Monad.Reader (ask)
 
-data ExprState = ExprState
-  { _scadVars  :: VarLookup
-  , patterns  :: [String]
-  , messages  :: [Message]
-  , _sourcePos :: SourcePosition
-  }
+-- Patterns is the only thing being modified, so
+-- it is the only on in the state structure.
+newtype ExprState = ExprState
+  { patterns  :: [String]
+  } deriving (Eq, Show)
 
-type StateE = StateT ExprState Identity
+-- varLookup and sourcePos are only ever read from
+-- so we can put them into a reader, so they can never
+-- accidentally be written to.
+data Input = Input
+  { varLookup :: VarLookup
+  , sourcePos :: SourcePosition
+  } deriving (Eq, Show)
+
+-- Check Graphics.Implicit.ExtOpenScad.Definitions for an explanation
+-- of why we are using a transformer stack.
+type StateE a = ImplicitCadM Input [Message] ExprState Identity a
+
+runStateE :: Input -> ExprState -> StateE a -> (a, [Message], ExprState)
+runStateE r s m = runIdentity $ runImplicitCadM r s m
 
 -- Add a message to our list of messages contained in the StatE monad.
 addMessage :: MessageType -> SourcePosition -> Text -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
   where
     addMesg :: Message -> StateE ()
-    addMesg m = modify $ \s -> s { messages = messages s <> pure m }
+    addMesg = tell . pure
 
 -- Log an error condition.
 errorE :: SourcePosition -> Text -> StateE ()
@@ -90,24 +106,29 @@ evalExpr :: SourcePosition -> Expr -> StateC OVal
 evalExpr pos expr = do
     vars <- getVarLookup
     let
-      (valf, s) = runState (evalExpr' expr) $ ExprState vars [] [] pos
+      input = Input vars pos
+      initState = ExprState []
+      (valf, messages, _) = runStateE input initState (evalExpr' expr)
       moveMessage (Message mtype mpos text) = GIEUS.addMessage mtype mpos text
-    traverse_ moveMessage $ messages s
+    traverse_ moveMessage messages
     pure $ valf []
 
 -- A more raw entry point, that does not depend on IO.
 rawRunExpr :: SourcePosition -> VarLookup -> Expr -> (OVal, [Message])
 rawRunExpr pos vars expr = do
   let
-    (valf, s) = runState (evalExpr' expr) $ ExprState vars [] [] pos
-  (valf [], messages s)
+    input = Input vars pos
+    initState = ExprState []
+    (valf, messages, _) = runStateE input initState (evalExpr' expr) 
+  (valf [], messages)
 
 -- The expression evaluators.
 evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 
 -- Evaluate a variable lookup.
 evalExpr' (Var (Symbol name)) = do
-  (ExprState (VarLookup varlookup) namestack _ spos) <- get
+  Input (VarLookup varlookup) spos <- ask
+  (ExprState namestack) <- get
   case (lookup (Symbol name) varlookup, elemIndex (unpack name) namestack) of
         (_, Just pos) -> pure (!! pos)
         (Just val, _) -> pure $ const val
@@ -149,4 +170,3 @@ evalExpr' (LamE pats fexpr) = do
             Nothing -> OError "Pattern match failed"
     fval <- evalExpr' fexpr
     pure $ foldr ($) fval fparts
-
