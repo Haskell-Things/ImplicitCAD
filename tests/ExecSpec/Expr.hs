@@ -6,7 +6,7 @@
 module ExecSpec.Expr (exprExec) where
 
 -- Be explicit about what we import.
-import Prelude (($), pure, (==), length, Bool (False), (<=), (&&), (<>), show)
+import Prelude (($), (==), length, Bool (False), (<=), (&&), (<>), show)
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Spec, it, shouldSatisfy, expectationFailure)
@@ -15,7 +15,7 @@ import Test.Hspec (describe, Spec, it, shouldSatisfy, expectationFailure)
 import Graphics.Implicit.Definitions (ℝ)
 
 -- Our utility library, for making these tests easier to read.
-import ExecSpec.Util ((-->), num, list, vect, io)
+import ExecSpec.Util ((-->), num, list, vect)
 
 import Graphics.Implicit.ExtOpenScad.Eval.Constant (runExpr)
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal(OIO, OList, ONum))
