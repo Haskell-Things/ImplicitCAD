@@ -10,7 +10,7 @@ import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative, Bool(True
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), CompState(CompState, scadVars, oVals, messages), StatementI)
+import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup, ScadOpts, Message(Message), MessageType(SyntaxError), CompState(CompState, scadVars, oVals), StatementI, runImplicitCadM)
 
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
 
@@ -23,8 +23,6 @@ import Graphics.Implicit.ExtOpenScad.Eval.Constant (addConstants)
 import Graphics.Implicit.ExtOpenScad.Util.OVal (divideObjs)
 
 import Text.Parsec.Error (errorPos, errorMessages, showErrorMessages, ParseError)
-
-import Control.Monad.State.Lazy (runStateT)
 
 import System.Directory (getCurrentDirectory)
 
@@ -43,12 +41,15 @@ runOpenscad scadOpts constants source = do
     run sts = rearrange <$> do
       let sts' = traverse_ runStatementI sts
       path <- getCurrentDirectory
-      runStateT sts' $ CompState initialObjects [] path initialMessages scadOpts
+      let initState = CompState initialObjects [] path
+      (_, w, s') <- runImplicitCadM scadOpts initState sts'
+      pure (w, s')
+
   either err run $ parseProgram "" source
   where
-    rearrange :: ((), CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-    rearrange (_, s) =
+    rearrange :: ([Message], CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+    rearrange (messages,  s) =
       let (obj2s, obj3s, _) = divideObjs $ oVals s
-      in (scadVars s, obj2s, obj3s, messages s)
+      in (scadVars s, obj2s, obj3s, messages)
     show' = showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
     mesg e = Message SyntaxError (sourcePosition $ errorPos e) $ pack $ show' e
