@@ -37,6 +37,6 @@ programExec =
     it "calls a function with a named and an unnamed argument" $
       "module a(b,c){echo(b+c);}a(b=1,1);" --> oneMessage TextOut (SourcePosition 1 15 []) "2.0"
 --    it "warns about a missing argument" $
---      "module a(b){echo(b);}a();" --> oneMessage TextOut (SourcePosition 1 13 []) "1.0"=
+--      "module a(b){echo(b);}a();" --> oneMessage TextOut (SourcePosition 1 13 []) "1.0"
     it "handles let bindings in functions" $
       "function foo(a,b,c) = let(output=b) [output,b]; echo(foo(1,2,3));" --> oneMessage TextOut (SourcePosition 1 49 []) "[2.0,2.0]"
