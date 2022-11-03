@@ -111,3 +111,9 @@ exprExec = do
       "let (a = 1) let (b = a + 1) let (a = b) [a, a]" --> vect [2, 2]
       -- Scoped name overloading
       "let (a = 1) let (b = a + 1) [a, let (a = b) a]" --> vect [1, 2]
+  describe "operator precedence" $ do
+    -- https://github.com/Haskell-Things/ImplicitCAD/issues/428
+    it "Evaluates exponents correctly" $ do
+      "2*3^2" --> num 18
+      "-2^2" --> num 4
+      "-(2^2)" --> num (-4)
