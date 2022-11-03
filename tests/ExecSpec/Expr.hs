@@ -93,3 +93,9 @@ exprExec = do
       "lookup(0, [])" --> OUndefined
     it "Handles embedded statements" $ do
       "lookup(0+1, [[0*2, 0], [1+1, 4/2]])" --> num 1
+  describe "operator precedence" $ do
+    -- https://github.com/Haskell-Things/ImplicitCAD/issues/428
+    it "Evaluates exponents correctly" $ do
+      "2*3^2" --> num 18
+      "-2^2" --> num 4
+      "-(2^2)" --> num (-4)
