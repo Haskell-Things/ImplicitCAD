@@ -5,6 +5,7 @@
 
 * Other changes
   * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
+  * Fixing exponent operator precedence. [#428](https://github.com/Haskell-Things/ImplicitCAD/issues/428)
 
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 
