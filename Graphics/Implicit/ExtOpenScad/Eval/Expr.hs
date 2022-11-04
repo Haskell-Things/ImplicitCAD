@@ -32,8 +32,6 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.StateC as GIEUS (addMessage)
 
-import Control.Applicative ((<|>))
-
 import Data.Maybe (fromMaybe, isNothing)
 
 import Data.Map (fromList, lookup)
@@ -148,7 +146,7 @@ evalExpr' (Var (Symbol name)) = do
             -- it is possible that a name is pushed and then used before a value is pushed
             -- and this zip neatly handles that situation.
             zip namestack l
-      in fromMaybe OUndefined $ m <|> lookup (Symbol name) varlookup
+      in fromMaybe OUndefined m
     (Just o, _) -> pure $ const o
     _ -> do
       errorE spos ("Variable " <> name <> "not in scope")
