@@ -12,7 +12,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), addMessage) where
 
-import Prelude (String, Maybe(Just, Nothing), ($), pure, zip, (!!), const, (<>), foldr, foldMap, (.), (<$>), traverse)
+import Prelude (String, Maybe(Just, Nothing), Bool (True), ($), elem, pure, zip, (&&), const, (<>), foldr, foldMap, (.), (<$>), traverse)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
@@ -32,7 +32,7 @@ import Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.StateC as GIEUS (addMessage)
 
-import Data.List (elemIndex)
+import Data.Maybe (fromMaybe, isNothing)
 
 import Data.Map (fromList, lookup)
 
@@ -44,7 +44,7 @@ import Control.Monad (zipWithM)
 
 import Data.Text.Lazy (Text, unpack)
 
-import Data.Eq (Eq)
+import Data.Eq (Eq, (==))
 import Text.Show (Show)
 import Control.Monad.Writer.Class (tell)
 import Control.Monad.State.Lazy (get)
@@ -129,12 +129,28 @@ evalExpr' :: Expr -> StateE ([OVal] -> OVal)
 evalExpr' (Var (Symbol name)) = do
   Input (VarLookup varlookup) spos <- ask
   (ExprState namestack) <- get
-  case (lookup (Symbol name) varlookup, elemIndex (unpack name) namestack) of
-        (_, Just pos) -> pure (!! pos)
-        (Just val, _) -> pure $ const val
-        _             -> do
-          errorE spos ("Variable " <> name <> " not in scope")
-          pure $ const OUndefined
+  let v = lookup (Symbol name) varlookup
+      n = elem (unpack name) namestack
+  case (v, n) of
+    (_, True) -> pure $ \l ->
+      let m = foldr
+            -- Scan for variable names from the end of the list (newest), and also
+            -- ensure that we aren't overriding values if we have already found one.
+            -- All in all, this should ensure that we aren't seeing the off by 1 error
+            -- when looking up the values for function parameters as raised in this issue.
+            -- https://github.com/Haskell-Things/ImplicitCAD/issues/431
+            (\(n', v') z -> if isNothing z && unpack name == n' then pure v' else z)
+            Nothing $
+            -- Zip the names and incoming values so that when looking up values
+            -- we are ensuring that names are paired with values. When a LamE is evaled
+            -- it is possible that a name is pushed and then used before a value is pushed
+            -- and this zip neatly handles that situation.
+            zip namestack l
+      in fromMaybe OUndefined m
+    (Just o, _) -> pure $ const o
+    _ -> do
+      errorE spos ("Variable " <> name <> "not in scope")
+      pure $ const OUndefined
 
 -- Evaluate a literal value.
 evalExpr' (LitE  val) = pure $ const val
@@ -164,9 +180,14 @@ evalExpr' (fexpr :$ argExprs) = do
 -- Evaluate a lambda function.
 evalExpr' (LamE pats fexpr) = do
     fparts <- for pats $ \pat -> do
-        modify $ \s -> s { patterns = (unpack <$> patVars pat) <> patterns s}
+        -- Add new names to the end of the list so that names and values aren't
+        -- effectively shifted by 1 when a name is defined but the value hasn't been
+        -- calculated yet. This also allows us to neatly zip names and values ensuring
+        -- we are only looking at names with defined values.
+        modify $ \s -> s { patterns = patterns s <> (unpack <$> patVars pat)}
         pure $ \f xss -> OFunc $ \val -> case patMatch pat val of
-            Just xs -> f (xs <> xss)
+            -- Push values to the end once they are calculated.
+            Just xs -> f (xss <> xs)
             Nothing -> OError "Pattern match failed"
     fval <- evalExpr' fexpr
     pure $ foldr ($) fval fparts

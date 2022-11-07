@@ -63,6 +63,10 @@ assignmentSpec = do
   it "handles function with let expression" $
     "function withlet ( b ) = let ( c = 5 ) b + c ; " -->
     single (Name "withlet" := LamE [Name "b"] (LamE [Name "c"] (plus [Var "b", Var "c"]) :$ [num 5]))
+  -- https://github.com/Haskell-Things/ImplicitCAD/issues/431
+  it "handles function with let expression" $
+    "function foo(a,b,c) = let(output=b) [output,b];" -->
+    single (Name "foo" := LamE [Name "a", Name "b", Name "c"] (LamE [Name "output"] (ListE [Var "output", Var "b"]) :$ [Var "b"]))
   it "handles nested indexing" $
     "x = [ y [ 0 ] - z * 2 ] ; " -->
     single ( Name "x" := ListE [minus [index [Var "y", num 0],

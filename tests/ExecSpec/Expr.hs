@@ -93,6 +93,24 @@ exprExec = do
       "lookup(0, [])" --> OUndefined
     it "Handles embedded statements" $ do
       "lookup(0+1, [[0*2, 0], [1+1, 4/2]])" --> num 1
+  describe "let bindings" $ do
+    it "Evaluates let bindings" $ do
+      -- basic let binding
+      "let (a = 1) [a, 1]" --> vect [1, 1]
+      -- Directly nested lets
+      "let (a = 1) let (b = a) [a, b]" --> vect [1, 1]
+      "let (a = 1) let (b = a) let (c = b) [a, b, c]" --> vect [1, 1, 1]
+      "let (a = 1) let (b = a) let (c = a) [a, b, c]" --> vect [1, 1, 1]
+      "let (a = 1) let (b = a) let (c = b + 1) [a, b, c]" --> vect [1, 1, 2]
+      "let (a = 1) let (b = a) let (c = a + 1) [a, b, c]" --> vect [1, 1, 2]
+      "let (a = 1) let (b = a+1) let (c = b+1) [a, b, c]" --> vect [1, 2, 3]
+      "let (a = 1) let (a = a+1) [a]" --> vect [2]
+      -- Indirect nesting
+      "let (a = 1) [a, let (b = a) b]" --> vect [1, 1]
+      -- Let name overloading
+      "let (a = 1) let (b = a + 1) let (a = b) [a, a]" --> vect [2, 2]
+      -- Scoped name overloading
+      "let (a = 1) let (b = a + 1) [a, let (a = b) a]" --> vect [1, 2]
   describe "operator precedence" $ do
     -- https://github.com/Haskell-Things/ImplicitCAD/issues/428
     it "Evaluates exponents correctly" $ do
