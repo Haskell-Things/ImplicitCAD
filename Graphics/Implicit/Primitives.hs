@@ -30,6 +30,9 @@ module Graphics.Implicit.Primitives (
                                      circle,
                                      cylinder,
                                      cylinder2,
+                                     cone,
+                                     torus,
+                                     ellipsoid,
                                      square, rect,
                                      polygon,
                                      rotateExtrude,
@@ -50,7 +53,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($))
+import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
 
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
@@ -139,6 +142,24 @@ cylinder ::
     -> SymbolicObj3     -- ^ Resulting cylinder
 
 cylinder r = cylinder2 r r
+
+cone ::
+    ℝ                   -- ^ Radius of the cylinder
+    -> ℝ                -- ^ Height of the cylinder
+    -> SymbolicObj3     -- ^ Resulting cylinder
+cone r h = cylinder2 0 r h
+
+torus :: ℝ -> ℝ -> SymbolicObj3 -- Major radius, minor radius
+torus r1 r2 = implicit
+    (\(V3 x y z) -> let a = (sqrt (x**2 + y**2) - r1) in a**2 + z**2 - r2**2)
+    (V3 (-r) (-r) (-r2), V3 r r r2)
+    where
+        r = r1 + r2
+
+ellipsoid :: ℝ -> ℝ -> ℝ -> SymbolicObj3 -- a, b, c
+ellipsoid a b c = implicit
+    (\(V3 x y z) -> (x**2/a**2) + (y**2/b**2) + (z**2/c**2) - 1)
+    (V3 (-a) (-b) (-c), V3 a b c)
 
 -- $ 2D Primitives
 
