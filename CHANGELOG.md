@@ -2,6 +2,13 @@
 
 * ExtOpenScad interface changes
   * Added `rands` and `lookup` support [#433](https://github.com/Haskell-Things/ImplicitCAD/pull/433)
+  * Added several primitives
+    * `cone(r, h, center)`
+    * `torus(r1, r2)`
+    * `ellipsoid(a, b, c)`
+
+* Haskell interface changes
+  * Added matching primitives for `cone`, `torus`, and `ellipsoid`
 
 * Other changes
   * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)

@@ -8,6 +8,7 @@ import GoldenSpec.Util (golden, goldenAllFormats)
 import Graphics.Implicit
 import Prelude
 import Test.Hspec ( describe, Spec )
+import Graphics.Implicit.Primitives (torus, ellipsoid, cone)
 
 default (Int)
 
@@ -163,3 +164,9 @@ spec = describe "golden tests" $ do
             cylinder 10 80
       ]
 
+  golden "torusEllipsoidCone" 2 $
+    union
+      [ torus 40 15
+      , ellipsoid 10 15 20
+      , translate (V3 0 0 25) $ cone 20 20
+      ]

@@ -16,7 +16,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, error)
+import Prelude((.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, error, (<*>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -31,7 +31,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
-import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2)
+import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
 
 import Control.Monad (when, mplus)
 
@@ -57,6 +57,9 @@ primitiveModules =
   , onModIze cylinder [([("r", hasDefault), ("h", hasDefault), ("r1", hasDefault), ("r2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite),
                        ([("d", hasDefault), ("h", hasDefault), ("d1", hasDefault), ("d2", hasDefault), ("$fn", hasDefault), ("center", hasDefault)], noSuite)]
   , onModIze circle [([("r", noDefault), ("$fn", hasDefault)], noSuite), ([("d", noDefault), ("$fn", hasDefault)], noSuite)]
+  , onModIze cone [([("r", noDefault), ("h", hasDefault), ("center", hasDefault)], noSuite), ([("d", noDefault), ("h", hasDefault), ("center", hasDefault)], noSuite)]
+  , onModIze torus [([("r1", noDefault), ("r2", hasDefault)], noSuite)]
+  , onModIze ellipsoid [([("a", noDefault), ("b", hasDefault), ("c", hasDefault)], noSuite)]
   , onModIze polygon [([("points", noDefault)], noSuite)]
   , onModIze union [([("r", hasDefault)], requiredSuite)]
   , onModIze intersect [([("r", hasDefault)], requiredSuite)]
@@ -261,6 +264,66 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
             obj3 = Prim.extrude obj2 dh
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
+
+cone :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+cone = moduleWithoutSuite "cone" $ \_ _ -> do
+    example "cone(r=10, h=30, center=true);"
+    -- arguments
+    r <- do
+        argument "r" `defaultTo` 1 `doc` "radius of cylinder"
+        <|> do
+            d <- argument "d" `defaultTo` 2 `doc` "diameter of cylinder"
+            pure $ d/2
+
+    h :: Either ℝ ℝ2    <- argument "h"
+                `defaultTo` Left 1
+                `doc` "height of cylinder"
+    c :: Bool <- argument "center"
+                `defaultTo` False
+                `doc` "center cylinder with respect to z?"
+    -- Tests
+    test "cone(r=10, h=30, center=true);"
+        `eulerCharacteristic` 0
+    test "cone(r=5, h=10, $fn = 6);"
+        `eulerCharacteristic` 0
+    let
+        V2 h1 h2 = either (toInterval c) id h
+        dh = h2 - h1
+        shift :: SymbolicObj3 -> SymbolicObj3
+        shift =
+            if h1 == 0
+            then id
+            else Prim.translate (V3 0 0 h1)
+    addObj3 . shift $ Prim.cone r dh
+
+torus :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+torus = moduleWithoutSuite "torus" $ \_ _ -> do
+    example "torus(r1=10, r2=5);"
+    -- arguments
+    (r1, r2) <- (,)
+        <$> argument "r1" `defaultTo` 1 `doc` "major radius of torus"
+        <*> argument "r2" `defaultTo` 1 `doc` "minor radius of torus"
+    -- Tests
+    test "torus(r1=10, r2=5);"
+        `eulerCharacteristic` 0
+    -- The result is a computation state modifier that adds a 3D object,
+    -- based on the args.
+    addObj3 $ Prim.torus r1 r2
+
+ellipsoid :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+ellipsoid = moduleWithoutSuite "ellipsoid" $ \_ _ -> do
+    example "ellipsoid(a=1, b=2, c=3);"
+    -- arguments
+    (a, b, c) <- (,,)
+        <$> argument "a" `defaultTo` 1 `doc` "a radius of ellipsoid"
+        <*> argument "b" `defaultTo` 1 `doc` "b radius of ellipsoid"
+        <*> argument "c" `defaultTo` 1 `doc` "c radius of ellipsoid"
+    -- Tests
+    test "ellipsoid(a=1, b=2, c=3);"
+        `eulerCharacteristic` 0
+    -- The result is a computation state modifier that adds a 3D object,
+    -- based on the args.
+    addObj3 $ Prim.ellipsoid a b c
 
 circle :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 circle = moduleWithoutSuite "circle" $ \_ _ -> do
