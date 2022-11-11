@@ -23,6 +23,7 @@ import Graphics.Implicit.MathUtil (infty, rmax, rmaximum, rminimum, reflect)
 import Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(elements, uniformV))
 
 import Linear (Metric(dot))
+import {-# SOURCE #-} Graphics.Implicit.Primitives (outset)
 
 ------------------------------------------------------------------------------
 -- | Normalize a dimensionality-polymorphic vector.
@@ -80,8 +81,10 @@ getImplicitShared ctx (Scale s symbObj) = \p ->
 getImplicitShared ctx (Mirror v symbObj) =
     getImplicit' ctx symbObj . reflect v
 -- Boundary mods
-getImplicitShared ctx (Shell w symbObj) = \p ->
-  abs (getImplicit' ctx symbObj p) - w/2
+getImplicitShared ctx (Shell w symbObj) =
+  -- Get the difference of the original object, and the same
+  -- object with its boundaries moved towards the center.
+  getImplicitShared ctx (DifferenceR 0 symbObj [outset (-w) symbObj])
 getImplicitShared ctx (Outset d symbObj) = \p ->
   getImplicit' ctx symbObj p - d
 -- Misc

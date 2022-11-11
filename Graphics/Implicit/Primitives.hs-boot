@@ -3,7 +3,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Graphics.Implicit.Primitives (Object(getBox, getImplicit'), getImplicit) where
+module Graphics.Implicit.Primitives (Object(getBox, getImplicit'), getImplicit, outset) where
 
 import Graphics.Implicit.Definitions (ObjectContext, SymbolicObj2, SymbolicObj3, SharedObj, ℝ)
 import Control.Lens (Prism')
@@ -28,3 +28,4 @@ getImplicit :: Object obj f a => obj -> (f a -> a)
 instance Object SymbolicObj2 V2 ℝ
 instance Object SymbolicObj3 V3 ℝ
 
+outset :: Object obj f a => ℝ -> obj -> obj
