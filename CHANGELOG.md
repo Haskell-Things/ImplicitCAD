@@ -14,6 +14,7 @@
   * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
   * Fixing an off by one error in variable stack lookups. [#431](https://github.com/Haskell-Things/ImplicitCAD/issues/431)
   * Fixing exponent operator precedence. [#428](https://github.com/Haskell-Things/ImplicitCAD/issues/428)
+  * Fixing an issue with bounding boxes for infinite functions. [#412](https://github.com/Haskell-Things/ImplicitCAD/issues/412)
 
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 

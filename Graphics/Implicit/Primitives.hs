@@ -53,7 +53,7 @@ module Graphics.Implicit.Primitives (
                                      Object
                                     ) where
 
-import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
+import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt, (<=), (&&), max, Ord)
 
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
@@ -94,7 +94,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       ExtrudeMScale,
                                       defaultObjectContext
                                      )
-import Graphics.Implicit.MathUtil   (pack)
+import Graphics.Implicit.MathUtil   (pack, infty)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Linear (M33, M44, V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
@@ -147,7 +147,7 @@ cone ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-cone r h = cylinder2 0 r h
+cone = cylinder2 0
 
 torus :: ℝ -> ℝ -> SymbolicObj3 -- Major radius, minor radius
 torus r1 r2 = implicit
@@ -202,6 +202,7 @@ polygon = Polygon
 class ( Applicative f
       , Eq a
       , Eq (f a)
+      , Ord a
       , Num a
       , Num (f a))
       => Object obj f a | obj -> f a
@@ -220,6 +221,11 @@ class ( Applicative f
         :: ObjectContext
         -> obj         -- ^ Object to get implicit function of
         -> (f a -> a)  -- ^ Implicit function
+
+    implicit
+      :: (f a -> a)  -- ^ Implicit function
+      -> (f a, f a)  -- ^ Bounding box
+      -> obj         -- ^ Resulting object
 
 -- | Get the implicit function for an object
 getImplicit
@@ -356,13 +362,6 @@ intersectR _ [] = Shared Full
 intersectR _ [s] = s
 intersectR r ss = Shared $ IntersectR r ss
 
-implicit
-    :: Object obj f a
-    => (f a -> a)  -- ^ Implicit function
-    -> (f a, f a)  -- ^ Bounding box
-    -> obj         -- ^ Resulting object
-implicit a b = Shared $ EmbedBoxedObj (a, b)
-
 instance Object SymbolicObj2 V2 ℝ where
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
@@ -370,12 +369,31 @@ instance Object SymbolicObj2 V2 ℝ where
   getBox       = getBox2
   getImplicit' = getImplicit2
 
+  implicit a b = Shared $ EmbedBoxedObj
+    ( \p -> max (a p) (if pointInBox b p then -infty else 1)
+    , b
+    )
+    where
+      pointInBox (V2 lx ly, V2 ux uy) (V2 x y) =
+        lx <= x && x <= ux &&
+        ly <= y && y <= uy
+
 instance Object SymbolicObj3 V3 ℝ where
   _Shared = prism' Shared3 $ \case
     Shared3 x -> Just x
     _         -> Nothing
   getBox       = getBox3
   getImplicit' = getImplicit3
+
+  implicit a b = Shared $ EmbedBoxedObj
+    ( \p -> max (a p) (if pointInBox b p then -infty else 1)
+    , b
+    )
+    where
+      pointInBox (V3 lx ly lz, V3 ux uy uz) (V3 x y z) =
+        lx <= x && x <= ux &&
+        ly <= y && y <= uy &&
+        lz <= z && z <= uz
 
 union :: Object obj f a => [obj] -> obj
 union = unionR 0
