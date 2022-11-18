@@ -44,6 +44,15 @@ exprExec = do
       "2 + [1, 2]" --> vect [3, 4]
     it "performs number and list/vector multiplication" $
       "2 * [3, 4, 5]" --> vect [6, 8, 10]
+    it "performs matrix multiplication" $ do
+      -- number - matrix, covered above but included for completness
+      "4 * [[3, 4, -1], [0, 9, 5]]" --> list [vect [12, 16, -4], vect [0, 36, 20]]
+      -- matrix - vector
+      "[[1, -1, 2], [0, -3, 1]] * [2, 1, 0]" --> vect [1, -3]
+      -- vector - matrix
+      "[2, 1] * [[1, -1, 2], [0, -3, 1]]" --> vect [2, -5, 5]
+      --matrix - matrix
+      "[[12, 8, 4], [3, 17, 14], [9, 8, 10]] * [[5, 19, 3], [6, 15, 9], [7, 8, 16]]" --> list [vect [136, 380, 172], vect [215, 424, 386], vect [163, 371, 259]]
   describe "rands" $ do
     it "generates random numbers" $ do
       case runExpr "rands(1,2,1)" False of
