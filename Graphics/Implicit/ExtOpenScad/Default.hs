@@ -263,6 +263,7 @@ defaultPolymorphicFunctions =
         -- foldl is used because we need to track the length of the first sub-list throughout
         normaliseMatrix (a:as) = foldl' go base as
             where
+                base :: Maybe ([[ℝ]], Int, Int)
                 base = (\a' -> ([a'], 1, P.length a)) <$> toNumList a
                 go:: Maybe ([[ℝ]], Int, Int) -> [OVal] -> Maybe ([[ℝ]], Int, Int)
                 go Nothing _ = Nothing
