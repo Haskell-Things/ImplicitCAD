@@ -14,7 +14,7 @@ module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
 import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int)
-import qualified Prelude as P
+import qualified Prelude as P (length)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 
