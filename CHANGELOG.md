@@ -6,9 +6,11 @@
     * `cone(r, h, center)`
     * `torus(r1, r2)`
     * `ellipsoid(a, b, c)`
+  * Adding vector-matrix, matrix-vector, and matrix-matrix multiplication support to `*` [#414](https://github.com/Haskell-Things/ImplicitCAD/issues/414)
 
 * Haskell interface changes
   * Added matching primitives for `cone`, `torus`, and `ellipsoid`
+  * Adding vector-matrix, matrix-vector, and matrix-matrix multiplication support to `mult` [#414](https://github.com/Haskell-Things/ImplicitCAD/issues/414)
 
 * Other changes
   * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)

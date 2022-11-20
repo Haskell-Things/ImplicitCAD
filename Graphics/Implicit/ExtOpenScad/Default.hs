@@ -13,7 +13,8 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int)
+import qualified Prelude as P (length)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
 
@@ -29,7 +30,7 @@ import Data.Int (Int64)
 
 import Data.Map (Map, fromList, insert)
 
-import Data.List (genericIndex, genericLength, find)
+import Data.List (genericIndex, genericLength, find, foldl')
 
 import Data.Foldable (for_, foldr)
 
@@ -40,6 +41,7 @@ import Control.Monad (replicateM)
 import System.Random (randomRIO)
 import Data.Maybe (maybe)
 import Data.Tuple (snd)
+import Linear.Matrix ((!*!), (*!), (!*))
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
@@ -160,7 +162,7 @@ defaultPolymorphicFunctions =
     [
         (Symbol "+", toOObj add),
         (Symbol "sum", sumtotal),
-        (Symbol "*", prod),
+        (Symbol "*", toOObj mult),
         (Symbol "prod", prod),
         (Symbol "/", divide),
         (Symbol "-", toOObj sub),
@@ -247,10 +249,78 @@ defaultPolymorphicFunctions =
                 _          -> OError "prod takes only lists or nums"
             _              -> OError "prod takes only lists or nums"
 
+        toNumList :: [OVal] -> Maybe [ℝ]
+        toNumList [] = pure []
+        toNumList (ONum r:l) = (r :) <$> toNumList l
+        toNumList _ = Nothing
+
+        -- Given a matrix, ensure that each row is
+        -- at least as big as the first row, and
+        -- return the dimentions.
+        normaliseMatrix :: [[OVal]] -> Maybe ([[ℝ]], Int, Int) -- Matrix, outer length, inner length
+        normaliseMatrix [] = Just ([], 0, 0)
+        normaliseMatrix [a] = (\a' -> (pure a', 1, P.length a)) <$> toNumList a
+        -- foldl is used because we need to track the length of the first sub-list throughout
+        normaliseMatrix (a:as) = foldl' go base as
+            where
+                base :: Maybe ([[ℝ]], Int, Int)
+                base = (\a' -> ([a'], 1, P.length a)) <$> toNumList a
+                go:: Maybe ([[ℝ]], Int, Int) -> [OVal] -> Maybe ([[ℝ]], Int, Int)
+                go Nothing _ = Nothing
+                go x [] = x
+                go (Just (xs, l, l')) y =
+                    if P.length y >= l'
+                    then (\y' -> (xs <> pure y', l + 1, l')) <$> toNumList y
+                    else Nothing
+
+        -- scalar
         mult (ONum a)  (ONum b)  = ONum  (a*b)
+        -- vector-number
         mult (ONum a)  (OList b) = OList (fmap (mult (ONum a)) b)
-        mult (OList a) (ONum b)  = OList (fmap (mult (ONum b)) a)
-        mult (OList a) (OList b) = OList $ zipWith mult a b
+        mult b@(OList _)  a@(ONum _) = mult a b
+        -- (vector|matrix)-(vector|matrix)
+        mult (OList a) (OList b) = case (aList, bList) of
+            -- matrix multiplication
+            (Just a', Just b') -> case (normaliseMatrix a', normaliseMatrix b') of
+                (Just (as, _aOuter, aInner), Just (bs, bOuter, _bInner)) ->
+                    if aInner == bOuter
+                    then OList . fmap (OList . fmap ONum) $ as !*! bs
+                    else OError "Matrices of * do not have a matching M dimention for NxM and MxP"
+                (Nothing, _) -> OError "First matrix of * has rows that are too short."
+                (_, Nothing) -> OError "Second matrix of * has rows that are too short."
+            -- matrix * vector multiplication
+            -- These aren't commutative so we have to do it the hard way
+            -- https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Mathematical_Operators
+            (Just a', _) -> case normaliseMatrix a' of
+                Just (as, _aOuter, aInner) ->
+                    if P.length b >= aInner
+                    then
+                        maybe
+                            (OError "Second vector of * is not a list of numbers.")
+                            (\b' -> OList . fmap ONum $ as !* b')
+                            $ toNumList b
+                    else OError "Second vector of * is too short to multiply with the matrix."
+                _ -> OError "First matrix of * has rows that are too short."
+            -- vector * matrix multiplication
+            (_, Just b') -> case normaliseMatrix b' of
+                Just (bs, bOuter, _bInner) ->
+                    if P.length a >= bOuter
+                    then
+                        maybe
+                            (OError "First vector of * is not a list of numbers.")
+                            (\a' -> OList . fmap ONum $ a' *! bs)
+                            $ toNumList a
+                    else OError "First vector of * is too short to multiply with the matrix."
+                _ -> OError "Second matrix of * has rows that are too short."
+            -- vector dot product
+            _ -> dot
+            where
+                aList = foldr f (pure []) a
+                bList = foldr f (pure []) b
+                f :: OVal -> Maybe [[OVal]] -> Maybe [[OVal]]
+                f (OList x) (Just l) = pure $ x : l
+                f _ _ = Nothing
+                dot = OList $ zipWith mult a b
         mult a         b         = errorAsAppropriate "product" a b
 
         divide = OFunc $ \case
