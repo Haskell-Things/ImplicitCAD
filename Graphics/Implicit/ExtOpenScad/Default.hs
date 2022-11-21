@@ -60,7 +60,6 @@ defaultConstants = (\(a,b) -> (a, toOObj (b :: ℝ))) <$>
     [(Symbol "pi", pi),
      (Symbol "PI", pi)]
 
-
 -- Values and functions for dealing with NaNs and Infinities.
 minimumValue :: ℝ
 minimumValue = -1e100
