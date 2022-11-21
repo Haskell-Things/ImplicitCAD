@@ -91,7 +91,7 @@ import Control.Applicative (Applicative(liftA2))
 
 import Text.Show.Combinators
     ( Show(showsPrec, show), (@|), showApp, showCon, PrecShowS)
-import Control.Lens (Wrapped, makeWrapped)
+import Control.Lens (makeWrapped)
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -239,7 +239,7 @@ data SharedObj obj f a
   | Mirror (f a) obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
-  | EmbedBoxedObj ((f a) -> a, ((f a), (f a)))
+  | EmbedBoxedObj (f a -> a, (f a, f a))
   | WithRounding ℝ obj
   deriving (Generic)
 
