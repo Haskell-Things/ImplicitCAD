@@ -13,7 +13,7 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int, isNaN, negate, RealFloat)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int, isNaN, negate, RealFloat, Ord)
 import qualified Prelude as P (length)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
@@ -43,7 +43,9 @@ import Data.Maybe (maybe)
 import Data.Tuple (snd)
 import Linear.Matrix ((!*!), (*!), (!*))
 import Graphics.Implicit.MathUtil (infty)
-import Data.Ord (clamp)
+
+clamp :: Ord a => (a, a) -> a -> a
+clamp (lower, upper) a = min upper (max lower a)
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
