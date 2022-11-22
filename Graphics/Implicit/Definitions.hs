@@ -10,6 +10,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- Definitions of the types used when modeling, and a few operators.
 module Graphics.Implicit.Definitions (
@@ -18,6 +21,7 @@ module Graphics.Implicit.Definitions (
     ℝ,
     ℝ2,
     ℝ3,
+    ℝ3' (ℝ3'),
     minℝ,
     ComponentWiseMultable,
     (⋯*),
@@ -71,7 +75,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac)
+import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), isNaN, (||))
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -87,6 +91,7 @@ import Control.Applicative (Applicative(liftA2))
 
 import Text.Show.Combinators
     ( Show(showsPrec, show), (@|), showApp, showCon, PrecShowS)
+import Control.Lens (makeWrapped)
 
 -- | A type synonym for 'Double'. When used in the context of positions or
 -- sizes, measured in units of millimeters. When used as in the context of
@@ -101,6 +106,19 @@ type ℝ2 = V2 ℝ
 -- in millimeters cubed. When used as a rotation, interpreted as Euler angles
 -- measured in radians.
 type ℝ3 = V3 ℝ
+
+-- ℝ3 except that we also check if values are NaN because those aren't
+-- equal under the normal floating point equivalence.
+newtype ℝ3' = ℝ3' (V3 ℝ)
+$(makeWrapped ''ℝ3')
+instance Eq ℝ3' where
+  ℝ3' a == ℝ3' b = eqNaNs a b
+
+eqNaNs :: ℝ3 -> ℝ3 -> Bool
+eqNaNs (V3 a b c) (V3 a' b' c') =
+    eqNaN a a' && eqNaN b b' && eqNaN c c'
+eqNaN :: RealFloat a => a -> a -> Bool
+eqNaN a b = (isNaN a && isNaN b) || (a == b)
 
 -- | A give up point for dividing ℝs, and for the maximum difference between abs(n) and abs(-n).
 minℝ :: ℝ
@@ -221,7 +239,7 @@ data SharedObj obj f a
   | Mirror (f a) obj -- ^ Mirror across the line whose normal is defined by the vector
   | Outset ℝ obj
   | Shell ℝ obj
-  | EmbedBoxedObj ((f a) -> a, ((f a), (f a)))
+  | EmbedBoxedObj (f a -> a, (f a, f a))
   | WithRounding ℝ obj
   deriving (Generic)
 

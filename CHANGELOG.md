@@ -7,6 +7,7 @@
     * `torus(r1, r2)`
     * `ellipsoid(a, b, c)`
   * Adding vector-matrix, matrix-vector, and matrix-matrix multiplication support to `*` [#414](https://github.com/Haskell-Things/ImplicitCAD/issues/414)
+  * Several mathematical functions that have undefined values for some inputs or tend to infinity have been given finite but extremely large bounds.
 
 * Haskell interface changes
   * Added matching primitives for `cone`, `torus`, and `ellipsoid`
@@ -16,6 +17,7 @@
   * Migrating StateC and StateE to a ReaderT/WriterT/StateT transformer stack, rather than being just StateT. [#432](https://github.com/Haskell-Things/ImplicitCAD/pull/432)
   * Fixing an off by one error in variable stack lookups. [#431](https://github.com/Haskell-Things/ImplicitCAD/issues/431)
   * Fixing exponent operator precedence. [#428](https://github.com/Haskell-Things/ImplicitCAD/issues/428)
+  * Fixing some crashes relating to unclosed loops when generating surfaces. [#373](https://github.com/Haskell-Things/ImplicitCAD/issues/373)
 
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 

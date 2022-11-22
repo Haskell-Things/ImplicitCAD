@@ -13,7 +13,7 @@
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
-import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int)
+import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int, isNaN, negate, RealFloat, Ord)
 import qualified Prelude as P (length)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ)
@@ -42,6 +42,10 @@ import System.Random (randomRIO)
 import Data.Maybe (maybe)
 import Data.Tuple (snd)
 import Linear.Matrix ((!*!), (*!), (!*))
+import Graphics.Implicit.MathUtil (infty)
+
+clamp :: Ord a => (a, a) -> a -> a
+clamp (lower, upper) a = min upper (max lower a)
 
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
@@ -58,14 +62,27 @@ defaultConstants = (\(a,b) -> (a, toOObj (b :: ℝ))) <$>
     [(Symbol "pi", pi),
      (Symbol "PI", pi)]
 
+-- Values and functions for dealing with NaNs and Infinities.
+minimumValue :: ℝ
+minimumValue = -1e100
+maximumValue :: ℝ
+maximumValue = 1e100
+nanNegInf :: RealFloat a => a -> a
+nanNegInf x = if isNaN x then -infty else x
+signedNaNInf :: RealFloat a => a -> a -> a
+signedNaNInf x y = if isNaN y then signum x * infty else y
+
 defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ))) <$>
     [
         (Symbol "sin",   sin),
         (Symbol "cos",   cos),
         (Symbol "tan",   tan),
-        (Symbol "asin",  asin),
-        (Symbol "acos",  acos),
+        -- If the value is NaN, set it to the signed infinity of the input
+        -- and then clamp the values so that infinity doesn't propagate.
+        (Symbol "asin",  \x -> clamp (minimumValue, maximumValue) . signedNaNInf x $ asin x),
+        -- same as asin, but we need to invert the input sign when clamping
+        (Symbol "acos",  \x -> clamp (minimumValue, maximumValue) . signedNaNInf (negate x) $ acos x),
         (Symbol "atan",  atan),
         (Symbol "sinh",  sinh),
         (Symbol "cosh",  cosh),
@@ -76,10 +93,14 @@ defaultFunctions = (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ))) <$>
         (Symbol "ceil",  fromInteger . ceiling ),
         (Symbol "round", fromInteger . round ),
         (Symbol "exp",   exp),
-        (Symbol "ln",    log),
-        (Symbol "log",   log),
+        -- Log is undefined for negative values, so we are taking those NaNs
+        -- and -Infinity values and clamping them to a very negative, but
+        -- finite, value.
+        (Symbol "ln",    clamp (minimumValue, infty) . nanNegInf . log),
+        (Symbol "log",   clamp (minimumValue, infty) . nanNegInf . log),
         (Symbol "sign",  signum),
-        (Symbol "sqrt",  sqrt)
+        -- same as log, but clamping to 0 rather than a very large negative value
+        (Symbol "sqrt",  clamp (0, infty) . nanNegInf . sqrt)
     ]
 
 defaultFunctions2 :: [(Symbol, OVal)]
@@ -325,12 +346,12 @@ defaultPolymorphicFunctions =
 
         divide = OFunc $ \case
             (ONum a) -> OFunc $ \case
-                (ONum b) -> ONum (a/b)
+                (ONum b) -> ONum (clamp (minimumValue, maximumValue) $ a/b)
                 b        -> errorAsAppropriate "divide" (ONum a) b
             a -> OFunc $ \case
                 b -> div' a b
 
-        div' (ONum a)  (ONum b) = ONum  (a/b)
+        div' (ONum a)  (ONum b) = ONum  (clamp (minimumValue, maximumValue) $  a/b)
         div' (OList a) (ONum b) = OList (fmap (\x -> div' x (ONum b)) a)
         div' a         b        = errorAsAppropriate "divide" a b
 

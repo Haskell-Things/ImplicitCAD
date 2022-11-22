@@ -170,3 +170,27 @@ spec = describe "golden tests" $ do
       , ellipsoid 10 15 20
       , translate (V3 0 0 25) $ cone 20 20
       ]
+  golden "closing-paths-1" 0.5 $
+    extrudeM
+      (Left 0)
+      (C1 1)
+      (Left 0)
+      (circle 1)
+      -- limit height or this races off to infinity
+      -- and makes the tests take forever, eating all
+      -- your RAM while it tries to calculate the surface
+      $ Right $ \(V2 x y) -> min 100 $ 1 / sqrt (x ^ 2 + y ^ 2)
+  golden "closing-paths-2" 1 $
+    extrudeM
+      -- Note, this have a gap from the base plane and the extruded
+      -- object, and the base of the extruded object is going to be
+      -- missing. This is because we are directly using haskell
+      -- functions rather than the clamped / Infinity / NaN checked
+      -- versions that the parser is set up to provide.
+      -- However, this is still useful in that it doesn't crash on
+      -- unclosed loops.
+      (pure $ \h -> 35 * log (h*2*pi/30))
+      (C1 1)
+      (Left 0)
+      (union [circle 10])
+      $ Left 40

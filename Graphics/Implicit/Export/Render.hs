@@ -9,9 +9,9 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>))
+import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>), traverse)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromℕtoℝ, fromℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromℕtoℝ, fromℕ, ℝ3' (ℝ3'))
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -71,6 +71,7 @@ import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
 import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Data.Maybe (fromMaybe)
 import Graphics.Implicit.Primitives (getImplicit)
+import Control.Lens (_Wrapped, view, over, _Just)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
@@ -109,15 +110,15 @@ getMesh res@(V3 xres yres zres) symObj =
         par3DList lenx leny lenz =
             [[[ sample mx my mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-              `using` parBuffer (max 1 $ div (fromℕ $ (lenx+leny+lenz)) forcesteps) rdeepseq
+              `using` parBuffer (max 1 $ div (fromℕ (lenx+leny+lenz)) forcesteps) rdeepseq
 
         -- sample our object(s) at the given point.
         sample :: ℕ -> ℕ -> ℕ -> ℝ
         sample mx my mz = obj $
               V3
-                (x1 + rx*(fromℕtoℝ mx))
-                (y1 + ry*(fromℕtoℝ my))
-                (z1 + rz*(fromℕtoℝ mz))
+                (x1 + rx*fromℕtoℝ mx)
+                (y1 + ry*fromℕtoℝ my)
+                (z1 + rz*fromℕtoℝ mz)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ = [[[
@@ -168,7 +169,13 @@ getMesh res@(V3 xres yres zres) symObj =
         minres = xres `min` yres `min` zres
         sqTris = [[[
             foldMap (tesselateLoop minres obj) $
-              fromMaybe (error "unclosed loop in paths given") $ getLoops $
+              fromMaybe (error "unclosed loop in paths given") $
+              -- Shove the ℝ3s into ℝ3's to get the NaN checks, then
+              -- unwrap everything. This should mostly compile away
+              -- given that it is lensy and passing a newtype instance
+              -- around. `getLoops` is the function actually doing the
+              -- work we care about
+              over (_Just . traverse . traverse . traverse) (view _Wrapped) . getLoops . over (traverse . traverse) ℝ3' $
                         segX''' <>
                    mapR segX''T <>
                    mapR segY''' <>
@@ -263,19 +270,19 @@ getContour res@(V2 xres yres) symObj =
 -- utility functions
 
 injX :: ℝ -> Polyline -> [ℝ3]
-injX val polyline = (prepend val) <$> getSegments polyline
+injX val polyline = prepend val <$> getSegments polyline
   where
     prepend :: ℝ -> ℝ2 -> ℝ3
     prepend a (V2 b c) = V3 a b c
 
 injY :: ℝ -> Polyline -> [ℝ3]
-injY val polyline = (insert val)  <$> getSegments polyline
+injY val polyline = insert val  <$> getSegments polyline
   where
     insert :: ℝ -> ℝ2 -> ℝ3
     insert b (V2 a c) = V3 a b c
 
 injZ :: ℝ -> Polyline -> [ℝ3]
-injZ val polyline = (postfix val) <$> getSegments polyline
+injZ val polyline = postfix val <$> getSegments polyline
   where
     postfix :: ℝ -> ℝ2 -> ℝ3
     postfix c (V2 a b) = V3 a b c
