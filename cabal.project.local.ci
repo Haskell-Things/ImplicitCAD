@@ -4,4 +4,5 @@ package implicit
   ghc-options:
     -fspecialise-aggressively
     -Wunused-packages
+    -Wno-all-missed-specialisations
     -Werror
