@@ -1,4 +1,4 @@
-{ rev ? "c542baa0c894796c92a8173dead027f3b952c22e"
+{ rev ? "679cadfdfed2b90311a247b2d6ef6dfd3d6cab73"
 , withImplicitSnap ? false
 , pkgs ?
     if ((rev == "") || (rev == "default") || (rev == "local"))
