@@ -9,12 +9,18 @@
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE TypeOperators          #-}
+-- type (~)
+{-# LANGUAGE CPP #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
 
 import Prelude (abs, fmap, Bounded, Double, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+#if MIN_VERSION_base(4,17,0)
+import Prelude (type(~))
+#endif
 
 import Graphics.Implicit
     ( square,
