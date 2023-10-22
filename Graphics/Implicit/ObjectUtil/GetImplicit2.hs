@@ -11,7 +11,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
+    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Slice, Transform2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
@@ -20,6 +20,8 @@ import Data.List (nub)
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
 import Linear (V2(V2), V3(V3))
 import qualified Linear
+
+import {-# SOURCE #-} Graphics.Implicit.Primitives (getImplicit)
 
 ------------------------------------------------------------------------------
 -- | Filter out equal consecutive elements in the list. This function will
@@ -59,12 +61,17 @@ getImplicit2 _ (Polygon (scanUniqueCircular -> points@(_:_:_:_))) =
     in
         minimum dists * if isIn then -1 else 1
 getImplicit2 ctx (Polygon _) = getImplicitShared @SymbolicObj2 ctx Empty
--- (Rounded) CSG
+-- Simple transforms
 getImplicit2 ctx (Rotate2 θ symbObj) =
     \(V2 x y) -> let
         obj = getImplicit2 ctx symbObj
     in
         obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
+getImplicit2 _ctx (Slice symObj) =
+  let
+      obj = getImplicit symObj
+  in
+    \(V2 x y) -> obj (V3 x y 0)
 getImplicit2 ctx (Transform2 m symbObj) =
     \vin ->
     let

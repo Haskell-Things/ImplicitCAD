@@ -50,6 +50,7 @@ module Graphics.Implicit.Definitions (
         Circle,
         Polygon,
         Rotate2,
+        Slice,
         Transform2,
         Shared2),
     SymbolicObj3(
@@ -296,6 +297,8 @@ data SymbolicObj2 =
     -- Simple transforms
     | Rotate2 ℝ SymbolicObj2
     | Transform2 (M33 ℝ) SymbolicObj2
+    -- Slice 3D object by intersecting it with a XY plane to produce 2D outline
+    | Slice SymbolicObj3
     -- Lifting common objects
     | Shared2 (SharedObj SymbolicObj2 V2 ℝ)
     deriving (Generic)
@@ -310,6 +313,7 @@ instance Show SymbolicObj2 where
     Polygon ps       -> showCon "polygon"    @| ps
     Rotate2 v obj    -> showCon "rotate"     @| v     @| obj
     Transform2 m obj -> showCon "transform"  @| m     @| obj
+    Slice o          -> showCon "slice"      @| o
     Shared2 obj   -> flip showsPrec obj
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.

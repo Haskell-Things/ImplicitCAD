@@ -79,6 +79,7 @@ import Graphics.Implicit.Definitions
       , Shared2
       , Square
       , Transform2
+      , Slice
       )
   , SymbolicObj3
       ( Cube
@@ -158,6 +159,7 @@ fmapObj2 f _ _ (Circle r)       = f $ Circle r
 fmapObj2 f _ _ (Polygon ps)     = f $ Polygon ps
 fmapObj2 f g s (Rotate2 r o)    = f $ Rotate2 r (fmapObj2 f g s o)
 fmapObj2 f g s (Transform2 m o) = f $ Transform2 m (fmapObj2 f g s o)
+fmapObj2 f g s (Slice o)        = f $ Slice (fmapObj3 g f s o)
 fmapObj2 f g s (Shared2 o)      = fmapSharedObj (fmapObj2 f g s) s (Shared2 o)
 
 -- | Map over @SymbolicObj3@ and its underlying shared objects
@@ -223,6 +225,7 @@ instance EqObj SymbolicObj2 where
   Polygon a =^= Polygon b = a == b
   Rotate2 x a =^= Rotate2 y b = x == y && a =^= b
   Transform2 x a =^= Transform2 y b = x == y && a =^= b
+  Slice a =^= Slice b = a =^= b
   Shared2 a =^= Shared2 b = a =^= b
   _ =^= _ = False
 
