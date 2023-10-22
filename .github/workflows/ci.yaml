@@ -4,7 +4,7 @@ jobs:
     steps:
       - uses: "actions/checkout@v3"
       - id: setup-haskell-cabal
-        uses: "haskell/actions/setup@v2"
+        uses: "haskell-actions/setup@v2"
         with:
           cabal-version: "${{ matrix.cabal }}"
           enable-stack: false
@@ -17,7 +17,7 @@ jobs:
             cp cabal.project.local.ci cabal.project.local
           fi
       - name: freeze
-        run: cabal freeze
+        run: cabal freeze --enable-tests --enable-benchmarks
       - uses: "actions/cache@v3"
         with:
           key: "${{ runner.os }}-${{ matrix.ghc }}-cabal-${{ hashFiles('cabal.project.freeze') }}"
@@ -35,12 +35,11 @@ jobs:
     strategy:
       matrix:
         cabal:
-          - '3.4'
+          - '3.10'
         ghc:
+          - '9.4.7'
           - '9.0.2'
           - '8.10.7'
-          - '8.8.4'
-          - '8.6.5'
 name: Haskell CI
 on:
   - push
