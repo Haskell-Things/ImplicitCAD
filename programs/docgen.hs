@@ -52,8 +52,9 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
     else
     do
       putStrLn "#Examples:\n"
-      forM_ examples $ \(ExampleDoc example) ->
-        putStrLn $ "   * `" <> example <> "`"
+      forM_ examples $ \x -> case x of
+        (ExampleDoc example) -> putStrLn $ "   * `" <> example <> "`"
+        _ -> error $ "Unexpected " <> show x <> " in examples"
       putStrLn ""
 
   if null arguments
@@ -70,26 +71,30 @@ dumpPrimitive (Symbol moduleName) moduleDocList level = do
             putStrLn "#Arguments:\n"
           else
             putStrLn "#Shared Arguments:\n"
-      forM_ arguments $ \(ArgumentDoc (Symbol name) posfallback description) ->
-        case (posfallback, description) of
-          (Nothing, "") ->
-            putStrLn $ "   * `" <> unpack name  <> "`"
-          (Just fallback, "") ->
-            putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
-          (Nothing, _) -> do
-            putStrLn $ "   * `" <> unpack name <> "`"
-            putStrLn $ "     " <> description
-          (Just fallback, _) -> do
-            putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
-            putStrLn $ "     " <> description
+      forM_ arguments $ \x -> case x of
+        (ArgumentDoc (Symbol name) posfallback description) ->
+          case (posfallback, description) of
+            (Nothing, "") ->
+              putStrLn $ "   * `" <> unpack name  <> "`"
+            (Just fallback, "") ->
+              putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
+            (Nothing, _) -> do
+              putStrLn $ "   * `" <> unpack name <> "`"
+              putStrLn $ "     " <> description
+            (Just fallback, _) -> do
+              putStrLn $ "   * `" <> unpack name <> " = " <> fallback <> "`"
+              putStrLn $ "     " <> description
+        _ -> error $ "Unexpected " <> show x <> " in arguments"
       putStrLn ""
 
   if null syntaxes
     then
       return ()
     else
-      forM_ syntaxes $ \(Branch syntax) ->
-        dumpPrimitive (Symbol $ pack $ "Syntax " <> show (level+1)) syntax (level+1)
+      forM_ syntaxes $ \x -> case x of
+        (Branch syntax) ->
+          dumpPrimitive (Symbol $ pack $ "Syntax " <> show (level+1)) syntax (level+1)
+        _ -> error $ "Unexpected " <> show x <> " in syntaxes"
 
 -- | Our entrypoint. Generate one document describing all of our primitives.
 main :: IO ()
