@@ -13,6 +13,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+-- required by makeWrapped
+{-# LANGUAGE TypeOperators #-}
 
 -- Definitions of the types used when modeling, and a few operators.
 module Graphics.Implicit.Definitions (
