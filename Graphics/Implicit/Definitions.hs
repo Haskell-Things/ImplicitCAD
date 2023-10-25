@@ -414,7 +414,7 @@ isScaleID _ = False
 -- | Convert a 'Quaternion' to its constituent euler angles.
 --
 -- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
-quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
+quaternionToEuler :: RealFloat a => Quaternion a -> V3 a
 quaternionToEuler (Quaternion w (V3 x y z))=
   let sinr_cosp = 2 * (w * x + y * z)
       cosr_cosp = 1 - 2 * (x * x + y * y)
@@ -426,5 +426,5 @@ quaternionToEuler (Quaternion w (V3 x y z))=
               else asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
-   in (roll, pitch, yaw)
+   in V3 roll pitch yaw
 

@@ -133,7 +133,7 @@ buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [
                              , bf h
                              ] []
 buildS3 (Rotate3 q obj) =
-  let (x,y,z) = quaternionToEuler q
+  let (V3 x y z) = quaternionToEuler q
    in call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
 
 buildS3 (Transform3 m obj) =
