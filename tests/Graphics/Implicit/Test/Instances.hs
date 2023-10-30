@@ -16,12 +16,13 @@
 -- Polymorphic makeTestResult
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
 
-import Prelude (abs, fmap, Bool(False, True), Bounded, Double, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -235,6 +236,7 @@ makeTestResult
   :: forall obj f a
    . ( RealFloat a
      , Object obj f a
+     , Quantizable a
      , f ~ Space obj
      )
   => obj
@@ -243,7 +245,7 @@ makeTestResult
 makeTestResult obj sampleAt =
   let
     fun = getImplicit obj
-    sampledVal = fun sampleAt
+    sampledVal = quantize epsilon $ fun sampleAt
   in
     TestResult
       { trInsidedness = insidedness sampledVal
@@ -263,6 +265,32 @@ instance Observe (ℝ2, ()) (TestResult SymbolicObj2 Double) SymbolicObj2 where
 -- all points (up to an error term of 'epsilon')
 instance Observe (ℝ3, ()) (TestResult SymbolicObj3 Double) SymbolicObj3 where
   observe (sampledAt, _) obj = makeTestResult obj sampledAt
+
+------------------------------------------------------------------------------
+-- | The number of decimal points we need to agree to assume two 'Double's are
+-- equal.
+epsilon :: Int
+epsilon = 10
+
+------------------------------------------------------------------------------
+-- | Types which can truncate their decimal points to a certain number of
+-- digits.
+class Quantizable a where
+  quantize
+      :: Int  -- ^ The number of decimal points to keep
+      -> a
+      -> a
+
+instance Quantizable a => Quantizable [a] where
+  quantize n = fmap (quantize n)
+
+instance Quantizable a => Quantizable (b -> a) where
+  quantize n = fmap (quantize n)
+
+instance Quantizable Double where
+  quantize n r =
+    let pow = 10 ^ n :: Double
+    in fromIntegral @Integer (round (r * pow)) / pow
 
 -- | Generate a small list of 'Arbitrary' elements, splitting the current
 -- complexity budget between all of them.
