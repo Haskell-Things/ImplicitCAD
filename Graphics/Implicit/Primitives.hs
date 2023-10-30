@@ -54,7 +54,7 @@ module Graphics.Implicit.Primitives (
                                      Object(Space)
                                     ) where
 
-import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
 
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
@@ -204,6 +204,7 @@ polygon = Polygon
 class ( Applicative f
       , Eq a
       , Eq (f a)
+      , Foldable f
       , Num a
       , Num (f a))
       => Object obj f a | obj -> f a

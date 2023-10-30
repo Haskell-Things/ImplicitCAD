@@ -12,7 +12,7 @@ module Graphics.Implicit.Primitives (Object(getBox, getImplicit', Space), getImp
 import Graphics.Implicit.Definitions (ObjectContext, SymbolicObj2, SymbolicObj3, SharedObj, ℝ)
 import Control.Lens (Prism')
 import Data.Kind (Type)
-import Prelude (Applicative, Eq, Num)
+import Prelude (Applicative, Eq, Foldable, Num)
 import Linear (V2, V3)
 
 -- See the non-source version of "Graphics.Implicit.Primitives" for
@@ -20,6 +20,7 @@ import Linear (V2, V3)
 class ( Applicative f
       , Eq a
       , Eq (f a)
+      , Foldable f
       , Num a
       , Num (f a))
       => Object obj f a | obj -> f a
