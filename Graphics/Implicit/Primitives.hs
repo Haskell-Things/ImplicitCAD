@@ -106,7 +106,6 @@ import Data.Kind (Type)
 sphere ::
     ℝ                  -- ^ Radius of the sphere
     -> SymbolicObj3    -- ^ Resulting sphere
-
 sphere = Sphere
 
 -- | A rectangular prism
@@ -114,7 +113,6 @@ rect3
     :: ℝ3             -- ^ Bottom.. corner
     -> ℝ3             -- ^ Top right... corner
     -> SymbolicObj3   -- ^ Resuting cube
-
 rect3 xyz1 xyz2 = translate xyz1 $ Cube $ xyz2 - xyz1
 
 -- | A cube
@@ -142,7 +140,6 @@ cylinder ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-
 cylinder r = cylinder2 r r
 
 cone ::
@@ -168,7 +165,6 @@ ellipsoid a b c = implicit
 circle ::
     ℝ               -- ^ radius of the circle
     -> SymbolicObj2 -- ^ resulting circle
-
 circle   = Circle
 
 -- | A rectangle
@@ -176,7 +172,6 @@ rect
     :: ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
     -> SymbolicObj2 -- ^ Resulting square
-
 rect xy1 xy2 = translate xy1 $ Square $ xy2 - xy1
 
 -- | A square
@@ -191,7 +186,6 @@ square True  size = translate (fmap (negate . (/ 2)) size) $ Square size
 polygon
     :: [ℝ2]          -- ^ Verticies of the polygon
     -> SymbolicObj2  -- ^ Resulting polygon
-
 polygon = Polygon
 
 -- $ Shared Operations
