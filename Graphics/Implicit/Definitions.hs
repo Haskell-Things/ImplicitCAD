@@ -72,12 +72,14 @@ module Graphics.Implicit.Definitions (
     toScaleFn,
     isScaleID,
     quaternionToEuler,
+    hasZeroComponent,
+    hasNaNComponent,
     )
 where
 
 import GHC.Generics (Generic)
 
-import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), isNaN, (||))
+import Prelude (Foldable, Functor(fmap), (.), Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), or)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -428,3 +430,16 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       yaw = atan2 siny_cosp cosy_cosp
    in V3 roll pitch yaw
 
+-- | Returns True if any component of a foldable functor is zero
+hasZeroComponent
+    :: (Foldable f, Functor f, Num a, Eq a)
+    => f a
+    -> Bool
+hasZeroComponent =  or . fmap (==0)
+
+-- | Returns True if any component of a foldable functor is zero
+hasNaNComponent
+    :: (Foldable f, Functor f, RealFloat a)
+    => f a
+    -> Bool
+hasNaNComponent = or . fmap isNaN
