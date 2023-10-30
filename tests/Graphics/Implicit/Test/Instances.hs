@@ -20,9 +20,9 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (Observe, observe, (=~=), arbitraryNonZeroV) where
 
-import Prelude (abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (Applicative, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -67,6 +67,7 @@ import Test.QuickCheck
       vectorOf,
       Gen,
       Positive(getPositive),
+      NonZero(getNonZero),
       Property)
 
 import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
@@ -306,6 +307,14 @@ arbitraryPos = getPositive <$> arbitrary
 -- | Generate an arbitrary positive 'ℝ3'. Useful for sizes.
 arbitraryV3 :: Gen ℝ3
 arbitraryV3 = fmap abs <$> arbitrary
+
+-- | Generate arbitrary vector that has no zero components
+arbitraryNonZeroV
+  :: ( Arbitrary (f (NonZero a))
+     , Applicative f
+     )
+  => Gen (f a)
+arbitraryNonZeroV = fmap getNonZero <$> arbitrary
 
 -- | Split the complexity budget by a factor of @n@.
 decayArbitrary :: Arbitrary a => Int -> Gen a

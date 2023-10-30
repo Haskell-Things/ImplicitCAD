@@ -39,7 +39,7 @@ import Graphics.Implicit (intersectR)
 import Graphics.Implicit (extrude)
 import Graphics.Implicit (cylinder2)
 import Graphics.Implicit (mirror)
-import Graphics.Implicit.Test.Instances (Observe, (=~=))
+import Graphics.Implicit.Test.Instances (Observe, (=~=), arbitraryNonZeroV)
 
 ------------------------------------------------------------------------------
 -- Tests showing equivalencies between algebraic formulations of symbolic
@@ -248,7 +248,7 @@ transform3dSpec = describe "3d transform" $ do
     =~= translate tr . rotateQ quat
 
   prop "scale"
-    $ forAll (arbitrary `suchThat` (/= 0)) $ \s@(V3 x y z) ->
+    $ forAll arbitraryNonZeroV $ \s@(V3 x y z) ->
     transform3
       (V4 (V4 x 0 0 0)
           (V4 0 y 0 0)
