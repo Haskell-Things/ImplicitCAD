@@ -295,7 +295,6 @@ fullSpace = Shared Full
 -- the current object-rounding value set in 3D will not apply to extruded 2D
 -- shapes.
 withRounding :: Object obj f a => ℝ -> obj -> obj
-withRounding 0 = id
 withRounding r = Shared . WithRounding r
 
 -- | Mirror an object across the hyperplane whose normal is a given
