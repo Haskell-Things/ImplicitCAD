@@ -12,12 +12,16 @@
 {-# LANGUAGE TypeOperators          #-}
 -- type (~)
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE RecordWildCards #-}
+-- Polymorphic makeTestResult
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
 
-import Prelude (abs, fmap, Bounded, Double, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bounded, Double, Enum, Show(show), unlines, Num, Ord, compare, Eq, (==), pure, Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -49,7 +53,7 @@ import Graphics.Implicit.Definitions
       SharedObj(Outset, Translate, Scale, UnionR, IntersectR,
                 DifferenceR, Shell, WithRounding) )
 
-import Graphics.Implicit.Primitives ( getImplicit )
+import Graphics.Implicit.Primitives ( getImplicit, Object(Space) )
 
 import qualified Test.QuickCheck
 import Test.QuickCheck
@@ -69,9 +73,37 @@ import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
 data Insidedness = Inside | Outside | Surface
   deriving (Eq, Ord, Show, Enum, Bounded)
 
-insidedness :: Double -> Insidedness
+insidedness :: (Num a, Ord a) => a -> Insidedness
 insidedness 0 = Surface
 insidedness x = if x < 0 then Inside else Outside
+
+data TestResult obj a = TestResult {
+    trInsidedness   :: Insidedness
+  , trSampledValue  :: a
+  , trSampledObject :: obj
+  , trSampledAt     :: (Space obj) a
+  }
+
+instance
+  ( Show obj
+  , Show a
+  , Show (Space obj a)
+  )
+  => Show (TestResult obj a)
+  where
+  show TestResult{..} = unlines
+    [ ""
+    , "TestResult:"
+    , "  | " <> show trInsidedness
+    , "  | " <> show trSampledObject
+    , "  | Sampled at " <> show trSampledAt <> " returns " <> show trSampledValue
+    ]
+
+instance Eq a => Eq (TestResult obj a) where
+  (==) ta tb = trInsidedness ta == trInsidedness tb
+
+instance Ord a => Ord (TestResult obj a) where
+  compare ta tb = trInsidedness ta `compare` trInsidedness tb
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
@@ -188,17 +220,38 @@ instance Observe () Double Double
 a =~= b = Test.QuickCheck.property $ \test -> observe test a Test.QuickCheck.=== observe test b
 infix 4 =~=
 
+makeTestResult
+  :: forall obj f a
+   . ( Ord a
+     , Object obj f a
+     , f ~ Space obj
+     )
+  => obj
+  -> Space obj a
+  -> TestResult obj a
+makeTestResult obj sampleAt =
+  let
+    fun = getImplicit obj
+    sampledVal = fun sampleAt
+  in
+    TestResult
+      { trInsidedness = insidedness sampledVal
+      , trSampledValue = sampledVal
+      , trSampledObject = obj
+      , trSampledAt = sampleAt
+      }
+
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj2's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
-  observe p = insidedness . observe p . getImplicit
+instance Observe (ℝ2, ()) (TestResult SymbolicObj2 Double) SymbolicObj2 where
+  observe (sampledAt, _) obj = makeTestResult obj sampledAt
 
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj3's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
-  observe p = insidedness . observe p . getImplicit
+instance Observe (ℝ3, ()) (TestResult SymbolicObj3 Double) SymbolicObj3 where
+  observe (sampledAt, _) obj = makeTestResult obj sampledAt
 
 -- | Generate a small list of 'Arbitrary' elements, splitting the current
 -- complexity budget between all of them.

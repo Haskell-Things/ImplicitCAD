@@ -9,6 +9,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
@@ -50,7 +51,7 @@ module Graphics.Implicit.Primitives (
                                      withRounding,
                                      _Shared,
                                      pattern Shared,
-                                     Object
+                                     Object(Space)
                                     ) where
 
 import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
@@ -98,6 +99,7 @@ import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Linear (M33, M44, V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
+import Data.Kind (Type)
 
 -- $ 3D Primitives
 
@@ -206,6 +208,11 @@ class ( Applicative f
       , Num (f a))
       => Object obj f a | obj -> f a
       where
+
+    -- | Type representing a space this object belongs to.
+    -- V3 for 3D objects, V2 for 2D
+    type Space obj :: Type -> Type
+
     -- | A 'Prism'' for including 'SharedObj's in @obj@. Prefer using 'Shared'
     -- instead of this.
     _Shared :: Prism' obj (SharedObj obj f a)
@@ -364,6 +371,7 @@ implicit
 implicit a b = Shared $ EmbedBoxedObj (a, b)
 
 instance Object SymbolicObj2 V2 ℝ where
+  type Space SymbolicObj2 = V2
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
     _         -> Nothing
@@ -371,6 +379,7 @@ instance Object SymbolicObj2 V2 ℝ where
   getImplicit' = getImplicit2
 
 instance Object SymbolicObj3 V3 ℝ where
+  type Space SymbolicObj3 = V3
   _Shared = prism' Shared3 $ \case
     Shared3 x -> Just x
     _         -> Nothing
