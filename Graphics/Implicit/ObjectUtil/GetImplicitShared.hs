@@ -56,7 +56,7 @@ getImplicitShared ctx (UnionR _ []) =
 getImplicitShared ctx (UnionR r symbObjs) = \p ->
   rminimum r $ fmap (flip (getImplicit' ctx) p) symbObjs
 getImplicitShared ctx (IntersectR _ []) =
-  getImplicitShared @obj ctx Full
+  getImplicitShared @obj ctx Empty
 getImplicitShared ctx (IntersectR r symbObjs) = \p ->
   rmaximum r $ fmap (flip (getImplicit' ctx) p) symbObjs
 getImplicitShared ctx (DifferenceR _ symbObj []) =
