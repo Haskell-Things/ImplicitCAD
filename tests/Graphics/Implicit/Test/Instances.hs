@@ -21,7 +21,7 @@
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
 
-import Prelude (abs, fmap, Bounded, Double, Enum, Show(show), unlines, Num, Ord, compare, Eq, (==), pure, Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (abs, fmap, Bool(False, True), Bounded, Double, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -70,12 +70,23 @@ import Test.QuickCheck
 
 import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
 
-data Insidedness = Inside | Outside | Surface
-  deriving (Eq, Ord, Show, Enum, Bounded)
+data Insidedness = Inside | Outside | Surface | NaNFail
+  deriving (Ord, Show, Enum, Bounded)
 
-insidedness :: (Num a, Ord a) => a -> Insidedness
+insidedness :: (RealFloat a) => a -> Insidedness
 insidedness 0 = Surface
-insidedness x = if x < 0 then Inside else Outside
+insidedness x | isNaN x = NaNFail
+insidedness x | x < 0 = Inside
+insidedness _ = Outside
+
+-- Explicitely allow matching the three cases
+-- so NaNFail never passes Eq (similar to an actual NaNs
+-- that are never equal)
+instance Eq Insidedness where
+  Inside == Inside = True
+  Outside == Outside = True
+  Surface == Surface = True
+  _ == _ = False
 
 data TestResult obj a = TestResult {
     trInsidedness   :: Insidedness
@@ -222,7 +233,7 @@ infix 4 =~=
 
 makeTestResult
   :: forall obj f a
-   . ( Ord a
+   . ( RealFloat a
      , Object obj f a
      , f ~ Space obj
      )
