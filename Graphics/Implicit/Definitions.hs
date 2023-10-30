@@ -357,7 +357,7 @@ instance Show SymbolicObj3 where
     Cylinder h r1 r2 ->
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
-    Transform3 m s -> showCon "transform3" @| show m @| s
+    Transform3 m s -> showCon "transform3" @| m @| s
     Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
