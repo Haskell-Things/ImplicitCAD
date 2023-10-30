@@ -130,8 +130,6 @@ cylinder2 ::
     -> ℝ                -- ^ Second radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-
-cylinder2 _ _ 0 = emptySpace  -- necessary to prevent a NaN
 cylinder2 r1 r2 h
   | h < 0 = mirror (V3 0 0 1) $ cylinder2 r1 r2 (abs h)
   | otherwise = Cylinder h r1 r2
