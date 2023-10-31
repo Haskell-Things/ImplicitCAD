@@ -9,7 +9,7 @@
 module ImplicitSpec (spec) where
 
 import Prelude (Fractional, fmap, pure, negate, (+),  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (describe, Spec)
+import Test.Hspec (describe, parallel, Spec)
 import Graphics.Implicit
     ( difference,
       rotate,
@@ -46,7 +46,7 @@ import Graphics.Implicit.Test.Instances (Observe, (=~=), arbitraryNonZeroV)
 -- objects, in both 2d and 3d. Equality is observational, based on random
 -- sampling of the underlying 'getImplicit' function.
 spec :: Spec
-spec = do
+spec = parallel $ do
   describe "symbolic obj 2" $ do
     idempotenceSpec  @SymbolicObj2
     identitySpec     @SymbolicObj2
