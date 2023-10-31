@@ -29,7 +29,7 @@ import Graphics.Implicit
       withRounding,
       Object )
 import Graphics.Implicit.Primitives (rotateQ)
-import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll)
+import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll, NonZero)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
 import Linear (V2(V2), V3(V3), V4(V4), (^*))
@@ -81,6 +81,7 @@ type TestInfrastructure obj f a test outcome =
   , Show (f a)
   , Arbitrary obj
   , Arbitrary (f a)
+  , Arbitrary (f (NonZero a))
   , Fractional (f a)
   )
 
@@ -139,7 +140,7 @@ inverseSpec = describe "inverses" $ do
       =~= id
 
   prop "scale inverse" $
-    forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
+    forAll arbitraryNonZeroV $ \xyz ->
       scale @obj xyz . scale (1 / xyz)
       =~= id
 
@@ -323,9 +324,11 @@ homomorphismSpec = describe "homomorphism" $ do
     translate @obj xyz2 . translate xyz1
       =~= translate (xyz1 + xyz2)
 
-  prop "scale" $ \xyz1 xyz2 ->
-    scale @obj xyz2 . scale xyz1
-      =~= scale (xyz1 * xyz2)
+  prop "scale" $
+    forAll arbitraryNonZeroV $ \xyz1 ->
+      forAll arbitraryNonZeroV $ \xyz2 ->
+        scale @obj xyz2 . scale xyz1
+          =~= scale (xyz1 * xyz2)
 
   prop "withRounding/unionR" $ \r_obj r_combo ->
     withRounding @obj r_obj . unionR r_combo

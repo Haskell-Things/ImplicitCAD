@@ -254,7 +254,6 @@ scale
     -> obj  -- ^ Resulting scaled object
 scale 1 s = s
 scale _ s@(Shared Empty) = s
-scale v1 (Shared (Scale v2 s)) = scale (v1 * v2) s
 scale v s = Shared $ Scale v s
 
 -- | Complement an Object
