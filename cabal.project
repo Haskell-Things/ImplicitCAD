@@ -1,8 +1,1 @@
 packages: .
-
--- for GHC9+, until
--- * https://github.com/snapframework/snap-server/issues/141
--- * https://github.com/snapframework/io-streams-haproxy/pull/24
-allow-newer:
-    snap-server:base
-  , io-streams-haproxy:base
