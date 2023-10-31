@@ -144,7 +144,7 @@ cone ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-cone r h = cylinder2 0 r h
+cone = cylinder2 0
 
 torus :: ℝ -> ℝ -> SymbolicObj3 -- Major radius, minor radius
 torus r1 r2 = implicit

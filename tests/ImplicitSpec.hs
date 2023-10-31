@@ -27,6 +27,11 @@ import Graphics.Implicit
       differenceR,
       translate,
       withRounding,
+      unionR,
+      intersectR,
+      extrude,
+      cylinder2,
+      mirror,
       Object )
 import Graphics.Implicit.Primitives (rotateQ)
 import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll, NonZero)
@@ -34,11 +39,6 @@ import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
 import Linear (V2(V2), V3(V3), V4(V4), (^*))
 import qualified Linear
-import Graphics.Implicit (unionR)
-import Graphics.Implicit (intersectR)
-import Graphics.Implicit (extrude)
-import Graphics.Implicit (cylinder2)
-import Graphics.Implicit (mirror)
 import Graphics.Implicit.Test.Instances (Observe, (=~=), arbitraryNonZeroV)
 
 ------------------------------------------------------------------------------

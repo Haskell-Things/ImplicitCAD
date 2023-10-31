@@ -112,7 +112,7 @@ buildShared (WithRounding r obj) | r == 0 = build obj
 
 buildShared(UnionR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildShared(IntersectR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(DifferenceR _ _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared(DifferenceR {}) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildShared(Outset _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildShared(Shell _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildShared(EmbedBoxedObj _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
@@ -178,11 +178,10 @@ buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
 
 buildS2 (Transform2 m obj) =
     let toM44 (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
-          (V4 (V4 a b c 0)
-              (V4 d e f 0)
-              (V4 g h i 0)
-              (V4 0 0 0 1)
-          )
+          V4 (V4 a b c 0)
+             (V4 d e f 0)
+             (V4 g h i 0)
+             (V4 0 0 0 1)
     in
     call "multmatrix"
       ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList (toM44 m))

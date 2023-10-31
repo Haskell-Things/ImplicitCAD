@@ -14,12 +14,10 @@ import Criterion.Main (Benchmark, bgroup, bench, nf, nfAppIO, defaultMain)
 
 -- The parts of ImplicitCAD we know how to benchmark.
 import Graphics.Implicit (union, circle, sphere, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), writeDXF2, writeSVG, writePNG2, writeSTL, writeBinSTL, unionR, translate, difference, extrudeM, rect3, withRounding)
-import Graphics.Implicit.Definitions (defaultObjectContext)
+-- The default object context and variables defining distance and counting in our world.
+import Graphics.Implicit.Definitions (defaultObjectContext, ℝ, Fastℕ)
 import Graphics.Implicit.Export.SymbolicObj2 (symbolicGetContour)
 import Graphics.Implicit.Export.SymbolicObj3 (symbolicGetMesh)
-
--- The variables defining distance and counting in our world.
-import Graphics.Implicit.Definitions (ℝ, Fastℕ)
 
 -- Vectors.
 import Linear(V2(V2), V3(V3))

@@ -21,7 +21,7 @@ isExample _ = False
 
 -- | Return true if the argument is of type ArgumentDoc.
 isArgument :: DocPart -> Bool
-isArgument (ArgumentDoc _ _ _) = True
+isArgument (ArgumentDoc {}) = True
 isArgument _ = False
 
 -- | Return true if the argument is of type Branch.

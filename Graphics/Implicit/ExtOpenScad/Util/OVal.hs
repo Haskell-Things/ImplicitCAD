@@ -8,8 +8,6 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-{-# LANGUAGE TypeSynonymInstances #-}
-
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
@@ -84,7 +82,7 @@ instance OTypeMirror Text where
     fromOObj (OString str) = Just str
     fromOObj _ = Nothing
     toOObj :: Text -> OVal
-    toOObj a = OString a
+    toOObj = OString
 
 instance (OTypeMirror a) => OTypeMirror (Maybe a) where
     fromOObj a = Just $ fromOObj a
@@ -170,8 +168,8 @@ oTypeStr (OList          _ ) = "List"
 oTypeStr (OString        _ ) = "String"
 oTypeStr (OFunc          _ ) = "Function"
 oTypeStr (OIO            _ ) = "IO"
-oTypeStr (OUModule   _ _ _ ) = "User Defined Module"
-oTypeStr (ONModule   _ _ _ ) = "Built-in Module"
+oTypeStr (OUModule {}      ) = "User Defined Module"
+oTypeStr (ONModule {}      ) = "Built-in Module"
 oTypeStr (OVargsModule _ _ ) = "VargsModule"
 oTypeStr (OError         _ ) = "Error"
 oTypeStr (OObj2          _ ) = "2D Object"

@@ -82,8 +82,8 @@ getImplicit2 ctx (Transform2 m symbObj) =
     \vin ->
     let
         obj = getImplicit2 ctx symbObj
-        augment (V2 x y) = (V3 x y 1)
-        normalize (V3 x y w) = (V2 (x/w) (y/w))
+        augment (V2 x y) = V3 x y 1
+        normalize (V3 x y w) = V2 (x/w) (y/w)
     in
-        obj $ (normalize . ((Linear.inv33 m) Linear.!*) . augment $ vin)
+        obj (normalize . (Linear.inv33 m Linear.!*) . augment $ vin)
 getImplicit2 ctx (Shared2 obj) = getImplicitShared ctx obj

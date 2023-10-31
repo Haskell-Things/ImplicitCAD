@@ -1,10 +1,7 @@
 {- ORMOLU_DISABLE -}
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE DeriveGeneric    #-}
 {-# LANGUAGE ImplicitPrelude  #-}
 {-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ViewPatterns     #-}
 
 module TesselationSpec (spec) where
 
