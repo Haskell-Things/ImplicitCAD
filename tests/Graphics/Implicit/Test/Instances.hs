@@ -136,7 +136,8 @@ instance Arbitrary SymbolicObj2 where
         , square  <$> arbitrary <*> arbitrary
         , polygon <$> do
             n <- choose (3, 10)
-            vectorOf n arbitrary
+            -- TODO(srk): this is a hack until #449 is solved
+            vectorOf n ((*100) <$> (V2 <$> arbitraryPos <*> arbitraryPos))
         , pure fullSpace
         , pure emptySpace
         ]
