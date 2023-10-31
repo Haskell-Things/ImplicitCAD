@@ -22,7 +22,7 @@
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=), arbitraryNonZeroV) where
 
-import Prelude (Applicative, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (Applicative, (.), not, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -64,13 +64,14 @@ import Test.QuickCheck
       oneof,
       scale,
       sized,
+      suchThat,
       vectorOf,
       Gen,
       Positive(getPositive),
       NonZero(getNonZero),
       Property)
 
-import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
+import Linear (V2(V2), V3(V3), V4(V4), M33, det33, M44, det44, Epsilon, nearZero, Quaternion, axisAngle)
 
 data Insidedness = Inside | Outside | Surface | NaNFail
   deriving (Ord, Show, Enum, Bounded)
@@ -126,7 +127,7 @@ instance Arbitrary SymbolicObj2 where
     then oneof small
     else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
-        , transform <$> arbitrary <*> decayArbitrary 2
+        , transform <$> arbitraryInvertibleM33 <*> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
     where
@@ -149,7 +150,7 @@ instance Arbitrary SymbolicObj3 where
     else oneof $
         [ rotate3    <$> arbitrary        <*> decayArbitrary 2
         , rotate3V   <$> arbitrary        <*> arbitrary        <*> decayArbitrary 2
-        , transform3 <$> arbitrary        <*> decayArbitrary 2
+        , transform3 <$> arbitraryInvertibleM44 <*> decayArbitrary 2
         , extrude    <$> decayArbitrary 2 <*> arbitraryPos
         , Shared3    <$> arbitrary
         ] <> small
@@ -315,6 +316,35 @@ arbitraryNonZeroV
      )
   => Gen (f a)
 arbitraryNonZeroV = fmap getNonZero <$> arbitrary
+
+-- | Generate arbitrary invertible 3x3 matrix, representing
+-- affine transformation matrix in 2D space. The last vector is fixed
+-- to @V3 0 0 1@ so it doesn't result in NaNs when normalized from
+-- homogeneous coordinates.
+--
+-- Inspired by InvertibleM33 from linear-tests package
+-- https://github.com/minimapletinytools/linear-tests/blob/master/src/Linear/Matrix/Arbitrary.hs
+arbitraryInvertibleM33
+  :: ( Arbitrary a
+     , Epsilon a
+     )
+  => Gen (M33 a)
+arbitraryInvertibleM33 =
+  (V3 <$> arbitrary <*> arbitrary <*> pure (V3 0 0 1))
+    `suchThat` (not . nearZero . det33)
+
+-- | Generate arbitrary invertible 4x4 matrix, representing
+-- affine transformation matrix in 3D space. The last vector is fixed
+-- to @V4 0 0 0 1@ so it doesn't result in NaNs when normalized from
+-- homogeneous coordinates.
+arbitraryInvertibleM44
+  :: ( Arbitrary a
+     , Epsilon a
+     )
+  => Gen (M44 a)
+arbitraryInvertibleM44 =
+  (V4 <$> arbitrary <*> arbitrary <*> arbitrary <*> pure (V4 0 0 0 1))
+    `suchThat` (not . nearZero . det44)
 
 -- | Split the complexity budget by a factor of @n@.
 decayArbitrary :: Arbitrary a => Int -> Gen a
