@@ -49,7 +49,6 @@ import Prelude
   , ($)
   , (&&)
   , (<$>)
-  , pi
   )
 
 import Graphics.Implicit.Definitions
@@ -278,7 +277,12 @@ canon2 (Square v) | hasZeroComponent v = emptySpace
 canon2 (Circle 0) = emptySpace
 canon2 (Polygon ps) | length ps < 3 = emptySpace
 canon2 (Rotate2 0 o) = o
-canon2 (Rotate2 θ o) | θ == (2*pi) = o
+-- TOOD(srk): this "fixes" (more like hides) the problem
+-- with polygon under rotation described in #449
+-- so we keep it disabled for now
+-- needs import Data.Fixed (mod') and Prelude (pi)
+-- canon2 (Rotate2 θ o) | θ `mod'` (2*pi) == 0 = o
+
 -- ignore if zeroes, TODO(srk): produce warning
 -- TODO(srk): produce warning and ignore if we get a non-invertible matrix
 canon2 (Transform2
