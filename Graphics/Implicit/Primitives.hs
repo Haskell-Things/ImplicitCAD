@@ -294,8 +294,6 @@ mirror
     => f a  -- ^ Vector defining the hyperplane
     -> obj  -- ^ Object to mirror
     -> obj  -- ^ Resulting object
-mirror _ s@(Shared Empty) = s
-mirror _ s@(Shared Full) = s
 mirror v s = Shared $ Mirror v s
 
 -- | Outset of an object.
@@ -304,10 +302,6 @@ outset
     => ℝ     -- ^ distance to outset
     -> obj   -- ^ object to outset
     -> obj   -- ^ resulting object
-outset 0 s = s
-outset _ s@(Shared Empty) = s
-outset _ s@(Shared Full) = s
-outset v1 (Shared (Outset v2 s)) = outset (v1 + v2) s
 outset v s = Shared $ Outset v s
 
 -- | Make a shell of an object.
@@ -316,8 +310,6 @@ shell
     => ℝ     -- ^ width of shell
     -> obj   -- ^ object to take shell of
     -> obj   -- ^ resulting shell
-shell _ s@(Shared Empty) = s
-shell _ s@(Shared Full) = s
 shell v s = Shared $ Shell v s
 
 -- | Rounded union
@@ -326,8 +318,6 @@ unionR
     => ℝ      -- ^ The radius (in mm) of rounding
     -> [obj]  -- ^ objects to union
     -> obj    -- ^ Resulting object
-unionR _ [] = Shared Empty
-unionR _ [s] = s
 unionR r ss = Shared $ UnionR r ss
 
 -- | Rounded difference
@@ -337,8 +327,6 @@ differenceR
     -> obj   -- ^ Base object
     -> [obj] -- ^ Objects to subtract from the base
     -> obj   -- ^ Resulting object
-differenceR _ s [] = s
-differenceR _ s@(Shared Empty) _ = s
 differenceR r s ss = Shared $ DifferenceR r s ss
 {-# INLINABLE differenceR #-}
 
@@ -348,8 +336,6 @@ intersectR
     => ℝ     -- ^ The radius (in mm) of rounding
     -> [obj] -- ^ Objects to intersect
     -> obj   -- ^ Resulting object
-intersectR _ [] = Shared Full
-intersectR _ [s] = s
 intersectR r ss = Shared $ IntersectR r ss
 
 implicit
