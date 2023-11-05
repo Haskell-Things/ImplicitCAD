@@ -25,6 +25,7 @@ import PropertySpec (propSpec)
 
 import qualified GoldenSpec.Spec as Golden
 import qualified ImplicitSpec as Implicit
+import qualified RewriteSpec as Rewrite
 import qualified TesselationSpec as Tesselation
 
 main :: IO ()
@@ -45,4 +46,5 @@ main = hspec $ do
 
   Implicit.spec
   Tesselation.spec
+  Rewrite.spec
 

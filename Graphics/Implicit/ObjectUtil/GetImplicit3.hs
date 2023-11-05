@@ -9,7 +9,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn, SharedObj(Empty), hasZeroComponent )
+    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
@@ -17,26 +17,20 @@ import qualified Data.Either as Either (either)
 
 -- Use getImplicit for handling extrusion of 2D shapes to 3D.
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
-import Linear (V2(V2), V3(V3), V4(V4))
+import Linear (V2(V2), V3(V3))
 import qualified Linear
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives (getImplicit)
 
 default (ℝ)
 
-getEmptySpace :: ObjectContext -> V3 ℝ -> ℝ
-getEmptySpace c = getImplicitShared c (Empty :: SharedObj SymbolicObj3 V3 ℝ)
-
 -- Get a function that describes the surface of the object.
 getImplicit3 :: ObjectContext -> SymbolicObj3 -> Obj3
 -- Primitives
-getImplicit3 ctx (Cube vec) | hasZeroComponent vec = getEmptySpace ctx
 getImplicit3 ctx (Cube (V3 dx dy dz)) =
     \(V3 x y z) -> rmaximum (objectRounding ctx) [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
-getImplicit3 c (Sphere 0) = getEmptySpace c
 getImplicit3 _ (Sphere r) =
     \(V3 x y z) -> sqrt (x*x + y*y + z*z) - r
-getImplicit3 c (Cylinder 0 _ _) = getEmptySpace c
 getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
     let
         d = sqrt (x*x + y*y) - ((r2-r1)/h*z+r1)
@@ -46,15 +40,6 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
 -- Simple transforms
 getImplicit3 ctx (Rotate3 q symbObj) =
     getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)
--- ignore if zeroes, TODO(srk): produce warning
--- TODO(srk): produce warning and ignore if we get a non-invertible matrix
-getImplicit3 ctx (Transform3
-                   (V4 (V4 x _ _ _)
-                       (V4 _ y _ _)
-                       (V4 _ _ z _)
-                       (V4 _ _ _ _)
-                   )
-                   symbObj) | hasZeroComponent (V3 x y z) = getImplicit3 ctx symbObj
 getImplicit3 ctx (Transform3 m symbObj) =
     getImplicit3 ctx symbObj . Linear.normalizePoint . (Linear.inv44 m Linear.!*) . Linear.point
 -- 2D Based

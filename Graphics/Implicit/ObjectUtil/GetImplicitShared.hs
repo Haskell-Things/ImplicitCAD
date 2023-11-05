@@ -15,7 +15,7 @@ import {-# SOURCE #-} Graphics.Implicit.Primitives (Object(getImplicit'))
 import Prelude (flip, (-), (*), (>), (<), (&&), (/), product, abs, (**), fmap, (.), negate, ($), const)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj, WithRounding), ComponentWiseMultable((⋯/)), ℝ, minℝ, hasZeroComponent, hasNaNComponent )
+    ( objectRounding, ObjectContext, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Shell, Outset, EmbedBoxedObj, WithRounding), ComponentWiseMultable((⋯/)), ℝ, minℝ )
 
 import Graphics.Implicit.MathUtil (infty, rmax, rmaximum, rminimum, reflect)
 
@@ -75,10 +75,6 @@ getImplicitShared ctx (DifferenceR r symbObj symbObjs) =
 -- Simple transforms
 getImplicitShared ctx (Translate v symbObj) = \p ->
   getImplicit' ctx symbObj (p - v)
--- ignore if zeroes, TODO(srk): produce warning
-getImplicitShared ctx (Scale s symbObj) | hasZeroComponent s = getImplicit' ctx symbObj
--- ignore if NaNs, TODO(srk): produce warning
-getImplicitShared ctx (Scale s symbObj) | hasNaNComponent s = getImplicit' ctx symbObj
 getImplicitShared ctx (Scale s symbObj) = \p ->
   normalize s * getImplicit' ctx symbObj (p ⋯/ s)
 getImplicitShared ctx (Mirror v symbObj) =

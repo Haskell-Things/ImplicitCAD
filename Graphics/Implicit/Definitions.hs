@@ -73,7 +73,6 @@ module Graphics.Implicit.Definitions (
     isScaleID,
     quaternionToEuler,
     hasZeroComponent,
-    hasNaNComponent,
     )
 where
 
@@ -436,10 +435,3 @@ hasZeroComponent
     => f a
     -> Bool
 hasZeroComponent =  or . fmap (==0)
-
--- | Returns True if any component of a foldable functor is zero
-hasNaNComponent
-    :: (Foldable f, Functor f, RealFloat a)
-    => f a
-    -> Bool
-hasNaNComponent = or . fmap isNaN

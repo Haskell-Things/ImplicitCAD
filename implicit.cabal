@@ -98,6 +98,7 @@ Library
 
     Exposed-modules:
                     Graphics.Implicit
+                    Graphics.Implicit.Canon
                     Graphics.Implicit.Definitions
                     Graphics.Implicit.Primitives
                     Graphics.Implicit.Export

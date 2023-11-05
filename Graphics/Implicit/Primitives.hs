@@ -51,11 +51,11 @@ module Graphics.Implicit.Primitives (
                                      withRounding,
                                      _Shared,
                                      pattern Shared,
-                                     Object(Space)
-                                    ) where
+                                     Object(Space, canonicalize)) where
 
-import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
 
+import Graphics.Implicit.Canon (canonicalize2, canonicalize3)
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
                                                 Full,
@@ -221,6 +221,10 @@ class ( Applicative f
         -> obj         -- ^ Object to get implicit function of
         -> (f a -> a)  -- ^ Implicit function
 
+    -- | Canonicalization function used to rewrite / normalize
+    -- abstract syntax tree representing an object
+    canonicalize :: obj -> obj
+
 -- | Get the implicit function for an object
 getImplicit
     :: Object obj f a
@@ -240,10 +244,6 @@ translate
     => f a  -- ^ Vector to translate by
     -> obj  -- ^ Object to translate
     -> obj  -- ^ Resulting object
-translate 0 s = s
-translate _ s@(Shared Empty) = s
-translate _ s@(Shared Full) = s
-translate v1 (Shared (Translate v2 s)) = translate (v1 + v2) s
 translate v s = Shared $ Translate v s
 
 -- | Scale an object
@@ -252,8 +252,6 @@ scale
     => f a  -- ^ Amount to scale by
     -> obj  -- ^ Object to scale
     -> obj  -- ^ Resulting scaled object
-scale 1 s = s
-scale _ s@(Shared Empty) = s
 scale v s = Shared $ Scale v s
 
 -- | Complement an Object
@@ -366,16 +364,18 @@ instance Object SymbolicObj2 V2 ℝ where
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
     _         -> Nothing
-  getBox       = getBox2
-  getImplicit' = getImplicit2
+  getBox       = getBox2 . canonicalize
+  getImplicit' ctx = getImplicit2 ctx . canonicalize
+  canonicalize = canonicalize2
 
 instance Object SymbolicObj3 V3 ℝ where
   type Space SymbolicObj3 = V3
   _Shared = prism' Shared3 $ \case
     Shared3 x -> Just x
     _         -> Nothing
-  getBox       = getBox3
-  getImplicit' = getImplicit3
+  getBox       = getBox3 . canonicalize
+  getImplicit' ctx = getImplicit3 ctx . canonicalize
+  canonicalize = canonicalize3
 
 union :: Object obj f a => [obj] -> obj
 union = unionR 0
@@ -413,9 +413,7 @@ rotateExtrude
     -> Either ℝ  (ℝ -> ℝ )  -- ^ rotate
     -> SymbolicObj2         -- ^ object to extrude
     -> SymbolicObj3
-rotateExtrude 0 _ _ _ = emptySpace
-rotateExtrude _ _ _ (Shared Empty) = emptySpace
-rotateExtrude theta t r obj = RotateExtrude theta t r obj
+rotateExtrude = RotateExtrude
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
@@ -423,7 +421,6 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
-rotate3 0 = id
 rotate3 (V3 pitch roll yaw)
   = Rotate3
   $ axisAngle (V3 0 0 1) yaw
@@ -442,7 +439,6 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
-rotate3V 0 _ = id
 rotate3V w xyz = Rotate3 $ axisAngle xyz w
 
 -- | Transform a 3D object using a 4x4 matrix representing affine transformation

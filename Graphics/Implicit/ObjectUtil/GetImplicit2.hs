@@ -11,7 +11,7 @@ module Graphics.Implicit.ObjectUtil.GetImplicit2 (getImplicit2) where
 import Prelude(cycle, (/=), uncurry, fst, Eq, zip, drop, abs, (-), (/), sqrt, (*), (+), length, fmap, (<=), (&&), (>=), (||), odd, ($), (>), filter, (<), minimum, (.), sin, cos)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ, hasZeroComponent )
+    ( objectRounding, ObjectContext, SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2), SharedObj (Empty), Obj2, ℝ2, ℝ )
 
 import Graphics.Implicit.MathUtil
     ( distFromLineSeg, rmaximum )
@@ -35,15 +35,10 @@ scanUniqueCircular
 circularPairs :: [a] -> [(a,a)]
 circularPairs as = zip as $ drop 1 $ cycle as
 
-getEmptySpace :: ObjectContext -> V2 ℝ -> ℝ
-getEmptySpace c = getImplicitShared c (Empty :: SharedObj SymbolicObj2 V2 ℝ)
-
 getImplicit2 :: ObjectContext -> SymbolicObj2 -> Obj2
 -- Primitives
-getImplicit2 ctx (Square vec) | hasZeroComponent vec = getEmptySpace ctx
 getImplicit2 ctx (Square (V2 dx dy)) =
     \(V2 x y) -> rmaximum (objectRounding ctx) [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2]
-getImplicit2 c (Circle 0) = getEmptySpace c
 getImplicit2 _ (Circle r) =
     \(V2 x y) -> sqrt (x * x + y * y) - r
 -- FIXME: stop ignoring rounding for polygons.
@@ -70,14 +65,6 @@ getImplicit2 ctx (Rotate2 θ symbObj) =
         obj = getImplicit2 ctx symbObj
     in
         obj $ V2 (x*cos θ + y*sin θ) (y*cos θ - x*sin θ)
--- ignore if zeroes, TODO(srk): produce warning
--- TODO(srk): produce warning and ignore if we get a non-invertible matrix
-getImplicit2 ctx (Transform2
-                   (V3 (V3 x _ _)
-                       (V3 _ y _)
-                       (V3 _ _ _)
-                   )
-                   symbObj) | hasZeroComponent (V2 x y) = getImplicit2 ctx symbObj
 getImplicit2 ctx (Transform2 m symbObj) =
     \vin ->
     let
