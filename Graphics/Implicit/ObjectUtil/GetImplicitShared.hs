@@ -51,12 +51,8 @@ getImplicitShared _ Empty = const infty
 getImplicitShared _ Full = const $ -infty
 getImplicitShared ctx (Complement symbObj) =
   negate . getImplicit' ctx symbObj
-getImplicitShared ctx (UnionR _ []) =
-  getImplicitShared @obj ctx Empty
 getImplicitShared ctx (UnionR r symbObjs) = \p ->
   rminimum r $ fmap (flip (getImplicit' ctx) p) symbObjs
-getImplicitShared ctx (IntersectR _ []) =
-  getImplicitShared @obj ctx Empty
 getImplicitShared ctx (IntersectR r symbObjs) = \p ->
   rmaximum r $ fmap (flip (getImplicit' ctx) p) symbObjs
 getImplicitShared ctx (DifferenceR _ symbObj []) =
