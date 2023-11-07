@@ -9,6 +9,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -- A module exporting all of the primitives, and some operations on them.
 module Graphics.Implicit.Primitives (
@@ -50,11 +51,11 @@ module Graphics.Implicit.Primitives (
                                      withRounding,
                                      _Shared,
                                      pattern Shared,
-                                     Object
-                                    ) where
+                                     Object(Space, canonicalize)) where
 
-import Prelude(Applicative, Eq, Num, abs, (<), otherwise, id, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
 
+import Graphics.Implicit.Canon (canonicalize2, canonicalize3)
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       SharedObj(Empty,
                                                 Full,
@@ -98,13 +99,13 @@ import Graphics.Implicit.MathUtil   (pack)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Linear (M33, M44, V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
+import Data.Kind (Type)
 
 -- $ 3D Primitives
 
 sphere ::
     ℝ                  -- ^ Radius of the sphere
     -> SymbolicObj3    -- ^ Resulting sphere
-
 sphere = Sphere
 
 -- | A rectangular prism
@@ -112,7 +113,6 @@ rect3
     :: ℝ3             -- ^ Bottom.. corner
     -> ℝ3             -- ^ Top right... corner
     -> SymbolicObj3   -- ^ Resuting cube
-
 rect3 xyz1 xyz2 = translate xyz1 $ Cube $ xyz2 - xyz1
 
 -- | A cube
@@ -130,8 +130,6 @@ cylinder2 ::
     -> ℝ                -- ^ Second radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-
-cylinder2 _ _ 0 = emptySpace  -- necessary to prevent a NaN
 cylinder2 r1 r2 h
   | h < 0 = mirror (V3 0 0 1) $ cylinder2 r1 r2 (abs h)
   | otherwise = Cylinder h r1 r2
@@ -140,14 +138,13 @@ cylinder ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-
 cylinder r = cylinder2 r r
 
 cone ::
     ℝ                   -- ^ Radius of the cylinder
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
-cone r h = cylinder2 0 r h
+cone = cylinder2 0
 
 torus :: ℝ -> ℝ -> SymbolicObj3 -- Major radius, minor radius
 torus r1 r2 = implicit
@@ -166,7 +163,6 @@ ellipsoid a b c = implicit
 circle ::
     ℝ               -- ^ radius of the circle
     -> SymbolicObj2 -- ^ resulting circle
-
 circle   = Circle
 
 -- | A rectangle
@@ -174,7 +170,6 @@ rect
     :: ℝ2           -- ^ Bottom left corner
     -> ℝ2           -- ^ Top right corner
     -> SymbolicObj2 -- ^ Resulting square
-
 rect xy1 xy2 = translate xy1 $ Square $ xy2 - xy1
 
 -- | A square
@@ -189,7 +184,6 @@ square True  size = translate (fmap (negate . (/ 2)) size) $ Square size
 polygon
     :: [ℝ2]          -- ^ Verticies of the polygon
     -> SymbolicObj2  -- ^ Resulting polygon
-
 polygon = Polygon
 
 -- $ Shared Operations
@@ -202,10 +196,16 @@ polygon = Polygon
 class ( Applicative f
       , Eq a
       , Eq (f a)
+      , Foldable f
       , Num a
       , Num (f a))
       => Object obj f a | obj -> f a
       where
+
+    -- | Type representing a space this object belongs to.
+    -- V3 for 3D objects, V2 for 2D
+    type Space obj :: Type -> Type
+
     -- | A 'Prism'' for including 'SharedObj's in @obj@. Prefer using 'Shared'
     -- instead of this.
     _Shared :: Prism' obj (SharedObj obj f a)
@@ -220,6 +220,10 @@ class ( Applicative f
         :: ObjectContext
         -> obj         -- ^ Object to get implicit function of
         -> (f a -> a)  -- ^ Implicit function
+
+    -- | Canonicalization function used to rewrite / normalize
+    -- abstract syntax tree representing an object
+    canonicalize :: obj -> obj
 
 -- | Get the implicit function for an object
 getImplicit
@@ -240,10 +244,6 @@ translate
     => f a  -- ^ Vector to translate by
     -> obj  -- ^ Object to translate
     -> obj  -- ^ Resulting object
-translate 0 s = s
-translate _ s@(Shared Empty) = s
-translate _ s@(Shared Full) = s
-translate v1 (Shared (Translate v2 s)) = translate (v1 + v2) s
 translate v s = Shared $ Translate v s
 
 -- | Scale an object
@@ -252,9 +252,6 @@ scale
     => f a  -- ^ Amount to scale by
     -> obj  -- ^ Object to scale
     -> obj  -- ^ Resulting scaled object
-scale 1 s = s
-scale _ s@(Shared Empty) = s
-scale v1 (Shared (Scale v2 s)) = scale (v1 * v2) s
 scale v s = Shared $ Scale v s
 
 -- | Complement an Object
@@ -288,7 +285,6 @@ fullSpace = Shared Full
 -- the current object-rounding value set in 3D will not apply to extruded 2D
 -- shapes.
 withRounding :: Object obj f a => ℝ -> obj -> obj
-withRounding 0 = id
 withRounding r = Shared . WithRounding r
 
 -- | Mirror an object across the hyperplane whose normal is a given
@@ -298,8 +294,6 @@ mirror
     => f a  -- ^ Vector defining the hyperplane
     -> obj  -- ^ Object to mirror
     -> obj  -- ^ Resulting object
-mirror _ s@(Shared Empty) = s
-mirror _ s@(Shared Full) = s
 mirror v s = Shared $ Mirror v s
 
 -- | Outset of an object.
@@ -308,10 +302,6 @@ outset
     => ℝ     -- ^ distance to outset
     -> obj   -- ^ object to outset
     -> obj   -- ^ resulting object
-outset 0 s = s
-outset _ s@(Shared Empty) = s
-outset _ s@(Shared Full) = s
-outset v1 (Shared (Outset v2 s)) = outset (v1 + v2) s
 outset v s = Shared $ Outset v s
 
 -- | Make a shell of an object.
@@ -320,8 +310,6 @@ shell
     => ℝ     -- ^ width of shell
     -> obj   -- ^ object to take shell of
     -> obj   -- ^ resulting shell
-shell _ s@(Shared Empty) = s
-shell _ s@(Shared Full) = s
 shell v s = Shared $ Shell v s
 
 -- | Rounded union
@@ -330,8 +318,6 @@ unionR
     => ℝ      -- ^ The radius (in mm) of rounding
     -> [obj]  -- ^ objects to union
     -> obj    -- ^ Resulting object
-unionR _ [] = Shared Empty
-unionR _ [s] = s
 unionR r ss = Shared $ UnionR r ss
 
 -- | Rounded difference
@@ -341,8 +327,6 @@ differenceR
     -> obj   -- ^ Base object
     -> [obj] -- ^ Objects to subtract from the base
     -> obj   -- ^ Resulting object
-differenceR _ s [] = s
-differenceR _ s@(Shared Empty) _ = s
 differenceR r s ss = Shared $ DifferenceR r s ss
 {-# INLINABLE differenceR #-}
 
@@ -352,8 +336,6 @@ intersectR
     => ℝ     -- ^ The radius (in mm) of rounding
     -> [obj] -- ^ Objects to intersect
     -> obj   -- ^ Resulting object
-intersectR _ [] = Shared Full
-intersectR _ [s] = s
 intersectR r ss = Shared $ IntersectR r ss
 
 implicit
@@ -364,18 +346,22 @@ implicit
 implicit a b = Shared $ EmbedBoxedObj (a, b)
 
 instance Object SymbolicObj2 V2 ℝ where
+  type Space SymbolicObj2 = V2
   _Shared = prism' Shared2 $ \case
     Shared2 x -> Just x
     _         -> Nothing
-  getBox       = getBox2
-  getImplicit' = getImplicit2
+  getBox       = getBox2 . canonicalize
+  getImplicit' ctx = getImplicit2 ctx . canonicalize
+  canonicalize = canonicalize2
 
 instance Object SymbolicObj3 V3 ℝ where
+  type Space SymbolicObj3 = V3
   _Shared = prism' Shared3 $ \case
     Shared3 x -> Just x
     _         -> Nothing
-  getBox       = getBox3
-  getImplicit' = getImplicit3
+  getBox       = getBox3 . canonicalize
+  getImplicit' ctx = getImplicit3 ctx . canonicalize
+  canonicalize = canonicalize3
 
 union :: Object obj f a => [obj] -> obj
 union = unionR 0
@@ -413,9 +399,7 @@ rotateExtrude
     -> Either ℝ  (ℝ -> ℝ )  -- ^ rotate
     -> SymbolicObj2         -- ^ object to extrude
     -> SymbolicObj3
-rotateExtrude 0 _ _ _ = emptySpace
-rotateExtrude _ _ _ (Shared Empty) = emptySpace
-rotateExtrude theta t r obj = RotateExtrude theta t r obj
+rotateExtrude = RotateExtrude
 
 extrudeOnEdgeOf :: SymbolicObj2 -> SymbolicObj2 -> SymbolicObj3
 extrudeOnEdgeOf = ExtrudeOnEdgeOf
@@ -423,7 +407,6 @@ extrudeOnEdgeOf = ExtrudeOnEdgeOf
 -- | Rotate a 3D object via an Euler angle, measured in radians, along the
 -- world axis.
 rotate3 :: ℝ3 -> SymbolicObj3 -> SymbolicObj3
-rotate3 0 = id
 rotate3 (V3 pitch roll yaw)
   = Rotate3
   $ axisAngle (V3 0 0 1) yaw
@@ -442,7 +425,6 @@ rotate3V
     -> ℝ3  -- ^ Axis of rotation
     -> SymbolicObj3
     -> SymbolicObj3
-rotate3V 0 _ = id
 rotate3V w xyz = Rotate3 $ axisAngle xyz w
 
 -- | Transform a 3D object using a 4x4 matrix representing affine transformation

@@ -184,7 +184,7 @@ run rawargs = do
     let res = fromMaybe (estimateResolution s) (resolution args)
         basename = fst (splitExtension $ inputFile args)
         -- If we don't know the format -- it will be 2D/3D default (stl)
-        posDefExt = fromMaybe "stl" (formatExtension <$> format)
+        posDefExt = maybe "stl" formatExtension format
 
     case (obj2s, obj3s) of
       ([], obj:objs) -> do

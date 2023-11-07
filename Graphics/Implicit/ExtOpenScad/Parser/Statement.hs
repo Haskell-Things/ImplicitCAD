@@ -85,6 +85,7 @@ computation A2 =
 --
 --  We consider it to be a list of computables which
 --  are in turn StatementI s.
+{-# ANN suite "HLint: ignore Functor law" #-}
 suite :: GenParser Char st [StatementI]
 suite = (
     removeNoOps . (:[]) <$> computation A1

@@ -9,7 +9,7 @@
 module ImplicitSpec (spec) where
 
 import Prelude (Fractional, fmap, pure, negate, (+),  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
-import Test.Hspec (describe, Spec)
+import Test.Hspec (describe, parallel, Spec)
 import Graphics.Implicit
     ( difference,
       rotate,
@@ -27,26 +27,26 @@ import Graphics.Implicit
       differenceR,
       translate,
       withRounding,
+      unionR,
+      intersectR,
+      extrude,
+      cylinder2,
+      mirror,
       Object )
 import Graphics.Implicit.Primitives (rotateQ)
-import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll)
+import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll, NonZero)
 import Data.Foldable ( for_ )
 import Test.Hspec.QuickCheck (prop)
 import Linear (V2(V2), V3(V3), V4(V4), (^*))
 import qualified Linear
-import Graphics.Implicit (unionR)
-import Graphics.Implicit (intersectR)
-import Graphics.Implicit (extrude)
-import Graphics.Implicit (cylinder2)
-import Graphics.Implicit (mirror)
-import Graphics.Implicit.Test.Instances (Observe, (=~=))
+import Graphics.Implicit.Test.Instances (Observe, (=~=), arbitraryNonZeroV)
 
 ------------------------------------------------------------------------------
 -- Tests showing equivalencies between algebraic formulations of symbolic
 -- objects, in both 2d and 3d. Equality is observational, based on random
 -- sampling of the underlying 'getImplicit' function.
 spec :: Spec
-spec = do
+spec = parallel $ do
   describe "symbolic obj 2" $ do
     idempotenceSpec  @SymbolicObj2
     identitySpec     @SymbolicObj2
@@ -81,6 +81,7 @@ type TestInfrastructure obj f a test outcome =
   , Show (f a)
   , Arbitrary obj
   , Arbitrary (f a)
+  , Arbitrary (f (NonZero a))
   , Fractional (f a)
   )
 
@@ -139,7 +140,7 @@ inverseSpec = describe "inverses" $ do
       =~= id
 
   prop "scale inverse" $
-    forAll (arbitrary `suchThat` (/= 0)) $ \xyz ->
+    forAll arbitraryNonZeroV $ \xyz ->
       scale @obj xyz . scale (1 / xyz)
       =~= id
 
@@ -248,7 +249,7 @@ transform3dSpec = describe "3d transform" $ do
     =~= translate tr . rotateQ quat
 
   prop "scale"
-    $ forAll (arbitrary `suchThat` (/= 0)) $ \s@(V3 x y z) ->
+    $ forAll arbitraryNonZeroV $ \s@(V3 x y z) ->
     transform3
       (V4 (V4 x 0 0 0)
           (V4 0 y 0 0)
@@ -323,9 +324,11 @@ homomorphismSpec = describe "homomorphism" $ do
     translate @obj xyz2 . translate xyz1
       =~= translate (xyz1 + xyz2)
 
-  prop "scale" $ \xyz1 xyz2 ->
-    scale @obj xyz2 . scale xyz1
-      =~= scale (xyz1 * xyz2)
+  prop "scale" $
+    forAll arbitraryNonZeroV $ \xyz1 ->
+      forAll arbitraryNonZeroV $ \xyz2 ->
+        scale @obj xyz2 . scale xyz1
+          =~= scale (xyz1 * xyz2)
 
   prop "withRounding/unionR" $ \r_obj r_combo ->
     withRounding @obj r_obj . unionR r_combo

@@ -1,4 +1,8 @@
 flags: +implicitsnap
 
 package implicit
-  ghc-options: -fspecialise-aggressively -Werror
+  ghc-options:
+    -fspecialise-aggressively
+    -Wunused-packages
+    -Wno-all-missed-specialisations
+    -Werror

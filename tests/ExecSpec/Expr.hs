@@ -6,7 +6,7 @@
 module ExecSpec.Expr (exprExec) where
 
 -- Be explicit about what we import.
-import Prelude (($), (==), length, Bool (False), (<=), (&&), (<>), show)
+import Prelude (($), (==), length, null, Bool (False), (<=), (&&), (<>), show)
 
 -- Hspec, for writing specs.
 import Test.Hspec (describe, Spec, it, shouldSatisfy, expectationFailure)
@@ -68,7 +68,7 @@ exprExec = do
       case runExpr "rands(1,2,0)" False of
         (OIO m, _) -> do
           OList l <- m
-          shouldSatisfy l $ \l' -> length l' == 0
+          shouldSatisfy l $ \l' -> null l'
         _ -> expectationFailure "Not an OIO"
       case runExpr "rands(1,1,1)" False of
         (OIO m, _) -> do

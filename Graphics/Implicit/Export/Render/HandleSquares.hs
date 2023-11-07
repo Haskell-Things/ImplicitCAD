@@ -3,6 +3,8 @@
 -- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
+{-# LANGUAGE LambdaCase #-}
+
 module Graphics.Implicit.Export.Render.HandleSquares (mergedSquareTris) where
 
 import Prelude((+), foldMap, (<>), ($), fmap, concat, (.), (==), compare, error, otherwise, concatMap)
@@ -71,15 +73,33 @@ mergedSquareTris sqTris =
         squaresFromTris = [ Sq x y z q | Sq x y z q <- sqTris ]
 
         -- Collect squares that are on the same plane.
-        planeAligned = groupWith (\(Sq basis z _ _) -> (basis,z)) squaresFromTris
+        planeAligned = groupWith
+          (\case
+            (Sq basis z _ _) -> (basis,z)
+            (Tris _) -> error "Unexpected Tris"
+          ) squaresFromTris
+
         -- For each plane:
         -- Select for being the same range on X and then merge them on Y
         -- Then vice versa.
         joined :: [[TriSquare]]
         joined = fmap
-            ( concatMap joinXaligned . groupWith (\(Sq _ _ xS _) -> xS)
-            . concatMap joinYaligned . groupWith (\(Sq _ _ _ yS) -> yS)
-            . concatMap joinXaligned . groupWith (\(Sq _ _ xS _) -> xS))
+            ( concatMap joinXaligned . groupWith
+                (\case
+                  (Sq _ _ xS _) -> xS
+                  (Tris _) -> error "Unexpected Tris"
+                )
+            . concatMap joinYaligned . groupWith
+                (\case
+                  (Sq _ _ _ yS) -> yS
+                  (Tris _) -> error "Unexpected Tris"
+                )
+            . concatMap joinXaligned . groupWith
+                (\case
+                  (Sq _ _ xS _) -> xS
+                  (Tris _) -> error "Unexpected Tris"
+                )
+            )
             planeAligned
         -- Merge them back together, and we have the desired reult!
         finishedSquares = concat joined
@@ -94,7 +114,10 @@ joinXaligned :: [TriSquare] -> [TriSquare]
 joinXaligned quads@((Sq b z xS _):_) =
     let
         orderedQuads = sortBy
-            (\(Sq _ _ _ (V2 ya _)) (Sq _ _ _ (V2 yb _)) -> compare ya yb)
+            (\i j -> case (i, j) of
+                (Sq _ _ _ (V2 ya _), Sq _ _ _ (V2 yb _)) -> compare ya yb
+                _ -> error "Unexpected Tris"
+            )
             quads
         mergeAdjacent (pres@(Sq _ _ _ (V2 y1a y2a)) : next@(Sq _ _ _ (V2 y1b y2b)) : others)
           | y2a == y1b = mergeAdjacent (Sq b z xS (V2 y1a y2b) : others)
@@ -110,7 +133,10 @@ joinYaligned :: [TriSquare] -> [TriSquare]
 joinYaligned quads@((Sq b z _ yS):_) =
     let
         orderedQuads = sortBy
-            (\(Sq _ _ (V2 xa _) _) (Sq _ _ (V2 xb _) _) -> compare xa xb)
+            (\i j -> case (i, j) of
+                (Sq _ _ (V2 xa _) _, Sq _ _ (V2 xb _) _) -> compare xa xb
+                _ -> error "Unexpected Tris"
+            )
             quads
         mergeAdjacent (pres@(Sq _ _ (V2 x1a x2a) _) : next@(Sq _ _ (V2 x1b x2b) _) : others)
           | x2a == x1b = mergeAdjacent (Sq b z (V2 x1a x2b) yS : others)

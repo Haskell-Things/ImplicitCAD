@@ -554,8 +554,8 @@ rotateExtrude = moduleWithSuite "rotate_extrude" $ \_ children -> do
 -- This is a shim for scad, which expects this function to operate in degrees.
 rotateExtrudeDegrees
     :: ℝ                     -- Angle to sweep to (in degs)
-    -> (Either ℝ2 (ℝ -> ℝ2)) -- translate
-    -> (Either ℝ  (ℝ -> ℝ )) -- rotate
+    -> Either ℝ2 (ℝ -> ℝ2)   -- translate
+    -> Either ℝ  (ℝ -> ℝ )   -- rotate
     -> SymbolicObj2          -- object to extrude
     -> SymbolicObj3
 rotateExtrudeDegrees totalRot translateArg rotateArg =

@@ -52,7 +52,7 @@ rmax ::
     -> ℝ  -- ^ first number to round maximum
     -> ℝ  -- ^ second number to round maximum
     -> ℝ  -- ^ resulting number
-rmax r x y = if abs (x-y) < r && r /= 0
+rmax r x y = if r /= 0 && abs (x-y) < r
                 then y - r*sin(pi/4-asin((x-y)/r/sqrt 2)) + r
                 else max x y
 
@@ -64,7 +64,7 @@ rmin ::
     -> ℝ  -- ^ first number to round minimum
     -> ℝ  -- ^ second number to round minimum
     -> ℝ  -- ^ resulting number
-rmin r x y = if abs (x-y) < r && r /= 0
+rmin r x y = if r /= 0 && abs (x-y) < r
     then y + r*sin(pi/4+asin((x-y)/r/sqrt 2)) - r
     else min x y
 

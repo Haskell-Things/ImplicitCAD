@@ -41,7 +41,7 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
 getImplicit3 ctx (Rotate3 q symbObj) =
     getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)
 getImplicit3 ctx (Transform3 m symbObj) =
-    getImplicit3 ctx symbObj . Linear.normalizePoint . ((Linear.inv44 m) Linear.!*) . Linear.point
+    getImplicit3 ctx symbObj . Linear.normalizePoint . (Linear.inv44 m Linear.!*) . Linear.point
 -- 2D Based
 getImplicit3 ctx (Extrude symbObj h) =
     let

@@ -13,6 +13,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+-- required by makeWrapped
+{-# LANGUAGE TypeOperators #-}
 
 -- Definitions of the types used when modeling, and a few operators.
 module Graphics.Implicit.Definitions (
@@ -70,12 +72,13 @@ module Graphics.Implicit.Definitions (
     toScaleFn,
     isScaleID,
     quaternionToEuler,
+    hasZeroComponent,
     )
 where
 
 import GHC.Generics (Generic)
 
-import Prelude (Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), isNaN, (||))
+import Prelude (Foldable, Functor(fmap), (.), Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), or)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -259,7 +262,7 @@ instance (Show obj, Show (f a)) => Show (SharedObj obj f a) where
      Mirror vec obj          -> showCon "mirror"       @| vec @| obj
      Outset r obj            -> showCon "outset"       @| r   @| obj
      Shell r obj             -> showCon "shell"        @| r   @| obj
-     EmbedBoxedObj _         -> showCon "implicit"     @| Blackhole
+     EmbedBoxedObj (_, box)  -> showCon "implicit"     @| Blackhole @| box
      WithRounding r obj      -> showCon "withRounding" @| r   @| obj
 
 ------------------------------------------------------------------------------
@@ -304,7 +307,7 @@ instance Show SymbolicObj2 where
     Circle r         -> showCon "circle"     @| r
     Polygon ps       -> showCon "polygon"    @| ps
     Rotate2 v obj    -> showCon "rotate"     @| v     @| obj
-    Transform2 m obj -> showCon "transform2" @| m     @| obj
+    Transform2 m obj -> showCon "transform"  @| m     @| obj
     Shared2 obj   -> flip showsPrec obj
 
 -- | Semigroup under 'Graphic.Implicit.Primitives.union'.
@@ -355,7 +358,7 @@ instance Show SymbolicObj3 where
     Cylinder h r1 r2 ->
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
-    Transform3 m s -> showCon "transform3" @| show m @| s
+    Transform3 m s -> showCon "transform3" @| m @| s
     Extrude s d2 -> showCon "extrude" @| s @| d2
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
@@ -412,7 +415,7 @@ isScaleID _ = False
 -- | Convert a 'Quaternion' to its constituent euler angles.
 --
 -- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
-quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
+quaternionToEuler :: RealFloat a => Quaternion a -> V3 a
 quaternionToEuler (Quaternion w (V3 x y z))=
   let sinr_cosp = 2 * (w * x + y * z)
       cosr_cosp = 1 - 2 * (x * x + y * y)
@@ -424,5 +427,11 @@ quaternionToEuler (Quaternion w (V3 x y z))=
               else asin sinp
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
-   in (roll, pitch, yaw)
+   in V3 roll pitch yaw
 
+-- | Returns True if any component of a foldable functor is zero
+hasZeroComponent
+    :: (Foldable f, Functor f, Num a, Eq a)
+    => f a
+    -> Bool
+hasZeroComponent =  or . fmap (==0)

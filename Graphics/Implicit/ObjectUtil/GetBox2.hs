@@ -36,8 +36,8 @@ getBox2 (Rotate2 θ symbObj) =
      in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
 getBox2 (Transform2 m symbObj) =
     let box = getBox2 symbObj
-        augment (V2 x y) = (V3 x y 1)
-        normalize (V3 x y w) = (V2 (x/w) (y/w))
+        augment (V2 x y) = V3 x y 1
+        normalize (V3 x y w) = V2 (x/w) (y/w)
      in pointsBox $ normalize . (m Linear.!*) . augment <$> corners box
 getBox2 (Shared2 obj) = getBoxShared obj
 

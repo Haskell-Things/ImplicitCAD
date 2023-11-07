@@ -5,16 +5,26 @@
 
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE UndecidableInstances   #-}
 {-# LANGUAGE DefaultSignatures      #-}
 {-# LANGUAGE GADTs                  #-}
+{-# LANGUAGE TypeOperators          #-}
+-- type (~)
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE RecordWildCards #-}
+-- Polymorphic makeTestResult
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graphics.Implicit.Test.Instances (Observe, observe, (=~=)) where
+module Graphics.Implicit.Test.Instances (Observe, observe, (=~=), arbitraryNonZeroV) where
 
-import Prelude (abs, fmap, Bounded, Double, Enum, Show, Ord, Eq, (==), pure, Int, Double, (.), ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (Applicative, (.), not, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+#if MIN_VERSION_base(4,17,0)
+import Prelude (type(~))
+#endif
 
 import Graphics.Implicit
     ( square,
@@ -43,7 +53,7 @@ import Graphics.Implicit.Definitions
       SharedObj(Outset, Translate, Scale, UnionR, IntersectR,
                 DifferenceR, Shell, WithRounding) )
 
-import Graphics.Implicit.Primitives ( getImplicit )
+import Graphics.Implicit.Primitives ( getImplicit, Object(Space) )
 
 import qualified Test.QuickCheck
 import Test.QuickCheck
@@ -53,19 +63,60 @@ import Test.QuickCheck
       oneof,
       scale,
       sized,
+      suchThat,
       vectorOf,
       Gen,
       Positive(getPositive),
+      NonZero(getNonZero),
       Property)
 
-import Linear (V2(V2), V3(V3), V4(V4), Quaternion, axisAngle)
+import Linear (V2(V2), V3(V3), V4(V4), M33, det33, M44, det44, Epsilon, nearZero, Quaternion, axisAngle)
 
-data Insidedness = Inside | Outside | Surface
-  deriving (Eq, Ord, Show, Enum, Bounded)
+data Insidedness = Inside | Outside | Surface | NaNFail
+  deriving (Ord, Show, Enum, Bounded)
 
-insidedness :: Double -> Insidedness
+insidedness :: (RealFloat a) => a -> Insidedness
 insidedness 0 = Surface
-insidedness x = if x < 0 then Inside else Outside
+insidedness x | isNaN x = NaNFail
+insidedness x | x < 0 = Inside
+insidedness _ = Outside
+
+-- Explicitely allow matching the three cases
+-- so NaNFail never passes Eq (similar to an actual NaNs
+-- that are never equal)
+instance Eq Insidedness where
+  Inside == Inside = True
+  Outside == Outside = True
+  Surface == Surface = True
+  _ == _ = False
+
+data TestResult obj a = TestResult {
+    trInsidedness   :: Insidedness
+  , trSampledValue  :: a
+  , trSampledObject :: obj
+  , trSampledAt     :: (Space obj) a
+  }
+
+instance
+  ( Show obj
+  , Show a
+  , Show (Space obj a)
+  )
+  => Show (TestResult obj a)
+  where
+  show TestResult{..} = unlines
+    [ ""
+    , "TestResult:"
+    , "  | " <> show trInsidedness
+    , "  | " <> show trSampledObject
+    , "  | Sampled at " <> show trSampledAt <> " returns " <> show trSampledValue
+    ]
+
+instance Eq a => Eq (TestResult obj a) where
+  (==) ta tb = trInsidedness ta == trInsidedness tb
+
+instance Ord a => Ord (TestResult obj a) where
+  compare ta tb = trInsidedness ta `compare` trInsidedness tb
 
 ------------------------------------------------------------------------------
 instance Arbitrary SymbolicObj2 where
@@ -75,7 +126,7 @@ instance Arbitrary SymbolicObj2 where
     then oneof small
     else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
-        , transform <$> arbitrary <*> decayArbitrary 2
+        , transform <$> arbitraryInvertibleM33 <*> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
     where
@@ -84,7 +135,8 @@ instance Arbitrary SymbolicObj2 where
         , square  <$> arbitrary <*> arbitrary
         , polygon <$> do
             n <- choose (3, 10)
-            vectorOf n arbitrary
+            -- TODO(srk): this is a hack until #449 is solved
+            vectorOf n ((*100) <$> (V2 <$> arbitraryPos <*> arbitraryPos))
         , pure fullSpace
         , pure emptySpace
         ]
@@ -98,7 +150,7 @@ instance Arbitrary SymbolicObj3 where
     else oneof $
         [ rotate3    <$> arbitrary        <*> decayArbitrary 2
         , rotate3V   <$> arbitrary        <*> arbitrary        <*> decayArbitrary 2
-        , transform3 <$> arbitrary        <*> decayArbitrary 2
+        , transform3 <$> arbitraryInvertibleM44 <*> decayArbitrary 2
         , extrude    <$> decayArbitrary 2 <*> arbitraryPos
         , Shared3    <$> arbitrary
         ] <> small
@@ -182,17 +234,65 @@ instance Observe () Double Double
 a =~= b = Test.QuickCheck.property $ \test -> observe test a Test.QuickCheck.=== observe test b
 infix 4 =~=
 
+makeTestResult
+  :: forall obj f a
+   . ( RealFloat a
+     , Object obj f a
+     , Quantizable a
+     , f ~ Space obj
+     )
+  => obj
+  -> Space obj a
+  -> TestResult obj a
+makeTestResult obj sampleAt =
+  let
+    fun = getImplicit obj
+    sampledVal = quantize epsilon $ fun sampleAt
+  in
+    TestResult
+      { trInsidedness = insidedness sampledVal
+      , trSampledValue = sampledVal
+      , trSampledObject = obj
+      , trSampledAt = sampleAt
+      }
+
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj2's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ2, ()) Insidedness SymbolicObj2 where
-  observe p = insidedness . observe p . getImplicit
+instance Observe (ℝ2, ()) (TestResult SymbolicObj2 Double) SymbolicObj2 where
+  observe (sampledAt, _) obj = makeTestResult obj sampledAt
 
 ------------------------------------------------------------------------------
 -- | Two 'SymbolicObj3's are the same if their 'getImplicit' functions agree at
 -- all points (up to an error term of 'epsilon')
-instance Observe (ℝ3, ()) Insidedness SymbolicObj3 where
-  observe p = insidedness . observe p . getImplicit
+instance Observe (ℝ3, ()) (TestResult SymbolicObj3 Double) SymbolicObj3 where
+  observe (sampledAt, _) obj = makeTestResult obj sampledAt
+
+------------------------------------------------------------------------------
+-- | The number of decimal points we need to agree to assume two 'Double's are
+-- equal.
+epsilon :: Int
+epsilon = 10
+
+------------------------------------------------------------------------------
+-- | Types which can truncate their decimal points to a certain number of
+-- digits.
+class Quantizable a where
+  quantize
+      :: Int  -- ^ The number of decimal points to keep
+      -> a
+      -> a
+
+instance Quantizable a => Quantizable [a] where
+  quantize n = fmap (quantize n)
+
+instance Quantizable a => Quantizable (b -> a) where
+  quantize n = fmap (quantize n)
+
+instance Quantizable Double where
+  quantize n r =
+    let pow = 10 ^ n :: Double
+    in fromIntegral @Integer (round (r * pow)) / pow
 
 -- | Generate a small list of 'Arbitrary' elements, splitting the current
 -- complexity budget between all of them.
@@ -208,6 +308,43 @@ arbitraryPos = getPositive <$> arbitrary
 -- | Generate an arbitrary positive 'ℝ3'. Useful for sizes.
 arbitraryV3 :: Gen ℝ3
 arbitraryV3 = fmap abs <$> arbitrary
+
+-- | Generate arbitrary vector that has no zero components
+arbitraryNonZeroV
+  :: ( Arbitrary (f (NonZero a))
+     , Applicative f
+     )
+  => Gen (f a)
+arbitraryNonZeroV = fmap getNonZero <$> arbitrary
+
+-- | Generate arbitrary invertible 3x3 matrix, representing
+-- affine transformation matrix in 2D space. The last vector is fixed
+-- to @V3 0 0 1@ so it doesn't result in NaNs when normalized from
+-- homogeneous coordinates.
+--
+-- Inspired by InvertibleM33 from linear-tests package
+-- https://github.com/minimapletinytools/linear-tests/blob/master/src/Linear/Matrix/Arbitrary.hs
+arbitraryInvertibleM33
+  :: ( Arbitrary a
+     , Epsilon a
+     )
+  => Gen (M33 a)
+arbitraryInvertibleM33 =
+  (V3 <$> arbitrary <*> arbitrary <*> pure (V3 0 0 1))
+    `suchThat` (not . nearZero . det33)
+
+-- | Generate arbitrary invertible 4x4 matrix, representing
+-- affine transformation matrix in 3D space. The last vector is fixed
+-- to @V4 0 0 0 1@ so it doesn't result in NaNs when normalized from
+-- homogeneous coordinates.
+arbitraryInvertibleM44
+  :: ( Arbitrary a
+     , Epsilon a
+     )
+  => Gen (M44 a)
+arbitraryInvertibleM44 =
+  (V4 <$> arbitrary <*> arbitrary <*> arbitrary <*> pure (V4 0 0 0 1))
+    `suchThat` (not . nearZero . det44)
 
 -- | Split the complexity budget by a factor of @n@.
 decayArbitrary :: Arbitrary a => Int -> Gen a

@@ -4,8 +4,9 @@
 
 module GoldenSpec.Spec (spec) where
 
-import GoldenSpec.Util (golden, goldenAllFormats)
+import GoldenSpec.Util (golden, goldenAllFormats, goldenFormat2)
 import Graphics.Implicit
+import Graphics.Implicit.Export.OutputFormat (OutputFormat (PNG))
 import Prelude
 import Test.Hspec ( describe, Spec )
 import Graphics.Implicit.Primitives (torus, ellipsoid, cone)
@@ -194,3 +195,26 @@ spec = describe "golden tests" $ do
       (Left 0)
       (union [circle 10])
       $ Left 40
+
+  -- These two should be equal, but internally when sampled at (V2 (-1) 0)
+  -- the sign of the SDF differs yet they both get rendered correctly.
+  let funPoly = polygon [V2 0 0, V2 0 (-0.1), V2 (-2) 0, V2 0 (-1)]
+      rotFunPoly = rotate (2*pi) funPoly
+  --
+  -- > getImplicit funPoly (V2 (-1) 0)
+  -- -4.993761694389224e-2
+  -- > getBox funPoly
+  -- (V2 (-2.0) (-1.0),V2 0.0 0.0)
+  --
+  -- vs
+  --
+  -- > getImplicit rotFunPoly (V2 (-1) 0))
+  -- 4.9937616943891996e-2
+  -- > getBox rotFunPoly
+  -- (V2 (-2.0000000000000004) (-1.0),V2 0.0 4.898587196589413e-16)
+  --
+  -- TODO(srk): investigate, see also #449
+
+  describe "2d" $ do
+    goldenFormat2 PNG "troublesome-polygon" 1 funPoly
+    goldenFormat2 PNG "troublesome-polygon-under-rotation" 1 rotFunPoly
