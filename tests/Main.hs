@@ -32,17 +32,19 @@ main :: IO ()
 main = hspec $ do
   -- run the golden tests to ensure we haven't broken mesh generation
   describe "golden tests" Golden.spec
-  -- run tests against the expression parsing engine.
-  describe "expression parsing" exprSpec
-  -- and now, against the statement parsing engine.
-  describe "statements parsing" statementSpec
-  -- run tests against the expression execution engine. single statements.
-  describe "expression execution" exprExec
-  -- run tests against the evaluation engine, checking for messages.
-  describe "program execution" programExec
 
-  -- Generate data to be evaluated, and ensure the properties hold.
-  describe "property tests" propSpec
+  describe "extopenscad tests" $ do
+    -- run tests against the expression parsing engine.
+    describe "expression parsing" exprSpec
+    -- and now, against the statement parsing engine.
+    describe "statements parsing" statementSpec
+    -- run tests against the expression execution engine. single statements.
+    describe "expression execution" exprExec
+    -- run tests against the evaluation engine, checking for messages.
+    describe "program execution" programExec
+
+    -- Generate data to be evaluated, and ensure the properties hold.
+    describe "property tests" propSpec
 
   Implicit.spec
   Tesselation.spec
