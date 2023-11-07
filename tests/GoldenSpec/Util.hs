@@ -4,15 +4,16 @@
 
 module GoldenSpec.Util (golden, goldenAllFormats, goldenFormat, goldenFormat2) where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, unless)
 import Control.Monad.IO.Class (liftIO)
 import Graphics.Implicit (SymbolicObj2, SymbolicObj3)
 import Graphics.Implicit.Export (export2, export3)
 import Graphics.Implicit.Export.OutputFormat (OutputFormat (ASCIISTL), formats3D, formatExtension)
 import Prelude (IO, FilePath, Bool (True, False), String, Double, pure, (==), (>>=), (<>), ($), show)
-import System.Directory (getTemporaryDirectory, doesFileExist)
+import System.Directory (getTemporaryDirectory, doesFileExist, removeFile)
 import System.IO (hClose, openTempFile)
-import Test.Hspec (describe, it, shouldBe, SpecWith)
+import Test.Hspec (describe, it, SpecWith)
+import Test.HUnit (assertFailure)
 import Data.ByteString (readFile, writeFile)
 
 -- | Construct a golden test for rendering the given 'SymbolicObj3' at the
@@ -28,7 +29,7 @@ goldenAllFormats name resolution sym = do
     $ forM_ formats3D
     $ \fmt -> goldenFormat fmt name resolution sym
 
--- | Construct a golden test for rendering the given 'SymbolicObj3' at the
+-- | Construct a golden test for rendering the given 'SymbolicObj2|3' at the
 -- specified resolution. On the first run of this test, it will render the
 -- object and cache the results. Subsequent test runs will compare their result
 -- to the cached one. This is valuable for ensuring mesh generation doesn't
@@ -37,55 +38,64 @@ goldenAllFormats name resolution sym = do
 -- The objects are cached under @tests/golden/@, with the given name. Deleting
 -- this file is sufficient to update the test if changes in the mesh generation
 -- are intended.
-goldenFormat :: OutputFormat -> String -> Double -> SymbolicObj3 -> SpecWith ()
-goldenFormat fmt name resolution sym = it (name <> " (golden, format: " <> show fmt <> ")") $ do
-  (res, cached) <- liftIO $ do
-    temp_fp <- getTemporaryFilePath "golden"
+goldenFormat'
+  :: (   OutputFormat
+      -> Double
+      -> FilePath
+      -> a
+      -> IO ()
+     )
+  -> OutputFormat
+  -> String
+  -> Double
+  -> a
+  -> SpecWith ()
+goldenFormat' exportFn fmt name resolution sym = it (name <> " (golden, format: " <> show fmt <> ")") $ do
+  (okay, goldenFp, tempFp) <- liftIO $ do
+    tempFp <- getTemporaryFilePath "golden"
     -- Output the rendered mesh
-    export3 fmt resolution temp_fp sym
-    !res <- readFile temp_fp
-    let golden_fp = "./tests/golden/" <> name <> "." <> formatExtension fmt
+    exportFn fmt resolution tempFp sym
+    !res <- readFile tempFp
+    let goldenFp = "./tests/golden/" <> name <> "." <> formatExtension fmt
     -- Check if the cached results already exist.
-    doesFileExist golden_fp >>= \case
+    doesFileExist goldenFp >>= \case
       True  -> pure ()
       -- If not, save the mesh we just created in the cache.
-      False -> writeFile golden_fp res
-    !cached <- readFile golden_fp
-    pure (res, cached)
-  -- Finally, ceck if the two meshes are equal.
-  if res == cached
-    then pure ()
-    else False `shouldBe` True
+      False -> writeFile goldenFp res
+    !cached <- readFile goldenFp
+    -- Finally, ceck if the two meshes are equal.
+    if res == cached
+      then do
+        removeFile tempFp
+        pure (True, goldenFp, tempFp)
+      else
+        pure (False, goldenFp, tempFp)
 
--- | Construct a golden test for rendering the given 'SymbolicObj2' at the
--- specified resolution. On the first run of this test, it will render the
--- object and cache the results. Subsequent test runs will compare their result
--- to the cached one. This is valuable for ensuring mesh generation doesn't
--- break across commits.
---
--- The objects are cached under @tests/golden/@, with the given name. Deleting
--- this file is sufficient to update the test if changes in the mesh generation
--- are intended.
--- TODO(srk): polymorphic export would be nice, related to #446
-goldenFormat2 :: OutputFormat -> String -> Double -> SymbolicObj2 -> SpecWith ()
-goldenFormat2 fmt name resolution sym = it (name <> " (golden, format: " <> show fmt <> ")") $ do
-  (res, cached) <- liftIO $ do
-    temp_fp <- getTemporaryFilePath "golden"
-    -- Output the rendered mesh
-    export2 fmt resolution temp_fp sym
-    !res <- readFile temp_fp
-    let golden_fp = "./tests/golden/" <> name <> "." <> formatExtension fmt
-    -- Check if the cached results already exist.
-    doesFileExist golden_fp >>= \case
-      True  -> pure ()
-      -- If not, save the mesh we just created in the cache.
-      False -> writeFile golden_fp res
-    !cached <- readFile golden_fp
-    pure (res, cached)
-  -- Finally, ceck if the two meshes are equal.
-  if res == cached
-    then pure ()
-    else False `shouldBe` True
+  unless okay
+    $ assertFailure
+    $ "Object doesn't match its golden preimage,"
+    <> " temporary file preserved at "
+    <> tempFp
+    <> " compare with original at "
+    <> goldenFp
+
+-- | Test for @SymbolicObj3@
+goldenFormat
+  :: OutputFormat
+  -> String
+  -> Double
+  -> SymbolicObj3
+  -> SpecWith ()
+goldenFormat = goldenFormat' export3
+
+-- | Test for @SymbolicObj2@
+goldenFormat2
+  :: OutputFormat
+  -> String
+  -> Double
+  -> SymbolicObj2
+  -> SpecWith ()
+goldenFormat2 = goldenFormat' export2
 
 ------------------------------------------------------------------------------
 -- | Get a temporary filepath with the desired extension. On unix systems, this
@@ -101,4 +111,3 @@ getTemporaryFilePath ext = do
   (fp, h) <- openTempFile tempdir "implicit-golden"
   hClose h
   pure $ fp <> "." <> ext
-

@@ -218,6 +218,7 @@ Test-suite test-implicit
                   base,
                   bytestring,
                   hspec,
+                  HUnit,
                   implicit,
                   text,
                   parsec,
@@ -231,6 +232,7 @@ Test-suite test-implicit
                   ParserSpec.Expr
                   ParserSpec.Statement
                   ParserSpec.Util
+                  RewriteSpec
                   ExecSpec.Expr
                   ExecSpec.Util
                   MessageSpec.Message
