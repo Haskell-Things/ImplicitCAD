@@ -262,7 +262,7 @@ instance (Show obj, Show (f a)) => Show (SharedObj obj f a) where
      Mirror vec obj          -> showCon "mirror"       @| vec @| obj
      Outset r obj            -> showCon "outset"       @| r   @| obj
      Shell r obj             -> showCon "shell"        @| r   @| obj
-     EmbedBoxedObj _         -> showCon "implicit"     @| Blackhole
+     EmbedBoxedObj (_, box)  -> showCon "implicit"     @| Blackhole @| box
      WithRounding r obj      -> showCon "withRounding" @| r   @| obj
 
 ------------------------------------------------------------------------------
