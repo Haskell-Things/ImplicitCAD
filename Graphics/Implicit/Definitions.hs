@@ -78,7 +78,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Foldable, Functor(fmap), (.), Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), or)
+import Prelude (Foldable, Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), any)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -431,7 +431,7 @@ quaternionToEuler (Quaternion w (V3 x y z))=
 
 -- | Returns True if any component of a foldable functor is zero
 hasZeroComponent
-    :: (Foldable f, Functor f, Num a, Eq a)
+    :: (Foldable f, Num a, Eq a)
     => f a
     -> Bool
-hasZeroComponent =  or . fmap (==0)
+hasZeroComponent =  any (==0)
