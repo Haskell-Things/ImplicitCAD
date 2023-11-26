@@ -1,10 +1,11 @@
-ImplicitCAD: Math Inspired CAD
-==============================
+# ImplicitCAD: Math Inspired CAD
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Haskell-Things/ImplicitCAD/ci.yaml?branch=master)](https://github.com/Haskell-Things/ImplicitCAD/actions/workflows/ci.yaml) [![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit) [![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Haskell-Things/ImplicitCAD/ci.yaml?branch=master)](https://github.com/Haskell-Things/ImplicitCAD/actions/workflows/ci.yaml)
+[![Hackage version](https://img.shields.io/hackage/v/implicit.svg?color=success)](https://hackage.haskell.org/package/implicit)
+[![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
+[![Dependencies](https://img.shields.io/hackage-deps/v/implicit?label=Dependencies)](https://packdeps.haskellers.com/feed?needle=implicit)
 
-Introduction
-------------
+## Introduction
 
 ImplicitCAD is a programmatic CAD program, implemented in Haskell. Unlike traditional CAD programs, programmatic CAD programs use text descriptions of objects, as in programming. Concepts like variables, control structures and abstraction are used, just as in programming. This provides a number of advantages:
 
@@ -22,8 +23,7 @@ It also directly provides some GCode generation, and has a parser for OpenSCAD t
 ImplicitCAD is very much a work in progress. The author considers it ready for beta testers and greatly appreciates bug reports.
 
 
-ExtOpenSCAD Examples
---------------------
+## ExtOpenSCAD Examples
 
 Let's begin with OpenSCAD examples, since they're likely a more comfortable format than Haskell for most readers :)
 
@@ -186,8 +186,7 @@ And some higher order functions, like my friend map:
 echo(map(cos, [0, pi/2, pi]));
 ```
 
-Haskell Examples
------------------
+## Haskell Examples
 
 Everything you saw above can be done with the Haskell API. For example, a simple 2D example, the same as our first ExtOpenSCAD one:
 
@@ -240,8 +239,7 @@ main = writeSTL 1 "test.stl" out
 
 You can do a whole lot more!
 
-Try ImplicitCAD!
-----------------
+## Try ImplicitCAD!
 
  1. Install GHC and cabal.
      * Debain/Ubuntu: `apt-get install ghc cabal-install zlib1g-dev`
@@ -283,8 +281,7 @@ Try ImplicitCAD!
            anywhere with the `-Ldir` or `-llib` options. Alternatively, some people have
            permanently fixed this by doing the cabal install as root.
 
-Documentation
--------------
+## Documentation
 
 Documentation can be generated from the source code of ImplicitCAD by Haddock by running `cabal haddock`.
 
@@ -292,15 +289,13 @@ Releases of ImplicitCAD are uploaded to HackageDB which, in addition to making t
 
 In Implicit CAD, we consider objects as functions of `outwardness'. The boundary is 0, negative is the interior and positive the exterior. The magnitude is how far out or in. A description of the mathematical ideas underpinning ImplicitCAD are in a [blog post on colah's blog](http://christopherolah.wordpress.com/2011/11/06/manipulation-of-implicit-functions-with-an-eye-on-cad/).
 
-Related projects
-----------------
+## Related projects
 
 * [ExplicitCAD](https://github.com/kliment/explicitcad/)
 * [HSlice](https://github.com/Haskell-Things/hslice/)
 * [implicitpipe](https://github.com/Haskell-Things/implicitpipe/)
 
-Status
-------
+## Status
 
 ImplicitCAD is very much a work in progress.
 

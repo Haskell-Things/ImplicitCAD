@@ -18,6 +18,7 @@
   * Fixing an off by one error in variable stack lookups. [#431](https://github.com/Haskell-Things/ImplicitCAD/issues/431)
   * Fixing exponent operator precedence. [#428](https://github.com/Haskell-Things/ImplicitCAD/issues/428)
   * Fixing some crashes relating to unclosed loops when generating surfaces. [#373](https://github.com/Haskell-Things/ImplicitCAD/issues/373)
+  * Addition of canonicalization pass and `canonicalize` member function for `Object` [#445](https://github.com/Haskell-Things/ImplicitCAD/pulls/445)
 
 # Version [0.4.0.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.3.0.0...v0.4.0.0) (2022-06-06)
 

@@ -33,7 +33,9 @@ import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat, rawRunExpr)
 
 import Graphics.Implicit.ExtOpenScad.Default (defaultObjects)
 
-import Control.Monad.State (liftIO, (>>=))
+import Control.Monad ((>>=))
+
+import Control.Monad.IO.Class (liftIO)
 
 import System.Directory (getCurrentDirectory)
 

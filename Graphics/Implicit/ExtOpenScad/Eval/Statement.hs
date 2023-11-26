@@ -124,7 +124,7 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
                   ((_, suiteInfoFound):_) -> suiteInfoFound
               when (null possibleInstances) (do
                                                 errorC sourcePos $ "no instance of " <> name <> " found to match given parameters.\nInstances available:\n" <> pack (show (ONModule (Symbol name) implementation forms))
-                                                traverse_ (`checkOptions` True) $ fmap (Just . fst) forms
+                                                traverse_ ((`checkOptions` True) . Just . fst) forms
                                             )
               -- Ignore this for now, because all instances we define have the same suite requirements.
               {-
