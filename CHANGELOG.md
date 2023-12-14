@@ -1,4 +1,4 @@
-# Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...master) (202Y-MM-DD)
+# Version [0.4.1.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...v0.4.1.0) (2023-12-18)
 
 * ExtOpenScad interface changes
   * Added `rands` and `lookup` support [#433](https://github.com/Haskell-Things/ImplicitCAD/pull/433)
