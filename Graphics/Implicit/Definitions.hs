@@ -78,7 +78,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Foldable, Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), any)
+import Prelude (Foldable, Num, Ord, Eq, atan2, asin, (>=), abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), any, max, min, otherwise)
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -420,12 +420,14 @@ quaternionToEuler (Quaternion w (V3 x y z))=
   let sinr_cosp = 2 * (w * x + y * z)
       cosr_cosp = 1 - 2 * (x * x + y * y)
       sinp = 2 * (w * y - z * x);
+      -- A clamped sinp, for precision.
+      sinp_clamped = max (-1) (min 1 sinp)
+      pitch = asin sinp_clamped
+      roll
+        | abs sinp_clamped >= 1 = 0 -- handle gimble lock.
+        | otherwise = atan2 sinr_cosp cosr_cosp
       siny_cosp = 2 * (w * z + x * y);
       cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = if abs sinp >= 1
-              then signum sinp * pi / 2
-              else asin sinp
-      roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
    in V3 roll pitch yaw
 
