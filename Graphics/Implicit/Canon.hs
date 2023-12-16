@@ -125,6 +125,7 @@ fmapSharedObj
   -> (obj -> obj)
   -> obj
   -> obj
+{-# INLINABLE fmapSharedObj #-}
 fmapSharedObj _ g (Shared Empty) = g emptySpace
 fmapSharedObj _ g (Shared Full) = g fullSpace
 fmapSharedObj f g (Shared (Complement o)) = g $ Shared $ Complement (f o)
