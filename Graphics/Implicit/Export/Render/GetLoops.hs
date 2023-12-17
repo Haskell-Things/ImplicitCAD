@@ -42,6 +42,7 @@ getLoops'
     -> [[a]]   -- ^ accumulator
     -> a       -- ^ last element in the accumulator
     -> Maybe [[[a]]]
+{-# INLINABLE getLoops' #-}
 
 -- If there aren't any segments, and the "building loop" is empty, produce no loops.
 getLoops' [] [] _ = Just []

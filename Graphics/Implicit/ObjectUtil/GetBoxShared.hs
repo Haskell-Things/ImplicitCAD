@@ -106,6 +106,7 @@ fullBox = (uniformV (-infty), uniformV infty)
 pointsBox :: (Applicative f, Num a, VectorStuff (f a)) => [f a] -> (f a, f a)
 pointsBox [] = emptyBox
 pointsBox (a : as) = (foldr (pointwise min) a as, foldr (pointwise max) a as)
+{-# INLINABLE pointsBox #-}
 
 ------------------------------------------------------------------------------
 -- | Compute the intersection of dimensionality-polymorphic bounding boxes.
@@ -115,6 +116,7 @@ unionBoxes r
   . pointsBox
   . foldMap corners
   . filter (not . isEmpty)
+{-# INLINABLE unionBoxes #-}
 
 -- | Is a box empty?
 isEmpty :: (Eq (f a), Applicative f, Num a, Num (f a)) => (f a, f a) -> Bool
@@ -130,6 +132,7 @@ getBoxShared
      .  ( Object obj f a, VectorStuff (f a), ComponentWiseMultable (f a), Fractional a, Metric f)
     => SharedObj obj f a
     -> (f a, f a)
+{-# INLINABLE getBoxShared #-}
 -- Primitives
 getBoxShared Empty = emptyBox
 getBoxShared Full  = fullBox

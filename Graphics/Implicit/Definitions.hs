@@ -428,10 +428,12 @@ quaternionToEuler (Quaternion w (V3 x y z))=
       roll = atan2 sinr_cosp cosr_cosp
       yaw = atan2 siny_cosp cosy_cosp
    in V3 roll pitch yaw
+{-# INLINABLE quaternionToEuler #-}
 
 -- | Returns True if any component of a foldable functor is zero
 hasZeroComponent
     :: (Foldable f, Num a, Eq a)
     => f a
     -> Bool
+{-# INLINABLE hasZeroComponent #-}
 hasZeroComponent =  any (==0)
