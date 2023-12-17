@@ -82,7 +82,7 @@ TARGETS=$(EXECTARGETS) $(LIBTARGET)
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Options to GHC during compilation of our examples.
-EXAMPLEOPTS=-package linear -package show-combinators -package lens
+EXAMPLEOPTS=-package linear -package show-combinators -package lens -package blaze-svg -package data-default -package JuicyPixels
 
 # Mark the below fake targets as unreal, so make will not get choked up if a file with one of these names is created.
 .PHONY: build install clean distclean nukeclean docs dist examples tests benchmarks benchmarkdir
@@ -153,6 +153,7 @@ dist: $(TARGETS)
 # Generate examples.
 examples: $(EXTOPENSCADBIN)
 	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { echo $$each ; ../$(EXTOPENSCADBIN) $(SCADOPTS) $$each $(RTSOPTS); } done
+	# NOTE: on debian, if this fails to find the linear package, run: 'apt install libghc-linear-dev libghc-show-combinators-dev libghc-blaze-svg-dev libghc-data-default-dev libghc-juicypixels-dev'
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; cd ..; $(GHC) $(EXAMPLEOPTS) Examples/$$filename.hs -o Examples/$$filename; cd Examples; echo $$filename; $$filename +RTS -t ; } done
 
 # Generate images from the examples, so we can upload the images to our website.
