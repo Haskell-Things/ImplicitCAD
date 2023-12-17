@@ -127,9 +127,8 @@ clean:
 	rm -f ${BUILDROOT}/cache/registration
 
 # Clean up before making a release.
-distclean: clean Setup
-	./Setup clean
-	rm -f Setup Setup.hi Setup.o
+distclean: clean
+	cabal clean
 	rm -rf dist
 	rm -rf dist-newstyle
 	rm -rf .stack-work
@@ -143,13 +142,13 @@ nukeclean: distclean
 	rm -rf ~/.cabal/ ~/.ghc/
 
 # Generate documentation.
-docs: $(DOCGENBIN) Setup
+docs: $(DOCGENBIN)
 	cabal haddock --enable-documentationk
 	$(DOCGENBIN) > docs/escad.md
 
 # Upload to hackage?
-dist: $(TARGETS) Setup
-	./Setup sdist
+dist: $(TARGETS)
+	cabal sdist
 
 # Generate examples.
 examples: $(EXTOPENSCADBIN)
@@ -193,8 +192,3 @@ ${BUILDROOT}/setup-config: implicit.cabal
 	cabal new-update
 	cabal new-install --only-dependencies --upgrade-dependencies --overwrite-policy=always $(PROFILING)
 	cabal new-configure --enable-tests --enable-benchmarks $(PROFILING)
-
-# The setup command, used to perform administrative tasks (haddock, upload to hackage, clean, etc...).
-Setup: Setup.*hs ${BUILDROOT}/setup-config $(LIBTARGET)
-	$(GHC) -O2 -Wall --make Setup -package Cabal
-	touch $@
