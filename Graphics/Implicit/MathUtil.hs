@@ -7,15 +7,15 @@
 {-# LANGUAGE ViewPatterns #-}
 
 -- A module of math utilities.
-module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, quaternionToEuler, infty) where
+module Graphics.Implicit.MathUtil (rmax, rmaximum, rminimum, distFromLineSeg, pack, box3sWithin, reflect, alaV3, packV3, unpackV3, infty) where
 
 -- Explicitly include what we need from Prelude.
-import Prelude (Num, Fractional, Bool, RealFloat, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, (>=), signum, atan2, error, (/=))
+import Prelude (Num, Fractional, Bool, Ordering, (.), (>), (<), (+), ($), (/), otherwise, not, (||), (&&), abs, (-), (*), sin, asin, pi, max, sqrt, min, compare, (<=), fst, snd, (<>), flip, error, (/=))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, Box2)
 
 import Data.List (sort, sortBy)
-import Linear (Metric, (*^), norm, distance, normalize, dot, Quaternion(Quaternion), V2(V2), V3(V3))
+import Linear (Metric, (*^), norm, distance, normalize, dot, V2(V2), V3(V3))
 
 -- | The distance a point p is from a line segment (a,b)
 distFromLineSeg :: ℝ2 -> (ℝ2, ℝ2) -> ℝ
@@ -154,23 +154,6 @@ packV3 (x, y, z) = V3 x y z
 unpackV3 :: V3 a -> (a, a, a)
 unpackV3 (V3 a a2 a3) = (a, a2, a3)
 {-# INLINABLE unpackV3 #-}
-
--- | Convert a 'Quaternion' to its constituent euler angles.
---
--- From https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Source_code_2
-quaternionToEuler :: RealFloat a => Quaternion a -> (a, a, a)
-quaternionToEuler (Quaternion w (V3 x y z))=
-  let sinr_cosp = 2 * (w * x + y * z)
-      cosr_cosp = 1 - 2 * (x * x + y * y)
-      sinp = 2 * (w * y - z * x);
-      siny_cosp = 2 * (w * z + x * y);
-      cosy_cosp = 1 - 2 * (y * y + z * z);
-      pitch = if sinp >= 1
-              then signum sinp * pi / 2
-              else asin sinp
-      roll = atan2 sinr_cosp cosr_cosp
-      yaw = atan2 siny_cosp cosy_cosp
-   in (roll, pitch, yaw)
 
 ------------------------------------------------------------------------------
 -- | Haskell's standard library doesn't make floating-point infinity available
