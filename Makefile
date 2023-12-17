@@ -143,9 +143,9 @@ nukeclean: distclean
 	rm -rf ~/.cabal/ ~/.ghc/
 
 # Generate documentation.
-docs: $(DOCGEN) Setup
-	./Setup haddock
-	$(DOCGEN) > docs/escad.md
+docs: $(DOCGENBIN) Setup
+	cabal haddock --enable-documentationk
+	$(DOCGENBIN) > docs/escad.md
 
 # Upload to hackage?
 dist: $(TARGETS) Setup
