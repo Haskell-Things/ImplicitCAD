@@ -143,7 +143,7 @@ nukeclean: distclean
 
 # Generate documentation.
 docs: $(DOCGENBIN)
-	cabal haddock --enable-documentationk
+	cabal haddock --enable-documentation
 	$(DOCGENBIN) > docs/escad.md
 
 # Upload to hackage?
