@@ -64,7 +64,7 @@ git push origin v$VERSION
 2. Extract it to a temporary directory
 3. Move the container directory to implicit-<VERSIONNUMBER>
 4. Make a tar file from it. make sure to add the --format=ustar option.
- * tar --format=ustar -cvzf implicit-0.4.0.0.tar.gz implicit-0.4.0.0/
+ * tar --format=ustar -cvzf implicit-0.4.1.0.tar.gz implicit-0.4.1.0/
 5. Upload the package candidate to https://hackage.haskell.org/packages/candidates/upload
 6. Look over the resulting page.
 7. Scroll down to 'edit package information'

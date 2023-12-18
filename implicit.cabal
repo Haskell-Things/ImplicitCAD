@@ -1,6 +1,6 @@
 Cabal-version:       2.2
 Name:                implicit
-Version:             0.4.0.0
+Version:             0.4.1.0
 Tested-with:         GHC >= 8.8
 Build-type:          Simple
 Synopsis:            A math-inspired programmatic 2D & 3D CAD system.
