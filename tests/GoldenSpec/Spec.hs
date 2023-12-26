@@ -1,6 +1,7 @@
 {- ORMOLU_DISABLE -}
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults        #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module GoldenSpec.Spec (spec) where
 
@@ -171,6 +172,7 @@ spec = describe "golden tests" $ do
       , ellipsoid 10 15 20
       , translate (V3 0 0 25) $ cone 20 20
       ]
+
   golden "closing-paths-1" 0.5 $
     extrudeM
       (Left 0)
@@ -218,3 +220,27 @@ spec = describe "golden tests" $ do
   describe "2d" $ do
     goldenFormat2 PNG "troublesome-polygon" 1 funPoly
     goldenFormat2 PNG "troublesome-polygon-under-rotation" 1 rotFunPoly
+
+  golden "shell" 0.5 $
+    let radius :: ℝ = 10
+        radius2 = radius * 2
+        shellWidth :: ℝ = 1
+    in
+      union
+        -- make a shell and slice the bottom off so we can inspect the wall
+        [ differenceR 0 (shell shellWidth $ sphere radius)
+          [ translate (V3 (-radius) (-radius) (-radius)) $ cube False (V3 radius2 radius2 radius)
+          ]
+        -- Make a cube with the same radius as the sphere and moved upwards
+        -- so that it is just touching the top of the sphere. This lets us
+        -- easily check if the radius is being messed with for some reason.
+        -- The render quality will need to be increased a lot to actually see
+        -- if this is working, but you will get a feel for when it is correct
+        -- and the STL is just showing resolution limits
+        , translate (V3 (-radius) (-radius) radius) . cube False $ V3 radius2 radius2 radius
+        -- Make a cube with the same dimentions as the shell thickness
+        -- and place it on the lip of the shell so we can check if the thickness
+        -- is actually correct
+        , translate (V3 (radius-shellWidth) (-(shellWidth/2)) (-shellWidth)) . cube False $
+          V3 shellWidth shellWidth shellWidth
+        ]

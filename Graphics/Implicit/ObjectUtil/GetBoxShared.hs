@@ -10,7 +10,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(uniformV, elements, corners), intersectBoxes, emptyBox, pointsBox, unionBoxes, outsetBox, getBoxShared) where
 
-import Prelude (Num, (-), (+), pure, (==), max, min, foldr, (/), ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
+import Prelude (Num, (-), (+), pure, (==), max, min, foldr, ($), fmap, (.), not, filter, foldMap, Fractional, Bool, Eq)
 import {-# SOURCE #-} Graphics.Implicit.Primitives
     ( Object(getBox) )
 import Graphics.Implicit.Definitions
@@ -156,8 +156,8 @@ getBoxShared (Scale s symbObj) =
 getBoxShared (Mirror v symbObj) =
   pointsBox $ fmap (reflect v) $ corners $ getBox symbObj
 -- Boundary mods
-getBoxShared (Shell w symbObj) =
-    outsetBox (w/2) $ getBox symbObj
+-- Shell shouldn't be changing bounding boxes
+getBoxShared (Shell _ symbObj) = getBox symbObj
 getBoxShared (Outset d symbObj) =
     outsetBox d $ getBox symbObj
 -- Misc
