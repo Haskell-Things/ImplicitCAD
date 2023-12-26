@@ -53,7 +53,7 @@ module Graphics.Implicit.Primitives (
                                      pattern Shared,
                                      Object(Space, canonicalize)) where
 
-import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt, id, (<=), (&&), max, Ord)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt, (<=), (&&), max, Ord)
 
 import Graphics.Implicit.Canon (canonicalize2, canonicalize3)
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
