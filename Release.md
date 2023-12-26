@@ -30,13 +30,13 @@ Purpose of this document: to make sure we follow a consistent pattern, when maki
 ## Performing a release
 
 ### Create a Release branch
-1. git checkout -b release/<VERSION>
+1. `git checkout -b release/<VERSION>`
 2. update the Version field in implicit.cabal.
 3. update the Version in the README.md.
 4. change the most recent Version line in CHANGELOG.md from 'next', updating the following fields on that line.
 5. push the branch to github, and file a pull request.
 
-## Merge to master
+### Merge to master
 In the github interface, after all of the tests are green, merge to the master branch.
 
 ### Tagging a release
@@ -48,29 +48,31 @@ git tag -a v$VERSION -m "Release $VERSION"
 git push origin v$VERSION
 ```
 
-#### Publishing the release to GitHub
+### Publishing the release to GitHub
 
 1. Open Github.
 2. Click on the 'Releases' link from the code page for the implicitcad repo.
-3. Click on 'draft a new release'
+3. Click on 'Draft a new release'
 4. Select the tag created in the previous step.
 5. Paste the CHANGELOG.md entries from this release into the release description.
 6. Title the release 'Release <versionnumber>'
 7. Click on 'Publish release'
 
-#### Publishing the release to Hackage
+### Publishing the release to Hackage
 
 1. Use github's 'download zip' to download a zip of the package.
 2. Extract it to a temporary directory
-3. Move the container directory to implicit-<VERSIONNUMBER>
+3. Move the container directory to `implicit-<VERSION>`
 4. Make a tar file from it. make sure to add the --format=ustar option.
- * tar --format=ustar -cvzf implicit-0.4.1.0.tar.gz implicit-0.4.1.0/
+ * `tar --format=ustar -cvzf implicit-<VERSION>.tar.gz implicit-<VERSION>/`
 5. Upload the package candidate to https://hackage.haskell.org/packages/candidates/upload
 6. Look over the resulting page.
 7. Scroll down to 'edit package information'
 8. click on 'publish candidate'
 9. hit the 'publish package' button.
 
-#### Update ImplicitCAD.org
-1. Use the output of docgen to update implicitcad.org (fixme: how?)
+### Update ImplicitCAD.org
+1. Use the output of docgen to update implicitcad.org (FIXME: how?)
 
+### Re-Anchor the ChangeLog.
+File a new PR for adding a clean '# Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...master) (202Y-MM-DD)' to the top of the Changelog, with a single empty bullet point.
