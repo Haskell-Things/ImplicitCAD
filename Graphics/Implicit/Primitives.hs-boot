@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -12,7 +11,7 @@ module Graphics.Implicit.Primitives (Object(getBox, getImplicit', Space, _Shared
 import Graphics.Implicit.Definitions (ObjectContext, SymbolicObj2, SymbolicObj3, SharedObj, ℝ)
 import Control.Lens (Prism')
 import Data.Kind (Type)
-import Prelude (Applicative, Eq, Foldable, Num)
+import Prelude (Applicative, Eq, Foldable, Num, Ord)
 import Linear (V2, V3)
 
 -- See the non-source version of "Graphics.Implicit.Primitives" for
@@ -21,6 +20,7 @@ class ( Applicative f
       , Eq a
       , Eq (f a)
       , Foldable f
+      , Ord a
       , Num a
       , Num (f a)
       )
@@ -31,6 +31,7 @@ class ( Applicative f
     getBox       :: obj -> (f a, f a)
     getImplicit' :: ObjectContext -> obj -> (f a -> a)
     canonicalize :: obj -> obj
+    implicit     :: (f a -> a) -> (f a, f a) -> obj
 
 getImplicit :: Object obj f a => obj -> (f a -> a)
 
