@@ -7,7 +7,7 @@
 -- due to GHC 8.7.10 (and lesser) warning about Space
 {-# OPTIONS_GHC -fno-warn-missing-methods #-}
 
-module Graphics.Implicit.Primitives (Object(getBox, getImplicit', Space, _Shared), getImplicit, emptySpace, fullSpace) where
+module Graphics.Implicit.Primitives (Object(getBox, getImplicit', Space, _Shared), getImplicit, emptySpace, fullSpace,outset) where
 
 import Graphics.Implicit.Definitions (ObjectContext, SymbolicObj2, SymbolicObj3, SharedObj, ℝ)
 import Control.Lens (Prism')
@@ -38,3 +38,4 @@ instance Object SymbolicObj2 V2 ℝ
 instance Object SymbolicObj3 V3 ℝ
 
 emptySpace, fullSpace :: Object obj f a => obj
+outset :: Object obj f a => ℝ -> obj -> obj
