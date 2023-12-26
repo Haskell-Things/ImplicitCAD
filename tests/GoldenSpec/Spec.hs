@@ -244,3 +244,35 @@ spec = describe "golden tests" $ do
         , translate (V3 (radius-shellWidth) (-(shellWidth/2)) (-shellWidth)) . cube False $
           V3 shellWidth shellWidth shellWidth
         ]
+
+  -- https://github.com/Haskell-Things/ImplicitCAD/issues/412
+  golden "boundingBoxes" 0.5 $
+    let
+      circle_diameter_bottom :: ℝ
+      circle_diameter_bottom = 14.80 -- mm
+      circle_height :: ℝ
+      circle_height = 9.86
+
+      root :: ℝ -> ℝ -> ℝ
+      root n x = x ** (1/n)
+
+      shape :: ℝ -> ℝ -> ℝ -> V2 ℝ -> ℝ
+      shape n width height (V2 x y) =
+          1 - root n ((x / half width) ** n + (y / half height) ** n)
+
+      half k = k / 2
+      twice k = 2 * k
+
+      test_shape :: ℝ -> SymbolicObj2
+      test_shape k =
+          intersect
+          [ implicit
+              (shape k circle_diameter_bottom (twice circle_height))
+              (V2 (-9) (-5), V2 9 10)
+              -- (pure (-infty), pure infty)
+          , rect (V2 (-15) 0) (V2 15 25)
+          ]
+
+      test_solid :: ℝ -> SymbolicObj3
+      test_solid k = extrude (test_shape k) 7
+    in test_solid 2

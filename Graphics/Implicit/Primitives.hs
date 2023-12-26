@@ -53,7 +53,7 @@ module Graphics.Implicit.Primitives (
                                      pattern Shared,
                                      Object(Space, canonicalize)) where
 
-import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt, id, (<=), (&&), max, Ord)
 
 import Graphics.Implicit.Canon (canonicalize2, canonicalize3)
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
@@ -95,7 +95,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                       ExtrudeMScale,
                                       defaultObjectContext
                                      )
-import Graphics.Implicit.MathUtil   (pack)
+import Graphics.Implicit.MathUtil   (pack, infty)
 import Graphics.Implicit.ObjectUtil (getBox2, getBox3, getImplicit2, getImplicit3)
 import Linear (M33, M44, V2(V2),V3(V3), axisAngle, Quaternion)
 import Control.Lens (prism', Prism', preview, (#))
@@ -197,6 +197,7 @@ class ( Applicative f
       , Eq a
       , Eq (f a)
       , Foldable f
+      , Ord a
       , Num a
       , Num (f a))
       => Object obj f a | obj -> f a
@@ -224,6 +225,10 @@ class ( Applicative f
     -- | Canonicalization function used to rewrite / normalize
     -- abstract syntax tree representing an object
     canonicalize :: obj -> obj
+    implicit
+      :: (f a -> a)  -- ^ Implicit function
+      -> (f a, f a)  -- ^ Bounding box
+      -> obj         -- ^ Resulting object
 
 -- | Get the implicit function for an object
 getImplicit
@@ -338,13 +343,6 @@ intersectR
     -> obj   -- ^ Resulting object
 intersectR r ss = Shared $ IntersectR r ss
 
-implicit
-    :: Object obj f a
-    => (f a -> a)  -- ^ Implicit function
-    -> (f a, f a)  -- ^ Bounding box
-    -> obj         -- ^ Resulting object
-implicit a b = Shared $ EmbedBoxedObj (a, b)
-
 instance Object SymbolicObj2 V2 ℝ where
   type Space SymbolicObj2 = V2
   _Shared = prism' Shared2 $ \case
@@ -354,6 +352,15 @@ instance Object SymbolicObj2 V2 ℝ where
   getImplicit' ctx = getImplicit2 ctx . canonicalize
   canonicalize = canonicalize2
 
+  implicit a b = Shared $ EmbedBoxedObj
+    ( \p -> max (a p) (if pointInBox b p then -infty else 1)
+    , b
+    )
+    where
+      pointInBox (V2 lx ly, V2 ux uy) (V2 x y) =
+        lx <= x && x <= ux &&
+        ly <= y && y <= uy
+
 instance Object SymbolicObj3 V3 ℝ where
   type Space SymbolicObj3 = V3
   _Shared = prism' Shared3 $ \case
@@ -362,6 +369,16 @@ instance Object SymbolicObj3 V3 ℝ where
   getBox       = getBox3 . canonicalize
   getImplicit' ctx = getImplicit3 ctx . canonicalize
   canonicalize = canonicalize3
+
+  implicit a b = Shared $ EmbedBoxedObj
+    ( \p -> max (a p) (if pointInBox b p then -infty else 1)
+    , b
+    )
+    where
+      pointInBox (V3 lx ly lz, V3 ux uy uz) (V3 x y z) =
+        lx <= x && x <= ux &&
+        ly <= y && y <= uy &&
+        lz <= z && z <= uz
 
 union :: Object obj f a => [obj] -> obj
 union = unionR 0
