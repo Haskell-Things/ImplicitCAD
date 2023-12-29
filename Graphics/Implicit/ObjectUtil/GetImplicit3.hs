@@ -6,10 +6,20 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**))
+import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**), min)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, Torus, Ellipsoid), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( objectRounding,
+      ObjectContext,
+      ℕ,
+      SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude,
+                   ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, Torus, Ellipsoid, BoxFrame),
+      Obj3,
+      ℝ2,
+      ℝ,
+      fromℕtoℝ,
+      toScaleFn,
+      ℝ3 )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
@@ -39,6 +49,24 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
+getImplicit3 _ (BoxFrame b e) = \p' ->
+    let p@(V3 px py pz) = abs p' - b
+        V3 qx qy qz = abs (p + pure e) - pure e
+        -- Splitting out bits from https://iquilezles.org/articles/distfunctions/
+        -- to make it somewhat readable.
+        length :: ℝ3 -> ℝ
+        length v = Linear.distance (abs v) $ pure 0
+        -- Component wise maximum. This is what the opengl language is doing, so we need
+        -- it for the function as defined by the blog above.
+        -- See "Maximum" http://15462.courses.cs.cmu.edu/fall2019/article/20
+        compMax :: ℝ3 -> ℝ3 -> ℝ3
+        compMax (V3 a1 b1 c1) (V3 a2 b2 c2) = V3 (max a1 a2) (max b1 b2) (max c1 c2)
+        -- These names don't mean anything, and are just for splitting up the code.
+        x', y', z' :: ℝ
+        x' = length (compMax (V3 px qy qz) (pure 0)) + min (max px (max qy qz)) 0
+        y' = length (compMax (V3 qx py qz) (pure 0)) + min (max qx (max py qz)) 0
+        z' = length (compMax (V3 qx qy pz) (pure 0)) + min (max qx (max qy pz)) 0
+    in min (min x' y') z'
 -- Simple transforms
 getImplicit3 ctx (Rotate3 q symbObj) =
     getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)

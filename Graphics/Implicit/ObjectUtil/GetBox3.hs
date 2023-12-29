@@ -12,7 +12,7 @@ import Graphics.Implicit.Definitions
     ( Fastℕ,
       fromFastℕ,
       ExtrudeMScale(C2, C1),
-      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude, Torus, Ellipsoid),
+      SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeOnEdgeOf, ExtrudeM, RotateExtrude, Torus, Ellipsoid, BoxFrame),
       Box3,
       ℝ,
       fromFastℕtoℝ,
@@ -38,6 +38,7 @@ getBox3 (Torus r1 r2) =
   let r = r1 + r2
   in (V3 (-r) (-r) (-r2), V3 r r r2)
 getBox3 (Ellipsoid a b c) = (V3 (-a) (-b) (-c), V3 a b c)
+getBox3 (BoxFrame b _) = (-b, b)
 -- (Rounded) CSG
 -- Simple transforms
 getBox3 (Rotate3 q symbObj) =

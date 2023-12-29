@@ -3,7 +3,7 @@
 -- Copyright 2016, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
-module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay) where
+module Graphics.Implicit.Export.RayTrace( Color(Color), average, Camera(Camera), Light(Light), Scene(Scene), traceRay, cameraRay, vectorDistance) where
 
 import Prelude(Show, RealFrac, Maybe(Just, Nothing), Bool(False, True), (-), (.), ($), (*), (/), min, fromInteger, max, round, fromIntegral, unzip, fmap, length, sum, maximum, minimum, (>), (+), (<), (==), pred, flip, not, abs, floor, toRational, otherwise, pure)
 

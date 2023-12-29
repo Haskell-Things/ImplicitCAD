@@ -52,7 +52,7 @@ module Graphics.Implicit.Primitives (
                                      withRounding,
                                      _Shared,
                                      pattern Shared,
-                                     Object(Space, canonicalize)) where
+                                     Object(Space, canonicalize), boxFrame) where
 
 import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (<=), (&&), max, Ord)
 
@@ -87,6 +87,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Sphere,
                                                    Cylinder,
                                                    Torus,
+                                                   BoxFrame,
                                                    Rotate3,
                                                    Transform3,
                                                    Extrude,
@@ -143,6 +144,9 @@ cylinder ::
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
 cylinder r = cylinder2 r r
+
+boxFrame :: ℝ3 -> ℝ -> SymbolicObj3
+boxFrame = BoxFrame
 
 cone ::
     ℝ                   -- ^ Radius of the cylinder

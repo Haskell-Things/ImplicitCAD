@@ -10,7 +10,7 @@ import Graphics.Implicit
 import Graphics.Implicit.Export.OutputFormat (OutputFormat (PNG))
 import Prelude
 import Test.Hspec ( describe, Spec )
-import Graphics.Implicit.Primitives (torus, ellipsoid, cone)
+import Graphics.Implicit.Primitives (torus, ellipsoid, cone, boxFrame)
 
 default (Int)
 
@@ -171,6 +171,12 @@ spec = describe "golden tests" $ do
       [ torus 40 15
       , ellipsoid 10 15 20
       , translate (V3 0 0 25) $ cone 20 20
+      ]
+  
+  golden "boxFrame" 2 $
+    union
+      [ boxFrame (V3 20 20 20) 2
+      , translate (V3 0 0 10) $ boxFrame (V3 10 10 10) 2
       ]
 
   golden "closing-paths-1" 0.5 $
