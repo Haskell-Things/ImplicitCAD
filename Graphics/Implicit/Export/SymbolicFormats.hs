@@ -12,7 +12,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2, Slice), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, BoxFrame, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf, Torus, Ellipsoid), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2, Slice), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, BoxFrame, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf, Torus, Ellipsoid, Link), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -133,6 +133,10 @@ buildS3 (Ellipsoid a b c) = callNaked "ellipsoid" ["a = " <> bf a, "b = " <> bf 
 
 buildS3 (BoxFrame (V3 w d h) e) = callNaked "boxFrame"
   ["w = " <> bf w, "d = " <> bf d, "h = " <> bf h, "e = " <> bf e]
+  []
+
+buildS3 (Link le r1 r2) = callNaked "link"
+  ["le = " <> bf le, "r1 = " <> bf r1, "r2 = " <> bf r2]
   []
 
 buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [

@@ -95,6 +95,7 @@ import Graphics.Implicit.Definitions
       , Torus
       , Ellipsoid
       , BoxFrame
+      , Link
       , Transform3
       )
   , hasZeroComponent
@@ -180,6 +181,7 @@ fmapObj3 f _ _ (Cylinder r1 r2 h) = f $ Cylinder r1 r2 h
 fmapObj3 f _ _ (Torus r1 r2) = f $ Torus r1 r2
 fmapObj3 f _ _ (Ellipsoid a b c) = f $ Ellipsoid a b c
 fmapObj3 f _ _ (BoxFrame b e) = f $ BoxFrame b e
+fmapObj3 f _ _ (Link le r1 r2) = f $ Link le r1 r2
 fmapObj3 f g s (Rotate3 q o) = f $ Rotate3 q (fmapObj3 f g s o)
 fmapObj3 f g s (Transform3 m o) = f $ Transform3 m (fmapObj3 f g s o)
 fmapObj3 f g s (Extrude h o2) = f $ Extrude h (fmapObj2 g f s o2)
@@ -239,6 +241,7 @@ instance EqObj SymbolicObj3 where
   Ellipsoid a1 b1 c1 =^= Ellipsoid a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2
   Cylinder r1a r2a ha =^= Cylinder r1b r2b hb = r1a == r1b && r2a == r2b && ha == hb
   BoxFrame b1 e1 =^= BoxFrame b2 e2 = b1 == b2 && e1 == e2
+  Link a1 b1 c1 =^= Link a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2
   Rotate3 x a =^= Rotate3 y b = x == y && a =^= b
   Transform3 x a =^= Transform3 y b = x == y && a =^= b
   Extrude x a =^= Extrude y b = x == y && a =^= b

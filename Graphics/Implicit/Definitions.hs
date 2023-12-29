@@ -62,6 +62,7 @@ module Graphics.Implicit.Definitions (
         Torus,
         Ellipsoid,
         BoxFrame,
+        Link,
         Extrude,
         ExtrudeM,
         ExtrudeOnEdgeOf,
@@ -334,6 +335,7 @@ data SymbolicObj3 =
     | Torus ℝ ℝ
     | Ellipsoid ℝ ℝ ℝ
     | BoxFrame ℝ3 ℝ -- b e from https://iquilezles.org/articles/distfunctions/
+    | Link ℝ ℝ ℝ -- le r1 r2 from https://iquilezles.org/articles/distfunctions/
     -- Simple transforms
     | Rotate3 (Quaternion ℝ) SymbolicObj3
     | Transform3 (M44 ℝ) SymbolicObj3
@@ -362,6 +364,7 @@ instance Show SymbolicObj3 where
     Cube sz -> showCon "cube" @| False @| sz
     Sphere d -> showCon "sphere" @| d
     BoxFrame b e -> showCon "boxFrame" @| b @| e
+    Link le r1 r2 -> showCon "link" @| le @| r1 @| r2
     -- NB: The arguments to 'Cylinder' are backwards compared to 'cylinder' and
     -- 'cylinder2'.
     Cylinder h r1 r2 | r1 == r2 ->
