@@ -51,9 +51,10 @@ module Graphics.Implicit.Primitives (
                                      emptySpace,
                                      fullSpace,
                                      withRounding,
+                                     boxFrame,
                                      _Shared,
                                      pattern Shared,
-                                     Object(Space, canonicalize), boxFrame) where
+                                     Object(Space, canonicalize)) where
 
 import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (<=), (&&), max, Ord)
 

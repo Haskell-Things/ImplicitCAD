@@ -172,7 +172,7 @@ spec = describe "golden tests" $ do
       , ellipsoid 10 15 20
       , translate (V3 0 0 25) $ cone 20 20
       ]
-  
+
   golden "boxFrame" 2 $
     union
       [ boxFrame (V3 20 20 20) 2

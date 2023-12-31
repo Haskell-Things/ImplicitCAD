@@ -96,7 +96,6 @@ import Graphics.Implicit.Definitions
       , Ellipsoid
       , BoxFrame
       , Link
-      , Transform3
       )
   , hasZeroComponent
   )
