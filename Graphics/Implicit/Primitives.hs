@@ -91,7 +91,8 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    ExtrudeM,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf,
-                                                   Shared3, Ellipsoid
+                                                   Shared3,
+                                                   Ellipsoid
                                                   ),
                                       ExtrudeMScale,
                                       defaultObjectContext
