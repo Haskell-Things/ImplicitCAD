@@ -6,10 +6,10 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise)
+import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**))
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, Torus, Ellipsoid), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
@@ -31,6 +31,8 @@ getImplicit3 ctx (Cube (V3 dx dy dz)) =
     \(V3 x y z) -> rmaximum (objectRounding ctx) [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 _ (Sphere r) =
     \(V3 x y z) -> sqrt (x*x + y*y + z*z) - r
+getImplicit3 _ (Torus r1 r2) =  \(V3 x y z) -> let a = (sqrt (x**2 + y**2) - r1) in a**2 + z**2 - r2**2
+getImplicit3 _ (Ellipsoid a b c) = \(V3 x y z) -> (x**2/a**2) + (y**2/b**2) + (z**2/c**2) - 1
 getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
     let
         d = sqrt (x*x + y*y) - ((r2-r1)/h*z+r1)

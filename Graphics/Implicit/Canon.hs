@@ -91,6 +91,8 @@ import Graphics.Implicit.Definitions
       , Shared3
       , Sphere
       , Transform3
+      , Torus
+      , Ellipsoid
       )
   , hasZeroComponent
   )
@@ -171,6 +173,8 @@ fmapObj3
 fmapObj3 f _ _ (Cube v) = f $ Cube v
 fmapObj3 f _ _ (Sphere r) = f $ Sphere r
 fmapObj3 f _ _ (Cylinder r1 r2 h) = f $ Cylinder r1 r2 h
+fmapObj3 f _ _ (Torus r1 r2) = f $ Torus r1 r2
+fmapObj3 f _ _ (Ellipsoid a b c) = f $ Ellipsoid a b c
 fmapObj3 f g s (Rotate3 q o) = f $ Rotate3 q (fmapObj3 f g s o)
 fmapObj3 f g s (Transform3 m o) = f $ Transform3 m (fmapObj3 f g s o)
 fmapObj3 f g s (Extrude o2 h) = f $ Extrude (fmapObj2 g f s o2) h
@@ -225,6 +229,8 @@ instance EqObj SymbolicObj2 where
 instance EqObj SymbolicObj3 where
   Cube a =^= Cube b = a == b
   Sphere a =^= Sphere b = a == b
+  Torus a1 a2 =^= Torus b1 b2 = a1 == b1 && a2 == b2
+  Ellipsoid a1 b1 c1 =^= Ellipsoid a2 b2 c2 = a1 == a2 && b1 == b2 && c1 == c2
   Cylinder r1a r2a ha =^= Cylinder r1b r2b hb = r1a == r1b && r2a == r2b && ha == hb
   Rotate3 x a =^= Rotate3 y b = x == y && a =^= b
   Transform3 x a =^= Transform3 y b = x == y && a =^= b
@@ -300,6 +306,10 @@ canon3 (Cube v) | hasZeroComponent v = emptySpace
 canon3 (Sphere 0) = emptySpace
 canon3 (Cylinder 0 _ _) = emptySpace
 canon3 (Extrude _o2 0) = emptySpace
+canon3 (Torus _ 0) = emptySpace
+canon3 (Ellipsoid 0 _ _) = emptySpace
+canon3 (Ellipsoid _ 0 _) = emptySpace
+canon3 (Ellipsoid _ _ 0) = emptySpace
 canon3 (Rotate3 0 o) = o
 canon3 (RotateExtrude 0 _t _r _o) = emptySpace
 canon3 (RotateExtrude _theta _t _r (Shared Empty)) = emptySpace

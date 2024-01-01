@@ -53,7 +53,7 @@ module Graphics.Implicit.Primitives (
                                      pattern Shared,
                                      Object(Space, canonicalize)) where
 
-import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (+), (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (**), sqrt, (<=), (&&), max, Ord)
+import Prelude(Applicative, Eq, Foldable, Num, abs, (<), otherwise, Num, (-), (*), (/), (.), negate, Bool(True, False), Maybe(Just, Nothing), Either, fmap, ($), (<=), (&&), max, Ord)
 
 import Graphics.Implicit.Canon (canonicalize2, canonicalize3)
 import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
@@ -84,13 +84,15 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Cube,
                                                    Sphere,
                                                    Cylinder,
+                                                   Torus,
                                                    Rotate3,
                                                    Transform3,
                                                    Extrude,
                                                    ExtrudeM,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf,
-                                                   Shared3
+                                                   Shared3,
+                                                   Ellipsoid
                                                   ),
                                       ExtrudeMScale,
                                       defaultObjectContext
@@ -147,16 +149,10 @@ cone ::
 cone = cylinder2 0
 
 torus :: ℝ -> ℝ -> SymbolicObj3 -- Major radius, minor radius
-torus r1 r2 = implicit
-    (\(V3 x y z) -> let a = (sqrt (x**2 + y**2) - r1) in a**2 + z**2 - r2**2)
-    (V3 (-r) (-r) (-r2), V3 r r r2)
-    where
-        r = r1 + r2
+torus = Torus
 
 ellipsoid :: ℝ -> ℝ -> ℝ -> SymbolicObj3 -- a, b, c
-ellipsoid a b c = implicit
-    (\(V3 x y z) -> (x**2/a**2) + (y**2/b**2) + (z**2/c**2) - 1)
-    (V3 (-a) (-b) (-c), V3 a b c)
+ellipsoid = Ellipsoid
 
 -- $ 2D Primitives
 
