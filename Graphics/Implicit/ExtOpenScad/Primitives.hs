@@ -31,7 +31,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideOb
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
-import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
+import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, slice, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
 
 import Control.Monad (when, mplus)
 
@@ -70,6 +70,7 @@ primitiveModules =
   , onModIze extrude [([("height", hasDefault), ("center", hasDefault), ("twist", hasDefault), ("scale", hasDefault), ("translate", hasDefault), ("r", hasDefault)], requiredSuite)]
   , onModIze rotateExtrude [([("angle", hasDefault), ("r", hasDefault), ("translate", hasDefault), ("rotate", hasDefault)], requiredSuite)]
   , onModIze shell [([("w", noDefault)], requiredSuite)]
+  , onModIze projection [([("cut", hasDefault)], requiredSuite)]
   , onModIze pack [([("size", noDefault), ("sep", noDefault)], requiredSuite)]
   , onModIze unit [([("unit", noDefault)], requiredSuite)]
   , onModIze mirror [([("x", noDefault), ("y", noDefault), ("z", noDefault)], requiredSuite), ([("v", noDefault)], requiredSuite)]
@@ -574,6 +575,20 @@ shell = moduleWithSuite "shell" $ \_ children -> do
             `doc` "width of the shell..."
     pure $ pure $ objMap (Prim.shell w) (Prim.shell w) children
 
+projection :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
+projection = moduleWithSuite "projection" $ \sourcePosition children -> do
+    example "projection(cut=true) sphere(10);"
+    -- arguments
+    cut :: Bool <- argument "cut"
+            `defaultTo` False
+            `doc` "Cut with a plane at z=0"
+    pure $
+      if cut
+      then pure $ obj3DownMap Prim.slice children
+      else do
+        errorC sourcePosition "projection(cut=false) is not yet implemented"
+        pure children
+
 -- Not a permanent solution! Breaks if can't pack.
 pack :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 pack = moduleWithSuite "pack" $ \sourcePosition children -> do
@@ -704,6 +719,12 @@ obj2UpMap obj2upmod (x:xs) = case x of
     OObj2 obj2 -> OObj3 (obj2upmod obj2) : obj2UpMap obj2upmod xs
     a          -> a                      : obj2UpMap obj2upmod xs
 obj2UpMap _ [] = []
+
+obj3DownMap :: (SymbolicObj3 -> SymbolicObj2) -> [OVal] -> [OVal]
+obj3DownMap obj3downmod (x:xs) = case x of
+    OObj3 obj3 -> OObj2 (obj3downmod obj3) : obj3DownMap obj3downmod xs
+    a          -> a                        : obj3DownMap obj3downmod xs
+obj3DownMap _ [] = []
 
 toInterval :: Bool -> ℝ -> ℝ2
 toInterval center h =
