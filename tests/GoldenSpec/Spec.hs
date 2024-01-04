@@ -185,6 +185,21 @@ spec = describe "golden tests" $ do
      , translate (V3 0 0 10 )$ rotate3 (V3 0 (pi/2) 0) $ rotate3 (V3 (pi/2) 0 0) $ link 6.5 10 4.5
      ]
 
+  goldenAllFormats "pretty-printing" 2 $
+    union
+      [ torus 40 15
+      , ellipsoid 10 15 20
+      , translate (V3 0 0 25) $ union
+        [ cone 20 20
+        , cube False 10
+        ]
+      , extrude 7 $
+          translate (V2 20 0) $
+            difference
+              (circle 10)
+              [circle 10]
+      ]
+
   golden "closing-paths-1" 0.5 $
     extrudeM
       (Left 0)

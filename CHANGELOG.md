@@ -12,6 +12,7 @@
   * Fixing `shell` so that it doesn't increase the outside dimentions of objects.
   * Fixing an issue with bounding boxes for infinite functions. [#412](https://github.com/Haskell-Things/ImplicitCAD/issues/412)
   * Making `torus` and `ellipsoid` primitive objects, rather than being defined implicitly. [#450](https://github.com/Haskell-Things/ImplicitCAD/issues/450)
+  * Improved formatting of ExtOpenSCAD code [#472](https://github.com/Haskell-Things/ImplicitCAD/pull/472)
 
 # Version [0.4.1.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...v0.4.1.0) (2023-12-18)
 

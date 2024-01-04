@@ -11,7 +11,7 @@ import Prelude((.), ($), (-), (+), (/), minimum, maximum, unzip, show, unwords, 
 
 import Graphics.Implicit.Definitions (Polyline(Polyline), ℝ, ℝ2)
 
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt, buildTruncFloat)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt, buildTruncFloat, fromLazyText)
 
 import Text.Blaze.Svg.Renderer.Text (renderSvg)
 import Text.Blaze.Svg11 ((!),docTypeSvg,g,polyline,toValue,Svg)
@@ -53,7 +53,7 @@ svg plines = renderSvg . svg11 . svg' $ plines
       svg' polylines = thinBlueGroup $ traverse_ poly polylines
 
       poly (Polyline line) = polyline ! A.points pointList
-          where pointList = toValue $ toLazyText $ fold [bf (x-xmin) <> "," <> bf (ymax - y) <> " " | (V2 x y) <- line]
+          where pointList = toValue $ toLazyText $ fold [fromLazyText (bf $ x-xmin) <> "," <> fromLazyText (bf $ ymax - y) <> " " | (V2 x y) <- line]
 
       -- Instead of setting styles on every polyline, we wrap the lines in a group element and set the styles on it:
       thinBlueGroup = g ! A.stroke "rgb(0,0,255)" ! A.strokeWidth (stringValue $ show strokeWidth) ! A.fill "none" -- obj

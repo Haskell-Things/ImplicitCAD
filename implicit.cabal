@@ -93,7 +93,8 @@ Library
                   linear,
                   show-combinators,
                   lens,
-                  random
+                  random,
+                  prettyprinter
 
 
     Exposed-modules:
@@ -168,7 +169,8 @@ Executable extopenscad
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit
+                 implicit,
+                 prettyprinter
 
 Executable docgen
    Import: binstuff

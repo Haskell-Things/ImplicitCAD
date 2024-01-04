@@ -19,7 +19,7 @@ module Graphics.Implicit.Export.TextBuilderUtils (
      buildInt
     ) where
 
-import Prelude (Maybe(Nothing, Just), Int, ($))
+import Prelude (Maybe(Nothing, Just), Int, ($), (.))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, fromℝtoFloat)
 import Data.Text.Lazy as DTL (Text, pack)
@@ -35,8 +35,8 @@ toLazyText :: Builder -> Text
 toLazyText = toLazyTextWith defaultChunkSize
 
 -- | Serialize a value as a single precision float with an exponent attached.
-bf :: ℝ -> Builder
-bf value = formatRealFloat Exponent Nothing $ fromℝtoFloat value
+bf :: ℝ -> Text
+bf value = toLazyText . formatRealFloat Exponent Nothing $ fromℝtoFloat value
 
 -- | Serialize a float with four decimal places
 buildTruncFloat :: ℝ -> Builder
