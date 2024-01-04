@@ -169,8 +169,7 @@ Executable extopenscad
                  filepath,
                  optparse-applicative >= 0.10.0,
                  text,
-                 implicit,
-                 prettyprinter
+                 implicit
 
 Executable docgen
    Import: binstuff
