@@ -145,7 +145,7 @@ buildS3 (Transform3 m obj) =
       ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList m)
       [buildS3 obj]
 
-buildS3 (Extrude obj h) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
+buildS3 (Extrude h obj) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
 
 -- FIXME: handle scale, center.
 buildS3 (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID scale && translate == V2 0 0 = do

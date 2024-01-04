@@ -177,7 +177,7 @@ fmapObj3 f _ _ (Torus r1 r2) = f $ Torus r1 r2
 fmapObj3 f _ _ (Ellipsoid a b c) = f $ Ellipsoid a b c
 fmapObj3 f g s (Rotate3 q o) = f $ Rotate3 q (fmapObj3 f g s o)
 fmapObj3 f g s (Transform3 m o) = f $ Transform3 m (fmapObj3 f g s o)
-fmapObj3 f g s (Extrude o2 h) = f $ Extrude (fmapObj2 g f s o2) h
+fmapObj3 f g s (Extrude h o2) = f $ Extrude h (fmapObj2 g f s o2)
 fmapObj3 f g s (ExtrudeM twist sc tr o2 h) = f (ExtrudeM twist sc tr (fmapObj2 g f s o2) h)
 fmapObj3 f g s (RotateExtrude angle tr rot o2) = f (RotateExtrude angle tr rot (fmapObj2 g f s o2))
 fmapObj3 f g s (ExtrudeOnEdgeOf o2a o2b) = f (ExtrudeOnEdgeOf (fmapObj2 g f s o2a) (fmapObj2 g f s o2b))
@@ -234,7 +234,7 @@ instance EqObj SymbolicObj3 where
   Cylinder r1a r2a ha =^= Cylinder r1b r2b hb = r1a == r1b && r2a == r2b && ha == hb
   Rotate3 x a =^= Rotate3 y b = x == y && a =^= b
   Transform3 x a =^= Transform3 y b = x == y && a =^= b
-  Extrude a x =^= Extrude b y = x == y && a =^= b
+  Extrude x a =^= Extrude y b = x == y && a =^= b
 
   ExtrudeM (Left twa) ma (Left ta) a (Left ha)
     =^=
@@ -305,7 +305,7 @@ canon3 :: SymbolicObj3 -> SymbolicObj3
 canon3 (Cube v) | hasZeroComponent v = emptySpace
 canon3 (Sphere 0) = emptySpace
 canon3 (Cylinder 0 _ _) = emptySpace
-canon3 (Extrude _o2 0) = emptySpace
+canon3 (Extrude 0 _o2) = emptySpace
 canon3 (Torus _ 0) = emptySpace
 canon3 (Ellipsoid 0 _ _) = emptySpace
 canon3 (Ellipsoid _ 0 _) = emptySpace

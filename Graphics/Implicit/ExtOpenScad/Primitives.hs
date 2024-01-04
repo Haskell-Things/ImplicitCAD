@@ -261,7 +261,7 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ _ -> do
         then let
             obj2 = if sides < 0 then Prim.circle r else Prim.polygon
                 [V2 (r*cos θ) (r*sin θ) | θ <- [2*pi*fromℕtoℝ n/fromℕtoℝ sides | n <- [0 .. sides - 1]]]
-            obj3 = Prim.extrude obj2 dh
+            obj3 = Prim.extrude dh obj2
         in shift obj3
         else shift $ Prim.cylinder2 r1 r2 dh
 
@@ -533,7 +533,7 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
     pure $ pure $ obj2UpMap (
         \obj -> case height of
             Left constHeight | isTwistID && isScaleID scaleArg && isTransID ->
-                shiftAsNeeded $ Prim.withRounding r $ Prim.extrude obj constHeight
+                shiftAsNeeded $ Prim.withRounding r $ Prim.extrude constHeight obj
             _ ->
                 shiftAsNeeded $ Prim.withRounding r $ Prim.extrudeM twistArg scaleArg translateArg obj height'
         ) children

@@ -1,5 +1,8 @@
 # Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.1.0...master) (202Y-MM-DD)
 
+* Haskell interface changes
+  * `extrude` arguments are now swapped, instead of `extrude obj height` we now have `extrude height obj` [#473](https://github.com/Haskell-Things/ImplicitCAD/issues/473)
+
 * Other changes
   * Fixing `shell` so that it doesn't increase the outside dimentions of objects.
   * Fixing an issue with bounding boxes for infinite functions. [#412](https://github.com/Haskell-Things/ImplicitCAD/issues/412)

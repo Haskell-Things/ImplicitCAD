@@ -390,8 +390,8 @@ intersect = intersectR 0
 -- | Extrude a 2d object upwards. The current object-rounding value set by
 -- 'withRounding' is used to round the caps, but is not used by the 2D object.
 extrude
-    :: SymbolicObj2
-    -> ℝ   -- ^ Extrusion height
+    :: ℝ   -- ^ Extrusion height
+    -> SymbolicObj2
     -> SymbolicObj3
 extrude = Extrude
 

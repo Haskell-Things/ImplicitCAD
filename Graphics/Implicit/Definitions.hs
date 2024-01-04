@@ -332,7 +332,7 @@ data SymbolicObj3 =
     | Rotate3 (Quaternion ℝ) SymbolicObj3
     | Transform3 (M44 ℝ) SymbolicObj3
     -- 2D based
-    | Extrude SymbolicObj2 ℝ
+    | Extrude ℝ SymbolicObj2
     | ExtrudeM
         (Either ℝ (ℝ -> ℝ))   -- twist
         ExtrudeMScale         -- scale
@@ -363,7 +363,7 @@ instance Show SymbolicObj3 where
       showCon "cylinder2" @| r1 @| r2 @| h
     Rotate3 qd s -> showCon "rotate3" @| quaternionToEuler qd @| s
     Transform3 m s -> showCon "transform3" @| m @| s
-    Extrude s d2 -> showCon "extrude" @| s @| d2
+    Extrude d2 s -> showCon "extrude" @| d2 @| s
     ExtrudeM edfdd e ep_ddfdp_dd s edfp_ddd ->
       showCon "extrudeM" @|| edfdd @| e @|| ep_ddfdp_dd @| s @|| edfp_ddd
     RotateExtrude d ep_ddfdp_dd edfdd s ->
