@@ -1,7 +1,11 @@
 # Version [next](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.1.0...master) (202Y-MM-DD)
 
+* ExtOpenScad interface changes
+  * Added `projection(cut=true)` support [#448](https://github.com/Haskell-Things/ImplicitCAD/pull/448)
+
 * Haskell interface changes
   * `extrude` arguments are now swapped, instead of `extrude obj height` we now have `extrude height obj` [#473](https://github.com/Haskell-Things/ImplicitCAD/issues/473)
+  * Added `slice` primitive [#448](https://github.com/Haskell-Things/ImplicitCAD/pull/448)
 
 * Other changes
   * Fixing `shell` so that it doesn't increase the outside dimentions of objects.
