@@ -1,1 +1,6 @@
-packages: .
+packages:
+  ./implicit.cabal
+  ./implicit-interpreter/implicit-interpreter.cabal
+
+-- due to interpreter tests
+write-ghc-environment-files: always
