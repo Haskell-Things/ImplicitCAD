@@ -48,7 +48,7 @@ getBox3 (Transform3 m symbObj) =
      in pointsBox $ Linear.normalizePoint . (m Linear.!*) . Linear.point <$> corners box
 -- Misc
 -- 2D Based
-getBox3 (Extrude symbObj h) = (V3 x1 y1 0, V3 x2 y2 h)
+getBox3 (Extrude h symbObj) = (V3 x1 y1 0, V3 x2 y2 h)
     where
         (V2 x1 y1, V2 x2 y2) = getBox2 symbObj
 getBox3 (ExtrudeOnEdgeOf symbObj1 symbObj2) =

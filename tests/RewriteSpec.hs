@@ -13,7 +13,6 @@ import Prelude
   , Double
   , Eq((==))
   , Show
-  , flip
   , id
   , pure
   , ($)
@@ -127,13 +126,13 @@ sym32Sample :: SymbolicObj3
 sym32Sample =
   translate 1
     . rotate3 0
-    $ extrude sym2Sample 2
+    $ extrude 2 sym2Sample
 
 sym32Expected :: SymbolicObj3
 sym32Expected =
   scale 1
     . rotate3 0
-    $ extrude sym2Expected 2
+    $ extrude 2 sym2Expected
 
 spec :: Spec
 spec =
@@ -195,9 +194,9 @@ spec =
         c3 (translate 1
              $ scale 0
              $ translate (-1)
-             $ flip extrude 1
+             $ extrude 1
                $ translate 1
                $ scale 0
                $ translate (-1)
                $ circle 1
-           ) `shouldBe` extrude (circle 1) 1
+           ) `shouldBe` extrude 1 (circle 1)

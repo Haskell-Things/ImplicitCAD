@@ -151,7 +151,7 @@ instance Arbitrary SymbolicObj3 where
         [ rotate3    <$> arbitrary        <*> decayArbitrary 2
         , rotate3V   <$> arbitrary        <*> arbitrary        <*> decayArbitrary 2
         , transform3 <$> arbitraryInvertibleM44 <*> decayArbitrary 2
-        , extrude    <$> decayArbitrary 2 <*> arbitraryPos
+        , extrude    <$> arbitraryPos <*> decayArbitrary 2
         , Shared3    <$> arbitrary
         ] <> small
     where

@@ -201,7 +201,7 @@ executeAndExport content callback maybeFormat =
               unionWarning    = if null objs
                                 then ""
                                 else " \nWARNING: Multiple objects detected. Adding a Union around them."
-              output3d        = maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude target res
+              output3d        = maybe (TL.toStrict . jsTHREE) getOutputHandler3 maybeFormat $ discreteAprox res $ extrude res target
               output2d        = maybe (TL.toStrict . svg) getOutputHandler2 maybeFormat $ discreteAprox res target
           if fromMaybe "jsTHREE" maybeFormat == "jsTHREE"
             then encodeUtf8 output3d <> callbackF True True w (scadMessages <> unionWarning)

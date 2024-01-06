@@ -8,7 +8,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Fractional, fmap, pure, negate, (+),  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
+import Prelude (Fractional, flip, fmap, pure, negate, (+),  Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id)
 import Test.Hspec (describe, parallel, Spec)
 import Graphics.Implicit
     ( difference,
@@ -273,8 +273,8 @@ transform3dSpec = describe "3d transform" $ do
 misc3dSpec :: Spec
 misc3dSpec = describe "misc 3d tests" $ do
   prop "object-rounding value doesn't jump from 3d to 2d" $ \r obj ->
-    withRounding r . extrude obj
-      =~= withRounding r . extrude (withRounding 0 obj)
+    withRounding r . flip extrude obj
+      =~= withRounding r . flip extrude (withRounding 0 obj)
 
   prop "cylinder with negative height is a flipped cylinder with positive height" $ \r1 r2 h ->
     cylinder2 r1 r2 h =~= mirror (V3 0 0 1) (cylinder2 r1 r2 (-h))

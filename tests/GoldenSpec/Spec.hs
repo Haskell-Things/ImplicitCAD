@@ -274,5 +274,5 @@ spec = describe "golden tests" $ do
           ]
 
       test_solid :: ℝ -> SymbolicObj3
-      test_solid k = extrude (test_shape k) 7
+      test_solid k = extrude 7 (test_shape k)
     in test_solid 2

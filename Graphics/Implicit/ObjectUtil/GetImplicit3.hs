@@ -45,7 +45,7 @@ getImplicit3 ctx (Rotate3 q symbObj) =
 getImplicit3 ctx (Transform3 m symbObj) =
     getImplicit3 ctx symbObj . Linear.normalizePoint . (Linear.inv44 m Linear.!*) . Linear.point
 -- 2D Based
-getImplicit3 ctx (Extrude symbObj h) =
+getImplicit3 ctx (Extrude h symbObj) =
     let
         obj = getImplicit symbObj
     in
