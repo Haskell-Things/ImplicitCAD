@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 import Control.Applicative (pure)
 import Graphics.Implicit
 import Graphics.Implicit.Definitions

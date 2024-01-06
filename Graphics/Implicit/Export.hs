@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Copyright (C) 2014 2015, Julia Longtin (julial@turinglace.com)
 -- Copyright (C) 2015 2016, Mike MacHenry (mike.machenry@gmail.com)

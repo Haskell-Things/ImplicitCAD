@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 {-# LANGUAGE ImplicitPrelude  #-}
 {-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}

@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds     #-}
