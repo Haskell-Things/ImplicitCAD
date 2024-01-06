@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 -- Example 12 - the rounded union of a square and a circle.
 import Control.Applicative (pure)
 import Graphics.Implicit

@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 {-# OPTIONS_GHC -fno-warn-missing-import-lists #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults        #-}
 {-# LANGUAGE ScopedTypeVariables #-}

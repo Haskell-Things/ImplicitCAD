@@ -1,4 +1,3 @@
-
 ImplicitCAD Hacking How To
 ==========================
 

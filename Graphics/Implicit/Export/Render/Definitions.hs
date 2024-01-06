@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
 -- Released under the GNU AGPLV3+, see LICENSE
 

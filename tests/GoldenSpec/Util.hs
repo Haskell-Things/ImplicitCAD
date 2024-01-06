@@ -1,4 +1,3 @@
-{- ORMOLU_DISABLE -}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase   #-}
 
