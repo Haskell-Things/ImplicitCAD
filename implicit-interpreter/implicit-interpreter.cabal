@@ -1,0 +1,48 @@
+cabal-version:       2.2
+name:                implicit-interpreter
+version:             0.1.0.0
+synopsis:            ImplicitCAD Haskell intepreter
+description:         Interpret implicit objects using Hint
+homepage:            https://github.com/HaskellThings/ImplicitCAD
+License:             AGPL-3.0-or-later
+license-file:        LICENSE
+author:              Sorki
+maintainer:          srk@48.io
+copyright:           2024 Sorki
+category:            Graphics
+build-type:          Simple
+
+extra-source-files:
+    LICENSE
+    README.md
+
+extra-doc-files:
+    CHANGELOG.md
+
+library
+  ghc-options:         -Wall -Wunused-packages
+  hs-source-dirs:      src
+  exposed-modules:     Graphics.Implicit.Interpreter
+  build-depends:       base >= 4.7 && < 5
+                     , filepath
+                     , hint
+                     , transformers
+                     , temporary
+                     , exceptions
+                     , text
+  default-language:    Haskell2010
+
+test-suite implicit-interpreter-tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      test
+  main-is:             Spec.hs
+  build-depends:       base >= 4.7 && < 5
+                     , implicit
+                     , implicit-interpreter
+                     , hspec
+                     , text
+  default-language:    Haskell2010
+
+source-repository head
+  type:     git
+  location: https://github.com/HaskellThings/ImplicitCAD
