@@ -41,7 +41,8 @@ import Graphics.Implicit
       rotate3V,
       transform3,
       rotate,
-      transform )
+      transform,
+      slice )
 
 import Graphics.Implicit.Definitions
     ( ExtrudeMScale(C1,C2,Fn),
@@ -127,6 +128,7 @@ instance Arbitrary SymbolicObj2 where
     else oneof $
         [ rotate <$> arbitrary <*> decayArbitrary 2
         , transform <$> arbitraryInvertibleM33 <*> decayArbitrary 2
+        , slice <$> decayArbitrary 2
         , Shared2 <$> arbitrary
         ] <> small
     where

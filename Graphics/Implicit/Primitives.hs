@@ -43,6 +43,7 @@ module Graphics.Implicit.Primitives (
                                      transform3,
                                      pack3,
                                      rotate,
+                                     slice,
                                      transform,
                                      pack2,
                                      implicit,
@@ -77,6 +78,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Circle,
                                                    Polygon,
                                                    Rotate2,
+                                                   Slice,
                                                    Transform2,
                                                    Shared2
                                                   ),
@@ -495,3 +497,9 @@ pack2 (V2 dx dy) sep objs =
             (a, []) -> Just $ union $ fmap (\(V2 x y,obj) -> translate (V2 x y) obj) a
             _ -> Nothing
 
+-- 3D to 2D
+-- Slice 3D object by intersecting it with a XY plane to produce 2D outline
+slice
+    :: SymbolicObj3
+    -> SymbolicObj2
+slice = Slice

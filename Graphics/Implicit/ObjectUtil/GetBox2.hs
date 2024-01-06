@@ -8,7 +8,7 @@ module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
 import Prelude(pure, fmap, Eq, (==), (.), (<$>), (||), unzip, minimum, maximum, ($), (/), (-), (+), (*), cos, sin, sqrt, min, max, (<), (<>), pi, atan2, (==), (>), show, (&&), otherwise, error)
 
 import Graphics.Implicit.Definitions
-    ( SymbolicObj2(Square, Circle, Polygon, Rotate2, Transform2, Shared2),
+    ( SymbolicObj2(Square, Circle, Polygon, Rotate2, Slice, Transform2, Shared2),
       SharedObj(IntersectR, Complement, UnionR, DifferenceR),
       Box2,
       ℝ2,
@@ -18,6 +18,7 @@ import Graphics.Implicit.Definitions
 import Data.Fixed (mod')
 
 import Graphics.Implicit.ObjectUtil.GetBoxShared (emptyBox, corners, outsetBox, intersectBoxes, pointsBox, getBoxShared, unionBoxes)
+import {-# SOURCE #-} Graphics.Implicit.Primitives (getBox)
 
 -- To construct vectors of ℝs.
 import Linear (V2(V2), V3(V3))
@@ -29,11 +30,13 @@ getBox2 :: SymbolicObj2 -> Box2
 getBox2 (Square size) = (pure 0, size)
 getBox2 (Circle r) = (pure (-r), pure r)
 getBox2 (Polygon points) = pointsBox points
--- (Rounded) CSG
 -- Simple transforms
 getBox2 (Rotate2 θ symbObj) =
     let rotate (V2 x y) = V2 (x*cos θ - y*sin θ) (x*sin θ + y*cos θ)
      in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
+getBox2 (Slice symObj) =
+  let (V3 x1 y1 _z1, V3 x2 y2 _z2) = getBox symObj
+  in ((V2 x1 y1), (V2 x2 y2))
 getBox2 (Transform2 m symbObj) =
     let box = getBox2 symbObj
         augment (V2 x y) = V3 x y 1

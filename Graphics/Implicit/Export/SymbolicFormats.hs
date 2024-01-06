@@ -12,7 +12,7 @@ module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
 import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
 
-import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf, Torus, Ellipsoid), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
+import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2, Slice), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf, Torus, Ellipsoid), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
 import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
 
 import Control.Monad.Reader (Reader, runReader, ask)
@@ -193,3 +193,4 @@ buildS2 (Transform2 m obj) =
 
 buildS2 (Square (V2 w h)) = call "square" [bf w, bf h] []
 
+buildS2 (Slice obj) = callNaked "projection" ["cut = true"] [buildS3 obj]
