@@ -10,55 +10,60 @@
 -- output SCAD code, AKA an implicitcad to openscad converter.
 module Graphics.Implicit.Export.SymbolicFormats (scad2, scad3) where
 
-import Prelude((.), fmap, Either(Left, Right), ($), (*), ($!), (-), (/), pi, error, (+), (==), take, floor, (&&), const, pure, (<>), sequenceA, (<$>))
+import Prelude((.), fmap, Either(Left, Right), ($), (*), (-), (/), pi, error, (+), (==), take, floor, (&&), const, (<>), (<$>))
 
 import Graphics.Implicit.Definitions(ℝ, SymbolicObj2(Shared2, Square, Circle, Polygon, Rotate2, Transform2, Slice), SymbolicObj3(Shared3, Cube, Sphere, Cylinder, BoxFrame, Rotate3, Transform3, Extrude, ExtrudeM, RotateExtrude, ExtrudeOnEdgeOf, Torus, Ellipsoid, Link), isScaleID, SharedObj(Empty, Full, Complement, UnionR, IntersectR, DifferenceR, Translate, Scale, Mirror, Outset, Shell, EmbedBoxedObj, WithRounding), quaternionToEuler)
-import Graphics.Implicit.Export.TextBuilderUtils(Text, Builder, toLazyText, fromLazyText, bf)
-
-import Control.Monad.Reader (Reader, runReader, ask)
+import Graphics.Implicit.Export.TextBuilderUtils(Text, bf)
 
 -- For constructing vectors of ℝs.
 import Linear (V2(V2), V3(V3), V4(V4))
 
 import Data.List (intersperse)
 import Data.Function (fix)
-import Data.Foldable(fold, foldMap, toList)
+import Data.Foldable(fold, toList)
 import Graphics.Implicit.ObjectUtil.GetBoxShared (VectorStuff(elements))
+import Prettyprinter (Doc, (<+>), vsep, layoutPretty, defaultLayoutOptions, Pretty (pretty), concatWith, nest, line)
+import Prettyprinter.Render.Text (renderLazy)
 
 default (ℝ)
 
 scad2 :: ℝ -> SymbolicObj2 -> Text
-scad2 res obj = toLazyText $ runReader (buildS2 obj) res
+scad2 res obj = renderLazy . layoutPretty defaultLayoutOptions $ buildS2 res obj
 
 scad3 :: ℝ -> SymbolicObj3 -> Text
-scad3 res obj = toLazyText $ runReader (buildS3 obj) res
+scad3 res obj = renderLazy . layoutPretty defaultLayoutOptions $ buildS3 res obj
 
 -- used by rotate2 and rotate3
 rad2deg :: ℝ -> ℝ
 rad2deg r = r * (180/pi)
 
 -- | Format an openscad call given that all the modified objects are in the Reader monad...
-callToken :: (Text, Text) -> Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
-callToken cs name args []    = pure $ name <> buildArgs cs args <> ";"
-callToken cs name args [obj] = ((name <> buildArgs cs args) <>) <$> obj
-callToken cs name args objs  = do
-  objs' <- foldMap (<> "\n") <$> sequenceA objs
-  pure $! name <> buildArgs cs args <> "{\n" <> objs' <> "}\n"
+callToken :: (Doc a, Doc a) -> Doc a -> [Doc a] -> [Doc a] -> Doc a
+callToken cs name args []    = name <> buildArgs cs args <> ";"
+callToken cs name args [obj] = name <> buildArgs cs args <+> obj
+callToken cs name args objs  = vsep
+  -- nest doesn't indent the first element in the Doc, so we can use the calling name
+  -- as our first line, and add an extra line break in to match the `vsep` layout.
+  [ nest 4 $
+    (name <> buildArgs cs args <+> "{") <> line
+      <> vsep objs
+  , "}"
+  ]
 
-buildArgs :: (Text, Text) -> [Builder] -> Builder
+buildArgs :: (Doc a, Doc a) -> [Doc a] -> Doc a
 buildArgs _ [] = "()"
-buildArgs (c1, c2) args = "(" <> fromLazyText c1 <> fold (intersperse "," args) <> fromLazyText c2 <> ")"
+buildArgs (c1, c2) args = "(" <> c1 <> concatWith (\a b -> a <> "," <+> b) args <> c2 <> ")"
 
-call :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
+call :: Doc a -> [Doc a] -> [Doc a] -> Doc a
 call = callToken ("[", "]")
 
-callNaked :: Builder -> [Builder] -> [Reader a Builder] -> Reader a Builder
+callNaked :: Doc a -> [Doc a] -> [Doc a] -> Doc a
 callNaked = callToken ("", "")
 
 ------------------------------------------------------------------------------
 -- | Class which allows us to build the contained objects in 'buildShared'.
 class Build obj where
-  build :: obj -> Reader ℝ Builder
+  build :: ℝ -> obj -> Doc ()
 
 instance Build SymbolicObj2 where
   build = buildS2
@@ -68,127 +73,126 @@ instance Build SymbolicObj3 where
 
 ------------------------------------------------------------------------------
 -- | Unpack a dimensionality-polymorphic vector into multiple arguments.
-vectAsArgs :: VectorStuff vec => vec -> [Builder]
-vectAsArgs = fmap bf . elements
+vectAsArgs :: VectorStuff vec => vec -> [Doc a]
+vectAsArgs = fmap (pretty . bf) . elements
 
 ------------------------------------------------------------------------------
 -- | Unpack a dimensionality-polymorphic vector into a single argument.
-bvect :: VectorStuff vec => vec -> Builder
+bvect :: VectorStuff vec => vec -> Doc a
 bvect v = "[" <> fold (intersperse "," $ vectAsArgs v) <> "]"
 
 ------------------------------------------------------------------------------
 -- | Build the common combinators.
-buildShared :: forall obj f a. (Build obj, VectorStuff (f a)) => SharedObj obj f a -> Reader ℝ Builder
+buildShared :: forall obj f a. (Build obj, VectorStuff (f a)) => ℝ -> SharedObj obj f a -> Doc ()
 
-buildShared Empty = call "union" [] []
+buildShared _ Empty = call "union" [] []
 
-buildShared Full = call "difference" [] [call "union" [] []]
+buildShared _ Full = call "difference" [] [call "union" [] []]
 
-buildShared (Complement obj) = call "complement" [] [build obj]
+buildShared res (Complement obj) = call "complement" [] [build res obj]
 
-buildShared (UnionR r objs) | r == 0 = call "union" [] $ build <$> objs
+buildShared res (UnionR r objs) | r == 0 = call "union" [] $ build res <$> objs
 
-buildShared (IntersectR r objs) | r == 0 = call "intersection" [] $ build <$> objs
+buildShared res (IntersectR r objs) | r == 0 = call "intersection" [] $ build res <$> objs
 
-buildShared (DifferenceR r obj objs) | r == 0 = call "difference" [] $ build <$> obj : objs
+buildShared res (DifferenceR r obj objs) | r == 0 = call "difference" [] $ build res <$> obj : objs
 
-buildShared (Translate v obj) = call "translate" (bf <$> elements v) [build obj]
+buildShared res (Translate v obj) = call "translate" (pretty . bf <$> elements v) [build res obj]
 
-buildShared (Scale v obj) = call "scale" (bf <$> elements v) [build obj]
+buildShared res (Scale v obj) = call "scale" (pretty . bf <$> elements v) [build res obj]
 
-buildShared (Mirror v obj) = callNaked "mirror" [ "v=" <> bvect v ] [build obj]
+buildShared res (Mirror v obj) = callNaked "mirror" [ "v=" <> bvect v ] [build res obj]
 
 -- NOTE(sandy): This @r == 0@ guard says we only emit "outset" if it has r = 0,
 -- erroring otherwise saying "cannot provide roundness." But this is not
 -- a roundness parameter!
-buildShared (Outset r obj) | r == 0 = call "outset" [] [build obj]
+buildShared res (Outset r obj) | r == 0 = call "outset" [] [build res obj]
 
 -- NOTE(sandy): This @r == 0@ guard says we only emit "shell" if it has r = 0,
 -- erroring otherwise saying "cannot provide roundness." But this is not
 -- a roundness parameter!
-buildShared (Shell r obj) | r == 0 = call "shell" [] [build obj]
+buildShared res (Shell r obj) | r == 0 = call "shell" [] [build res obj]
 
-buildShared (WithRounding r obj) | r == 0 = build obj
+buildShared res (WithRounding r obj) | r == 0 = build res obj
 
-buildShared(UnionR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(IntersectR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(DifferenceR {}) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(Outset _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(Shell _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared(EmbedBoxedObj _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildShared (WithRounding _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (UnionR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (IntersectR _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (DifferenceR {}) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (Outset _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (Shell _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (EmbedBoxedObj _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildShared _ (WithRounding _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
 -- | First, the 3D objects.
-buildS3 :: SymbolicObj3 -> Reader ℝ Builder
+buildS3 :: ℝ -> SymbolicObj3 -> Doc ()
 
-buildS3 (Shared3 obj) = buildShared obj
+buildS3 res (Shared3 obj) = buildShared res obj
 
-buildS3 (Cube (V3 w d h)) = call "cube" [bf w, bf d, bf h] []
+buildS3 _ (Cube (V3 w d h)) = call "cube" [pretty $ bf w, pretty $ bf d, pretty $ bf h] []
 
-buildS3 (Sphere r) = callNaked "sphere" ["r = " <> bf r] []
+buildS3 _ (Sphere r) = callNaked "sphere" ["r = " <> pretty (bf r)] []
 
-buildS3 (Torus r1 r2) = callNaked "torus" ["r1 = " <> bf r1, "r2 = " <> bf r2]  []
+buildS3 _ (Torus r1 r2) = callNaked "torus" ["r1 = " <> pretty (bf r1), "r2 = " <> pretty (bf r2)]  []
 
-buildS3 (Ellipsoid a b c) = callNaked "ellipsoid" ["a = " <> bf a, "b = " <> bf b, "c = " <> bf c] []
+buildS3 _ (Ellipsoid a b c) = callNaked "ellipsoid" ["a = " <> pretty (bf a), "b = " <> pretty (bf b), "c = " <> pretty (bf c)] []
 
-buildS3 (BoxFrame (V3 w d h) e) = callNaked "boxFrame"
-  ["w = " <> bf w, "d = " <> bf d, "h = " <> bf h, "e = " <> bf e]
+buildS3 _ (BoxFrame (V3 w d h) e) = callNaked "boxFrame"
+  ["w = " <> pretty (bf w), "d = " <> pretty (bf d), "h = " <> pretty (bf h), "e = " <> pretty (bf e)]
   []
 
-buildS3 (Link le r1 r2) = callNaked "link"
-  ["le = " <> bf le, "r1 = " <> bf r1, "r2 = " <> bf r2]
+buildS3 _ (Link le r1 r2) = callNaked "link"
+  ["le = " <> pretty (bf le), "r1 = " <> pretty (bf r1), "r2 = " <> pretty (bf r2)]
   []
 
-buildS3 (Cylinder h r1 r2) = callNaked "cylinder" [
-                              "r1 = " <> bf r1
-                             ,"r2 = " <> bf r2
-                             , bf h
+buildS3 _ (Cylinder h r1 r2) = callNaked "cylinder" [
+                              "r1 = " <> pretty (bf r1)
+                             ,"r2 = " <> pretty (bf r2)
+                             , pretty $ bf h
                              ] []
-buildS3 (Rotate3 q obj) =
+buildS3 res (Rotate3 q obj) =
   let (V3 x y z) = quaternionToEuler q
-   in call "rotate" [bf (rad2deg x), bf (rad2deg y), bf (rad2deg z)] [buildS3 obj]
+   in call "rotate" [pretty $ bf (rad2deg x), pretty $ bf (rad2deg y), pretty $ bf (rad2deg z)] [buildS3 res obj]
 
-buildS3 (Transform3 m obj) =
+buildS3 res (Transform3 m obj) =
     call "multmatrix"
-      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList m)
-      [buildS3 obj]
+      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap (pretty . bf) . toList <$> toList m)
+      [buildS3 res obj]
 
-buildS3 (Extrude h obj) = callNaked "linear_extrude" ["height = " <> bf h] [buildS2 obj]
+buildS3 res (Extrude h obj) = callNaked "linear_extrude" ["height = " <> pretty (bf h)] [buildS2 res obj]
 
 -- FIXME: handle scale, center.
-buildS3 (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID scale && translate == V2 0 0 = do
-  res <- ask
+buildS3 res (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID scale && translate == V2 0 0 =
   let
     twist' = case twist of
                Left twval  -> const twval
                Right twfun -> twfun
-  call "union" [] [
-             call "rotate" ["0","0", bf $ twist' h] [
-                        callNaked "linear_extrude" ["height = " <> bf res, "twist = " <> bf (twist' (h+res) - twist' h)][
-                                   buildS2 obj
+  in call "union" [] [
+             call "rotate" ["0","0", pretty $ bf $ twist' h] [
+                        callNaked "linear_extrude" ["height = " <> pretty (bf res), "twist = " <> pretty (bf $ twist' (h+res) - twist' h)] [
+                                   buildS2 res obj
                                   ]
                        ] |  h <- take (floor (res / height)) $ fix (\f x -> x : f (x+res)) 0
             ]
 
 -- FIXME: where are RotateExtrude, ExtrudeOnEdgeOf?
 
-buildS3 ExtrudeM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3 RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
-buildS3(ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 _ ExtrudeM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 _ RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
+buildS3 _ (ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
 
 -- Now the 2D objects/transforms.
 
-buildS2 :: SymbolicObj2 -> Reader ℝ Builder
+buildS2 :: ℝ -> SymbolicObj2 -> Doc ()
 
-buildS2 (Shared2 obj) = buildShared obj
+buildS2 res (Shared2 obj) = buildShared res obj
 
-buildS2 (Circle r) = call "circle" [bf r] []
+buildS2 _ (Circle r) = call "circle" [pretty $ bf r] []
 
-buildS2 (Polygon points) = call "polygon" (fmap bvect points) []
+buildS2 _ (Polygon points) = call "polygon" (fmap bvect points) []
 
-buildS2 (Rotate2 r obj)     = call "rotate" [bf (rad2deg r)] [buildS2 obj]
+buildS2 res (Rotate2 r obj)     = call "rotate" [pretty $ bf (rad2deg r)] [buildS2 res obj]
 
-buildS2 (Transform2 m obj) =
+buildS2 res (Transform2 m obj) =
     let toM44 (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
           V4 (V4 a b c 0)
              (V4 d e f 0)
@@ -196,9 +200,9 @@ buildS2 (Transform2 m obj) =
              (V4 0 0 0 1)
     in
     call "multmatrix"
-      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap bf . toList <$> toList (toM44 m))
-      [buildS2 obj]
+      ((\x -> "["<>x<>"]") . fold . intersperse "," . fmap (pretty . bf) . toList <$> toList (toM44 m))
+      [buildS2 res obj]
 
-buildS2 (Square (V2 w h)) = call "square" [bf w, bf h] []
+buildS2 _ (Square (V2 w h)) = call "square" [pretty $ bf w, pretty $ bf h] []
 
-buildS2 (Slice obj) = callNaked "projection" ["cut = true"] [buildS3 obj]
+buildS2 res (Slice obj) = callNaked "projection" ["cut = true"] [buildS3 res obj]

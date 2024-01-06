@@ -12,7 +12,7 @@ module Graphics.Implicit.Export.TriangleMeshFormats (stl, binaryStl, jsTHREE) wh
 import Prelude ((-), Float, Eq, Bool, ($), (+), (.), toEnum, length, zip, pure, (==), (||), (&&), filter, not, (<>))
 
 import Graphics.Implicit.Definitions (Triangle(Triangle), TriangleMesh(TriangleMesh, getTriangles), ℕ, ℝ3, ℝ, fromℝtoFloat)
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildℕ, fromLazyText)
 
 import Blaze.ByteString.Builder (toLazyByteString, fromByteString, fromWord32le, fromWord16le)
 import qualified Data.ByteString.Builder as BI (Builder, floatLE)
@@ -62,7 +62,7 @@ stl triangles = toLazyText $ stlHeader <> foldMap triangle (getTriangles $ clean
         stlFooter :: Builder
         stlFooter = "endsolid ImplictCADExport\n"
         vector :: ℝ3 -> Builder
-        vector (V3 x y z) = bf x <> " " <> bf y <> " " <> bf z
+        vector (V3 x y z) = fromLazyText (bf x) <> " " <> fromLazyText (bf y) <> " " <> fromLazyText (bf z)
         vertex :: ℝ3 -> Builder
         vertex v = "vertex " <> vector v
         triangle :: Triangle -> Builder
@@ -107,7 +107,7 @@ jsTHREE triangles = toLazyText $ header <> vertcode <> facecode <> footer
                          <> "Shape.prototype.constructor = Shape;\n"
                 -- A vertex line; v (0.0, 0.0, 1.0) = "v(0.0,0.0,1.0);\n"
                 v :: ℝ3 -> Builder
-                v (V3 x y z) = "v(" <> bf x <> "," <> bf y <> "," <> bf z <> ");\n"
+                v (V3 x y z) = "v(" <> fromLazyText (bf x) <> "," <> fromLazyText (bf y) <> "," <> fromLazyText (bf z) <> ");\n"
                 -- A face line
                 f :: ℕ -> ℕ -> ℕ -> Builder
                 f posa posb posc =

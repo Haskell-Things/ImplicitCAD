@@ -93,7 +93,8 @@ Library
                   linear,
                   show-combinators,
                   lens,
-                  random
+                  random,
+                  prettyprinter
 
 
     Exposed-modules:

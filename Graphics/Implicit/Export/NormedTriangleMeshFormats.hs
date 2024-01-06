@@ -11,7 +11,7 @@ module Graphics.Implicit.Export.NormedTriangleMeshFormats (obj) where
 import Prelude(($), fmap, (+), (.), (*), length, (-), pure, (<>))
 
 import Graphics.Implicit.Definitions (NormedTriangle(NormedTriangle), NormedTriangleMesh(getNormedTriangles), ℝ3)
-import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt)
+import Graphics.Implicit.Export.TextBuilderUtils (Text, Builder, toLazyText, bf, buildInt, fromLazyText)
 
 import Data.Foldable (fold, foldMap)
 import Linear (V3(V3))
@@ -23,10 +23,10 @@ obj mesh = toLazyText $ vertcode <> normcode <> trianglecode
     where
         -- A vertex line; v (0.0, 0.0, 1.0) = "v 0.0 0.0 1.0\n"
         v :: ℝ3 -> Builder
-        v (V3 x y z) = "v "  <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
+        v (V3 x y z) = "v "  <> fromLazyText (bf x) <> " " <> fromLazyText (bf y) <> " " <> fromLazyText (bf z) <> "\n"
         -- A normal line; n (0.0, 0.0, 1.0) = "vn 0.0 0.0 1.0\n"
         n :: ℝ3 -> Builder
-        n (V3 x y z) = "vn " <> bf x <> " " <> bf y <> " " <> bf z <> "\n"
+        n (V3 x y z) = "vn " <> fromLazyText (bf x) <> " " <> fromLazyText (bf y) <> " " <> fromLazyText (bf z) <> "\n"
         verts = do
             --  Extract the vertices for each triangle.
             --  recall that a normed triangle is of the form ((vert, norm), ...)
