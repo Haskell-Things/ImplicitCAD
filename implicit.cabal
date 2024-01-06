@@ -24,6 +24,9 @@ Extra-source-files:
 
 Extra-doc-files:
   CHANGELOG.md
+  CONTRIBUTORS
+  Release.md
+  Tools.md
 
 flag extopenscad
   default:
