@@ -12,6 +12,19 @@ Maintainer:          Julia Longtin <julia.longtin@gmail.com>
 Homepage:            http://implicitcad.org/
 Category:            Graphics
 
+Extra-source-files:
+  README.md
+  LICENSE
+  tests/golden/*.ascii.stl
+  tests/golden/*.three.js
+  tests/golden/*.obj
+  tests/golden/*.png
+  tests/golden/*.scad
+  tests/golden/boxCylinder.stl
+
+Extra-doc-files:
+  CHANGELOG.md
+
 flag extopenscad
   default:
     True
