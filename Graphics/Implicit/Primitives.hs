@@ -25,6 +25,7 @@ module Graphics.Implicit.Primitives (
                                      getImplicit',
                                      extrude,
                                      extrudeM,
+                                     link,
                                      extrudeOnEdgeOf,
                                      sphere,
                                      cube, rect3,
@@ -50,6 +51,7 @@ module Graphics.Implicit.Primitives (
                                      emptySpace,
                                      fullSpace,
                                      withRounding,
+                                     boxFrame,
                                      _Shared,
                                      pattern Shared,
                                      Object(Space, canonicalize)) where
@@ -87,6 +89,7 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    Sphere,
                                                    Cylinder,
                                                    Torus,
+                                                   BoxFrame,
                                                    Rotate3,
                                                    Transform3,
                                                    Extrude,
@@ -94,7 +97,8 @@ import Graphics.Implicit.Definitions (ObjectContext, ℝ, ℝ2, ℝ3, Box2,
                                                    RotateExtrude,
                                                    ExtrudeOnEdgeOf,
                                                    Shared3,
-                                                   Ellipsoid
+                                                   Ellipsoid,
+                                                   Link
                                                   ),
                                       ExtrudeMScale,
                                       defaultObjectContext
@@ -143,6 +147,12 @@ cylinder ::
     -> ℝ                -- ^ Height of the cylinder
     -> SymbolicObj3     -- ^ Resulting cylinder
 cylinder r = cylinder2 r r
+
+boxFrame :: ℝ3 -> ℝ -> SymbolicObj3
+boxFrame = BoxFrame
+
+link :: ℝ -> ℝ -> ℝ -> SymbolicObj3
+link = Link
 
 cone ::
     ℝ                   -- ^ Radius of the cylinder

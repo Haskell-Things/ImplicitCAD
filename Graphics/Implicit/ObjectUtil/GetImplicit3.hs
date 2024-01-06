@@ -6,10 +6,20 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**))
+import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**), min, Num, Applicative)
 
 import Graphics.Implicit.Definitions
-    ( objectRounding, ObjectContext, ℕ, SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude, ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, Torus, Ellipsoid), Obj3, ℝ2, ℝ, fromℕtoℝ, toScaleFn )
+    ( objectRounding,
+      ObjectContext,
+      ℕ,
+      SymbolicObj3(Cube, Sphere, Cylinder, Rotate3, Transform3, Extrude,
+                   ExtrudeM, ExtrudeOnEdgeOf, RotateExtrude, Shared3, Torus, Ellipsoid, BoxFrame, Link),
+      Obj3,
+      ℝ2,
+      ℝ,
+      fromℕtoℝ,
+      toScaleFn,
+      ℝ3 )
 
 import Graphics.Implicit.MathUtil ( rmax, rmaximum )
 
@@ -17,12 +27,23 @@ import qualified Data.Either as Either (either)
 
 -- Use getImplicit for handling extrusion of 2D shapes to 3D.
 import Graphics.Implicit.ObjectUtil.GetImplicitShared (getImplicitShared)
-import Linear (V2(V2), V3(V3))
+import Linear (V2(V2), V3(V3), _xy, _z)
 import qualified Linear
 
 import {-# SOURCE #-} Graphics.Implicit.Primitives (getImplicit)
+import Control.Lens ((^.))
 
 default (ℝ)
+
+-- Length similar to the opengl version, needed for some of the shape definitions
+openglLength :: (Linear.Metric f, Num (f ℝ), Applicative f) => f ℝ -> ℝ
+openglLength v = Linear.distance (abs v) $ pure 0
+
+-- Component wise maximum. This is what the opengl language is doing, so we need
+-- it for the function as defined by the blog above.
+-- See "Maximum" http://15462.courses.cs.cmu.edu/fall2019/article/20
+compMax :: ℝ3 -> ℝ3 -> ℝ3
+compMax (V3 a1 b1 c1) (V3 a2 b2 c2) = V3 (max a1 a2) (max b1 b2) (max c1 c2)
 
 -- Get a function that describes the surface of the object.
 getImplicit3 :: ObjectContext -> SymbolicObj3 -> Obj3
@@ -39,6 +60,20 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
         θ = atan2 (r2-r1) h
     in
         max (d * cos θ) (abs (z-h/2) - (h/2))
+getImplicit3 _ (BoxFrame b e) = \p' ->
+    let p@(V3 px py pz) = abs p' - b
+        V3 qx qy qz = abs (p + pure e) - pure e
+        -- Splitting out bits from https://iquilezles.org/articles/distfunctions/
+        -- to make it somewhat readable.
+        -- These names don't mean anything, and are just for splitting up the code.
+        x', y', z' :: ℝ
+        x' = openglLength (compMax (V3 px qy qz) (pure 0)) + min (max px (max qy qz)) 0
+        y' = openglLength (compMax (V3 qx py qz) (pure 0)) + min (max qx (max py qz)) 0
+        z' = openglLength (compMax (V3 qx qy pz) (pure 0)) + min (max qx (max qy pz)) 0
+    in min (min x' y') z'
+getImplicit3 _ (Link le r1 r2) = \(V3 px py pz) ->
+    let q = V3 px (max (abs py - le) 0) pz
+    in openglLength (V2 (openglLength (q ^. _xy) - r1) (q ^. _z)) - r2
 -- Simple transforms
 getImplicit3 ctx (Rotate3 q symbObj) =
     getImplicit3 ctx symbObj . Linear.rotate (Linear.conjugate q)
@@ -156,4 +191,3 @@ getImplicit3 ctx (RotateExtrude totalRotation translate rotate symbObj) =
                     (obj rz_pos)
               else obj rz_pos
 getImplicit3 ctx (Shared3 obj) = getImplicitShared ctx obj
-

@@ -6,6 +6,7 @@
 * Haskell interface changes
   * `extrude` arguments are now swapped, instead of `extrude obj height` we now have `extrude height obj` [#473](https://github.com/Haskell-Things/ImplicitCAD/issues/473)
   * Added `slice` primitive [#448](https://github.com/Haskell-Things/ImplicitCAD/pull/448)
+  * Added `boxFrame` and `link` primitive [#471](https://github.com/Haskell-Things/ImplicitCAD/pull/471)
 
 * Other changes
   * Fixing `shell` so that it doesn't increase the outside dimentions of objects.
