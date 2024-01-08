@@ -186,8 +186,8 @@ spec = describe "golden tests" $ do
 
   goldenAllFormats "pretty-printing" 2 $
     union
-      [ torus 40 15
-      , ellipsoid 10 15 20
+      [ sphere 15
+      , cube False (V3 10 15 20)
       , translate (V3 0 0 25) $ union
         [ cone 20 20
         , cube False 10

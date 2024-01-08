@@ -331,10 +331,6 @@ data SymbolicObj3 =
       Cube ℝ3 -- rounding, size.
     | Sphere ℝ -- radius
     | Cylinder ℝ ℝ ℝ --
-    | Torus ℝ ℝ
-    | Ellipsoid ℝ ℝ ℝ
-    | BoxFrame ℝ3 ℝ -- b e from https://iquilezles.org/articles/distfunctions/
-    | Link ℝ ℝ ℝ -- le r1 r2 from https://iquilezles.org/articles/distfunctions/
     -- Simple transforms
     | Rotate3 (Quaternion ℝ) SymbolicObj3
     | Transform3 (M44 ℝ) SymbolicObj3
@@ -353,6 +349,12 @@ data SymbolicObj3 =
         SymbolicObj2          -- object to extrude
     | ExtrudeOnEdgeOf SymbolicObj2 SymbolicObj2
     | Shared3 (SharedObj SymbolicObj3 V3 ℝ)
+    -- Extended useful primitives.
+    -- These aren't supported by escad.
+    | Torus ℝ ℝ
+    | Ellipsoid ℝ ℝ ℝ
+    | BoxFrame ℝ3 ℝ -- b e from https://iquilezles.org/articles/distfunctions/
+    | Link ℝ ℝ ℝ -- le r1 r2 from https://iquilezles.org/articles/distfunctions/
     deriving (Generic)
 
 instance Show SymbolicObj3 where
