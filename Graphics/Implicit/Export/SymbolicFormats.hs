@@ -131,18 +131,6 @@ buildS3 _ (Cube (V3 w d h)) = call "cube" [pretty $ bf w, pretty $ bf d, pretty 
 
 buildS3 _ (Sphere r) = callNaked "sphere" ["r = " <> pretty (bf r)] []
 
-buildS3 _ (Torus r1 r2) = callNaked "torus" ["r1 = " <> pretty (bf r1), "r2 = " <> pretty (bf r2)]  []
-
-buildS3 _ (Ellipsoid a b c) = callNaked "ellipsoid" ["a = " <> pretty (bf a), "b = " <> pretty (bf b), "c = " <> pretty (bf c)] []
-
-buildS3 _ (BoxFrame (V3 w d h) e) = callNaked "boxFrame"
-  ["w = " <> pretty (bf w), "d = " <> pretty (bf d), "h = " <> pretty (bf h), "e = " <> pretty (bf e)]
-  []
-
-buildS3 _ (Link le r1 r2) = callNaked "link"
-  ["le = " <> pretty (bf le), "r1 = " <> pretty (bf r1), "r2 = " <> pretty (bf r2)]
-  []
-
 buildS3 _ (Cylinder h r1 r2) = callNaked "cylinder" [
                               "r1 = " <> pretty (bf r1)
                              ,"r2 = " <> pretty (bf r2)
@@ -178,6 +166,11 @@ buildS3 res (ExtrudeM twist scale (Left translate) obj (Left height)) |isScaleID
 buildS3 _ ExtrudeM{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 _ RotateExtrude{} = error "cannot provide roundness when exporting openscad; unsupported in target format."
 buildS3 _ (ExtrudeOnEdgeOf _ _) = error "cannot provide roundness when exporting openscad; unsupported in target format."
+-- Extended primitives that aren't supported in openscad
+buildS3 _ Torus{} = error "cannot use torus objects when exporting openscad; unsupported in target format."
+buildS3 _ Ellipsoid{} = error "cannot use ellipsoid objects when exporting openscad; unsupported in target format."
+buildS3 _ BoxFrame{} = error "cannot use boxFrame objects when exporting openscad; unsupported in target format."
+buildS3 _ Link{} = error "cannot use link objects when exporting openscad; unsupported in target format."
 
 -- Now the 2D objects/transforms.
 
