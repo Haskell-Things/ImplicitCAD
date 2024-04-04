@@ -249,7 +249,7 @@ You can do a whole lot more!
          * Homebrew: `brew install ghc cabal-install`
          * Install GHCup following [these install instructions](https://www.haskell.org/ghcup/)
      * Windows: Follows [these install instructions](https://www.haskell.org/ghcup/).
-     * Other unices: If your package manager does not include ghc and cabal you should [install GHCup](http://www.haskell.org/ghcup).
+     * Other unices: If your package manager does not include ghc and cabal you should [install GHCup](https://www.haskell.org/ghcup).
  2. You now have two options for installation:
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
