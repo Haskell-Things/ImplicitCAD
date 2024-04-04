@@ -247,9 +247,9 @@ You can do a whole lot more!
      * Red Hat/Fedora: `yum install ghc cabal-install`
      * Mac OSX:
          * Homebrew: `brew install ghc cabal-install`
-         * *Fink doesn't seem to have a package for cabal*; Install the Haskell Platform [manually](http://hackage.haskell.org/platform/mac.html).
-     * Windows: Follows [these install instructions](http://hackage.haskell.org/platform/windows.html).
-     * Other unices: If your package manager does not include ghc and cabal you should [install the Haskell platform](http://www.haskell.org/platform).
+         * Install GHCup following [these install instructions](https://www.haskell.org/ghcup/)
+     * Windows: Follows [these install instructions](https://www.haskell.org/ghcup/).
+     * Other unices: If your package manager does not include ghc and cabal you should [install GHCup](https://www.haskell.org/ghcup).
  2. You now have two options for installation:
      * Latest release:
          * Use cabal to install ImplicitCAD: `cabal update && cabal install implicit`
