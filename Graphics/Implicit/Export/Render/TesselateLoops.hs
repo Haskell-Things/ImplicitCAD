@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(sum, (-), pure, ($), length, (==), zip, init, tail, reverse, (<), (/), null, (<>), head, (*), abs, (+), foldMap, (&&))
+import Prelude(sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (/), null, (<>), head, (*), abs, (+), foldMap, (&&), snd, (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -12,8 +12,12 @@ import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.List (genericLength)
+import Data.List (genericLength, uncons)
 import Linear ( cross, Metric(norm), (^*), (^/) )
+import Data.Maybe (fromMaybe)
+
+tail :: [a] -> [a]
+tail l = fromMaybe [] $ snd <$> uncons l
 
 -- de-compose a loop into a series of triangles or squares.
 -- FIXME: res should be ℝ3.

@@ -8,7 +8,7 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(error, (-), ceiling, ($), (+), (*), max, div, tail, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>), traverse)
+import Prelude(error, (-), ceiling, ($), (+), (*), max, div, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>), traverse, snd)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromℕtoℝ, fromℕ, ℝ3' (ℝ3'))
 
@@ -71,9 +71,13 @@ import Graphics.Implicit.Export.Render.HandlePolylines (cleanLoopsFromSegs)
 import Data.Maybe (fromMaybe)
 import Graphics.Implicit.Primitives (getImplicit)
 import Control.Lens (_Wrapped, view, over, _Just)
+import Data.List (uncons)
 
 -- Set the default types for the numbers in this file.
 default (ℕ, Fastℕ, ℝ)
+
+tail :: [a] -> [a]
+tail l = fromMaybe [] $ snd <$> uncons l
 
 getMesh :: ℝ3 -> SymbolicObj3 -> TriangleMesh
 getMesh res@(V3 xres yres zres) symObj =
