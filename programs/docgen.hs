@@ -4,9 +4,7 @@
 -- FIXME: document why we need each of these.
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, length, (/=), (+), error, print, snd, (<$>))
-import Data.Maybe (fromMaybe)
-import Data.List (uncons)
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, length, (/=), (+), error, print, drop)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFail,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule), SourcePosition(SourcePosition), StateC)
 
@@ -16,7 +14,7 @@ import Data.Traversable (traverse)
 import Data.Text.Lazy (unpack, pack)
 
 tail :: [a] -> [a]
-tail l = fromMaybe [] $ snd <$> uncons l
+tail = drop 1
 
 -- | Return true if the argument is of type ExampleDoc.
 isExample :: DocPart -> Bool

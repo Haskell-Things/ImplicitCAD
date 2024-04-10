@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (/), null, (<>), head, (*), abs, (+), foldMap, (&&), snd, (<$>))
+import Prelude(sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (/), null, (<>), (*), abs, (+), foldMap, (&&), drop, Int)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
@@ -12,12 +12,11 @@ import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Data.List (genericLength, uncons)
+import Data.List (genericLength)
 import Linear ( cross, Metric(norm), (^*), (^/) )
-import Data.Maybe (fromMaybe)
 
 tail :: [a] -> [a]
-tail l = fromMaybe [] $ snd <$> uncons l
+tail = drop 1
 
 -- de-compose a loop into a series of triangles or squares.
 -- FIXME: res should be ℝ3.
@@ -84,8 +83,13 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
     else let
         mid = centroid path
         midval = obj mid
+        rotateList :: Int -> [a] -> [a]
+        rotateList 0 l = l
+        rotateList _ [] = []
+        rotateList _ [a] = [a]
+        rotateList n (a:as) = rotateList (n-1) (as <> [a])
         preNormal = sum
-            [ a `cross` b | (a,b) <- zip path (tail path <> [head path]) ]
+            [ a `cross` b | (a,b) <- zip path (rotateList 1 path) ]
         preNormalNorm = norm preNormal
         normal = preNormal ^/ preNormalNorm
         deriv = (obj (mid + (normal ^* (res/100)) ) - midval)/res*100
@@ -94,8 +98,8 @@ tesselateLoop res obj pathSides = pure $ Tris $ TriangleMesh $
         isCloserToSurface = abs midval' < abs midval
         isNearby = norm (mid - mid') < 2 * abs midval
     in if isCloserToSurface && isNearby
-        then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (tail path <> [head path]) ]
-        else early_tris <> [Triangle (a,b,mid) | (a,b) <- zip path (tail path <> [head path]) ]
+        then early_tris <> [Triangle (a,b,mid') | (a,b) <- zip path (rotateList 1 path) ]
+        else early_tris <> [Triangle (a,b,mid) | (a,b) <- zip path (rotateList 1 path) ]
 
 shrinkLoop :: ℕ -> [ℝ3] -> ℝ -> Obj3 -> ([Triangle], [ℝ3])
 

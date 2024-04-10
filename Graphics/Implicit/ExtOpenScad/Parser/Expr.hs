@@ -12,7 +12,7 @@
 -- A parser for a numeric expressions.
 module Graphics.Implicit.ExtOpenScad.Parser.Expr(expr0) where
 
-import Prelude (Char, Maybe(Nothing, Just), ($), (<>), id, foldl, foldr, (==), length, head, (&&), (<$>), (<*>), (*>), (<*), flip, (.), pure)
+import Prelude (Char, Maybe(Nothing, Just), ($), (<>), id, foldl, foldr, (==), (<$>), (<*>), (*>), (<*), flip, (.), pure, Bool (True))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (Expr(LamE, LitE, ListE, (:$)), OVal(ONum, OUndefined), Symbol(Symbol))
 
@@ -147,9 +147,9 @@ vectorListParentheses =
               <* if o == '['
                  then matchTok ']'
                  else matchTok ')'
-            pure $ if o == '(' && length exprs == 1
-                     then head exprs
-                     else ListE exprs
+            pure $ case (o == '(', exprs) of
+                (True, [e]) -> e
+                _ -> ListE exprs
     *<|> "vector/list generator" ?: do
         -- eg.  [ a : 1 : a + 10 ]
         --      [ a : a + 10 ]
