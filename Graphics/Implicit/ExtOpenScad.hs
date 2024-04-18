@@ -5,7 +5,7 @@
 -- An executor, which parses openscad code, and executes it.
 module Graphics.Implicit.ExtOpenScad (runOpenscad) where
 
-import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative, Bool(True))
+import Prelude(String, IO, ($), (<$>), pure, either, (.), Applicative, Bool(True), Maybe, maybe)
 
 import Graphics.Implicit.Definitions (SymbolicObj2, SymbolicObj3)
 
@@ -28,10 +28,11 @@ import System.Directory (getCurrentDirectory)
 import Data.Foldable (traverse_)
 
 import Data.Text.Lazy (pack)
+import System.FilePath (FilePath, takeDirectory)
 
 -- | Small wrapper of our parser to handle parse errors, etc.
-runOpenscad :: ScadOpts -> [String] -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
-runOpenscad scadOpts constants source = do
+runOpenscad :: ScadOpts -> [String] -> Maybe FilePath -> String -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
+runOpenscad scadOpts constants filepath source = do
   (initialObjects, initialMessages) <- addConstants constants True
   let
     err :: Applicative f => ParseError -> f (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
@@ -39,11 +40,12 @@ runOpenscad scadOpts constants source = do
     run :: [StatementI] -> IO (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])
     run sts = rearrange <$> do
       let sts' = traverse_ runStatementI sts
-      path <- getCurrentDirectory
+      -- If we are given a filepath, use its directory, relative or absolute.
+      -- If there is no filepath given, then use the current directory of the process.
+      path <- maybe getCurrentDirectory (pure . takeDirectory) filepath
       let initState = CompState initialObjects [] path
       (_, w, s') <- runImplicitCadM scadOpts initState sts'
       pure (w, s')
-
   either err run $ parseProgram "" source
   where
     rearrange :: ([Message], CompState) -> (VarLookup, [SymbolicObj2], [SymbolicObj3], [Message])

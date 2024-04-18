@@ -10,7 +10,7 @@
 
 -- Let's be explicit about what we're getting from where :)
 
-import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), return, unlines, filter, not, null, (||), (&&), (.), print)
+import Prelude (Maybe(Just, Nothing), IO, Bool(True, False), FilePath, String, (<>), ($), readFile, fst, putStrLn, show, (>>=), return, unlines, filter, not, null, (||), (&&), (.), print, pure)
 
 -- Our Extended OpenScad interpreter
 import Graphics.Implicit (union, runOpenscad)
@@ -173,7 +173,7 @@ run rawargs = do
                 _ | Just file <- outputFile args  -> Just $ guessOutputFormat file
                 _                                 -> Nothing
         scadOpts = generateScadOpts args
-        openscadProgram = runOpenscad scadOpts (rawDefines args) content
+        openscadProgram = runOpenscad scadOpts (rawDefines args) (pure $ inputFile args) content
 
     if quiet args
       then return ()

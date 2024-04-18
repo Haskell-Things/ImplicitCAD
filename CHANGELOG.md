@@ -14,6 +14,7 @@
   * Making `torus` and `ellipsoid` primitive objects, rather than being defined implicitly. [#450](https://github.com/Haskell-Things/ImplicitCAD/issues/450)
   * Improved formatting of ExtOpenSCAD code [#472](https://github.com/Haskell-Things/ImplicitCAD/pull/472)
   * Fixing an issue where ImplicitCAD extended primitive objects were being exported to OpenSCAD where they aren't supported.
+  * Fixing relative imports to use the directory of the initial source file rather than the directory where `extopenscad` was called.
 
 # Version [0.4.1.0](https://github.com/Haskell-Things/ImplicitCAD/compare/v0.4.0.0...v0.4.1.0) (2023-12-18)
 
