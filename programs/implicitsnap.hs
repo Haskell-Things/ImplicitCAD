@@ -158,7 +158,7 @@ executeAndExport content callback maybeFormat =
         callbackS str          msg =
             callback <> "([" <> BSL.toStrict (encode str) <> "," <> BSL.toStrict (encode msg) <> ",null,null]);"
         scadOptions = generateScadOpts
-        openscadProgram = runOpenscad scadOptions [] content
+        openscadProgram = runOpenscad scadOptions [] Nothing content
     in
       unsafePerformIO $ do
       s@(_, obj2s, obj3s, messages) <- openscadProgram
