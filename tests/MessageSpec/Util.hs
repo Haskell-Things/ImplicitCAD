@@ -10,7 +10,7 @@ module MessageSpec.Util
        ) where
 
 -- be explicit about where we get things from.
-import Prelude (String, Bool(False), IO, return)
+import Prelude (String, Bool(False), IO, return, Maybe (Nothing))
 
 -- Expressions, symbols, and values in the OpenScad language.
 import Graphics.Implicit.ExtOpenScad.Definitions (ScadOpts(ScadOpts), MessageType, Message(Message), SourcePosition)
@@ -39,7 +39,7 @@ infixr 1 -->
 -- | An even smaller wrapper which runs a program, and only returns the generated messages. for the test suite.
 getOpenscadMessages ::  ScadOpts -> [String] -> String -> IO [Message]
 getOpenscadMessages scadOpts constants source = do
-    (_, _, _, messages) <- runOpenscad scadOpts constants source
+    (_, _, _, messages) <- runOpenscad scadOpts constants Nothing source
     return messages
 
 oneMessage :: MessageType -> SourcePosition -> Text -> [Message]
