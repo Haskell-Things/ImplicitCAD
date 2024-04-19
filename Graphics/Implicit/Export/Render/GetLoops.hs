@@ -5,7 +5,7 @@
 module Graphics.Implicit.Export.Render.GetLoops (getLoops) where
 
 -- Explicitly include what we want from Prelude.
-import Prelude ((<$>), head, last, (==), Bool(False), (.), null, (<>), Eq, Maybe(Just, Nothing))
+import Prelude ((<$>), last, (==), Bool(False), (.), null, (<>), Eq, Maybe(Just, Nothing))
 
 import Data.List (partition)
 
@@ -51,7 +51,7 @@ getLoops' (x:xs) [] _ = getLoops' xs [x] (last x)
 
 -- A loop is finished if its start and end are the same.
 -- Return it and start searching for another loop.
-getLoops' segs workingLoop ultima | head (head workingLoop) == ultima =
+getLoops' segs workingLoop@((x:_):_) ultima | x == ultima =
     (workingLoop :) <$> getLoops' segs [] ultima
 
 -- Finally, we search for pieces that can continue the working loop,

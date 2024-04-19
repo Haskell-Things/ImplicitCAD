@@ -16,19 +16,19 @@ module Graphics.Implicit.Export.OutputFormat
   )
 where
 
-import Prelude (Bool, Eq, FilePath, Maybe, Read (readsPrec), Show(show), String, drop, error, flip, length, take, ($), (<>), (==), snd)
+import Prelude (Bool, Eq, FilePath, Maybe, Read (readsPrec), Show(show), String, drop, error, flip, length, take, ($), (<>), (==))
 import Control.Applicative ((<$>))
 -- For making the format guesser case insensitive when looking at file extensions.
 import Data.Char (toLower)
 import Data.Default.Class (Default(def))
-import Data.List (lookup, elem, uncons)
+import Data.List (lookup, elem)
 import Data.Maybe (fromMaybe)
 import Data.Tuple (swap)
 -- For handling input/output files.
 import System.FilePath (takeExtensions)
 
 tail :: [a] -> [a]
-tail l = fromMaybe [] $ snd <$> uncons l
+tail = drop 1
 
 -- | A type serving to enumerate our output formats.
 data OutputFormat
