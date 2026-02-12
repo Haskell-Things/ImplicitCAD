@@ -263,6 +263,43 @@ Test-suite test-implicit
                   ImplicitSpec
                   TesselationSpec
 
+Test-suite scadgen
+    Import: binstuff
+    Type: exitcode-stdio-1.0
+    Main-is: Main-ScadOut.hs
+    Hs-source-dirs: tests
+    Build-depends:
+                  base,
+                  bytestring,
+                  hspec,
+                  HUnit,
+                  implicit,
+                  text,
+                  parsec,
+                  directory,
+                  hedgehog,
+                  hw-hspec-hedgehog,
+                  QuickCheck,
+                  linear,
+                  lens
+    Other-Modules:
+                  ParserSpec.Expr
+                  ParserSpec.Statement
+                  ParserSpec.Util
+                  RewriteSpec
+                  ExecSpec.Expr
+                  ExecSpec.Util
+                  MessageSpec.Message
+                  MessageSpec.Util
+                  PropertySpec
+                  PropertySpec.Exec
+                  GoldenSpec.Spec
+                  GoldenSpec.Util
+                  Graphics.Implicit.Test.Instances
+                  Graphics.Implicit.Test.Utils
+                  ImplicitSpec
+                  TesselationSpec
+
 Benchmark parser-bench
     Import: binstuff
     Type: exitcode-stdio-1.0

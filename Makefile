@@ -46,6 +46,8 @@ PARSERBENCH=${BENCHBUILDROOT}/parser-bench/build/parser-bench/parser-bench
 PARSERBENCHDIR=${BENCHBUILDROOT}/parser-bench
 # The location of the created test binary, for running haskell test cases.
 TESTSUITE=${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit
+# The location of the created scad generation binary, for generating scad test cases.
+SCADGEN=${TESTBUILDROOT}/scadgen/build/scadgen/scadgen
 TESTSUITEDIR=${TESTBUILDROOT}/test-implicit
 # The location of it's source.
 TESTFILES=$(shell find tests/ -name '*.hs')
@@ -75,7 +77,7 @@ LIBTARGET=${BUILDROOT}/build/Graphics/Implicit.o
 # don't try to compile implicitsnap unless the flag for compiling it has been set.
 MAYBEIMPLICITSNAPBIN=$(shell bash -c "[ -n \"$$([ -f cabal.project.local ] && cat cabal.project.local | sed -n '/flags: .*+implicitsnap.*/p')\" ] && echo ${IMPLICITSNAPBIN}" )
 
-EXECTARGETS=$(EXTOPENSCADBIN) $(MAYBEIMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN)
+EXECTARGETS=$(EXTOPENSCADBIN) $(MAYBEIMPLICITSNAPBIN) $(BENCHMARKBIN) $(TESTSUITE) $(PARSERBENCH) $(DOCGENBIN) $(SCADGEN)
 EXECBUILDDIRS=$(EXTOPENSCADDIR) $(IMPLICITSNAPDIR) $(BENCHMARKDIR) $(DOCGENDIR)
 TARGETS=$(EXECTARGETS) $(LIBTARGET)
 
@@ -178,6 +180,10 @@ $(LIBTARGET): $(LIBFILES)
 # The parser test suite, since it's source is stored in a different location than the other binaries we build:
 ${TESTBUILDROOT}/test-implicit/build/test-implicit/test-implicit: $(TESTFILES) ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
 	cabal new-build test-implicit
+
+# The test suite, since it's source is stored in a different location than the other binaries we build:
+${SCADGEN}: ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
+	cabal new-build scadgen
 
 # Build a binary target with cabal.
 ${EXEBUILDROOT}/%: programs/$$(word 1,$$(subst /, ,%)).hs ${BUILDROOT}/setup-config $(LIBTARGET) $(LIBFILES)
