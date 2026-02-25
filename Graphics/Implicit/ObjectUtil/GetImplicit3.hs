@@ -5,7 +5,7 @@
 
 module Graphics.Implicit.ObjectUtil.GetImplicit3 (getImplicit3) where
 
-import Prelude (id, (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, (**), min, Num, Applicative)
+import Prelude (id, not, (<=), (||), (/=), either, round, fromInteger, Either(Left, Right), abs, (-), (/), (*), sqrt, (+), atan2, max, cos, minimum, ($), sin, pi, (.), Bool(True, False), ceiling, floor, pure, (==), otherwise, min, Num, Applicative)
 
 import Graphics.Implicit.Definitions
     ( objectRounding,
@@ -51,8 +51,8 @@ getImplicit3 ctx (Cube (V3 dx dy dz)) =
     \(V3 x y z) -> rmaximum (objectRounding ctx) [abs (x-dx/2) - dx/2, abs (y-dy/2) - dy/2, abs (z-dz/2) - dz/2]
 getImplicit3 _ (Sphere r) =
     \(V3 x y z) -> sqrt (x*x + y*y + z*z) - r
-getImplicit3 _ (Torus r1 r2) =  \(V3 x y z) -> let a = (sqrt (x**2 + y**2) - r1) in a**2 + z**2 - r2**2
-getImplicit3 _ (Ellipsoid a b c) = \(V3 x y z) -> (x**2/a**2) + (y**2/b**2) + (z**2/c**2) - 1
+getImplicit3 _ (Torus r1 r2) =  \(V3 x y z) -> let a = (sqrt (x*x + y*y) - r1) in a*a + z*z - r2*r2
+getImplicit3 _ (Ellipsoid a b c) = \(V3 x y z) -> ((x*x)/(a*a)) + ((y*y)/(b*b)) + ((z*z)/(c*c)) - 1
 getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
     let
         d = sqrt (x*x + y*y) - ((r2-r1)/h*z+r1)
@@ -135,30 +135,8 @@ getImplicit3 _ (ExtrudeOnEdgeOf symbObj1 symbObj2) =
         \(V3 x y z) -> obj1 $ V2 (obj2 (V2 x y)) z
 getImplicit3 ctx (RotateExtrude totalRotation translate rotate symbObj) =
     let
-        tau :: ℝ
-        tau = 2 * pi
         obj = getImplicit symbObj
-
-        is360m :: ℝ -> Bool
-        is360m n = tau * fromInteger (round $ n / tau) /= n
-        capped
-             = is360m totalRotation
-            || either ( /= pure 0) (\f -> f 0 /= f totalRotation) translate
-            || either is360m (\f -> is360m (f 0 - f totalRotation)) rotate
         round' = objectRounding ctx
-        translate' :: ℝ -> ℝ2
-        translate' = Either.either
-                (\(V2 a b) θ -> V2 (a*θ/totalRotation) (b*θ/totalRotation))
-                id
-                translate
-        rotate' :: ℝ -> ℝ
-        rotate' = Either.either
-                (\t θ -> t*θ/totalRotation )
-                id
-                rotate
-        twists = case rotate of
-                   Left 0  -> True
-                   _       -> False
     in
         \(V3 x y z) -> minimum $ do
             let
@@ -181,12 +159,44 @@ getImplicit3 ctx (RotateExtrude totalRotation translate rotate symbObj) =
                             (c,s) = (cos twist, sin twist)
                             (r',z') = (r-rshift, z-zshift)
                         in
-                            V2 (c*r' - s*z') (c*z' + s*r')
-                        else V2 (r - rshift) (z - zshift)
+                           V2 (c*r' - s*z') (c*z' + s*r')
+                        else
+                           V2 (r - rshift) (z - zshift)
             pure $
               if capped
               then rmax round'
                     (abs (θvirt - (totalRotation / 2)) - (totalRotation / 2))
                     (obj rz_pos)
               else obj rz_pos
+    where
+        translate' :: ℝ -> ℝ2
+        translate' = Either.either
+                (\(V2 a b) θ -> V2 (a*θ/totalRotation) (b*θ/totalRotation))
+                id
+                translate
+        rotate' :: ℝ -> ℝ
+        rotate' = Either.either
+                (\t θ -> t*θ/totalRotation)
+                id
+                rotate
+        capped
+             = not $ isMultipleOfTau totalRotation
+               || translateEndpointsDiffer
+               || rotateEndpointsDiffer
+        tau :: ℝ
+        tau = 2 * pi
+        eps :: ℝ
+        eps = 1e-12
+        isMultipleOfTau :: ℝ -> Bool
+        isMultipleOfTau v = abs (v - i * tau) <= eps
+          where
+            i :: ℝ
+            i = fromInteger $ round $ v / tau
+        -- Sample translate at the start and end of rotation, to see if it's changing. if so...
+        translateEndpointsDiffer = either ( /= pure 0) (\f -> f 0 /= f totalRotation) translate
+        -- Sample rotate at the start and end of rotation, to see if it's changing. if so...
+        rotateEndpointsDiffer = either (not . isMultipleOfTau) (\f -> not $ isMultipleOfTau (f 0 - f totalRotation)) rotate
+        twists = case rotate of
+                   Left 0  -> True
+                   _       -> False
 getImplicit3 ctx (Shared3 obj) = getImplicitShared ctx obj
