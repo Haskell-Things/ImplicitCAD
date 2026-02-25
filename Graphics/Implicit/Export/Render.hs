@@ -8,9 +8,9 @@
 -- export getContour and getMesh, which returns the edge of a 2D object, or the surface of a 3D object, respectively.
 module Graphics.Implicit.Export.Render (getMesh, getContour) where
 
-import Prelude(error, (-), ceiling, ($), (+), (*), max, div, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>), traverse, drop)
+import Prelude(decodeFloat, encodeFloat, error, snd, (-), ceiling, ($), (+), (*), max, div, fmap, reverse, (.), foldMap, min, Int, (<>), (<$>), traverse, drop, Integer, Integral)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromℕtoℝ, fromℕ, ℝ3' (ℝ3'))
+import Graphics.Implicit.Definitions (ℝ, Fastℕ, ℝ2, ℝ3, TriangleMesh, Obj2, SymbolicObj2, Obj3, SymbolicObj3, Polyline(getSegments), (⋯/), fromFastℕtoℝ, fromFastℕ, ℝ3' (ℝ3'))
 
 import Graphics.Implicit.Export.Symbolic.Rebound2 (rebound2)
 
@@ -73,7 +73,7 @@ import Graphics.Implicit.Primitives (getImplicit)
 import Control.Lens (_Wrapped, view, over, _Just)
 
 -- Set the default types for the numbers in this file.
-default (ℕ, Fastℕ, ℝ)
+default (Fastℕ, ℝ)
 
 tail :: [a] -> [a]
 tail = drop 1
@@ -88,16 +88,25 @@ getMesh res@(V3 xres yres zres) symObj =
         d = p2 - p1
 
         -- How many steps will we take on each axis?
-        nx, ny, nz :: ℕ
-        steps@(V3 nx ny nz) = ceiling <$> ( d ⋯/ res)
+        nx, ny, nz :: Fastℕ
+        steps@(V3 nx ny nz) = saferCeiling <$> ( d ⋯/ res)
 
         -- How big are the steps?
-        (V3 rx ry rz) = d ⋯/ (fromℕtoℝ <$> steps)
+        (V3 rx ry rz) = d ⋯/ (fromFastℕtoℝ <$> steps)
 
         -- The planes we're rendering along.
-        pYZ = [ x1 + rx*fromℕtoℝ n | n <- [0.. nx] ]
-        pXZ = [ y1 + ry*fromℕtoℝ n | n <- [0.. ny] ]
-        pXY = [ z1 + rz*fromℕtoℝ n | n <- [0.. nz] ]
+        iX = [0.. nx]
+        iY = [0.. ny]
+        iZ = [0.. nz]
+        lastX = tail iX
+        lastY = tail iY
+        lastZ = tail iZ
+
+        -- Rather than creating a list of values, calculate position on the fly.
+        xAt,yAt,zAt :: Fastℕ -> ℝ
+        xAt i = x1 + rx * fromFastℕtoℝ i
+        yAt i = y1 + ry * fromFastℕtoℝ i
+        zAt i = z1 + rz * fromFastℕtoℝ i
 
         -- performance tuning.
         -- FIXME: magic number.
@@ -108,63 +117,63 @@ getMesh res@(V3 xres yres zres) symObj =
         objV = par3DList nx ny nz
 
         -- Sample our object(s) at every point in the 3D space given.
-        par3DList :: ℕ -> ℕ -> ℕ -> [[[ℝ]]]
+        par3DList :: Fastℕ -> Fastℕ -> Fastℕ -> [[[ℝ]]]
         par3DList lenx leny lenz =
             [[[ sample mx my mz
             | mx <- [0..lenx] ] | my <- [0..leny] ] | mz <- [0..lenz] ]
-              `using` parBuffer (max 1 $ div (fromℕ (lenx+leny+lenz)) forcesteps) rdeepseq
+              `using` parBuffer (max 1 $ div (fromFastℕ (lenx+leny+lenz)) forcesteps) rdeepseq
 
         -- sample our object(s) at the given point.
-        sample :: ℕ -> ℕ -> ℕ -> ℝ
+        sample :: Fastℕ -> Fastℕ -> Fastℕ -> ℝ
         sample mx my mz = obj $
               V3
-                (x1 + rx*fromℕtoℝ mx)
-                (y1 + ry*fromℕtoℝ my)
-                (z1 + rz*fromℕtoℝ mz)
+                (x1 + rx*fromFastℕtoℝ mx)
+                (y1 + ry*fromFastℕtoℝ my)
+                (z1 + rz*fromFastℕtoℝ mz)
 
         -- (1) Calculate mid points on X, Y, and Z axis in 3D space.
         midsZ = [[[
-                 interpolate (V2 z0 objX0Y0Z0) (V2 z1' objX0Y0Z1) (appABC obj x0 y0) zres
-                 | x0 <- pYZ |                   objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
-                ]| y0 <- pXZ |                   objY0Z0   <- objZ0   | objY0Z1   <- objZ1
-                ]| z0 <- pXY | z1' <- tail pXY | objZ0     <- objV    | objZ1     <- tail objV
-                ] `using` parBuffer (max 1 $ div (fromℕ nz) forcesteps) rdeepseq
+                 interpolate (V2 (zAt k0) objX0Y0Z0) (V2 (zAt k1) objX0Y0Z1) (appABC obj (xAt i0) (yAt j0)) zres
+                 | i0 <- iX |               objX0Y0Z0 <- objY0Z0 | objX0Y0Z1 <- objY0Z1
+                ]| j0 <- iY |               objY0Z0   <- objZ0   | objY0Z1   <- objZ1
+                ]| k0 <- iZ | k1 <- lastZ | objZ0     <- objV    | objZ1     <- tail objV
+                ] `using` parBuffer (max 1 $ div (fromFastℕ nz) forcesteps) rdeepseq
 
         midsY = [[[
-                 interpolate (V2 y0 objX0Y0Z0) (V2 y1' objX0Y1Z0) (appACB obj x0 z0) yres
-                 | x0 <- pYZ |                   objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
-                ]| y0 <- pXZ | y1' <- tail pXZ | objY0Z0   <- objZ0   | objY1Z0   <- tail objZ0
-                ]| z0 <- pXY |                   objZ0     <- objV
-                ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
+                 interpolate (V2 (yAt j0) objX0Y0Z0) (V2 (yAt j1) objX0Y1Z0) (appACB obj (xAt i0) (zAt k0)) yres
+                 | i0 <- iX |               objX0Y0Z0 <- objY0Z0 | objX0Y1Z0 <- objY1Z0
+                ]| j0 <- iY | j1 <- lastY | objY0Z0   <- objZ0   | objY1Z0   <- tail objZ0
+                ]| k0 <- iZ |               objZ0     <- objV
+                ] `using` parBuffer (max 1 $ div (fromFastℕ ny) forcesteps) rdeepseq
 
         midsX = [[[
-                 interpolate (V2 x0 objX0Y0Z0) (V2 x1' objX1Y0Z0) (appBCA obj y0 z0) xres
-                 | x0 <- pYZ | x1' <- tail pYZ | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
-                ]| y0 <- pXZ |                   objY0Z0   <- objZ0
-                ]| z0 <- pXY |                   objZ0     <- objV
-                ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
+                 interpolate (V2 (xAt i0) objX0Y0Z0) (V2 (xAt i1) objX1Y0Z0) (appBCA obj (yAt j0) (zAt k0)) xres
+                 | i0 <- iX | i1 <- lastX | objX0Y0Z0 <- objY0Z0 | objX1Y0Z0 <- tail objY0Z0
+                ]| j0 <- iY |               objY0Z0   <- objZ0
+                ]| k0 <- iZ |               objZ0     <- objV
+                ] `using` parBuffer (max 1 $ div (fromFastℕ nx) forcesteps) rdeepseq
 
         -- (2) Calculate segments for each side
         segsZ = [[[
-            injZ z0 <$> getSegs (V2 x0 y0) (V2 x1' y1') (obj **$ z0) (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) (midA0, midA1, midB0, midB1)
-             | x0<-pYZ | x1'<-tail pYZ |midB0<-mX''  | midB1<-mX'T     | midA0<-mY''  | midA1<-tail mY''  | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<- tail objY0Z0 | objX0Y1Z0<-objY1Z0    | objX1Y1Z0<-tail objY1Z0
-            ]| y0<-pXZ | y1'<-tail pXZ |mX'' <-mX'   | mX'T <-tail mX' | mY'' <-mY'                       | objY0Z0  <-objZ0                              | objY1Z0  <-tail objZ0
-            ]| z0<-pXY                 |mX'  <-midsX |                   mY'  <-midsY                     | objZ0    <-objV
-            ] `using` parBuffer (max 1 $ div (fromℕ nz) forcesteps) rdeepseq
+            injZ (zAt k0) <$> getSegs (V2 (xAt i0) (yAt j0)) (V2 (xAt i1) (yAt j1)) (obj **$ zAt k0) (objX0Y0Z0, objX1Y0Z0, objX0Y1Z0, objX1Y1Z0) (midA0, midA1, midB0, midB1)
+             | i0 <- iX | i1 <- lastX | midB0<-mX''  | midB1<-mX'T     | midA0<-mY'' | midA1<-tail mY''  | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<- tail objY0Z0 | objX0Y1Z0<-objY1Z0    | objX1Y1Z0<-tail objY1Z0
+            ]| j0 <- iY | j1 <- lastY | mX'' <-mX'   | mX'T <-tail mX' | mY'' <-mY'                      | objY0Z0  <-objZ0                              | objY1Z0  <-tail objZ0
+            ]| k0 <- iZ               | mX'  <-midsX |                   mY'  <-midsY                    | objZ0    <-objV
+            ] `using` parBuffer (max 1 $ div (fromFastℕ nz) forcesteps) rdeepseq
 
         segsY = [[[
-            injY y0 <$> getSegs (V2 x0 z0) (V2 x1' z1') (obj *$* y0) (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) (midA0, midA1, midB0, midB1)
-             | x0<-pYZ | x1'<-tail pYZ | midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-tail mA'' | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<-tail objY0Z0 | objX0Y0Z1<-objY0Z1 | objX1Y0Z1<-tail objY0Z1
-            ]| y0<-pXZ |                 mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'                      | objY0Z0  <-objZ0                             | objY0Z1  <-objZ1
-            ]| z0<-pXY | z1'<-tail pXY | mB'  <-midsX | mBT  <-tail midsX | mA'  <-midsZ                    | objZ0    <-objV                              | objZ1    <-tail objV
-            ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
+            injY (yAt j0) <$> getSegs (V2 (xAt i0) (zAt k0)) (V2 (xAt i1) (zAt k1)) (obj *$* yAt j0) (objX0Y0Z0, objX1Y0Z0, objX0Y0Z1, objX1Y0Z1) (midA0, midA1, midB0, midB1)
+             | i0 <- iX | i1 <- lastX | midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-tail mA'' | objX0Y0Z0<-objY0Z0 | objX1Y0Z0<-tail objY0Z0 | objX0Y0Z1<-objY0Z1   | objX1Y0Z1<-tail objY0Z1
+            ]| j0 <- iY |               mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'                      | objY0Z0  <-objZ0                             | objY0Z1  <-objZ1
+            ]| k0 <- iZ | k1 <- lastZ | mB'  <-midsX | mBT  <-tail midsX | mA'  <-midsZ                    | objZ0    <-objV                              | objZ1    <-tail objV
+            ] `using` parBuffer (max 1 $ div (fromFastℕ ny) forcesteps) rdeepseq
 
         segsX = [[[
-            injX x0 <$> getSegs (V2 y0 z0) (V2 y1' z1') (obj $** x0) (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) (midA0, midA1, midB0, midB1)
-             | x0<-pYZ |                 midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-mA'T     | objX0Y0Z0<-objY0Z0 | objX0Y1Z0<-objY1Z0    | objX0Y0Z1<-objY0Z1    | objX0Y1Z1<-     objY1Z1
-            ]| y0<-pXZ | y1'<-tail pXZ | mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'   | mA'T <-tail mA' | objY0Z0  <-objZ0   | objY1Z0  <-tail objZ0 | objY0Z1  <-objZ1      | objY1Z1  <-tail objZ1
-            ]| z0<-pXY | z1'<-tail pXY | mB'  <-midsY | mBT  <-tail midsY | mA'  <-midsZ                   | objZ0    <- objV                           | objZ1    <- tail objV
-            ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
+            injX (xAt i0) <$> getSegs (V2 (yAt j0) (zAt k0)) (V2 (yAt j1) (zAt k1)) (obj $** xAt i0) (objX0Y0Z0, objX0Y1Z0, objX0Y0Z1, objX0Y1Z1) (midA0, midA1, midB0, midB1)
+             | i0 <- iX |               midB0<-mB''  | midB1<-mBT'       | midA0<-mA''  | midA1<-mA'T     | objX0Y0Z0<-objY0Z0 | objX0Y1Z0<-objY1Z0    | objX0Y0Z1<-objY0Z1    | objX0Y1Z1<-     objY1Z1
+            ]| j0 <- iY | j1 <- lastY | mB'' <-mB'   | mBT' <-mBT        | mA'' <-mA'   | mA'T <-tail mA' | objY0Z0  <-objZ0   | objY1Z0  <-tail objZ0 | objY0Z1  <-objZ1      | objY1Z1  <-tail objZ1
+            ]| k0 <- iZ | k1 <- lastZ | mB'  <-midsY | mBT  <-tail midsY | mA'  <-midsZ                   | objZ0    <- objV                           | objZ1    <- tail objV
+            ] `using` parBuffer (max 1 $ div (fromFastℕ nx) forcesteps) rdeepseq
 
         -- (3) & (4) : get and tesselate loops
         -- FIXME: hack.
@@ -195,7 +204,7 @@ getMesh res@(V3 xres yres zres) symObj =
             ]| segZ'  <- segsZ | segZT  <- tail segsZ
              | segY'  <- segsY
              | segX'  <- segsX
-            ] `using` parBuffer (max 1 $ div (fromℕ $ nx+ny+nz) forcesteps) rdeepseq
+            ] `using` parBuffer (max 1 $ div (fromFastℕ $ nx+ny+nz) forcesteps) rdeepseq
 
     in
       -- (5) merge squares, etc
@@ -212,15 +221,22 @@ getContour res@(V2 xres yres) symObj =
         d = p2 - p1
 
         -- How many steps will we take on each axis?
-        nx, ny :: ℕ
-        steps@(V2 nx ny) = ceiling <$> (d ⋯/ res)
+        nx, ny :: Fastℕ
+        steps@(V2 nx ny) = saferCeiling <$> (d ⋯/ res)
 
         -- How big are the steps?
-        (V2 rx ry) = d ⋯/ (fromℕtoℝ <$> steps)
+        (V2 rx ry) = d ⋯/ (fromFastℕtoℝ <$> steps)
 
         -- The lines we are rendering along.
-        pX = [ x1 + rx*fromℕtoℝ p | p <- [0.. nx] ]
-        pY = [ y1 + ry*fromℕtoℝ p | p <- [0.. ny] ]
+        iX = [0.. nx]
+        iY = [0.. ny]
+        lastX = tail iX
+        lastY = tail iY
+
+        -- Rather than creating a list of values, calculate position on the fly.
+        xAt,yAt :: Fastℕ -> ℝ
+        xAt i = x1 + rx * fromFastℕtoℝ i
+        yAt i = y1 + ry * fromFastℕtoℝ i
 
         -- Performance tuning.
         -- FIXME: magic number.
@@ -231,40 +247,40 @@ getContour res@(V2 xres yres) symObj =
         objV = par2DList nx ny
 
         -- Sample our object(s) at every point in the 2D plane given.
-        par2DList :: ℕ -> ℕ -> [[ℝ]]
+        par2DList :: Fastℕ -> Fastℕ -> [[ℝ]]
         par2DList lenx leny =
             [[ sample mx my
                   | mx <- [0..lenx]
                 ] | my <- [0..leny]
-                ] `using` parBuffer (max 1 $ div (fromℕ $ lenx+leny) forcesteps) rdeepseq
+                ] `using` parBuffer (max 1 $ div (fromFastℕ $ lenx+leny) forcesteps) rdeepseq
 
         -- sample our object(s) at the given point.
-        sample :: ℕ -> ℕ -> ℝ
+        sample :: Fastℕ -> Fastℕ -> ℝ
         sample mx my = obj $
           V2
-                (x1 + rx*fromℕtoℝ mx)
-                (y1 + ry*fromℕtoℝ my)
+                (x1 + rx*fromFastℕtoℝ mx)
+                (y1 + ry*fromFastℕtoℝ my)
 
         -- Calculate mid points on X axis in 2D space.
         midsX = [[
-                 interpolate (V2 x0 objX0Y0) (V2 x1' objX1Y0) (obj *$ y0) xres
-                 | x0 <- pX | x1' <- tail pX | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
-                ]| y0 <- pY |                   objY0   <- objV
-                ] `using` parBuffer (max 1 $ div (fromℕ nx) forcesteps) rdeepseq
+                 interpolate (V2 (xAt i0) objX0Y0) (V2 (xAt i1) objX1Y0) (obj *$ yAt j0) xres
+                 | i0 <- iX | i1 <- lastX      | objX0Y0 <- objY0 | objX1Y0 <- tail objY0
+                ]| j0 <- iY |                    objY0   <- objV
+                ] `using` parBuffer (max 1 $ div (fromFastℕ nx) forcesteps) rdeepseq
 
         -- Calculate mid points on Y axis in 2D space.
         midsY = [[
-                 interpolate (V2 y0 objX0Y0) (V2 y1' objX0Y1) (obj $* x0) yres
-                 | x0 <- pX |                  objX0Y0 <- objY0   | objX0Y1 <- objY1
-                ]| y0 <- pY | y1' <- tail pY | objY0   <- objV    | objY1   <- tail objV
-                ] `using` parBuffer (max 1 $ div (fromℕ ny) forcesteps) rdeepseq
+                 interpolate (V2 (yAt j0) objX0Y0) (V2 (yAt j1) objX0Y1) (obj $* xAt i0) yres
+                 | i0 <- iX |                    objX0Y0 <- objY0 | objX0Y1 <- objY1
+                ]| j0 <- iY | j1 <- lastY      | objY0   <- objV  | objY1   <- tail objV
+                ] `using` parBuffer (max 1 $ div (fromFastℕ ny) forcesteps) rdeepseq
 
         -- Calculate segments for each side
         segs = [[
-            getSegs (V2 x0 y0) (V2 x1' y1') obj (objX0Y0, objX1Y0, objX0Y1, objX1Y1) (midA0, midA1, midB0, midB1)
-             | x0<-pX | x1'<-tail pX |midB0<-mX''  | midB1<-mX'T       | midA0<-mY''  | midA1<-tail mY'' | objX0Y0<-objY0 | objX1Y0<-tail objY0 | objX0Y1<-objY1 | objX1Y1<-tail objY1
-            ]| y0<-pY | y1'<-tail pY |mX'' <-midsX | mX'T <-tail midsX | mY'' <-midsY                    | objY0 <- objV                        | objY1 <- tail objV
-            ] `using` parBuffer (max 1 $ div (fromℕ $ nx+ny) forcesteps) rdeepseq
+                getSegs (V2 (xAt i0) (yAt j0)) (V2 (xAt i1) (yAt j1)) obj (objX0Y0, objX1Y0, objX0Y1, objX1Y1) (midA0, midA1, midB0, midB1)
+                | i0 <- iX | i1 <- lastX | midB0<-mX''  | midB1<-mX'T       | midA0<-mY''  | midA1<-tail mY'' | objX0Y0<-objY0 | objX1Y0<-tail objY0 | objX0Y1<-objY1 | objX1Y1<-tail objY1
+               ]| j0 <- iY | j1 <- lastY | mX'' <-midsX | mX'T <-tail midsX | mY'' <-midsY                    | objY0 <- objV                        | objY1 <- tail objV
+               ] `using` parBuffer (max 1 $ div (fromFastℕ $ nx+ny) forcesteps) rdeepseq
     in
       -- Merge squares
       cleanLoopsFromSegs . fold $ fold segs
@@ -318,4 +334,12 @@ appACB f a c b = f (V3 a b c)
 
 mapR :: [[ℝ3]] -> [[ℝ3]]
 mapR = fmap reverse
+
+saferCeiling :: Integral a => ℝ -> a
+saferCeiling v = ceiling (v-eps)
+  where
+   eps :: ℝ
+   eps = encodeFloat reps (snd (decodeFloat v) - 52)
+   reps :: Integer
+   reps = 16
 
