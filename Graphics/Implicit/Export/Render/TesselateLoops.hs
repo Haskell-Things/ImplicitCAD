@@ -46,28 +46,34 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 
 {-
    #__#
-   |  |  -> if parallegram then quad
+   |  |  -> if we find a parallelogram then construct a quad.
    #__#
 -}
-tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] ~= centroid [b,d] = [Sq (b1,b2,b3) z xR yR corners]
+tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] ~= centroid [b,d] = [Sq (b1,b2,b3) z xR yR (a,b,c,d)]
   where
+    -- Basis vectors.
     b1 = normalize $ a - b
-    -- we re-reflect B2 against B3 to ensure it's perpendicular to B1
-    b2r = c - b
-    b3u = normalize $ b1 `cross` b2r
+    -- Note: We re-reflect B2 against B3 here to ensure it's perpendicular to B1. This is to encourage matches, and work around floating point error.
     b2 = normalize $ b3u `cross` b1
+    b3u = normalize $ b1 `cross` b2r
+    -- The un-reflected b2
+    b2r = c - b
     b3 = normalize $ b1 `cross` b2
+    -- Z height
     z = a `dot` b3
+    -- Ranges of surface covered by square
+    xR = V2 (min x1 x2) (max x1 x2)
+    yR = V2 (min y1 y2) (max y1 y2)
     x1 = a `dot` b1
     x2 = c `dot` b1
     y1 = a `dot` b2
     y2 = c `dot` b2
-    xR = V2 (min x1 x2) (max x1 x2)
-    yR = V2 (min y1 y2) (max y1 y2)
+    -- Equivalency checking for our center position of the two lines segments crossing the (hopefully) parallelogram.
+    (~=) u v = quadrance (u - v) <= eps
+    -- Our fudge factor.
     eps :: ℝ
     eps = 1e-8
-    (~=) u v = quadrance (u - v) <= eps
-    corners = (a,b,c,d)
+
 {-
    #__#      #__#
    |  |  ->  | /|
