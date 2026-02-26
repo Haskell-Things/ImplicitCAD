@@ -46,7 +46,7 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 
 {-
    #__#
-   |  |  -> if we find a parallelogram then construct a quad.
+   |  |  -> if we find a rectangle then construct a quad.
    #__#
 -}
 tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] ~= centroid [b,d] = [Sq (b1,b2,b3) z xR yR (a,b,c,d)]
