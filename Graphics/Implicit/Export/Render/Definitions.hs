@@ -4,6 +4,8 @@
 -- We want a type that can represent squares/quads and triangles.
 module Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris, Sq)) where
 
+import Prelude (Show, Eq)
+
 -- Points/Numbers, and the concept of an array of triangles.
 import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, TriangleMesh)
 
@@ -11,10 +13,16 @@ import Graphics.Implicit.Definitions(ℝ, ℝ2, ℝ3, TriangleMesh)
 import Control.DeepSeq (NFData, rnf)
 
 data TriSquare =
-      Sq (ℝ3,ℝ3,ℝ3) ℝ ℝ2 ℝ2
+      Sq {
+           _basis :: (ℝ3,ℝ3,ℝ3)
+         , _zOffset :: ℝ
+         , _xInterval :: ℝ2
+         , _yInterval :: ℝ2
+         , _origCoords :: (ℝ3,ℝ3,ℝ3,ℝ3)}
     | Tris TriangleMesh
+  deriving (Show, Eq)
 
 instance NFData TriSquare where
-    rnf (Sq b z xS yS) = rnf (b,z,xS,yS)
+    rnf (Sq b z xS yS coords) = rnf (b,z,xS,yS,coords)
     rnf (Tris tris) = rnf tris
 

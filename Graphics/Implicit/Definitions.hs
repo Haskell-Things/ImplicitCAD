@@ -177,6 +177,7 @@ newtype Polytri = Polytri (ℝ2, ℝ2, ℝ2)
 
 -- | A triangle in 3D space (a,b,c) = a triangle with vertices a, b and c
 newtype Triangle = Triangle (ℝ3, ℝ3, ℝ3)
+  deriving (Show, Eq)
 
 -- | A triangle ((v1,n1),(v2,n2),(v3,n3)) has vertices v1, v2, v3
 --   with corresponding normals n1, n2, and n3
@@ -184,6 +185,7 @@ newtype NormedTriangle = NormedTriangle ((ℝ3, ℝ3), (ℝ3, ℝ3), (ℝ3, ℝ3
 
 -- | A triangle mesh is a bunch of triangles, attempting to be a surface.
 newtype TriangleMesh = TriangleMesh { getTriangles :: [Triangle] }
+  deriving (Show, Eq)
 
 -- | A normed triangle mesh is a mesh of normed triangles.
 newtype NormedTriangleMesh = NormedTriangleMesh { getNormedTriangles :: [NormedTriangle] }
