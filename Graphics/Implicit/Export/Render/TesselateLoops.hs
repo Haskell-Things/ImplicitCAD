@@ -4,7 +4,7 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(max, min, otherwise, sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (<=), (/), null, (<>), (*), abs, (+), foldMap, (&&), drop, Int)
+import Prelude(max, min, sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (<=), (/), null, (<>), (*), abs, (+), foldMap, (&&), drop, Int)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
