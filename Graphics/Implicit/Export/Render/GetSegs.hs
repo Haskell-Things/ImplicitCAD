@@ -61,7 +61,7 @@ getSegs p1@(V2 x y) p2 obj (x1y1, x2y1, x1y2, x2y2) (midx1V,midx2V,midy1V,midy2V
 
         -- TODO(sandy): i might have swapped (^+^) for - here
         (V2 dx dy) = p2 - p1
-        res = sqrt (dx*dy)
+        res = sqrt (dx*dx+dy*dy)
 
         midx1 = V2 x        midx1V
         midx2 = V2 (x + dx) midx2V
