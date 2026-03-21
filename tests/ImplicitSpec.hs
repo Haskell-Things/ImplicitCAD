@@ -46,7 +46,7 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser (collectTests)
 
 import Graphics.Implicit.Definitions (TriangleMesh, Triangle(Triangle), getTriangles)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule), TestInvariant(EulerCharacteristic))
+import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule, ONModuleWithSuite), TestInvariant(EulerCharacteristic))
 
 import Graphics.Implicit.ExtOpenScad.Primitives(primitiveModules)
 
@@ -383,6 +383,7 @@ primitiveModulesSpec = mapM_ runTest inlineTests
         dummyPos :: SourcePosition
         dummyPos = SourcePosition 0 0 "/dev/null"
         testsOfModule (_, ONModule _ implementation _) = collectTests $ implementation dummyPos
+        testsOfModule (_, ONModuleWithSuite _ implementation _) = collectTests $ implementation dummyPos []
         testsOfModule _ = []
 
 -- FIXME: This should not be in IO () for reasons of ImplicitCAD.
