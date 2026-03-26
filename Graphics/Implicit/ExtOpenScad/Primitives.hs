@@ -23,7 +23,7 @@ import Graphics.Implicit.Export.Util (centroid)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ArgParser, Symbol(Symbol), StateC, SourcePosition)
 
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser (doc, defaultTo, example, test, eulerCharacteristic)
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (contoursAreClosed, doc, defaultTo, example, test, eulerCharacteristic)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.ArgParser as GIEUA (argument)
 
@@ -196,13 +196,8 @@ square = moduleWithoutSuite "square" $ \_ -> do
     example "square(size = [3,4], center = true, r = 0.5);"
     example "square(4);"
     -- Tests
--- FIXME: support 2D eulerCharacteristic tests.
-{-
-    test "square(2);"
-        `eulerCharacteristic` 0
-    test "square(size=[2,3]);"
-      `eulerCharacteristic` 0
--}
+    contoursAreClosed $ test "square(2);"
+    contoursAreClosed $ test "square(size=[2,3]);"
     -- arguments (two forms)
     (V2 x1 x2, V2 y1 y2) <-
         do
@@ -488,6 +483,7 @@ circle = moduleWithoutSuite "circle" $ \_ -> do
 polygon :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
 polygon = moduleWithoutSuite "polygon" $ \_ -> do
     example "polygon ([(0,0), (0,10), (10,0)]);"
+    contoursAreClosed $ test "polygon ([(0,0), (0,10), (10,0)]);"
     points :: [ℝ2]  <- argument "points"
                         `doc` "vertices of the polygon"
 {-    r      :: ℝ     <- argument "r"

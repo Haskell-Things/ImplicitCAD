@@ -7,7 +7,7 @@
 
 module ImplicitSpec (spec) where
 
-import Prelude (Fractional, concatMap, error, flip, fmap, fromIntegral, length, negate, pure, Bool(False, True), (+), (<), Show, Monoid, mempty, (*), (/), (<>), (-), (/=), ($), (.), pi, id, Int, IO)
+import Prelude (Fractional, all, concatMap, error, flip, fmap, fromIntegral, head, last, length, negate, not, null, pure, Bool(False, True), (+), (<), Show, Monoid, mempty, (&&), (*), (==), (/), (<>), (-), (/=), ($), (.), pi, id, Int, IO)
 
 import Test.Hspec (describe, it, parallel, shouldBe, Spec)
 
@@ -44,9 +44,9 @@ import Graphics.Implicit.Export.DiscreteAproxable (discreteAprox)
 
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (collectTests)
 
-import Graphics.Implicit.Definitions (TriangleMesh, Triangle(Triangle), getTriangles)
+import Graphics.Implicit.Definitions (Polyline(Polyline), TriangleMesh, Triangle(Triangle), getTriangles)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule), TestInvariant(EulerCharacteristic))
+import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule), TestInvariant(ContoursAreClosed,EulerCharacteristic))
 
 import Graphics.Implicit.ExtOpenScad.Primitives(primitiveModules)
 
@@ -390,25 +390,41 @@ primitiveModulesSpec = mapM_ runTest inlineTests
 -- | Run one of the tests from Graphics/Implicit/ExtOpenScad/Primitives.hs
 runInlineTest :: Text -> Maybe ℝ -> [TestInvariant] -> IO ()
 runInlineTest scad maybeRes invariants = do
-  (_, _, obj3s, _) <- runOpenscad defaultScadOpts [] Nothing unpackedScad
-  let foundObj = case obj3s of
-        [] -> error $ "SCAD code produced no 3D geometry: " <> unpackedScad
-        [obj] -> obj
-        objs -> union objs
-  mapM_ (checkInvariant maybeRes foundObj) invariants
+  (_, obj2s, obj3s, _) <- runOpenscad defaultScadOpts [] Nothing unpackedScad
+  let testInvariant invariant = case (obj3s, obj2s) of
+        ([],[]) -> error $ "SCAD code produced no 3D geometry: " <> unpackedScad
+        ([obj],[]) -> check3DInvariant maybeRes obj invariant
+        (objs,[])  -> check3DInvariant maybeRes (union objs) invariant
+        ([],[obj]) -> check2DInvariant maybeRes obj invariant
+        ([],objs) -> check2DInvariant maybeRes (union objs) invariant
+        _ -> error "too many objects"
+  mapM_ testInvariant invariants
   where
     unpackedScad = unpack scad
 
-checkInvariant :: Maybe ℝ -> SymbolicObj3 -> TestInvariant -> IO ()
-checkInvariant maybeRes obj (EulerCharacteristic expected) =
-  eulerCharacteristicOf (getTriangles (discreteAprox res obj :: TriangleMesh)) `shouldBe` fromIntegral expected
-  where
-    res = fromMaybe 1 maybeRes
+-- The SCAD options we will use during our runs.
 defaultScadOpts :: ScadOpts
 defaultScadOpts = ScadOpts compat_flag import_flag
   where
-    compat_flag = True -- Try to be extra compatible with openscad.
+    compat_flag = False -- Do not attempt to be compatible with OpenSCAD.
     import_flag = False -- Do not honor include or use statements.
+
+-- | Check a single invariant of a primitive.
+check3DInvariant :: Maybe ℝ -> SymbolicObj3 -> TestInvariant -> IO ()
+check3DInvariant maybeRes obj invariant =
+  case invariant of
+    (EulerCharacteristic expected) -> eulerCharacteristicOf (getTriangles (discreteAprox res obj :: TriangleMesh)) `shouldBe` fromIntegral expected
+    ContoursAreClosed -> error "cannot check for contours being closed in a 3D object!"
+  where
+    res = fromMaybe 1 maybeRes
+
+check2DInvariant :: Maybe ℝ -> SymbolicObj2 -> TestInvariant -> IO ()
+check2DInvariant maybeRes obj invariant =
+  case invariant of
+    (EulerCharacteristic _) -> error "cannot perform euler characteristic finding on 2D objects."
+    ContoursAreClosed -> allContoursAreClosed (discreteAprox res obj :: [Polyline]) `shouldBe` True
+  where
+    res = fromMaybe 1 maybeRes
 
 -- | Find the Euler Characteristic of a mesh. This is a topology property test.
 eulerCharacteristicOf :: [Triangle] -> Int
@@ -422,3 +438,9 @@ eulerCharacteristicOf triangles = v - e + f
     vertices :: Triangle -> [ℝ3]
     vertices (Triangle (v1,v2,v3)) = [v1,v2,v3]
     sortEdge v1 v2 = if v1 < v2 then (v1,v2) else (v2,v1)
+
+-- NOTE: Implies "yes, it generated geometry".
+allContoursAreClosed :: [Polyline] -> Bool
+allContoursAreClosed polylines = all isClosed polylines
+  where
+    isClosed (Polyline points) = not (null points) && head points == last points
