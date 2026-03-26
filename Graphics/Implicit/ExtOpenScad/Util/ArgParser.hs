@@ -13,6 +13,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
   argument,
   atResolution,
   collectTests,
+  contoursAreClosed,
   doc,
   defaultTo,
   eulerCharacteristic,
@@ -24,7 +25,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
 import Prelude(String, Maybe(Just, Nothing), ($), (<>), concatMap, error, otherwise, show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
 import qualified Prelude as P (null)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic), Symbol, VarLookup(VarLookup))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic, ContoursAreClosed), Symbol, VarLookup(VarLookup))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
@@ -75,6 +76,8 @@ defaultTo _ _ = APFail "Impossible! defaultTo"
 example :: Text -> ArgParser ()
 example str = APExample str (return ())
 
+-- * Our in-ArgParser unit test suite!
+
 -- | Start an inline test.
 test :: Text -> ArgParser ()
 test str = APTest str Nothing [] (return ())
@@ -90,7 +93,12 @@ atResolution _ _ = APFail "Impossible! atResolution"
 eulerCharacteristic :: ArgParser a -> ℕ -> ArgParser a
 eulerCharacteristic (APTest str maybeRes tests child) χ =
     APTest str maybeRes (EulerCharacteristic χ : tests) child
-eulerCharacteristic _ _ = APFail "Impossible! eulerCharacteristic"
+eulerCharacteristic _ _ = APFail "eulerCharacteristic called on an Argparser that isn't APTest"
+
+-- | Indicate that the test should result in 2D contours, and they should be closed.
+contoursAreClosed :: ArgParser a -> ArgParser a
+contoursAreClosed (APTest str maybeRes tests child) = APTest str maybeRes (ContoursAreClosed:tests) child
+contoursAreClosed _ = APFail  "contoursAreClosed called on an Argparser that isn't APTest"
 
 -- * Tools for handeling ArgParsers
 

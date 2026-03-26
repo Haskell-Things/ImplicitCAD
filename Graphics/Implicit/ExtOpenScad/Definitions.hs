@@ -21,7 +21,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)),
                                                   OVal(OIO, ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, ONModuleWithSuite, OVargsModule, OError, OObj2, OObj3),
-                                                  TestInvariant(EulerCharacteristic),
+                                                  TestInvariant(EulerCharacteristic, ContoursAreClosed),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
                                                   CompState(CompState, scadVars, oVals, sourceDir),
@@ -303,5 +303,7 @@ lookupVarIn :: Text -> VarLookup -> Maybe OVal
 lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
 -- | Our tests. We only have the one, and it is to check the Euler characteristic of a mesh.
-newtype TestInvariant = EulerCharacteristic ℕ
+data TestInvariant =
+    EulerCharacteristic ℕ
+  | ContoursAreClosed
     deriving (Show)
