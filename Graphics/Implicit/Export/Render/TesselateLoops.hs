@@ -4,16 +4,16 @@
 
 module Graphics.Implicit.Export.Render.TesselateLoops (tesselateLoop) where
 
-import Prelude(sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (/), null, (<>), (*), abs, (+), foldMap, (&&), drop, Int)
+import Prelude(max, min, sum, (-), pure, ($), length, (==), zip, init, reverse, (<), (<=), (/), null, (<>), (*), abs, (+), foldMap, (&&), drop, Int)
 
 import Graphics.Implicit.Definitions (ℝ, ℕ, Obj3, ℝ3, TriangleMesh(TriangleMesh), Triangle(Triangle))
 
-import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris))
+import Graphics.Implicit.Export.Render.Definitions (TriSquare(Tris,Sq))
 
 import Graphics.Implicit.Export.Util (centroid3DPair, centroid)
 
 import Data.List (genericLength)
-import Linear ( cross, Metric(norm), (^*), (^/) )
+import Linear ( cross, dot, normalize, quadrance, Metric(norm), (^*), (^/), V2(V2))
 
 tail :: [a] -> [a]
 tail = drop 1
@@ -46,20 +46,33 @@ tesselateLoop res obj [as@(_:_:_:_),[_,_], bs@(_:_:_:_), [_,_] ] | length as == 
 
 {-
    #__#
-   |  |  -> if parallegram then quad
+   |  |  -> if we find a rectangle then construct a quad.
    #__#
 -}
-
--- FIXME: this function is definately broken, resulting in floating squares. see https://github.com/colah/ImplicitCAD/issues/98
-
-{-
-tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] == centroid [b,d] =
-    let
-        b1 = normalized $ a - b
-        b2 = normalized $ c - b
-        b3 = b1 `cross3` b2
-    in [Sq (b1,b2,b3) (a ⋅ b3) (a ⋅ b1, c ⋅ b1) (a ⋅ b2, c ⋅ b2) ]
--}
+tesselateLoop _ _ [[a,_],[b,_],[c,_],[d,_]] | centroid [a,c] ~= centroid [b,d] = [Sq (b1,b2,b3) z xR yR (a,b,c,d)]
+  where
+    -- Basis vectors.
+    b1 = normalize $ a - b
+    -- Note: We re-reflect B2 against B3 here to ensure it's perpendicular to B1. This is to encourage matches, and work around floating point error.
+    b2 = normalize $ b3u `cross` b1
+    b3u = normalize $ b1 `cross` b2r
+    -- The un-reflected b2
+    b2r = c - b
+    b3 = normalize $ b1 `cross` b2
+    -- Z height
+    z = a `dot` b3
+    -- Ranges of surface covered by square
+    xR = V2 (min x1 x2) (max x1 x2)
+    yR = V2 (min y1 y2) (max y1 y2)
+    x1 = a `dot` b1
+    x2 = c `dot` b1
+    y1 = a `dot` b2
+    y2 = c `dot` b2
+    -- Equivalency checking for our center position of the two lines segments crossing the (hopefully) parallelogram.
+    (~=) u v = quadrance (u - v) <= eps
+    -- Our fudge factor.
+    eps :: ℝ
+    eps = 1e-8
 
 {-
    #__#      #__#
