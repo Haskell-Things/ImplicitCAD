@@ -46,7 +46,7 @@ import Graphics.Implicit.ExtOpenScad.Util.ArgParser (collectTests)
 
 import Graphics.Implicit.Definitions (Polyline(Polyline), TriangleMesh, Triangle(Triangle), getTriangles)
 
-import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule), TestInvariant(ContoursAreClosed,EulerCharacteristic))
+import Graphics.Implicit.ExtOpenScad.Definitions(ScadOpts(ScadOpts), SourcePosition(SourcePosition), OVal(ONModule), TestInvariant(ContoursAreClosed, EulerCharacteristic, MeshIsWaterTight))
 
 import Graphics.Implicit.ExtOpenScad.Primitives(primitiveModules)
 
@@ -55,6 +55,8 @@ import Test.QuickCheck (Arbitrary(arbitrary), suchThat, forAll, NonZero)
 import Data.Foldable (for_, mapM_)
 
 import Data.List (nub)
+
+import Data.Map (elems, fromListWith)
 
 import Data.Maybe (fromMaybe, Maybe(Nothing))
 
@@ -415,6 +417,7 @@ check3DInvariant maybeRes obj invariant =
   case invariant of
     (EulerCharacteristic expected) -> eulerCharacteristicOf (getTriangles (discreteAprox res obj :: TriangleMesh)) `shouldBe` fromIntegral expected
     ContoursAreClosed -> error "cannot check for contours being closed in a 3D object!"
+    MeshIsWaterTight -> meshIsWaterTight (getTriangles (discreteAprox res obj :: TriangleMesh)) `shouldBe` True
   where
     res = fromMaybe 1 maybeRes
 
@@ -423,6 +426,7 @@ check2DInvariant maybeRes obj invariant =
   case invariant of
     (EulerCharacteristic _) -> error "cannot perform euler characteristic finding on 2D objects."
     ContoursAreClosed -> allContoursAreClosed (discreteAprox res obj :: [Polyline]) `shouldBe` True
+    MeshIsWaterTight -> error "cannot perform mesh tests on 2D objects."
   where
     res = fromMaybe 1 maybeRes
 
@@ -444,3 +448,11 @@ allContoursAreClosed :: [Polyline] -> Bool
 allContoursAreClosed polylines = all isClosed polylines
   where
     isClosed (Polyline points) = not (null points) && head points == last points
+
+meshIsWaterTight :: [Triangle] -> Bool
+meshIsWaterTight triangles = all (==(2::Int)) $ elems edgeCounts
+  where
+    edgeCounts = fromListWith (+) [(edge, 1) | triangle <- triangles, edge <- edges triangle]
+    edges :: Triangle -> [(ℝ3,ℝ3)]
+    edges (Triangle (v1,v2,v3)) = [sortEdge v1 v2, sortEdge v2 v3, sortEdge v3 v1]
+    sortEdge v1 v2 = if v1 < v2 then (v1,v2) else (v2,v1)
