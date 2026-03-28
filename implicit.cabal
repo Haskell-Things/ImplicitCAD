@@ -240,6 +240,7 @@ Test-suite test-implicit
     Build-depends:
                   base,
                   bytestring,
+                  containers,
                   hspec,
                   HUnit,
                   implicit,

@@ -18,6 +18,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
   defaultTo,
   eulerCharacteristic,
   example,
+  meshIsWaterTight,
   test
   ) where
 
@@ -25,7 +26,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
 import Prelude(String, Maybe(Just, Nothing), ($), (<>), concatMap, error, otherwise, show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
 import qualified Prelude as P (null)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic, ContoursAreClosed), Symbol, VarLookup(VarLookup))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic, ContoursAreClosed, MeshIsWaterTight), Symbol, VarLookup(VarLookup))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
@@ -99,6 +100,10 @@ eulerCharacteristic _ _ = APFail "eulerCharacteristic called on an Argparser tha
 contoursAreClosed :: ArgParser a -> ArgParser a
 contoursAreClosed (APTest str maybeRes tests child) = APTest str maybeRes (ContoursAreClosed:tests) child
 contoursAreClosed _ = APFail  "contoursAreClosed called on an Argparser that isn't APTest"
+
+meshIsWaterTight :: ArgParser a -> ArgParser a
+meshIsWaterTight (APTest str maybeRes tests child) = APTest str maybeRes (MeshIsWaterTight:tests) child
+meshIsWaterTight _ = APFail  "meshIsWaterTight called on an Argparser that isn't APTest"
 
 -- * Tools for handeling ArgParsers
 

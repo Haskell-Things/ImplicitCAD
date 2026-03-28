@@ -21,7 +21,7 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   StatementI(StatementI),
                                                   Statement(DoNothing, NewModule, Include, If, ModuleCall, (:=)),
                                                   OVal(OIO, ONum, OBool, OString, OList, OFunc, OUndefined, OUModule, ONModule, ONModuleWithSuite, OVargsModule, OError, OObj2, OObj3),
-                                                  TestInvariant(EulerCharacteristic, ContoursAreClosed),
+                                                  TestInvariant(EulerCharacteristic, ContoursAreClosed, MeshIsWaterTight),
                                                   SourcePosition(SourcePosition),
                                                   StateC,
                                                   CompState(CompState, scadVars, oVals, sourceDir),
@@ -306,4 +306,5 @@ lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 data TestInvariant =
     EulerCharacteristic ℕ
   | ContoursAreClosed
+  | MeshIsWaterTight
     deriving (Show)

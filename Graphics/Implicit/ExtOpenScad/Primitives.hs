@@ -23,7 +23,7 @@ import Graphics.Implicit.Export.Util (centroid)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ArgParser, Symbol(Symbol), StateC, SourcePosition)
 
-import Graphics.Implicit.ExtOpenScad.Util.ArgParser (contoursAreClosed, doc, defaultTo, example, test, eulerCharacteristic)
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (contoursAreClosed, doc, defaultTo, example, meshIsWaterTight, test, eulerCharacteristic)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.ArgParser as GIEUA (argument)
 
@@ -150,11 +150,11 @@ cube = moduleWithoutSuite "cube" $ \_ -> do
     example "cube(size = [2,3,4], center = true, r = 0.5);"
     example "cube(4);"
     -- Tests
-    test "cube(4);"
+    meshIsWaterTight $ test "cube(4);"
         `eulerCharacteristic` 2
-    test "cube(size=[2,3,4]);"
+    meshIsWaterTight $ test "cube(size=[2,3,4]);"
         `eulerCharacteristic` 2
-    test "cube([2,3,4]);" -- openscad syntax
+    meshIsWaterTight $ test "cube([2,3,4]);" -- openscad syntax
         `eulerCharacteristic` 2
     -- arguments (two forms)
     (V2 x1 x2, V2 y1 y2, V2 z1 z2) <-
@@ -296,6 +296,7 @@ cylinder = moduleWithoutSuite "cylinder" $ \_ -> do
 polyhedron :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
 polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
     example "polyhedron(points=[[0,0,0], [2,0,0], [2,2,0], [0,2,0], [1, 1, 2]], faces=[[0,1,2,3], [0,4,1], [1,4,2], [2,4,3], [3,4,0]]);"
+    meshIsWaterTight $ test "polyhedron(points=[[0,0,0], [2,0,0], [2,2,0], [0,2,0], [1, 1, 2]], faces=[[0,1,2,3], [0,4,1], [1,4,2], [2,4,3], [3,4,0]]);" `eulerCharacteristic` 2
     -- Arguments
     -- FIXME: find a way to mark an arguement as non-empty!
     points :: [ℝ3] <- argument "points" `doc` "list of points to construct faces from"
@@ -420,7 +421,7 @@ torus :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
 torus = moduleWithoutSuite "torus" $ \_ -> do
     example "torus(r1=10, r2=5);"
     -- Tests
-    test "torus(r1=10, r2=5);"
+    meshIsWaterTight $ test "torus(r1=10, r2=5);"
         `eulerCharacteristic` 0
     -- arguments
     (r1, r2) <- (,)
