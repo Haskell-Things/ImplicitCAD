@@ -152,6 +152,7 @@ dist: $(TARGETS)
 
 # Generate examples.
 examples: $(EXTOPENSCADBIN)
+	cd Examples && echo ../$(EXTOPENSCADBIN) $(SCADOPTS) example3.escad -f asciistl $(RTSOPTS) && ../$(EXTOPENSCADBIN) $(SCADOPTS) example3.escad -f asciistl $(RTSOPTS)
 	cd Examples && for each in `find ./ -name '*scad' -type f | sort`; do { echo ../$(EXTOPENSCADBIN) $(SCADOPTS) $$each $(RTSOPTS); ../$(EXTOPENSCADBIN) $(SCADOPTS) $$each $(RTSOPTS); } done
 	# NOTE: on debian, if this fails to find the linear package, run: 'apt install libghc-linear-dev libghc-show-combinators-dev libghc-blaze-svg-dev libghc-data-default-dev libghc-juicypixels-dev'
 	cd Examples && for each in `find ./ -name '*.hs' -type f | sort`; do { filename=$(basename "$$each"); filename="$${filename%.*}"; cd ..; $(GHC) $(EXAMPLEOPTS) Examples/$$filename.hs -o Examples/$$filename; cd Examples; echo $$filename; $$filename +RTS -t ; } done

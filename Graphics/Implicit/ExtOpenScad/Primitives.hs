@@ -15,13 +15,13 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(any, concat, elem, error, foldr, head, mapM, (.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, show, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, (<*>), (<$>))
+import Prelude(any, concat, elem, error, fromIntegral, foldr, head, length, mapM, (.), (+), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, show, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, (<*>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), fromℕtoℝ, isScaleID)
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ArgParser, Symbol(Symbol), StateC, SourcePosition)
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser, OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ScadOpts(importsAllowed), SourcePosition, StateC, Symbol(Symbol))
 
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (contoursAreClosed, doc, defaultTo, example, meshIsWaterTight, test, eulerCharacteristic)
 
@@ -29,18 +29,22 @@ import qualified Graphics.Implicit.ExtOpenScad.Util.ArgParser as GIEUA (argument
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (OTypeMirror, caseOType, divideObjs, (<||>))
 
-import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (getRelPath, errorC, scadOptions, warnC)
 
-import Graphics.Implicit.TriUtil (Tri)
+import Graphics.Implicit.Import.Definitions (trianglesFromSTL)
+
+import Graphics.Implicit.TriUtil (Tri, Triangle)
 
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, polyhedron, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, slice, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
 
 import Control.Monad (foldM, mplus)
 
+import Data.ByteString (readFile)
+
 import Data.Foldable (toList)
 
-import Data.List (genericIndex)
+import Data.List (concatMap, genericIndex)
 
 import Data.Maybe (fromMaybe, isJust)
 
@@ -48,13 +52,17 @@ import Data.Sequence (Seq, deleteAt, filter, fromList)
 import qualified Data.Sequence as DS (null)
 
 import Data.Text.Lazy (Text)
-import qualified Data.Text.Lazy as DTL (pack)
+import qualified Data.Text.Lazy as DTL (pack, unpack)
 
 import Control.Lens ((^.))
+
+import Control.Monad.State (liftIO)
 
 import Linear (_m33, cross, dot, M34, M44, V2(V2), V3(V3), V4(V4))
 
 import Linear.Affine (qdA)
+
+import System.Directory (doesFileExist)
 
 default (ℝ)
 
@@ -79,6 +87,7 @@ primitiveModules =
   , consModule ellipsoid [[("a", noDefault), ("b", hasDefault), ("c", hasDefault)]]
   , consModule polygon [[("points", noDefault)]]
   , consModule polyhedron [[("points", noDefault), ("faces", noDefault)]]
+  , consModule stlImport [[("file", noDefault)]]
   , consModuleWithSuite union [[("r", hasDefault)]]
   , consModuleWithSuite intersect [[("r", hasDefault)]]
   , consModuleWithSuite difference [[("r", hasDefault)]]
@@ -117,6 +126,10 @@ primitiveModules =
           where
             fixupArgs :: (Text, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
+
+------------------------------------------------
+------------- Geometry Generation --------------
+------------------------------------------------
 
 -- | sphere is a module without a suite.
 --   this means that the parser will look for this like
@@ -519,6 +532,46 @@ polygon = moduleWithoutSuite "polygon" $ \_ -> do
              else Prim.polygon pts
         | otherwise = Prim.polygon points
     addObj2 $ addPolyOrSquare points
+
+-- | Import an STL file.
+stlImport :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
+stlImport = moduleWithoutSuite "import" $ \sourcePos -> do
+  example "import(\"myModel.stl\");"
+  fileName <- argument "file" `doc` "path to STL file"
+  pure $ do
+    opts <- scadOptions
+    if importsAllowed opts
+      then do
+        filePath <- getRelPath (DTL.unpack fileName)
+        fileExists <- liftIO $ doesFileExist filePath
+        if not fileExists
+          then
+          do
+            errorC sourcePos $ "Failed to import \"" <> (DTL.pack filePath) <> "\": File not found."
+            pure []
+          else
+          do
+            fileContents <- liftIO $ readFile filePath
+            let
+              (points, woundTris) = trianglesToPolyhedron $ trianglesFromSTL 1 fileContents
+            -- FIXME: create a new primitive for this.
+            pure [OObj3 $ Prim.polyhedron points woundTris]
+      else do
+      warnC sourcePos $ "Refusing to import \"" <> fileName <> "\": File import disabled."
+      pure []
+  where
+    -- | convert a list of Triangles to a set of Points and Triangles.
+    trianglesToPolyhedron :: [Triangle] -> ([ℝ3], [Tri])
+    trianglesToPolyhedron triangles = (points, indices)
+      where
+        points = concatMap triangleToPoints triangles
+        triangleToPoints (v1,v2,v3) = [v1,v2,v3]
+        indices :: [Tri]
+        indices = [ (i*3, i*3+1, i*3+2) | i <- [0.. fromIntegral (length triangles) -1]]
+
+----------------------------------------------------
+------------- Geometry Manipulation ----------------
+----------------------------------------------------
 
 union :: (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 union = moduleWithSuite "union" $ \_ children -> do

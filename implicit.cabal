@@ -149,6 +149,8 @@ Library
                     Graphics.Implicit.Export.Resolution
                     -- Exposed for in-argparser tests.
                     Graphics.Implicit.ExtOpenScad.Util.ArgParser
+                    -- Exposed for HSlice.
+                    Graphics.Implicit.Import.Definitions
     Other-modules:
                   Graphics.Implicit.FastIntUtil
                   Graphics.Implicit.TriUtil
