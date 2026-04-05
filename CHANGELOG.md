@@ -5,6 +5,7 @@
   * Added `polyhedron()` support [#497](https://github.com/Haskell-Things/ImplicitCAD/pull/497)
   * Added `import()` support [#505](https://github.com/Haskell-Things/ImplicitCAD/pull/505)
   * Improved syntax for module calling: now allows module calls in place of expressions []()
+  * Added `bbox()` and `render()` support for showing the bounding box of some geometry, and feeding said geometry from a variable or expression to the rendering engine. []()
 
 * Haskell interface changes
   * `extrude` arguments are now swapped, instead of `extrude obj height` we now have `extrude height obj` [#473](https://github.com/Haskell-Things/ImplicitCAD/issues/473)
