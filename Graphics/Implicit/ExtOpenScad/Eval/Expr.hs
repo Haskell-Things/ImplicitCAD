@@ -5,13 +5,13 @@
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), addMessage) where
+module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalArgs, evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), addMessage) where
 
-import Prelude (String, Maybe(Just, Nothing), Bool (True), ($), elem, pure, zip, (&&), const, (<>), foldr, foldMap, (.), (<$>), traverse)
+import Prelude (String, Monoid, Maybe(Just, Nothing), Bool (False, True), ($), elem, mempty, pure, show, zip, (&&), const, (<>), foldr, foldMap, (.), (<$>), traverse)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Pattern(Name, ListP, Wild),
-                                                  OVal(OList, OError, OFunc, OUndefined),
+                                                  OVal(OList, OError, OFunc, OUndefined, OUModule, ONModule, ONModuleWithSuite, OVargsModule),
                                                   Expr(LitE, ListE, LamE, Var, (:$)),
                                                   Symbol(Symbol),
                                                   VarLookup(VarLookup),
@@ -21,11 +21,15 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   StateC, ImplicitCadM, runImplicitCadM
                                                  )
 
+import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argMap)
+
 import Graphics.Implicit.ExtOpenScad.Util.OVal (oTypeStr, getErrors)
 
-import Graphics.Implicit.ExtOpenScad.Util.StateC (getVarLookup)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, getVarLookup)
 
 import qualified Graphics.Implicit.ExtOpenScad.Util.StateC as GIEUS (addMessage)
+
+import Graphics.Implicit.ExtOpenScad.Eval.Module (checkOptions, runModule)
 
 import Data.Maybe (fromMaybe, isNothing)
 
@@ -35,9 +39,9 @@ import Data.Foldable (fold, traverse_)
 
 import Data.Traversable (for)
 
-import Control.Monad (zipWithM)
+import Control.Monad (unless, zipWithM)
 
-import Data.Text.Lazy (Text, unpack)
+import Data.Text.Lazy (Text, pack, unpack)
 
 import Data.Eq (Eq, (==))
 import Text.Show (Show)
@@ -57,8 +61,8 @@ newtype ExprState = ExprState
 -- so we can put them into a reader, so they can never
 -- accidentally be written to.
 data Input = Input
-  { varLookup :: VarLookup
-  , sourcePos :: SourcePosition
+  { _varLookup :: VarLookup
+  , _sourcePos :: SourcePosition
   } deriving (Eq, Show)
 
 -- Check Graphics.Implicit.ExtOpenScad.Definitions for an explanation
@@ -96,9 +100,82 @@ patMatch _ _ = Nothing
 matchPat :: Pattern -> OVal -> Maybe VarLookup
 matchPat pat val = VarLookup . fromList . zip (Symbol <$> patVars pat) <$> patMatch pat val
 
--- | The entry point from StateC. evaluates an expression, pureing the result, and moving any error messages generated into the calling StateC.
+-- | Evaluate the arguments, turning them from expressions into values.
+evalArgs :: [(Maybe Symbol, Expr)] -> SourcePosition -> StateC [(Maybe Symbol, OVal)]
+evalArgs args sourcePos = for args $ \(posName, expr) -> do
+  val <- evalExpr sourcePos expr
+  pure (posName, val)
+
+-- | The entry point from StateC. Evaluates either an expression or an eligible module call.
 evalExpr :: SourcePosition -> Expr -> StateC OVal
-evalExpr pos expr = do
+evalExpr sourcePos expr = case expr of
+                            (maybeMod :$ argExprs) -> do
+                              -- Yes, we're recursing, after dropping argument expressions, for the OVal
+                              rVal <- evalExpr sourcePos maybeMod
+                              if isModule rVal
+                                then do
+                                -- Perform a module call.
+                                res <- runExprModule sourcePos rVal argExprs
+                                pure $ canonicalizeRes $ OList res
+                                else
+                                -- Evaluate expression.
+                                evalExprStateC sourcePos expr
+                            _ -> evalExprStateC sourcePos expr
+  where
+    isModule (OUModule _ _ _) = True
+    isModule (ONModule _ _ _) = True
+    isModule (ONModuleWithSuite _ _ _) = True
+    isModule (OVargsModule _ _) = True
+    isModule _ = False
+    -- FIXME: We may need a better result cannonicalizer here.
+    canonicalizeRes (OList [oneItem]) = oneItem
+    canonicalizeRes other = other
+
+-- | Execute a module call, in place of an expression.
+runExprModule :: SourcePosition -> OVal -> [Expr] -> StateC [OVal]
+runExprModule sourcePos mod argExprsRaw = do
+  let
+    -- Mark all of our arguments as unnamed. There are no named arguments in expressions.
+    argExprs = (\a -> (Nothing, a)) <$> argExprsRaw
+    -- Common error messages.
+    noSuiteError,notModError :: (Monoid a) => StateC a
+    noSuiteError = do
+      errorC sourcePos $ "tried to use a " <> oTypeStr mod <> " that uses suites on the right hand side of assignment."
+      pure mempty
+    notModError = do
+      errorC sourcePos $ "tried to run something that is not a module:" <> pack (show mod)
+      pure mempty
+
+  -- Fully evaluate arguments. Since we're in Expr context, we can only handle unnamed arguments.
+  evaluatedArgs <- evalArgs argExprs sourcePos
+
+  -- We can't handle any suites, either.
+  _ <- case mod of
+         (OUModule _ _ _) -> pure mempty :: StateC ()
+         (ONModule _ _ _) -> pure mempty
+         (ONModuleWithSuite _ _ _) -> noSuiteError
+         (OVargsModule _ _) -> noSuiteError
+         _ -> notModError
+
+  -- Perform any per-module-type specific housework, and call the module.
+  case mod of
+    (OUModule (Symbol name) args implementation) -> do
+      -- User modules can only have one instance, so we only have to check one set of options here.
+      optionsMatch <- checkOptions args argExprs True sourcePos
+      unless optionsMatch (errorC sourcePos $ "Options check failed when executing user-defined module " <> name <> ".")
+      varLookup <- getVarLookup
+      -- Run the module.
+      runModule sourcePos $ argMap evaluatedArgs $ implementation varLookup
+    (ONModule _ implementation _) -> do
+      -- Run the module.
+      runModule sourcePos $ argMap evaluatedArgs $ implementation sourcePos
+    (ONModuleWithSuite _ _ _) -> noSuiteError
+    (OVargsModule _ _) -> noSuiteError
+    _ -> notModError
+
+-- | The inner monadic entry point. Evaluates an expression, pureing the result, and moving any error messages generated into the calling StateC.
+evalExprStateC :: SourcePosition -> Expr -> StateC OVal
+evalExprStateC pos expr = do
     vars <- getVarLookup
     let
       input = Input vars pos

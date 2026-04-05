@@ -166,6 +166,7 @@ Library
                   Graphics.Implicit.ExtOpenScad.Parser.Util
                   Graphics.Implicit.ExtOpenScad.Eval.Statement
                   Graphics.Implicit.ExtOpenScad.Eval.Expr
+                  Graphics.Implicit.ExtOpenScad.Eval.Module
                   Graphics.Implicit.ExtOpenScad.Util.OVal
                   Graphics.Implicit.ExtOpenScad.Util.StateC
                   Graphics.Implicit.Export.RayTrace

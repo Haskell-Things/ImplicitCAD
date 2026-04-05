@@ -1,5 +1,5 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright (C) 2016, Julia Longtin (julial@turinglace.com)
+-- Copyright (C) 2016-2026, Julia Longtin (julial@turinglace.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
 -- Allow us to use string literals to represent Text.
