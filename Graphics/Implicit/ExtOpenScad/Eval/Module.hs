@@ -14,10 +14,9 @@ module Graphics.Implicit.ExtOpenScad.Eval.Module (
   runModule,
   ) where
 
-import Prelude(Maybe(Just, Nothing), Bool(False), (>), (.), ($), elem, error, filter, fmap, fst, init, last, length, not, notElem, null, show, snd, pure, zip, (<>), (&&), (==), (/=), String, (<$>))
+import Prelude(Maybe(Just, Nothing), Bool(False), (.), ($), elem, error, filter, fmap, fst, init, last, length, not, notElem, null, show, snd, pure, zip, (<>), (&&), (==), (/=), String, (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
-                                                  Expr(LitE),
                                                   OVal(OUModule, ONModule, ONModuleWithSuite, OVargsModule),
                                                   SourcePosition,
                                                   StateC,
@@ -25,7 +24,7 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   Symbol(Symbol)
                                                  )
 
-import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC)
+import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC)
 
 import qualified Data.List as DL (intercalate)
 
@@ -111,6 +110,8 @@ checkInstances :: SourcePosition -> OVal -> [(Maybe Symbol, Expr)] -> [[(Symbol,
 checkInstances sourcePos mod argsExpr forms = do
   possibleInstances <- selectInstances forms argsExpr sourcePos
   when (null possibleInstances) (errorC sourcePos $ "No instance of " <> nameOfModule mod <> " found to match given parameters.\narguments given:\n" <> pack (show argsExpr) <> "\nForms available:" <> pack (show forms) <> "\n")
+-- FIXME: make this a warning that can be turned on and off, and is off by default.
+{-
   when (length possibleInstances > 1) (warnC sourcePos $ "Multiple instances of " <> nameOfModule mod <> " found matching given parameters.\nInstances found:\n" <> (DTL.concat $ showInstance mod <$> possibleInstances) <> "Parameters given: " <> nameOfModule mod <> "(" <> (DTL.intercalate ", " $ showParameter <$> argsExpr) <> ");")
   where
     showParameter :: (Maybe Symbol, Expr) -> Text
@@ -121,6 +122,7 @@ checkInstances sourcePos mod argsExpr forms = do
     showInstance myMod args = nameOfModule myMod <> "(" <> (DTL.intercalate "," $ showArg <$> args) <> ");\n"
     showArg :: (Symbol, Bool) -> Text
     showArg (Symbol argName, optional) = argName <> "=...(" <> (if optional then "optional)" else "required)")
+-}
 
 -- Run a module.
 runModule :: SourcePosition -> (Maybe (StateC [OVal]), [String]) -> StateC [OVal]
