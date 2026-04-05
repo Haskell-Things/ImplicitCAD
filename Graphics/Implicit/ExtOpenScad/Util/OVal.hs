@@ -80,8 +80,23 @@ instance (OTypeMirror a) => OTypeMirror [a] where
 instance OTypeMirror Text where
     fromOObj (OString str) = Just str
     fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
     toOObj :: Text -> OVal
     toOObj = OString
+
+instance OTypeMirror SymbolicObj2 where
+    fromOObj (OObj2 obj) = Just obj
+    fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj :: SymbolicObj2 -> OVal
+    toOObj = OObj2
+
+instance OTypeMirror SymbolicObj3 where
+    fromOObj (OObj3 obj) = Just obj
+    fromOObj _ = Nothing
+    {-# INLINABLE fromOObj #-}
+    toOObj :: SymbolicObj3 -> OVal
+    toOObj = OObj3
 
 instance (OTypeMirror a) => OTypeMirror (Maybe a) where
     fromOObj a = Just $ fromOObj a

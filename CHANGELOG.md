@@ -4,6 +4,7 @@
   * Added `projection(cut=true)` support [#448](https://github.com/Haskell-Things/ImplicitCAD/pull/448)
   * Added `polyhedron()` support [#497](https://github.com/Haskell-Things/ImplicitCAD/pull/497)
   * Added `import()` support [#505](https://github.com/Haskell-Things/ImplicitCAD/pull/505)
+  * Improved syntax for module calling: now allows module calls in place of expressions []()
 
 * Haskell interface changes
   * `extrude` arguments are now swapped, instead of `extrude obj height` we now have `extrude height obj` [#473](https://github.com/Haskell-Things/ImplicitCAD/issues/473)

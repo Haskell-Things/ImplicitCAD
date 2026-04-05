@@ -7,7 +7,7 @@
 
 module Graphics.Implicit.ExtOpenScad.Eval.Statement (runStatementI) where
 
-import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (>), (.), ($), error, show, pure, (<>), reverse, fst, snd, readFile, filter, length, (&&), (==), (/=), fmap, notElem, elem, not, zip, init, last, null, String, (*>), (<$>), traverse, (<$))
+import Prelude(Maybe(Just, Nothing), Bool(True, False), Either(Left, Right), (.), ($), show, pure, (<>), reverse, readFile, not, null, (*>), traverse, (<$))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
                                                   SourcePosition,
@@ -28,14 +28,13 @@ import Graphics.Implicit.ExtOpenScad.Definitions (
 import Graphics.Implicit.ExtOpenScad.Util.OVal (getErrors)
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (argument, defaultTo, argMap)
 import Graphics.Implicit.ExtOpenScad.Util.StateC (errorC, warnC, modifyVarLookup, scadOptions, lookupVar, pushVals, getRelPath, withPathShiftedBy, getVals, putVals, addMessage, getVarLookup)
-import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalExpr, matchPat)
+import Graphics.Implicit.ExtOpenScad.Eval.Expr (evalArgs, evalExpr, matchPat)
+import Graphics.Implicit.ExtOpenScad.Eval.Module (checkInstances, checkOptions, ensureNoSuite, runModule)
 import Graphics.Implicit.ExtOpenScad.Parser.Statement (parseProgram)
-
-import Data.List (intercalate)
 
 import Data.Map (union, fromList, toList)
 
-import Data.Maybe (isJust, fromMaybe, mapMaybe, catMaybes)
+import Data.Maybe (isJust)
 
 import Control.Monad (when, unless)
 
@@ -45,7 +44,7 @@ import Data.Foldable (traverse_, for_)
 
 import Data.Traversable (for)
 
-import Data.Text.Lazy (unpack, pack, Text)
+import Data.Text.Lazy (unpack, pack)
 
 import System.Directory (doesFileExist)
 
@@ -177,9 +176,18 @@ runStatementI (StatementI sourcePos (Include name injectVals)) = do
 
 runStatementI (StatementI _ DoNothing) = pure ()
 
+-- Execute a set of OpenSCAD statements, without returning results.
 runSuite :: [StatementI] -> StateC ()
 runSuite = traverse_ runStatementI
 
+-- | Evaluate the suite of an OpenSCAD module.
+evalSuite :: VarLookup -> SourcePosition -> [StatementI] -> StateC [OVal]
+evalSuite varlookup sourcePos suite = do
+  vals <- runSuiteCapture varlookup suite
+  when (null vals) (errorC sourcePos "Suite required, but none provided.")
+  runSuiteCapture varlookup suite
+
+-- | Execute the suite of an OpenSCAD module.
 runSuiteCapture :: VarLookup -> [StatementI] -> StateC [OVal]
 runSuiteCapture varlookup suite = do
   opts <- ask
@@ -191,112 +199,3 @@ runSuiteCapture varlookup suite = do
       mkSubState s = CompState varlookup [] (sourceDir s)
       moveMessage (Message mtype mpos text) = addMessage mtype mpos text
 
-selectInstances :: [[(Symbol, Bool)]] -> [(Maybe Symbol, Expr)] -> SourcePosition -> StateC [[(Symbol, Bool)]]
-selectInstances instances argsExpr sourcePos = do
-  validInstances <- for instances
-                    ( \args -> do
-                        res <- checkOptions (Just args) argsExpr False sourcePos
-                        pure $ if res then Just args else Nothing
-                    )
-  pure $ catMaybes validInstances
-
-checkOptions :: Maybe [(Symbol, Bool)] -> [(Maybe Symbol, Expr)] -> Bool -> SourcePosition -> StateC Bool
-checkOptions args argsExpr makeWarnings sourcePos = do
-  let
-    -- Find what arguments are satisfied by a default value, were given in a named parameter, or were given.. and count them.
-    valDefaulted ,valNotDefaulted, valNamed, mappedDefaulted, mappedNotDefaulted, notMappedNotDefaultable :: [Symbol]
-    -- function definition has a default value.
-    valDefaulted  = fmap fst $ filter snd $ fromMaybe [] args
-    -- function definition has no default value.
-    valNotDefaulted = fmap fst $ filter (not.snd) $ fromMaybe [] args
-    -- function call has a named expression bound to this symbol.
-    valNamed = namedParameters argsExpr
-    -- function call has a named expression, function definition has an argument with this name, AND there is a default value for this argument.
-    mappedDefaulted = filter (`elem` valNamed) valDefaulted
-    -- function call has a named expression, function definition has an argument with this name, AND there is NOT a default value for this argument.
-    mappedNotDefaulted = filter (`elem` valNamed) valNotDefaulted
-    -- arguments we need to find a mapping for, from the unnamed expressions.
-    notMappedNotDefaultable = filter (`notElem` mappedNotDefaulted) valNotDefaulted
-    -- expressions without a name.
-    valUnnamed :: [Expr]
-    valUnnamed = unnamedParameters argsExpr
-    mapFromUnnamed :: [(Symbol, Expr)]
-    mapFromUnnamed = zip notMappedNotDefaultable valUnnamed
-    missingNotDefaultable = filter (`notElem` (mappedDefaulted <> mappedNotDefaulted <> fmap fst mapFromUnnamed)) valNotDefaulted
-    extraUnnamed = filter (`notElem` (valDefaulted <> valNotDefaulted)) $ namedParameters argsExpr
-    namedParameters :: [(Maybe Symbol, Expr)] -> [Symbol]
-    namedParameters = mapMaybe fst
-    unnamedParameters :: [(Maybe Symbol, Expr)] -> [Expr]
-    unnamedParameters = mapMaybe (
-      \(argName, expr) ->
-        case argName of
-          Just _  -> Nothing
-          Nothing -> Just expr
-      )
-    parameterReport =  "Passed " <>
-                       (if null valNamed && null valUnnamed then "no parameters" else "" ) <>
-                       (if not (null valNamed) then show (length valNamed) <> (if length valNamed == 1 then " named parameter" else " named parameters") else "" ) <>
-                       (if not (null valNamed) && not (null valUnnamed) then ", and " else "") <>
-                       (if not (null valUnnamed) then show (length valUnnamed) <> (if length valUnnamed == 1 then " un-named parameter." else " un-named parameters.") else ".") <>
-                       (if not (null missingNotDefaultable) then
-                           (if length missingNotDefaultable == 1
-                            then " Couldn't match one parameter: " <> showSymbol (last missingNotDefaultable)
-                            else " Couldn't match " <> show (length missingNotDefaultable) <> " parameters: " <> intercalate ", " (showSymbol <$> init missingNotDefaultable) <> " and " <> showSymbol (last missingNotDefaultable) <> "."
-                           ) else "") <>
-                       (if not (null extraUnnamed)
-                        then
-                          (if length extraUnnamed == 1
-                           then " Had one extra parameter: " <> showSymbol (last extraUnnamed)
-                           else " Had " <> show (length extraUnnamed) <> " extra parameters. They are:" <> intercalate ", " (showSymbol <$> init extraUnnamed) <> " and " <> showSymbol (last extraUnnamed) <> "."
-                          )
-                        else "")
-    showSymbol :: Symbol -> String
-    showSymbol (Symbol sym) = show sym
-  when (not (null missingNotDefaultable) && makeWarnings)
-    (errorC sourcePos $ "Insufficient parameters. " <> pack parameterReport)
-  when (not (null extraUnnamed) && isJust args && makeWarnings)
-    (errorC sourcePos $ "Too many parameters: " <> pack (show $ length extraUnnamed) <> " extra. " <> pack parameterReport)
-  pure $ null missingNotDefaultable && null extraUnnamed
-
--- Evaluate the arguments, turning them from expressions into values.
-evalArgs :: [(Maybe Symbol, Expr)] -> SourcePosition -> StateC [(Maybe Symbol, OVal)]
-evalArgs args sourcePos = for args $ \(posName, expr) -> do
-  val <- evalExpr sourcePos expr
-  pure (posName, val)
-
--- Do not evaluate the suite. throw an error instead.
-ensureNoSuite :: SourcePosition -> OVal -> [StatementI] -> StateC [OVal]
-ensureNoSuite sourcePos mod suite = do
-  when (suite /= []) (errorC sourcePos $ "Suite provided, but module " <> nameOfModule mod <> " does not accept one. Perhaps a missing semicolon?")
-  pure []
-
--- | Evaluate the suite.
-evalSuite :: VarLookup -> SourcePosition -> [StatementI] -> StateC [OVal]
-evalSuite varlookup sourcePos suite = do
-  vals <- runSuiteCapture varlookup suite
-  when (null vals) (errorC sourcePos "Suite required, but none provided.")
-  runSuiteCapture varlookup suite
-
--- check the instances, make sure we can only resolve one instance.
-checkInstances :: SourcePosition -> OVal -> [(Maybe Symbol, Expr)] -> [[(Symbol, Bool)]] -> StateC ()
-checkInstances sourcePos mod argsExpr forms = do
-  possibleInstances <- selectInstances forms argsExpr sourcePos
-  when (null possibleInstances) (do
-                                    errorC sourcePos $ "no instance of " <> nameOfModule mod <> " found to match given parameters.\nInstances available:\n" <> pack (show mod)
-                                    traverse_ (\a -> checkOptions (Just a) argsExpr True sourcePos) forms)
-  when (length possibleInstances > 1) (do
-                                          errorC sourcePos $ "too many instances of " <> nameOfModule mod <> " have been found that match given parameters."
-                                          traverse_ (\a -> checkOptions (Just a) argsExpr True sourcePos) possibleInstances)
-
--- Find the name of a module.
-nameOfModule :: OVal -> Text
-nameOfModule mod = case mod of
-  (ONModule (Symbol modName) _ _) -> modName
-  (ONModuleWithSuite (Symbol modName) _ _) -> modName
-  _ -> error "Tried to get the name of a non-module."
-
--- Run a module.
-runModule :: SourcePosition -> (Maybe (StateC [OVal]), [String]) -> StateC [OVal]
-runModule sourcePos argsMapped = do
-  for_ (pack <$> snd argsMapped) $ errorC sourcePos
-  fromMaybe (pure []) (fst argsMapped)
