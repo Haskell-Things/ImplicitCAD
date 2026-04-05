@@ -28,7 +28,7 @@ import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic, ContoursAreClosed, MeshIsWaterTight), Symbol, VarLookup(VarLookup))
 
-import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, oTypeStr, toOObj, OTypeMirror)
+import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
 
 import Graphics.Implicit.Definitions(ℕ, ℝ)
 
