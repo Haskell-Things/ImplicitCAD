@@ -1,0 +1,9 @@
+stlfile=import("example3.ascii.stl");
+
+myCube=cube(10);
+
+bounding_box=bbox(myCube);
+
+echo(bounding_box);
+
+render(stlfile);
