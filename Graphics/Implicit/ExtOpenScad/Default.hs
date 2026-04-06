@@ -9,21 +9,26 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+-- Allow us to use type signatures in patterns.
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Graphics.Implicit.ExtOpenScad.Default (defaultObjects) where
 
 -- be explicit about where we pull things in from.
 import Prelude (Bool(True, False), Maybe(Just, Nothing), ($), (<>), (<$>), fmap, pi, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, abs, signum, fromInteger, (.), floor, ceiling, round, exp, log, sqrt, max, min, atan2, (**), flip, (<), (>), (<=), (>=), (==), (/=), (&&), (||), not, show, foldl, (*), (/), mod, (+), zipWith, (-), otherwise, id, foldMap, fromIntegral, IO, pure, Int, isNaN, negate, RealFloat, Ord)
 import qualified Prelude as P (length)
 
-import Graphics.Implicit.Definitions (ℝ, ℕ)
+import Graphics.Implicit.Definitions (ℝ, ℕ, SymbolicObj2, SymbolicObj3)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, OVargsModule, OIO), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser, (<|>), VarLookup(VarLookup), OVal(OBool, OList, ONum, OString, OUndefined, OError, OFunc, ONModule, OVargsModule, OIO), Symbol(Symbol), StateC, StatementI, SourcePosition, MessageType(TextOut, Warning), ScadOpts(ScadOpts))
 
 import Graphics.Implicit.ExtOpenScad.Util.OVal (toOObj, oTypeStr)
 
-import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
+import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules, argument)
 
 import Graphics.Implicit.ExtOpenScad.Util.StateC (scadOptions, modifyVarLookup, addMessage)
+
+import Graphics.Implicit.ObjectUtil (getBox2, getBox3)
 
 import Data.Int (Int64)
 
@@ -54,6 +59,7 @@ defaultObjects withCSG = VarLookup $ fromList $
     <> defaultFunctionsSpecial
     <> defaultPolymorphicFunctions
     <> (if withCSG then primitiveModules else [])
+    <> objectFunctions
     <> varArgModules
 
 defaultConstants :: [(Symbol, OVal)]
@@ -119,6 +125,37 @@ defaultFunctionsSpecial =
         )
     ]
 
+-- | functions which operate on 3D geometry.
+objectFunctions :: [(Symbol, OVal)]
+objectFunctions = modVal <$>
+  [
+    ("bbox", bounding_box),
+    ("render", render)
+  ]
+  where
+    modVal (name,func) = (Symbol name, ONModule (Symbol name) func [[(Symbol "object", False)]])
+    -- Give us the bounding box around a portion of symbolic 3D geometry.
+    bounding_box :: SourcePosition -> ArgParser (StateC [OVal])
+    bounding_box _ = do
+      res <- do
+        object :: SymbolicObj3 <- argument "object"
+        pure $ toOObj $ getBox3 object
+        <|> do
+        object :: SymbolicObj2 <- argument "object"
+        pure $ toOObj $ getBox2 object
+      pure $ pure [res]
+    -- Pass the given object into the rendering pipeline.
+    render :: SourcePosition -> ArgParser (StateC [OVal])
+    render _ = do
+      res <- do
+        object :: SymbolicObj3 <- argument "object"
+        pure $ toOObj object
+        <|> do
+        object :: SymbolicObj2 <- argument "object"
+        pure $ toOObj object
+      pure $ pure [res]
+
+-- | Functions which can accept a variable number of arguments.
 varArgModules :: [(Symbol, OVal)]
 varArgModules =
     [

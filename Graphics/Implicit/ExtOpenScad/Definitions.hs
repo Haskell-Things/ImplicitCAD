@@ -34,7 +34,8 @@ module Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch
                                                   varUnion,
                                                   runImplicitCadM,
                                                   CanCompState,
-                                                  CanCompState'
+                                                  CanCompState',
+                                                  (<|>)
                                                   ) where
 
 import Prelude(Eq, Show, Ord, Maybe, Bool(True, False), IO, FilePath, (==), show, ($), (<>), and, zipWith, Int, (<$>))
@@ -308,3 +309,7 @@ data TestInvariant =
   | ContoursAreClosed
   | MeshIsWaterTight
     deriving (Show)
+
+-- | for composing ArgParsers.
+--(<|>) :: ArgParser a -> ArgParser a -> ArgParser a
+--(<|>) = mplus
