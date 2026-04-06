@@ -13,7 +13,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- Export one set containing all of the primitive modules.
-module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
+module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules, argument) where
 
 import Prelude(any, concat, elem, error, fromIntegral, foldr, head, length, mapM, (.), (+), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, show, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, (<*>), (<$>))
 
@@ -21,7 +21,7 @@ import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, Symbol
 
 import Graphics.Implicit.Export.Util (centroid)
 
-import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser, OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ScadOpts(importsAllowed), SourcePosition, StateC, Symbol(Symbol))
+import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser, OVal (OObj2, OObj3, ONModule, ONModuleWithSuite), ScadOpts(importsAllowed), SourcePosition, StateC, Symbol(Symbol), (<|>))
 
 import Graphics.Implicit.ExtOpenScad.Util.ArgParser (contoursAreClosed, doc, defaultTo, example, meshIsWaterTight, test, eulerCharacteristic)
 
@@ -38,7 +38,7 @@ import Graphics.Implicit.TriUtil (Tri, Triangle)
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, polyhedron, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, slice, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
 
-import Control.Monad (foldM, mplus)
+import Control.Monad (foldM)
 
 import Data.ByteString (readFile)
 
@@ -868,9 +868,6 @@ multmatrix = moduleWithSuite "multmatrix" $ \_ children -> do
         objMap (Prim.transform (m ^. Linear._m33)) (Prim.transform3 m) children
 
 ---------------
-
-(<|>) :: ArgParser a -> ArgParser a -> ArgParser a
-(<|>) = mplus
 
 moduleWithSuite :: Text -> (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) -> (Symbol, SourcePosition -> [OVal] -> ArgParser (StateC [OVal]))
 moduleWithSuite name modArgMapper = (Symbol name, modArgMapper)
