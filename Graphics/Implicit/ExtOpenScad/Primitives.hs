@@ -140,6 +140,8 @@ sphere :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
 sphere = moduleWithoutSuite "sphere" $ \_ -> do
     example "sphere(3);"
     example "sphere(r=5);"
+    test "sphere(3);" `eulerCharacteristic` 2
+    test "sphere(r=1.5);" `eulerCharacteristic` 2
     -- arguments:
     -- The radius, r, which is a (real) number.
     -- Because we don't provide a default, this ends right
@@ -468,12 +470,10 @@ circle :: (Symbol, SourcePosition -> ArgParser (StateC [OVal]))
 circle = moduleWithoutSuite "circle" $ \_ -> do
     example "circle(r=10); // circle"
     example "circle(r=5, $fn=6); //hexagon"
--- FIXME: support 2D tests.
+-- FIXME: and somehow, these are broken.
 {-
-    test "circle(r=10);"
-        `eulerCharacteristic` 0
-    test "circle(d=20);"
-        `eulerCharacteristic` 0
+    contoursAreClosed $ test "circle(r=10);"
+    contoursAreClosed $ test "circle(d=20);"
 -}
     -- Arguments
     r <-
