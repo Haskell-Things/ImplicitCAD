@@ -1,5 +1,7 @@
 # Intermediary files
 *.hi
+*.dyn_hi
+*.dyn_o
 *.o
 *.hi-boot
 *.o-boot
