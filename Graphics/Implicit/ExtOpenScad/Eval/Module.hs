@@ -17,6 +17,7 @@ module Graphics.Implicit.ExtOpenScad.Eval.Module (
 import Prelude(Maybe(Just, Nothing), Bool(False), (.), ($), elem, error, filter, fmap, fst, init, last, length, not, notElem, null, show, snd, pure, zip, (<>), (&&), (==), (/=), String, (<$>))
 
 import Graphics.Implicit.ExtOpenScad.Definitions (
+                                                  Expr(),
                                                   OVal(OUModule, ONModule, ONModuleWithSuite, OVargsModule),
                                                   SourcePosition,
                                                   StateC,
