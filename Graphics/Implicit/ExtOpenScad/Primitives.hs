@@ -64,12 +64,14 @@ import Linear.Affine (qdA)
 
 import System.Directory (doesFileExist)
 
+import Type.Reflection (Typeable)
+
 default (ℝ)
 
 -- FIXME: `defaultTo` is used inconsistently. The line between defaults and examples is a bit blurry.
 
 -- | Use the old syntax when defining arguments.
-argument :: OTypeMirror desiredType => Text -> ArgParser desiredType
+argument :: (OTypeMirror desiredType, Typeable desiredType) => Text -> ArgParser desiredType
 argument a = GIEUA.argument (Symbol a)
 
 -- | The only thing exported here. basically, a list of modules.

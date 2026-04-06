@@ -8,6 +8,9 @@
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Allow us to display a target type.
+{-# LANGUAGE TypeApplications #-}
+
 module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
   argMap,
   argument,
@@ -28,7 +31,7 @@ import qualified Prelude as P (null)
 
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP, APTest, APBranch, APTerminator, APFail, APExample), OVal (OError), TestInvariant(EulerCharacteristic, ContoursAreClosed, MeshIsWaterTight), Symbol, VarLookup(VarLookup))
 
-import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, toOObj, OTypeMirror)
+import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, oTypeStr, toOObj, OTypeMirror)
 
 import Graphics.Implicit.Definitions(ℕ, ℝ)
 
@@ -40,6 +43,8 @@ import Data.Maybe (isNothing, fromJust, isJust)
 
 import Data.Text.Lazy (Text, pack, unpack)
 
+import Type.Reflection (Typeable, typeRep)
+
 import Control.Arrow (first)
 
 -- * ArgParser building functions
@@ -48,7 +53,7 @@ import Control.Arrow (first)
 
 -- | Builds an argparser for the type that is expected from it.
 --   FIXME: make a version of this that accepts multiple symbol names, so we can have h= and height=
-argument :: forall desiredType. (OTypeMirror desiredType) => Symbol -> ArgParser desiredType
+argument :: forall desiredType. (OTypeMirror desiredType, Typeable desiredType) => Symbol -> ArgParser desiredType
 argument name =
     AP name Nothing "" $ \oObjVal -> do
         let
@@ -58,7 +63,9 @@ argument name =
             errmsg = case oObjVal of
                 OError err -> "error in computing value for argument " <> pack (show name)
                               <> ": " <>  err
-                _   ->  "arg " <> pack (show oObjVal) <> " not compatible with " <> pack (show name)
+                _ ->     "arg " <> pack (show name) <>
+                  " expected "  <> pack (show $ typeRep @desiredType) <>
+                  " but found " <> oTypeStr oObjVal
         maybe (APFail errmsg) APTerminator val
 {-# INLINABLE argument #-}
 
