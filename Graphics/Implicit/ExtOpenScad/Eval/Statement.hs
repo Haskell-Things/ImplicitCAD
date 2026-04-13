@@ -51,11 +51,10 @@ import System.Directory (doesFileExist)
 import System.FilePath (takeDirectory)
 import Control.Monad.Reader.Class (MonadReader(ask))
 
--- | Run statements out of the OpenScad file.
+-- | Run a single OpenSCAD statement.
 runStatementI :: StatementI -> StateC ()
 runStatementI (StatementI sourcePos (pat := expr)) = do
     -- Interpret variable assignment
-    -- FIXME: instead of just expression evaluation, module calling?
     val <- evalExpr sourcePos expr
     let posMatch = matchPat pat val
     case (getErrors val, posMatch) of
@@ -107,19 +106,19 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
 
           -- Evaluate the suites, if required.
           suiteResults <- case maybeMod of
-                            Just mod@(OUModule _ _ _) -> ensureNoSuite sourcePos mod suite
-                            Just mod@(ONModule _ _ _) -> ensureNoSuite sourcePos mod suite
-                            Just (ONModuleWithSuite _ _ _) -> evalSuite varlookup sourcePos suite
-                            Just mod@(OVargsModule _ _) -> ensureNoSuite sourcePos mod suite
-                            _ -> pure []
+            Just mod@(OUModule {}) -> ensureNoSuite sourcePos mod suite
+            Just mod@(ONModule {}) -> ensureNoSuite sourcePos mod suite
+            Just (ONModuleWithSuite {}) -> evalSuite varlookup sourcePos suite
+            Just mod@(OVargsModule {}) -> ensureNoSuite sourcePos mod suite
+            _ -> pure []
 
           -- Check that an instance exists that can execute the module, as it was called.
-          _ <- case maybeMod of
-                 Just (OUModule _ _ _) -> pure ()
-                 Just mod@(ONModule _ _ forms) -> checkInstances sourcePos mod argsExpr forms
-                 Just mod@(ONModuleWithSuite _ _ forms) -> checkInstances sourcePos mod argsExpr forms
-                 Just (OVargsModule _ _) -> pure ()
-                 _ -> pure ()
+          case maybeMod of
+            Just (OUModule {}) -> pure ()
+            Just mod@(ONModule _ _ forms) -> checkInstances sourcePos mod argsExpr forms
+            Just mod@(ONModuleWithSuite _ _ forms) -> checkInstances sourcePos mod argsExpr forms
+            Just (OVargsModule {}) -> pure ()
+            _ -> pure ()
 
           -- do any per-module-type work, and run the module.
           case maybeMod of
@@ -137,17 +136,17 @@ runStatementI (StatementI sourcePos (ModuleCall (Symbol name) argsExpr suite)) =
               -- Run the module.
               runModule sourcePos $ argMap evaluatedArgs $ implementation sourcePos suiteResults
             Just (OVargsModule modname implementation) -> do
-              -- Run the module, which evaluates it's own suite.
-              _ <- implementation modname sourcePos evaluatedArgs suite runSuite -- no values are pureed
+              -- Run the module, which evaluates it's own suite, and cannot return anything.
+              implementation modname sourcePos evaluatedArgs suite runSuite
               pure []
             Just foo -> do
-                    case getErrors foo of
-                        Just err -> errorC sourcePos err
-                        Nothing  -> errorC sourcePos $ "Object " <> name <> " is not a module!"
-                    pure []
+              case getErrors foo of
+                Just err -> errorC sourcePos err
+                Nothing  -> errorC sourcePos $ "Object " <> name <> " is not a module!"
+              pure []
             _ -> do
-                errorC sourcePos $ "Module " <> name <> " not in scope."
-                pure []
+              errorC sourcePos $ "Module " <> name <> " not in scope."
+              pure []
         pushVals newVals
 
 runStatementI (StatementI sourcePos (Include name injectVals)) = do

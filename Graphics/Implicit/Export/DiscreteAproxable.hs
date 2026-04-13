@@ -31,8 +31,10 @@ import Codec.Picture (DynamicImage(ImageRGBA8), PixelRGBA8(PixelRGBA8), generate
 
 import Control.Parallel.Strategies (using, rdeepseq, parBuffer)
 
-import Linear ( V3(V3), V2(V2), (*^), (^/) )
-import Linear.Affine ( Affine((.+^), (.-^)) )
+import Linear (V3(V3), V2(V2), (*^), (^/))
+
+import Linear.Affine (Affine((.+^), (.-^)))
+
 import Graphics.Implicit.Primitives (getImplicit)
 
 default (ℝ)
@@ -82,13 +84,13 @@ instance DiscreteAproxable SymbolicObj3 DynamicImage where
                             (cameraRay camera (V2 a b + V2 ( 0.25/w) (0.25/h)))
                             2 box scene,
                         traceRay
-                            (cameraRay camera (V2 a b + V2 (-0.25/w) (0.25/h)))
+                            (cameraRay camera (V2 a b + V2 (-(0.25/w)) (0.25/h)))
                             0.5 box scene,
                         traceRay
-                            (cameraRay camera (V2 a b + V2 (0.25/w) (-0.25/h)))
+                            (cameraRay camera (V2 a b + V2 (0.25/w) (-(0.25/h))))
                             0.5 box scene,
                         traceRay
-                            (cameraRay camera (V2 a b + V2 (-0.25/w) (-0.25/h)))
+                            (cameraRay camera (V2 a b + V2 (-(0.25/w)) (-(0.25/h))))
                             0.5 box scene
                         ]
                     where
@@ -113,7 +115,7 @@ instance DiscreteAproxable SymbolicObj2 DynamicImage where
             pixelRenderer :: Int -> Int -> PixelRGBA8
             pixelRenderer mya myb = mycolor
                 where
-                    xy a b = (V2 x1 y2 .-^ V2 (dxy-dx) (dy-dxy) ^/2) .+^ dxy *^ V2 (a/w) (-b/h)
+                    xy a b = (V2 x1 y2 .-^ V2 (dxy-dx) (dy-dxy) ^/2) .+^ dxy *^ V2 (a/w) (-(b/h))
                     s = 0.25 :: ℝ
                     V2 a' b' = V2 (realToFrac mya) (realToFrac myb) :: ℝ2
                     mycolor = colorToPixelRGBA8 $ average [objColor $ xy a' b', objColor $ xy a' b',

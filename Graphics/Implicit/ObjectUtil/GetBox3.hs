@@ -46,7 +46,7 @@ getBox3 (Polyhedron points _) = (minimum_point, maximum_point)
     maybeVs :: (Maybe (ℝ3,ℝ3))
     maybeVs = foldl' findMinMax Nothing points
       where
-        findMinMax :: (Maybe (ℝ3,ℝ3)) -> ℝ3 -> (Maybe (ℝ3,ℝ3))
+        findMinMax :: Maybe (ℝ3,ℝ3) -> ℝ3 -> Maybe (ℝ3,ℝ3)
         findMinMax Nothing newV3 = Just (newV3, newV3)
         findMinMax (Just (V3 minx miny minz,V3 maxx maxy maxz)) (V3 newx newy newz) = Just (V3 (min minx newx) (min miny newy) (min minz newz), V3 (max maxx newx) (max maxy newy) (max maxz newz))
 getBox3 (Torus r1 r2) =

@@ -137,7 +137,7 @@ buildS3 _ (Cylinder h r1 r2) = callNaked "cylinder" ["r1 = " <> pretty (bf r1)
                                                     , pretty $ bf h
                                                     ] []
 
-buildS3 _ (Polyhedron points tris) = callNaked "polyhedron" ["points = [" <> (fold $ intersperse "," $ renderPoint <$> points) <> "], faces = [" <> (fold $ intersperse "," $ renderTri <$> tris) <> "]" ] []
+buildS3 _ (Polyhedron points tris) = callNaked "polyhedron" ["points = [" <> fold (intersperse "," $ renderPoint <$> points) <> "], faces = [" <> fold (intersperse "," $ renderTri <$> tris) <> "]" ] []
   where
     renderPoint (V3 v1 v2 v3) = "[" <> pretty (bf v1) <> "," <> pretty (bf v2) <> "," <> pretty (bf v3) <> "]"
     renderTri (n1,n2,n3) = "[" <> pretty (bℕ n1) <> "," <> pretty (bℕ n2) <> "," <> pretty (bℕ n3) <> "]"

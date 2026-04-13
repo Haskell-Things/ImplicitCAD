@@ -72,14 +72,14 @@ getImplicit3 _ (Cylinder h r1 r2) = \(V3 x y z) ->
 -- FIXME: Make Polyhedron correct by construction.
 getImplicit3 _ (Polyhedron [] _) = error "Asked to find distance to an empty polyhedron. No points given."
 getImplicit3 _ (Polyhedron _ []) = error "Asked to find distance to an empty polyhedron. No faces given."
-getImplicit3 _ (Polyhedron points tris) = \(point) ->
+getImplicit3 _ (Polyhedron points tris) = \point ->
   let
     ((_,res), _) = unsignedDistanceAndTriangleClosestTo point
   in
 --    if pointOnOutside point (findTriangle points closestTri) closestTri feature
     if pointOnOutsideByWinding point triangles
-    then          res
-    else negate $ res
+    then        res
+    else negate res
   where
     unsignedDistanceAndTriangleClosestTo point = minimumBy (\((_,a),_) ((_,b),_) -> a `compare` b) $ featDistTriangles point
     featDistTriangles point = (\triangle -> (distancePointToTriangle point triangle, triangle)) <$> triangles
@@ -146,7 +146,7 @@ getImplicit3 ctx (ExtrudeM twist scale translate symbObj height) =
             h = height' $ V2 x y
             res = rmax r
                 (obj
-                 . rotateVec (-k*twistVal twist z h)
+                 . rotateVec ((-k)*twistVal twist z h)
                  . scaleVec z
                  . translatePos translate z
                  $ V2 x y )

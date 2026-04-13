@@ -83,7 +83,7 @@ where
 
 import GHC.Generics (Generic)
 
-import Prelude (Foldable, Num, Ord, Eq, atan2, asin, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||), any)
+import Prelude (Foldable, Num, Ord, Eq, atan2, asin, elem, pi, (>=), signum, abs, (+), (-), RealFloat, (==), ($), flip, Semigroup((<>)), Monoid (mempty), Double, Either(Left, Right), Bool(True, False), (*), (/), fromIntegral, Float, realToFrac, (&&), RealFloat(isNaN), (||))
 
 import Graphics.Implicit.FastIntUtil as F (Fastℕ(Fastℕ), fromFastℕ, toFastℕ)
 
@@ -456,4 +456,4 @@ hasZeroComponent
     => f a
     -> Bool
 {-# INLINABLE hasZeroComponent #-}
-hasZeroComponent =  any (==0)
+hasZeroComponent =  elem 0

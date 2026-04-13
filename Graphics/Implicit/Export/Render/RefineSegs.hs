@@ -41,7 +41,7 @@ detail n res obj (Polyline [p1, p2]) | n < 2 =
        else
          let
            normal = (\(V2 a b) -> V2 b (-a)) $ normalize (p2 - p1)
-           derivN = -(obj (mid - (normal ^* (midval/2))) - midval) * (2/midval)
+           derivN = -((obj (mid - (normal ^* (midval/2))) - midval) * (2/midval))
          in
            if abs derivN > 0.5 && abs derivN < 2 && abs (midval/derivN) < 3*res
            then

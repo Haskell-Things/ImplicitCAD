@@ -445,7 +445,7 @@ eulerCharacteristicOf triangles = v - e + f
 
 -- NOTE: Implies "yes, it generated geometry".
 allContoursAreClosed :: [Polyline] -> Bool
-allContoursAreClosed polylines = all isClosed polylines
+allContoursAreClosed = all isClosed
   where
     isClosed (Polyline points) = not (null points) && head points == last points
 

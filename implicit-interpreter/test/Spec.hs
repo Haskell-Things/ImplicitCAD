@@ -41,7 +41,7 @@ spec = do
       res <-
         interpretText
           @SymbolicObj3
-          ("unsafePerformIO $ cube")
+          "unsafePerformIO $ cube"
       res `shouldSatisfy` Data.Either.isLeft
 
 interpretsFine

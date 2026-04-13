@@ -38,7 +38,7 @@ import Graphics.Implicit.TriUtil (Tri, Triangle)
 -- Note the use of a qualified import, so we don't have the functions in this file conflict with what we're importing.
 import qualified Graphics.Implicit.Primitives as Prim (withRounding, sphere, rect3, rect, translate, circle, polygon, polyhedron, extrude, cylinder2, union, unionR, intersect, intersectR, difference, differenceR, rotate, slice, transform, rotate3V, rotate3, transform3, scale, extrudeM, rotateExtrude, shell, mirror, pack3, pack2, torus, ellipsoid, cone)
 
-import Control.Monad (foldM)
+import Control.Monad (foldM, when)
 
 import Data.ByteString (readFile)
 
@@ -114,7 +114,7 @@ primitiveModules =
         (name, implementation) = func
         instances = fmap fixup rawInstances
         fixup :: [(Text, Bool)] -> [(Symbol, Bool)]
-        fixup args = fmap fixupArgs args
+        fixup = fmap fixupArgs
           where
             fixupArgs :: (Text, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
@@ -124,7 +124,7 @@ primitiveModules =
         (name, implementation) = func
         instances = fmap fixup rawInstances
         fixup :: [(Text, Bool)] -> [(Symbol, Bool)]
-        fixup (args) = fmap fixupArgs args
+        fixup = fmap fixupArgs
           where
             fixupArgs :: (Text, Bool) -> (Symbol, Bool)
             fixupArgs (symbol, maybeDefault) = (Symbol symbol, maybeDefault)
@@ -320,7 +320,7 @@ polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
     faces :: [[ℕ]] <- argument "faces" `doc` "list of sets of indices into points, used to create faces on the polyhedron."
     pure $ do
       -- A tri is constructed of three indexes into the points.
-      tris <- fmap concat $ mapM (trianglesFromFace sourcePos) faces
+      tris <- concat <$> mapM (trianglesFromFace sourcePos) faces
       woundTris <- reWindTriangles sourcePos points tris
       pure [OObj3 $ Prim.polyhedron points woundTris]
       where
@@ -330,10 +330,10 @@ polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
                                                  warnC sourcePos "no point found when trying to generate triangles from a face.\n"
                                                  pure []
         trianglesFromFace sourcePos [p1]       = do
-                                                 errorC sourcePos $ "only one point found: " <> (DTL.pack $ show p1) <> "\n"
+                                                 errorC sourcePos $ "only one point found: " <> DTL.pack (show p1) <> "\n"
                                                  pure []
         trianglesFromFace sourcePos [p1,p2]    = do
-                                                 errorC sourcePos $ "only two points found: " <> (DTL.pack $ show p1) <> "\n" <> (DTL.pack $ show p2) <> "\n"
+                                                 errorC sourcePos $ "only two points found: " <> DTL.pack (show p1) <> "\n" <> DTL.pack (show p2) <> "\n"
                                                  pure []
         trianglesFromFace _         [p1,p2,p3] = pure [(p1,p2,p3)]
         trianglesFromFace sourcePos (p1:p2:p3:xs) = ((p1,p2,p3):) <$> trianglesFromFace sourcePos (p1:p3:xs)
@@ -364,7 +364,7 @@ polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
                   (newVisited, newUnvisited) <- foldM (classifyTri visited) ([], unvisited) (toList unvisited)
                   if null newVisited
                     then do
-                         warnC sourcePos $ "Had to pick a new root, incomplete polyhedron?"
+                         warnC sourcePos "Had to pick a new root, incomplete polyhedron?"
                          windTriangles (visited <> [head $ toList newUnvisited]) (deleteAt 0 newUnvisited)
                     else windTriangles (visited <> newVisited)                   newUnvisited
             -- | Compare one unvisited triangle against all visited triangles.
@@ -373,16 +373,14 @@ polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
             classifyTri visited (found, remaining) triUnderTest =
               case res of
                 Just triFound -> do -- See if we flipped our tri, and if so, throw a warning.
-                  if triFound /= triUnderTest
-                    then warnC sourcePos $ "Flipped face detected with vertices " <> (DTL.pack $ show triUnderTest)
-                    else pure ()
+                  when (triFound /= triUnderTest) (warnC sourcePos $ "Flipped face detected with vertices " <> DTL.pack (show triUnderTest))
                   pure (found <> [triFound], filter (/= triUnderTest) remaining)
                 Nothing ->       pure (found, remaining)
               where
-                res = foldr (\tri state -> firstNeighborFilter tri triUnderTest state) Nothing visited
+                res = foldr (firstNeighborFilter triUnderTest) Nothing visited
                 -- | A short-circuiting filter we fold over visited, and grab the first neighboring tri.
                 firstNeighborFilter :: Tri -> Tri -> Maybe Tri -> Maybe Tri
-                firstNeighborFilter src testTri maybeRes
+                firstNeighborFilter testTri src maybeRes
                   | isJust maybeRes = maybeRes
                   | otherwise  = maybeWindNeighbor src testTri
                 -- | Checks whether a triangle under test is a neighbor of the given triangle, and if it is, returns if after ensuring it is wound in the proper direction.
@@ -549,7 +547,7 @@ stlImport = moduleWithoutSuite "import" $ \sourcePos -> do
         if not fileExists
           then
           do
-            errorC sourcePos $ "Failed to import \"" <> (DTL.pack filePath) <> "\": File not found."
+            errorC sourcePos $ "Failed to import \"" <> DTL.pack filePath <> "\": File not found."
             pure []
           else
           do
@@ -599,7 +597,7 @@ difference = moduleWithSuite "difference" $ \sourcePos children -> do
         `defaultTo` 0
         `doc` "Radius of rounding for the difference interface"
     pure $ do
-      if (null children)
+      if null children
         then do
              errorC sourcePos "difference requires at least one element; none given."
              pure []
@@ -707,7 +705,7 @@ extrude = moduleWithSuite "linear_extrude" $ \_ children -> do
         shiftAsNeeded :: SymbolicObj3 -> SymbolicObj3
         shiftAsNeeded =
             if center
-            then Prim.translate (V3 0 0 (-heightn/2))
+            then Prim.translate (V3 0 0 (-(heightn/2)))
             else id
         isTwistID = case twistArg of
                       Left constant -> constant == 0
@@ -910,5 +908,5 @@ obj3DownMap _ [] = []
 toInterval :: Bool -> ℝ -> ℝ2
 toInterval center h =
     if center
-    then V2 (-h/2) (h/2)
+    then V2 (-(h/2)) (h/2)
     else V2 0 h

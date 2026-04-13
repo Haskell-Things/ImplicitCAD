@@ -5,6 +5,9 @@
 -- Allow us to use string literals for Text
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Allow us to treat incomplete tuples as function references.
+{-# LANGUAGE TupleSections #-}
+
 module Graphics.Implicit.ExtOpenScad.Eval.Expr (evalArgs, evalExpr, rawRunExpr, matchPat, StateE, ExprState(ExprState), addMessage) where
 
 import Prelude (String, Monoid, Maybe(Just, Nothing), Bool (False, True), ($), elem, mempty, pure, show, zip, (&&), const, (<>), foldr, foldMap, (.), (<$>), traverse)
@@ -72,14 +75,14 @@ type StateE a = ImplicitCadM Input [Message] ExprState Identity a
 runStateE :: Input -> ExprState -> StateE a -> (a, [Message], ExprState)
 runStateE r s m = runIdentity $ runImplicitCadM r s m
 
--- Add a message to our list of messages contained in the StatE monad.
+-- | Add a message to our list of messages contained in the StateE monad.
 addMessage :: MessageType -> SourcePosition -> Text -> StateE ()
 addMessage mtype pos text = addMesg $ Message mtype pos text
   where
     addMesg :: Message -> StateE ()
     addMesg = tell . pure
 
--- Log an error condition.
+-- | Log an error condition.
 errorE :: SourcePosition -> Text -> StateE ()
 errorE = addMessage Error
 
@@ -122,10 +125,10 @@ evalExpr sourcePos expr = case expr of
                                 evalExprStateC sourcePos expr
                             _ -> evalExprStateC sourcePos expr
   where
-    isModule (OUModule _ _ _) = True
-    isModule (ONModule _ _ _) = True
-    isModule (ONModuleWithSuite _ _ _) = True
-    isModule (OVargsModule _ _) = True
+    isModule (OUModule {}) = True
+    isModule (ONModule {}) = True
+    isModule (ONModuleWithSuite {}) = True
+    isModule (OVargsModule {}) = True
     isModule _ = False
     -- FIXME: We may need a better result cannonicalizer here.
     canonicalizeRes (OList [oneItem]) = oneItem
@@ -136,7 +139,7 @@ runExprModule :: SourcePosition -> OVal -> [Expr] -> StateC [OVal]
 runExprModule sourcePos mod argExprsRaw = do
   let
     -- Mark all of our arguments as unnamed. There are no named arguments in expressions.
-    argExprs = (\a -> (Nothing, a)) <$> argExprsRaw
+    argExprs = (Nothing,) <$> argExprsRaw
     -- Common error messages.
     noSuiteError,notModError :: (Monoid a) => StateC a
     noSuiteError = do
@@ -151,10 +154,10 @@ runExprModule sourcePos mod argExprsRaw = do
 
   -- We can't handle any suites, either.
   _ <- case mod of
-         (OUModule _ _ _) -> pure mempty :: StateC ()
-         (ONModule _ _ _) -> pure mempty
-         (ONModuleWithSuite _ _ _) -> noSuiteError
-         (OVargsModule _ _) -> noSuiteError
+         (OUModule {}) -> pure mempty :: StateC ()
+         (ONModule {}) -> pure mempty
+         (ONModuleWithSuite {}) -> noSuiteError
+         (OVargsModule {}) -> noSuiteError
          _ -> notModError
 
   -- Perform any per-module-type specific housework, and call the module.
@@ -169,8 +172,8 @@ runExprModule sourcePos mod argExprsRaw = do
     (ONModule _ implementation _) -> do
       -- Run the module.
       runModule sourcePos $ argMap evaluatedArgs $ implementation sourcePos
-    (ONModuleWithSuite _ _ _) -> noSuiteError
-    (OVargsModule _ _) -> noSuiteError
+    (ONModuleWithSuite {}) -> noSuiteError
+    (OVargsModule {}) -> noSuiteError
     _ -> notModError
 
 -- | The inner monadic entry point. Evaluates an expression, pureing the result, and moving any error messages generated into the calling StateC.
@@ -185,7 +188,7 @@ evalExprStateC pos expr = do
     traverse_ moveMessage messages
     pure $ valf []
 
--- A more raw entry point, that does not depend on IO.
+-- A pure entry point, that does not do module calls, and does not depend on IO.
 rawRunExpr :: SourcePosition -> VarLookup -> Expr -> (OVal, [Message])
 rawRunExpr pos vars expr = do
   let
@@ -241,7 +244,7 @@ evalExpr' (fexpr :$ argExprs) = do
             app f l = case (getErrors f, getErrors $ OList l) of
                 (Nothing, Nothing) -> app' f l
                     where
-                        -- apply function to the list of its arguments until we run out
+                        -- Apply a function to the list of its arguments until we run out
                         -- of them
                         app' (OFunc f') (x:xs) = app (f' x) xs
                         app' a [] = a

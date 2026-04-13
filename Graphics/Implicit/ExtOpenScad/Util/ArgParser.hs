@@ -25,7 +25,7 @@ module Graphics.Implicit.ExtOpenScad.Util.ArgParser (
   test
   ) where
 
--- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
+-- Imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
 import Prelude(String, Maybe(Just, Nothing), ($), (<>), concatMap, error, otherwise, show, return, fmap, snd, filter, (.), fst, foldl1, not, (&&), (<$>), maybe)
 import qualified Prelude as P (null)
 
@@ -35,7 +35,7 @@ import Graphics.Implicit.ExtOpenScad.Util.OVal (fromOObj, oTypeStr, toOObj, OTyp
 
 import Graphics.Implicit.Definitions(ℕ, ℝ)
 
--- imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
+-- Imported twice, once qualified. null from Data.Map conflicts with null from Prelude.
 import Data.Map (fromList, lookup, delete)
 import qualified Data.Map as DM (null)
 
@@ -49,7 +49,7 @@ import Control.Arrow (first)
 
 -- * ArgParser building functions
 
--- ** argument and combinators
+-- ** Argument and combinators
 
 -- | Builds an argparser for the type that is expected from it.
 --   FIXME: make a version of this that accepts multiple symbol names, so we can have h= and height=
@@ -121,7 +121,7 @@ collectTests (APExample _ child)               = collectTests child
 collectTests (APBranch branches)               = concatMap collectTests branches
 -- For AP, we use a default value to run the argParser, since we need one.
 collectTests (AP _ (Just defaultValue) _ fun)  = collectTests $ fun defaultValue
-collectTests (AP _ (Nothing) _ _)              = []
+collectTests (AP _ Nothing _ _)                = []
 collectTests _                                 = []
 
 -- | Apply arguments to an ArgParser

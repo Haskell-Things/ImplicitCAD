@@ -28,13 +28,13 @@ import qualified System.IO.Temp
 import qualified Type.Reflection
 
 data ImplicitInterpreterError
-  = ImplicitInterpreterError_Unsafe -- ^ Thrown when module contains unsafe functions
-  | ImplicitInterpreterError_Hint InterpreterError
+  = ImplicitInterpreterErrorUnsafe -- ^ Thrown when module contains unsafe functions
+  | ImplicitInterpreterErrorHint InterpreterError
   deriving Show
 
 renderError :: ImplicitInterpreterError -> Text
-renderError ImplicitInterpreterError_Unsafe = "Refusing to evaluate unsafe functions"
-renderError (ImplicitInterpreterError_Hint e) = renderHintError e
+renderError ImplicitInterpreterErrorUnsafe = "Refusing to evaluate unsafe functions"
+renderError (ImplicitInterpreterErrorHint e) = renderHintError e
 
 renderHintError :: InterpreterError -> Text
 renderHintError (WontCompile ghcErrs) =
@@ -105,7 +105,7 @@ interpret modFile = do
 
   pure $ case mo of
     Right x -> Right x
-    Left e -> Left $ ImplicitInterpreterError_Hint e
+    Left e -> Left $ ImplicitInterpreterErrorHint e
 
 evalRes
   :: forall t m
@@ -119,7 +119,7 @@ evalRes = do
   tcs <-
     Language.Haskell.Interpreter.typeChecks
       (  "res :: "
-      <> (show $ Type.Reflection.typeOf @t 0)
+      <> show (Type.Reflection.typeOf @t 0)
       )
   if tcs
   then
@@ -152,7 +152,7 @@ interpretText
   => Text
   -> IO (Either ImplicitInterpreterError (Double, a))
 interpretText code | isUnsafe (describeInput code) =
-  pure $ Left ImplicitInterpreterError_Unsafe
+  pure $ Left ImplicitInterpreterErrorUnsafe
 interpretText code =
   let
     InputDesc{..} = describeInput code

@@ -199,9 +199,9 @@ data OVal = OUndefined
          | OIO (IO OVal)
          -- Name, arguments, argument parsers.
          | OUModule Symbol (Maybe [(Symbol, Bool)]) (VarLookup -> ArgParser (StateC [OVal]))
-         -- Name, implementation, arguments.
+         -- Name, implementation, instances.
          | ONModule Symbol (SourcePosition -> ArgParser (StateC [OVal])) [[(Symbol, Bool)]]
-         -- Name, implementation, arguments.
+         -- Name, implementation, instances.
          | ONModuleWithSuite Symbol (SourcePosition -> [OVal] -> ArgParser (StateC [OVal])) [[(Symbol, Bool)]]
          | OVargsModule Symbol (Symbol -> SourcePosition -> [(Maybe Symbol, OVal)] -> [StatementI] -> ([StatementI] -> StateC ()) -> StateC ())
          | OObj3 SymbolicObj3
@@ -303,11 +303,11 @@ varUnion (VarLookup a) (VarLookup b) = VarLookup $ union a b
 lookupVarIn :: Text -> VarLookup -> Maybe OVal
 lookupVarIn target (VarLookup vars) = lookup (Symbol target) vars
 
--- | Our tests. We only have the one, and it is to check the Euler characteristic of a mesh.
+-- | Our tests.
 data TestInvariant =
-    EulerCharacteristic ℕ
-  | ContoursAreClosed
-  | MeshIsWaterTight
+    EulerCharacteristic ℕ -- check the Euler characteristic of a mesh.
+  | ContoursAreClosed -- Ensure all contours are Closed (start and stop with the same point)
+  | MeshIsWaterTight -- Ensure all of the triangles in the mesh have neighbors.
     deriving (Show)
 
 -- | for composing ArgParsers.

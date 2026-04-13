@@ -20,7 +20,7 @@
 
 module Graphics.Implicit.Test.Instances (Observe, observe, (=~=), arbitraryNonZeroV) where
 
-import Prelude (Applicative, (.), not, return, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
+import Prelude (Applicative, (.), not, abs, fmap, Bool(False, True), Bounded, Double, Integer, fromIntegral, (*), (/), (^), round, Enum, Show(show), unlines, Ord, compare, Eq, (==), pure, RealFloat(isNaN), Int, Double, ($), (<), div, (<*>), (<$>), (+), (<>), (<=))
 #if MIN_VERSION_base(4,17,0)
 import Prelude (type(~))
 #endif
@@ -218,9 +218,7 @@ instance Arbitrary (Quaternion ℝ) where
 
 instance Arbitrary ℕ where
 --  shrink = genericShrink
-  arbitrary = do
-    n <- getPositive <$> arbitrary
-    return n
+  arbitrary = getPositive <$> arbitrary
 
 ------------------------------------------------------------------------------
 -- Minimum of quickspec(s) Observe class and instances required for implicit testsuite

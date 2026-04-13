@@ -1,5 +1,5 @@
 -- Implicit CAD. Copyright (C) 2011, Christopher Olah (chris@colah.ca)
--- Copyright 2016, Julia Longtin (julial@turinglace.com)
+-- Copyright 2016-2026, Julia Longtin (julia.longtin@gmail.com)
 -- Released under the GNU AGPLV3+, see LICENSE
 
 module Graphics.Implicit.ObjectUtil.GetBox2 (getBox2, getBox2R) where
@@ -35,7 +35,7 @@ getBox2 (Rotate2 θ symbObj) =
      in pointsBox $ fmap rotate $ corners $ getBox2 symbObj
 getBox2 (Slice symObj) =
   let (V3 x1 y1 _z1, V3 x2 y2 _z2) = getBox symObj
-  in ((V2 x1 y1), (V2 x2 y2))
+  in (V2 x1 y1, V2 x2 y2)
 getBox2 (Transform2 m symbObj) =
     let box = getBox2 symbObj
         augment (V2 x y) = V3 x y 1
@@ -149,7 +149,7 @@ pointRBox (V2 xStart yStart) travel =
 
     noAxis :: Quadrant -> Quadrant -> Direction -> ℝ -> Box2
     noAxis q1 q2 dir amount
-      | q1 == q2 && amount < 90*k && amount > -90*k = (V2 minX  minY, V2 maxX maxY)
+      | q1 == q2 && amount < 90*k && amount > -(90*k) = (V2 minX  minY, V2 maxX maxY)
       | dir == Clockwise && q1 == UpperLeft  = oneAxis PosY q2 dir amount
       | dir == Clockwise && q1 == LowerRight = oneAxis PosX q2 dir amount
       | dir == Clockwise && q1 == LowerLeft  = oneAxis NegY q2 dir amount
@@ -162,13 +162,13 @@ pointRBox (V2 xStart yStart) travel =
     oneAxis :: Axis -> Quadrant -> Direction -> ℝ -> Box2
     oneAxis axis quadrant dir amount
       | dir == Clockwise &&
-        amount < 90*k && amount > -90*k &&
+        amount < 90*k && amount > -(90*k) &&
         ((axis == PosX && quadrant == LowerRight) ||
          (axis == NegY && quadrant == LowerLeft)  ||
          (axis == NegX && quadrant == UpperLeft)  ||
          (axis == PosY && quadrant == UpperRight))  = (V2 minX minY, V2 maxX maxY)
       | dir == CounterClockwise &&
-        amount < 90*k && amount > -90*k &&
+        amount < 90*k && amount > -(90*k) &&
         ((axis == PosX && quadrant == UpperRight) ||
          (axis == PosY && quadrant == UpperLeft)  ||
          (axis == NegX && quadrant == LowerLeft)  ||
@@ -263,7 +263,7 @@ pointRBox (V2 xStart yStart) travel =
     case rotationDirection of
       None -> (V2 xStart yStart, V2 xStart  yStart)
       Rotation dir -> case rotationAmount of
-                 amount | amount < 360*k && amount > -360*k ->
+                 amount | amount < 360*k && amount > -(360*k) ->
                           case startPosition of
                             CenterPoint -> emptyBox
                             OnAxis axis -> case stopPosition of

@@ -51,6 +51,7 @@ import Graphics.Implicit.MathUtil (infty)
 clamp :: Ord a => (a, a) -> a -> a
 clamp (lower, upper) a = min upper (max lower a)
 
+-- | Find functions in our SCAD sandbox.
 defaultObjects :: Bool -> VarLookup
 defaultObjects withCSG = VarLookup $ fromList $
     defaultConstants
@@ -62,6 +63,7 @@ defaultObjects withCSG = VarLookup $ fromList $
     <> objectFunctions
     <> varArgModules
 
+-- | Constants from Haskell.
 defaultConstants :: [(Symbol, OVal)]
 defaultConstants = (\(a,b) -> (a, toOObj (b :: ℝ))) <$>
     [(Symbol "pi", pi),
@@ -77,6 +79,7 @@ nanNegInf x = if isNaN x then -infty else x
 signedNaNInf :: RealFloat a => a -> a -> a
 signedNaNInf x y = if isNaN y then signum x * infty else y
 
+-- | Functions which only take one argument.
 defaultFunctions :: [(Symbol, OVal)]
 defaultFunctions = (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ))) <$>
     [
@@ -108,6 +111,7 @@ defaultFunctions = (\(a,b) -> (a, toOObj ( b :: ℝ -> ℝ))) <$>
         (Symbol "sqrt",  clamp (0, infty) . nanNegInf . sqrt)
     ]
 
+-- | Functions which take two arguments.
 defaultFunctions2 :: [(Symbol, OVal)]
 defaultFunctions2 = (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ))) <$>
     [
@@ -117,6 +121,7 @@ defaultFunctions2 = (\(a,b) -> (a, toOObj (b :: ℝ -> ℝ -> ℝ))) <$>
         (Symbol "pow",   (**))
     ]
 
+-- | Special functions, which accept a funcion as their first argument. Map has to be special.
 defaultFunctionsSpecial :: [(Symbol, OVal)]
 defaultFunctionsSpecial =
     [
