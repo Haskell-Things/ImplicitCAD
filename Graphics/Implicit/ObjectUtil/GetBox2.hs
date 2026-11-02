@@ -227,35 +227,35 @@ pointRBox (V2 xStart yStart) travel =
     crossOne :: Axis -> Direction -> Box2
     crossOne start dir
       | (start == PosX && dir == Clockwise)        ||
-        (start == NegX && dir == CounterClockwise)  = mixWith [(0,-distance)]
+        (start == NegX && dir == CounterClockwise)  = mixWith [V2 0 (-distance)]
       | (start == NegY && dir == Clockwise)        ||
-        (start == PosY && dir == CounterClockwise)  = mixWith [(-distance, 0)]
+        (start == PosY && dir == CounterClockwise)  = mixWith [V2 (-distance) 0]
       | (start == NegX && dir == Clockwise)        ||
-        (start == PosX && dir == CounterClockwise)  = mixWith [(0, distance)]
+        (start == PosX && dir == CounterClockwise)  = mixWith [V2 0 distance]
       | (start == PosY && dir == Clockwise)        ||
-        (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0)]
+        (start == NegY && dir == CounterClockwise)  = mixWith [V2 distance 0]
       | otherwise = distanceBox
     crossTwo :: Axis -> Direction -> Box2
     crossTwo start dir
       | (start == PosX && dir == Clockwise)        ||
-        (start == PosY && dir == CounterClockwise)  = mixWith [(-distance, 0), ( 0,-distance)]
+        (start == PosY && dir == CounterClockwise)  = mixWith [V2 (-distance) 0, V2 0 (-distance)]
       | (start == PosY && dir == Clockwise)        ||
-        (start == NegX && dir == CounterClockwise)  = mixWith [( distance, 0), ( 0,-distance)]
+        (start == NegX && dir == CounterClockwise)  = mixWith [V2 distance 0, V2 0 (-distance)]
       | (start == NegX && dir == Clockwise)        ||
-        (start == NegY && dir == CounterClockwise)  = mixWith [( distance, 0), ( 0, distance)]
+        (start == NegY && dir == CounterClockwise)  = mixWith [V2 distance 0, V2 0 distance]
       | (start == NegY && dir == Clockwise)        ||
-        (start == PosX && dir == CounterClockwise)  = mixWith [(-distance, 0), ( 0, distance)]
+        (start == PosX && dir == CounterClockwise)  = mixWith [V2 (-distance) 0, V2 0 distance]
       | otherwise = distanceBox
     crossThree :: Axis -> Box2
-    crossThree PosX = mixWith [( 0, distance), (-distance, 0), ( 0,-distance)]
-    crossThree PosY = mixWith [(-distance, 0), ( 0,-distance), ( distance, 0)]
-    crossThree NegX = mixWith [( 0,-distance), ( distance, 0), ( 0, distance)]
-    crossThree NegY = mixWith [( distance, 0), ( 0, distance), (-distance, 0)]
-    -- TODO(sandy): clean me up to not use pairs
-    mixWith :: [(ℝ,ℝ)] -> Box2
+    crossThree PosX = mixWith [V2 0    distance, V2 (-distance) 0, V2 0 (-distance)]
+    crossThree PosY = mixWith [V2 (-distance) 0, V2 0 (-distance), V2 distance    0]
+    crossThree NegX = mixWith [V2 0 (-distance), V2 distance    0, V2 0    distance]
+    crossThree NegY = mixWith [V2 distance    0, V2 0    distance, V2 (-distance) 0]
+    mixWith :: [ℝ2] -> Box2
     mixWith points = (V2 (minimum xPoints) (minimum yPoints), V2 (maximum xPoints) (maximum yPoints))
-                     where
-                       (xPoints, yPoints) = unzip $ points <> [(xStart, yStart), (xStop, yStop)]
+      where
+        toPair (V2 a b) = (a, b)
+        (xPoints, yPoints) = unzip $ toPair <$> points <> [V2 xStart yStart, V2 xStop yStop]
     invertRotation :: Direction -> Direction
     invertRotation Clockwise = CounterClockwise
     invertRotation CounterClockwise = Clockwise
