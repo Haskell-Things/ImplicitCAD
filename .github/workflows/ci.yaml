@@ -4,7 +4,7 @@ jobs:
     name: "GHC ${{ matrix.ghc }}, Cabal ${{ matrix.cabal }}, OS ${{ matrix.os }}"
     "runs-on": "${{ matrix.os }}"
     steps:
-    - uses: "actions/checkout@v4"
+    - uses: "actions/checkout@v7"
       with:
         submodules: recursive
     - id: "setup-haskell-cabal"
@@ -21,12 +21,13 @@ jobs:
         fi
     - name: freeze
       run: "cabal freeze --enable-tests --enable-benchmarks"
-    - uses: "actions/cache@v3"
+    - uses: "actions/cache@v5"
       with:
         key: "${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal}}-${{ hashFiles('cabal.project.freeze') }}"
         path: |
           ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
           dist-newstyle
+        "restore-keys": "${{ matrix.os }}-${{ matrix.ghc }}-${{ matrix.cabal}}-"
     - name: Install dependencies
       run: "cabal build all --enable-tests --enable-benchmarks --only-dependencies"
     - name: build all
@@ -42,16 +43,14 @@ jobs:
     strategy:
       matrix:
         cabal:
-        - '3.10'
+        - '3.16'
         ghc:
-        - '9.6.3'
-        - '9.4.7'
-        - '9.2.8'
+        - '9.10.3'
+        - '9.8.4'
+        - '9.6.7'
         os:
         - "ubuntu-latest"
 name: Haskell CI
 'on':
   pull_request: {}
   push: {}
-  schedule:
-  - cron: "4 20 10 * *"
