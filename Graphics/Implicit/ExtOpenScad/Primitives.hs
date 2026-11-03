@@ -15,7 +15,7 @@
 -- Export one set containing all of the primitive modules.
 module Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules) where
 
-import Prelude(any, concat, elem, error, foldr, head, mapM, (.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, show, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, (<*>), (<$>))
+import Prelude(any, concat, elem, error, foldr, mapM, (.), Either(Left, Right), Bool(True, False), Maybe(Just, Nothing), ($), pure, show, either, id, (-), (==), (&&), (<), (*), cos, sin, pi, (/), (>), const, uncurry, (/=), (||), not, null, fmap, (<>), otherwise, (<*>), (<$>))
 
 import Graphics.Implicit.Definitions (ℝ, ℝ2, ℝ3, ℕ, SymbolicObj2, SymbolicObj3, ExtrudeMScale(C1), fromℕtoℝ, isScaleID)
 
@@ -352,8 +352,10 @@ polyhedron = moduleWithoutSuite "polyhedron" $ \sourcePos -> do
                   if null newVisited
                     then do
                          warnC sourcePos $ "Had to pick a new root, incomplete polyhedron?"
-                         windTriangles (visited <> [head $ toList newUnvisited]) (deleteAt 0 newUnvisited)
-                    else windTriangles (visited <> newVisited)                   newUnvisited
+                         case toList newUnvisited of
+                          (x:_) -> windTriangles (visited <> [x]) (deleteAt 0 newUnvisited)
+                          [] -> pure visited
+                    else windTriangles (visited <> newVisited) newUnvisited
             -- | Compare one unvisited triangle against all visited triangles.
             -- If it's a neighbor of a visited triangle, correct it's winding and throw a warning if we had to flip it, then move it from unvisited to found (after flipping).
             classifyTri :: [Tri] -> ([Tri], Seq Tri) -> Tri -> StateC ([Tri], Seq Tri)
