@@ -4,7 +4,7 @@
 -- FIXME: document why we need each of these.
 {-# LANGUAGE ScopedTypeVariables  #-}
 
-import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), head, length, (/=), (+), error, print, drop)
+import Prelude(IO, Show, String, Int, Maybe(Just,Nothing), Eq, return, ($), show, fmap, (<>), putStrLn, filter, zip, null, undefined, const, Bool(True,False), fst, (.), (/=), (+), error)
 import Graphics.Implicit.ExtOpenScad.Primitives (primitiveModules)
 import Graphics.Implicit.ExtOpenScad.Definitions (ArgParser(AP,APFail,APExample,APTest,APTerminator,APBranch), Symbol(Symbol), OVal(ONModule, ONModuleWithSuite), SourcePosition(SourcePosition), StateC)
 
@@ -12,9 +12,6 @@ import qualified Control.Exception as Ex (catch, SomeException)
 import Control.Monad (forM_)
 import Data.Traversable (traverse)
 import Data.Text.Lazy (unpack, pack)
-
-tail :: [a] -> [a]
-tail = drop 1
 
 -- | Return true if the argument is of type ExampleDoc.
 isExample :: DocPart -> Bool
@@ -162,12 +159,12 @@ getArgParserDocs (APTerminator _) = return [Empty]
 getArgParserDocs (APFail _) = return [Empty]
 
 -- This one confuses me.
-getArgParserDocs (APBranch children) = do
-  print (length children)
-  otherDocs <- Ex.catch (getArgParserDocs (APBranch $ tail children)) (\(_ :: Ex.SomeException) -> return [])
-  aResults <- getArgParserDocs $ head children
+getArgParserDocs (APBranch (x:xs)) = do
+  otherDocs <- Ex.catch (getArgParserDocs (APBranch xs)) (\(_ :: Ex.SomeException) -> return [])
+  aResults <- getArgParserDocs x
   if otherDocs /= [Empty]
     then
     return [Branch (aResults <> otherDocs)]
     else
     return aResults
+getArgParserDocs (APBranch []) = return [Empty]
