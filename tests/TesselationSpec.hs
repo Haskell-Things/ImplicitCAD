@@ -1,6 +1,12 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ImplicitPrelude  #-}
 {-# LANGUAGE TupleSections    #-}
 {-# LANGUAGE TypeApplications #-}
+
+#if __GLASGOW_HASKELL__ >= 908
+-- allow head usage
+{-# OPTIONS_GHC -fno-warn-x-partial #-}
+#endif
 
 module TesselationSpec (spec) where
 
